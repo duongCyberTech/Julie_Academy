@@ -24,3 +24,4 @@ export class AuthController {
     return this.userService.createUser(dto)
   }
 }
+
