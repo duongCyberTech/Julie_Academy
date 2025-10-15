@@ -5,6 +5,9 @@ CREATE TYPE "public"."UserRole" AS ENUM ('admin', 'tutor', 'student', 'parents')
 CREATE TYPE "public"."AccountStatus" AS ENUM ('active', 'inactive');
 
 -- CreateEnum
+CREATE TYPE "public"."Difficulty" AS ENUM ('Easy', 'Medium', 'Hard');
+
+-- CreateEnum
 CREATE TYPE "public"."ClassStatus" AS ENUM ('pending', 'ongoing', 'completed', 'cancelled');
 
 -- CreateEnum
