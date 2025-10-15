@@ -26,6 +26,19 @@ enum AccountStatus {
   inactive
 }
 
+enum QuestionType {
+  MULTIPLE_CHOICE_SINGLE
+  MULTIPLE_CHOICE_MULTI
+  FILL_IN_BLANK
+  ORDERING
+}
+
+enum Difficulty {
+  Easy
+  Medium
+  Hard
+}
+
 model User {
   uid        String        @id @default(uuid())
   username   String        @unique
