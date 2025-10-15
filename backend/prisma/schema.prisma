@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../node_modules/.prisma/client"
@@ -12,6 +6,337 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  uid       String        @id @default(uuid())
+  username  String        @unique
+  fname     String
+  mname     String
+  lname     String
+  email     String        @unique
+  password  String
+  role      UserRole      @default(student)
+  status    AccountStatus @default(inactive)
+  avata_url String?
+  comments  Comments[]
+  follow    Follow[]
+  parents   Parents?
+  student   Student?
+  thread    Thread[]
+  tutor     Tutor?
+}
+
+model Tutor {
+  uid          String      @id @default(uuid())
+  phone_number String      @unique
+  experiences  String?
+  class        Class[]
+  exams        Exams[]
+  feedback     Feedback[]
+  folder       Folders[]
+  questions    Questions[]
+  resources    Resources[]
+  user         User        @relation(fields: [uid], references: [uid])
+}
+
+model Parents {
+  uid          String      @id @default(uuid())
+  phone_number String      @unique
+  user         User        @relation(fields: [uid], references: [uid])
+  family       is_family[]
+}
+
+model Student {
+  uid        String       @id @default(uuid())
+  school     String
+  dob        DateTime
+  exam_taken Exam_taken[]
+  feedback   Feedback[]
+  learning   Learning[]
+  user       User         @relation(fields: [uid], references: [uid])
+  family     is_family[]
+}
+
+model is_family {
+  student_uid String
+  parents_uid String
+  parents     Parents @relation(fields: [parents_uid], references: [uid])
+  student     Student @relation(fields: [student_uid], references: [uid])
+
+  @@id([student_uid, parents_uid])
+}
+
+model Feedback {
+  feed_id     String   @id @default(uuid())
+  content     String
+  createdAt   DateTime @default(now())
+  tutor_uid   String
+  student_uid String
+  student     Student  @relation(fields: [student_uid], references: [uid])
+  tutor       Tutor    @relation(fields: [tutor_uid], references: [uid])
+}
+
+model Class {
+  class_id      String               @id @default(uuid())
+  classname     String
+  description   String
+  createdAt     DateTime             @default(now())
+  updateAt      DateTime             @default(now())
+  duration_time Int
+  nb_of_student Int
+  status        ClassStatus          @default(pending)
+  grade         Int
+  subject       String
+  tutor_uid     String
+  startat       DateTime?            @default(now()) @db.Timestamp(6)
+  tutor         Tutor                @relation(fields: [tutor_uid], references: [uid])
+  exam_open_in  Exam_open_in[]
+  folders       Folder_of_class[]
+  learning      Learning[]
+  resources     Resources_of_class[]
+  schedule      Schedule[]
+}
+
+model Schedule {
+  schedule_id  Int
+  class_id     String
+  meeting_date DateTime
+  startAt      String
+  endAt        String
+  link_meet    String
+  class        Class    @relation(fields: [class_id], references: [class_id])
+
+  @@id([schedule_id, class_id])
+}
+
+model Learning {
+  class_id    String
+  student_uid String
+  class       Class   @relation(fields: [class_id], references: [class_id])
+  student     Student @relation(fields: [student_uid], references: [uid])
+
+  @@id([class_id, student_uid])
+}
+
+model Thread {
+  thread_id String     @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime   @default(now())
+  updateAt  DateTime   @default(now())
+  uid       String
+  comments  Comments[]
+  followers Follow[]
+  sender    User       @relation(fields: [uid], references: [uid])
+  t_image   t_image[]
+}
+
+model Comments {
+  thread_id  String
+  comment_id String
+  content    String
+  createdAt  DateTime  @default(now())
+  updateAt   DateTime  @default(now())
+  uid        String
+  thread     Thread    @relation(fields: [thread_id], references: [thread_id])
+  sender     User      @relation(fields: [uid], references: [uid])
+  c_image    c_image[]
+
+  @@id([thread_id, comment_id])
+}
+
+model t_image {
+  image_id  Int
+  url       String
+  thread_id String
+  thread    Thread @relation(fields: [thread_id], references: [thread_id])
+
+  @@id([image_id, thread_id])
+}
+
+model c_image {
+  image_id   Int
+  url        String
+  thread_id  String
+  comment_id String
+  comments   Comments @relation(fields: [thread_id, comment_id], references: [thread_id, comment_id])
+
+  @@id([image_id, thread_id, comment_id])
+}
+
+model Follow {
+  thread_id String
+  uid       String
+  thread    Thread @relation(fields: [thread_id], references: [thread_id])
+  follower  User   @relation(fields: [uid], references: [uid])
+
+  @@id([thread_id, uid])
+}
+
+model Resources {
+  did         String               @id @default(uuid())
+  title       String
+  description String
+  createdAt   DateTime             @default(now())
+  updateAt    DateTime             @default(now())
+  file_type   String
+  file_path   String
+  version     Int
+  num_pages   Int
+  tutor_id    String
+  folders     Resource_in_folder[]
+  tutor       Tutor                @relation(fields: [tutor_id], references: [uid])
+  classes     Resources_of_class[]
+}
+
+model Resources_of_class {
+  class_id  String
+  did       String
+  class     Class     @relation(fields: [class_id], references: [class_id])
+  resources Resources @relation(fields: [did], references: [did])
+
+  @@id([class_id, did])
+}
+
+model Folders {
+  folder_id   String               @id @default(uuid())
+  folder_name String
+  createdAt   DateTime             @default(now())
+  updateAt    DateTime             @default(now())
+  tutor_id    String
+  classes     Folder_of_class[]
+  tutor       Tutor                @relation(fields: [tutor_id], references: [uid])
+  resources   Resource_in_folder[]
+}
+
+model Resource_in_folder {
+  folder_id String
+  did       String
+  resources Resources @relation(fields: [did], references: [did])
+  folder    Folders   @relation(fields: [folder_id], references: [folder_id])
+
+  @@id([folder_id, did])
+}
+
+model Folder_of_class {
+  class_id  String
+  folder_id String
+  class     Class   @relation(fields: [class_id], references: [class_id])
+  folder    Folders @relation(fields: [folder_id], references: [folder_id])
+
+  @@id([class_id, folder_id])
+}
+
+model Categories {
+  category_id   String      @id @default(uuid())
+  category_name String      @unique
+  description   String?
+  grades        Int
+  subject       String
+  createdAt     DateTime    @default(now())
+  updateAt      DateTime    @default(now())
+  questions     Questions[]
+}
+
+model Questions {
+  ques_id        String             @id @default(uuid())
+  content        String
+  explaination   String?
+  type           QuestionType       @default(single_choice)
+  level          DifficultyLevel    @default(easy)
+  createAt       DateTime           @default(now())
+  updateAt       DateTime           @default(now())
+  category_id    String
+  tutor_id       String
+  status         QuestionStatus?    @default(private)
+  answers        Answers[]
+  exam_questions Question_of_exam[]
+  category       Categories         @relation(fields: [category_id], references: [category_id])
+  tutor          Tutor              @relation(fields: [tutor_id], references: [uid])
+}
+
+model Answers {
+  ques_id         String
+  aid             Int
+  content         String
+  is_correct      Boolean           @default(false)
+  answer_for_exam Answer_for_exam[]
+  question        Questions         @relation(fields: [ques_id], references: [ques_id])
+
+  @@id([ques_id, aid])
+}
+
+model Exams {
+  exam_id        String             @id @default(uuid())
+  title          String
+  description    String
+  level          DifficultyLevel    @default(easy)
+  duration       Int
+  total_score    Int
+  total_ques     Int
+  createdAt      DateTime           @default(now())
+  updateAt       DateTime           @default(now())
+  tutor_id       String
+  sessions       Exam_session[]
+  tutor          Tutor              @relation(fields: [tutor_id], references: [uid])
+  exam_questions Question_of_exam[]
+}
+
+model Question_of_exam {
+  exam_id  String
+  ques_id  String
+  exam     Exams     @relation(fields: [exam_id], references: [exam_id])
+  question Questions @relation(fields: [ques_id], references: [ques_id])
+
+  @@id([exam_id, ques_id])
+}
+
+model Exam_session {
+  exam_id            String
+  session_id         Int
+  startAt            DateTime       @default(now())
+  expireAt           DateTime
+  exam_type          ExamType       @default(practice)
+  limit_taken        Int            @default(1)
+  total_student_done Int            @default(0)
+  exam_open_in       Exam_open_in[]
+  exam               Exams          @relation(fields: [exam_id], references: [exam_id])
+
+  @@id([exam_id, session_id])
+}
+
+model Exam_open_in {
+  session_id   Int
+  exam_id      String
+  class_id     String
+  class        Class        @relation(fields: [class_id], references: [class_id])
+  exam_session Exam_session @relation(fields: [session_id, exam_id], references: [session_id, exam_id])
+
+  @@id([session_id, exam_id, class_id])
+}
+
+model Exam_taken {
+  et_id                String            @id @default(uuid())
+  final_score          Int
+  total_ques_completed Int
+  startAt              DateTime          @default(now())
+  doneAt               DateTime          @default(now())
+  exam_id              String?
+  session_id           Int?
+  student_uid          String
+  answers              Answer_for_exam[]
+  student              Student           @relation(fields: [student_uid], references: [uid])
+}
+
+model Answer_for_exam {
+  et_id      String
+  ques_id    String
+  aid        Int
+  exam_taken Exam_taken @relation(fields: [et_id], references: [et_id])
+  answer     Answers    @relation(fields: [ques_id, aid], references: [ques_id, aid])
+
+  @@id([et_id, ques_id, aid])
 }
 
 enum UserRole {
@@ -109,157 +434,6 @@ enum ClassStatus {
   completed
   cancelled
 }
-model Class {
-  class_id   String   @id @default(uuid())
-  classname  String
-  description String
-  createdAt  DateTime @default(now())
-  updateAt   DateTime @default(now())
-  duration_time Int
-  nb_of_student Int
-  status       ClassStatus @default(pending)
-  grade       Int
-  subject      String
-  tutor_uid    String
-  tutor       Tutor    @relation(fields: [tutor_uid], references: [uid])
-  learning    Learning[]
-  resources   Resources_of_class[]
-  folders     Folder_of_class[]
-  exam_open_in Exam_open_in[]
-  schedule    Schedule[]
-}
-
-model Schedule {
-  schedule_id Int
-  class_id    String
-  @@id([schedule_id, class_id])
-  meeting_date DateTime
-  startAt       String
-  endAt         String
-  link_meet    String
-  class       Class   @relation(fields: [class_id], references: [class_id])
-}
-
-model Learning {
-  class_id String
-  student_uid String
-  class    Class   @relation(fields: [class_id], references: [class_id])
-  student  Student @relation(fields: [student_uid], references: [uid])
-  @@id([class_id, student_uid])
-}
-
-model Thread {
-  thread_id String   @id @default(uuid())
-  title     String
-  content   String
-  createdAt DateTime @default(now())
-  updateAt  DateTime @default(now())
-  uid       String
-  sender    User     @relation(fields: [uid], references: [uid])
-  comments  Comments[]
-  t_image   t_image[]
-  followers Follow[]
-}
-
-model Comments {
-  thread_id  String
-  comment_id String 
-  @@id([thread_id, comment_id])
-  content    String
-  createdAt  DateTime @default(now())
-  updateAt   DateTime @default(now())
-  uid       String
-  thread     Thread   @relation(fields: [thread_id], references: [thread_id])
-  sender     User     @relation(fields: [uid], references: [uid])
-  c_image    c_image[]
-}
-
-model t_image {
-  image_id Int 
-  url      String
-  thread_id String
-  @@id([image_id, thread_id])
-  thread   Thread @relation(fields: [thread_id], references: [thread_id])
-}
-
-model c_image {
-  image_id Int 
-  url      String
-  thread_id String
-  comment_id String
-  @@id([image_id, thread_id, comment_id])
-  comments Comments @relation(fields: [thread_id, comment_id], references: [thread_id, comment_id])
-}
-
-model Follow {
-  thread_id String
-  uid       String
-  @@id([thread_id, uid])
-  thread    Thread @relation(fields: [thread_id], references: [thread_id])
-  follower  User   @relation(fields: [uid], references: [uid])
-}
-
-model Resources {
-  did     String   @id @default(uuid())
-  title   String
-  description String
-  createdAt DateTime @default(now())
-  updateAt  DateTime @default(now())
-  file_type String
-  file_path String
-  version  Int
-  num_pages Int
-  tutor_id String
-  tutor    Tutor    @relation(fields: [tutor_id], references: [uid])
-  classes Resources_of_class[]
-  folders Resource_in_folder[]
-}
-
-model Resources_of_class {
-  class_id String
-  did      String
-  @@id([class_id, did])
-  class    Class     @relation(fields: [class_id], references: [class_id])
-  resources Resources @relation(fields: [did], references: [did])
-}
-
-model Folders {
-  folder_id String   @id @default(uuid())
-  folder_name      String
-  createdAt DateTime @default(now())
-  updateAt  DateTime @default(now())
-  tutor_id  String
-  tutor     Tutor    @relation(fields: [tutor_id], references: [uid])
-  resources Resource_in_folder[]
-  classes   Folder_of_class[]
-}
-
-model Resource_in_folder {
-  folder_id String
-  did       String
-  @@id([folder_id, did])
-  folder    Folders   @relation(fields: [folder_id], references: [folder_id])
-  resources Resources @relation(fields: [did], references: [did])
-}
-
-model Folder_of_class {
-  class_id  String
-  folder_id String
-  @@id([class_id, folder_id])
-  class     Class   @relation(fields: [class_id], references: [class_id])
-  folder    Folders @relation(fields: [folder_id], references: [folder_id])
-}
-
-model Categories {
-  category_id String   @id @default(uuid())
-  category_name String  @unique
-  description  String?
-  grades      Int
-  subject    String
-  createdAt  DateTime @default(now())
-  updateAt   DateTime @default(now())
-  questions  Questions[]
-}
 
 enum QuestionType {
   single_choice
@@ -275,54 +449,9 @@ enum DifficultyLevel {
   hard
 }
 
-model Questions {
-  ques_id  String   @id @default(uuid())
-  content  String
-  explaination String?
-  type   QuestionType @default(single_choice)
-  level DifficultyLevel @default(easy)
-  createAt DateTime @default(now())
-  updateAt DateTime @default(now())
-  category_id String
-  category   Categories @relation(fields: [category_id], references: [category_id])
-  tutor_id  String
-  tutor     Tutor      @relation(fields: [tutor_id], references: [uid])
-  answers   Answers[]
-  exam_questions Question_of_exam[]
-}
-
-model Answers {
-  ques_id String
-  aid   Int   
-  @@id([ques_id, aid])
-  content  String
-  is_correct Boolean @default(false)
-  question Questions @relation(fields: [ques_id], references: [ques_id])
-  answer_for_exam Answer_for_exam[]
-}
-
-model Exams {
-  exam_id   String   @id @default(uuid())
-  title     String
-  description String
-  level     DifficultyLevel @default(easy)
-  duration Int
-  total_score Int
-  total_ques Int
-  createdAt DateTime @default(now())
-  updateAt  DateTime @default(now())
-  tutor_id  String
-  tutor     Tutor    @relation(fields: [tutor_id], references: [uid])
-  exam_questions Question_of_exam[]
-  sessions  Exam_session[]
-}
-
-model Question_of_exam {
-  exam_id String
-  ques_id String
-  @@id([exam_id, ques_id])
-  exam    Exams     @relation(fields: [exam_id], references: [exam_id])
-  question Questions @relation(fields: [ques_id], references: [ques_id])
+enum QuestionStatus {
+  public
+  private
 }
 
 enum ExamType {
@@ -330,6 +459,7 @@ enum ExamType {
   test
   final
 }
+<<<<<<< HEAD
 model Exam_session {
   exam_id   String
   session_id Int
@@ -375,3 +505,5 @@ model Answer_for_exam {
   exam_taken Exam_taken @relation(fields: [et_id], references: [et_id])
   answer   Answers    @relation(fields: [ques_id, aid], references: [ques_id, aid])
 }
+=======
+>>>>>>> 876408410bd4139e11b32af8c4df6e7e757c19dd

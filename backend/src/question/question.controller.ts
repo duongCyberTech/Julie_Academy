@@ -1,64 +1,68 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Put,
-  Query,
-  UseGuards,
-  Req,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, Put, UseGuards, Patch } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { QuestionService } from './question.service';
-import { CreateQuestionDto } from './dto/create-question.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
-import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
-import { QuestionEntity } from './entities/question.entity';
+import { AnswerDto, CategoryDto, QuestionDto } from './dto/question.dto';
 
-@UseGuards(JwtAuthGuard)
-@Controller('questions')
-export class QuestionController {
+@Controller('categories')
+export class CategoryController {
   constructor(private readonly questionService: QuestionService) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  create(
-    @Body() createQuestionDto: CreateQuestionDto,
-    @Req() req: any,
-  ): Promise<QuestionEntity> {
-    const creatorId = req.user.uid;
-    return this.questionService.create(createQuestionDto, creatorId);
+  createCategory(@Body() dto: CategoryDto[]){
+    return this.questionService.createCategory(dto);
   }
 
   @Get()
-  findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('level') level?: 'easy' | 'medium' | 'hard',
-  ) {
-    return this.questionService.findAll({ page, limit, level });
+  getAllCategories(@Query() query: any) {
+    return this.questionService.getAllCategories(query.page, query.limit, query.search, query.grade, query.subject);
   }
+}
 
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<QuestionEntity> {
-    return this.questionService.findOne(id);
-  }
+@Controller('questions')
+export class QuestionController {
+    constructor(private readonly questionService: QuestionService) {}
 
-  @Put(':id')
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateQuestionDto: UpdateQuestionDto,
-  ): Promise<QuestionEntity> {
-    return this.questionService.update(id, updateQuestionDto);
-  }
+    @Post('create/:tutor_id')
+    createQuestion(@Param('tutor_id') tutor_id: string, @Body() dto: QuestionDto[]) {
+        return this.questionService.createQuestion(dto, tutor_id);
+    }
 
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    await this.questionService.remove(id);
-  }
+    @Get('get')
+    getAllQuestions(@Query() query: any) {
+        return this.questionService.getAllQuestion(
+            query.page, query.limit, query.search, 
+            query.level, query.status, query.category_id
+        );
+    }
+
+    @Get('get/category/:category_id')
+    getQuestionsByCategory(@Param('category_id') category_id: string, @Query() query: any) {
+        return this.questionService.getQuestionsByCategory(
+            category_id, query.page, query.limit, query.search, 
+            query.level, query.status
+        );
+    }
+
+    @Get('get/my/:tutor_id')
+    getMyQuestions(@Param('tutor_id') tutor_id: string, @Query() query: any) {
+        return this.questionService.getMyQuestions(
+            tutor_id, query.page, query.limit, query.search, 
+            query.level, query.status, query.category_id
+        );
+    }
+
+    @Get('get/detail/:ques_id')
+    getQuestionDetail(@Param('ques_id') ques_id: string) {
+        return this.questionService.getQuestionById(ques_id);
+    }
+
+    @Patch('update/ques/:ques_id')
+    updateQuestion(@Param('ques_id') ques_id: string, @Body() dto: Partial<QuestionDto>) {
+        return this.questionService.updateQuestion(ques_id, dto);
+    }
+
+    @Patch('update/answer/:ques_id/:aid')
+    updateAnswer(@Param('ques_id') ques_id: string, @Param('aid') aid: number, @Body() dto: Partial<AnswerDto>) {
+        return this.questionService.updateAnswer(aid, ques_id, dto);
+    }
 }

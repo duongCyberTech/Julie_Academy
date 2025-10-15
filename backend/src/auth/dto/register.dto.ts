@@ -29,8 +29,4 @@ export class RegisterDto {
         { message: 'Password phải chứa ít nhất 1 ký tự đặc biệt (@$!%*?&)' },
     )
     password: string;
-
-    DoB?: Date;
-    description?: string;
-    phone_number?: string 
 }
