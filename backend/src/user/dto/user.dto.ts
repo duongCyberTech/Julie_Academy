@@ -29,8 +29,29 @@ export class UserDto {
         { message: 'Password phải chứa ít nhất 1 ký tự đặc biệt (@$!%*?&)' },
     )
     password: string;
+    dob?: Date;
+    school?: string;
+    phone_number?: string;
+    experiences?: string;
+}
 
-    DoB?: Date;
-    description?: string;
-    phone_number?: string 
+export class StudentDto {
+    @IsNotEmpty()
+    @IsString()
+    school: string;
+
+    @IsNotEmpty()
+    dob: Date;
+}
+
+export class TutorDto {
+    @Matches(/^(0|\+84)(3|5|7|8|9)+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' })
+    phone_number: string;
+    
+    experiences: string;
+}
+
+export class ParentsDto {
+    @Matches(/^(0|\+84)(3|5|7|8|9)+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' })
+    phone_number: string;
 }
