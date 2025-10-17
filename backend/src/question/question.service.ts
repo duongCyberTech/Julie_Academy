@@ -1,12 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CategoryDto, QuestionDto, AnswerDto } from './dto/question.dto';
+import { BookDto, CategoryDto, QuestionDto, AnswerDto } from './dto/question.dto';
+import { connect } from 'http2';
 
 @Injectable()
 export class QuestionService {
+  aid: number;
   constructor(private prisma: PrismaService) {}
 
-  async createCategory(data: CategoryDto[]) {
+  async createBook(data: BookDto[]){
+    return this.prisma.$transaction(async(tx) => {
+      const createdBook = [];
+      for (const book of data) {
+        const newBook = await tx.books.create({
+          data: {
+            title: book.title,
+            subject: book.subject,
+            grade: book.grade,
+            description: book.description ||  ""
+          }
+        })
+      }
+    })
+  }
+
+  async getAllBooks(){
+    return this.prisma.books.findMany()
+  }
+
+  async createCategory(book_id: string, data: CategoryDto[]) {
     return this.prisma.$transaction(async (tx) => {
         const createdCategories = [];
         for (const category of data) {
@@ -14,10 +36,9 @@ export class QuestionService {
                 data: {
                     category_name: category.category_name,
                     description: category.description,
-                    createdAt: new Date(),
+                    createAt: new Date(),
                     updateAt: new Date(),
-                    grades: category.grades,
-                    subject: category.subject,
+                    Books: { connect: { book_id } }
                 },
             });
             createdCategories.push(newCategory);
@@ -50,6 +71,7 @@ export class QuestionService {
                         aid: aid++,
                         content: (answer as AnswerDto).content,
                         is_correct: (answer as AnswerDto).is_correct,
+                        explaination: (answer as AnswerDto).explaination,
                         question: { connect: { ques_id: newQuestion.ques_id } },
                     },
                 });
@@ -60,8 +82,8 @@ export class QuestionService {
     })
   }
 
-  async getAllCategories(page?: number, limit?: number, search?: string, grade? : number, subject?: string) {
-    const skip:number = (page - 1) * limit;
+  async getAllCategories(book_id?:string, page?: number, limit?: number, search?: string, grade? : number, subject?: string) {
+    const skip: number = page && limit ? (Number(page) - 1) * Number(limit) : 0;
     const where: any = {};
     if (search) {
       where.OR = [
@@ -70,6 +92,7 @@ export class QuestionService {
         { subject: { contains: search, mode: 'insensitive' } },
       ];
     }
+    if (book_id) where.book_id = book_id
     if (grade) {
       where.grades = grade;
     }
@@ -80,23 +103,30 @@ export class QuestionService {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createAt: 'desc' },
         select:{
             category_id: true,
             category_name: true,
             description: true,
-            grades: true,
-            subject: true,
+            Books: {
+              select: {
+                book_id: true,
+                title: true,
+                subject: true,
+                grade: true
+              }
+            }
         },  
     });
   }
 
   async getQuestionsByCategory(category_id: string, page?: number, limit?: number, search?: string, level?: string, type?: string, status?: string) {
-    const skip:number = (page - 1) * limit;
+    const skip:number = page&&limit ? (page - 1) * limit : 0;
     const where: any = { category_id: category_id };
     if (level) where.level = level;
     if (type) where.type = type;
-    if (status) where.status = status;
+    //if (status) where.status = status;
+    where.status = 'public'
     if (search) {
       where.OR = [
         { content: { contains: search, mode: 'insensitive' } },
@@ -123,11 +153,12 @@ export class QuestionService {
     page?: number, limit?: number, search?: string, 
     level?: string, type?: string, status?: string
   ) {
-    const skip:number = (page - 1) * limit;
+    const skip:number = page&&limit ? (page - 1) * limit : 0;
     const where: any = {};
+    where.status = 'public'
     if (level) where.level = level;
     if (type) where.type = type;
-    if (status) where.status = status;
+    //if (status) where.status = status;
     if (search) {
       where.OR = [
         { content: { contains: search, mode: 'insensitive' } },
@@ -149,7 +180,13 @@ export class QuestionService {
             category: { 
                 select: { 
                     category_id: true, category_name: true, 
-                    subject: true, grades: true 
+                    Books: { 
+                      select: {
+                        title: true,
+                        subject: true,
+                        grade: true
+                      }
+                    }
                 } 
             },
         },  
@@ -160,8 +197,8 @@ export class QuestionService {
     tutor_uid: string, page?: number, limit?: number, search?: string, 
     level?: string, type?: string, status?: string
   ) {
-    const skip:number = (page - 1) * limit;
-    const where: any = { tutor_uid };
+    const skip:number = page&&limit ? (page - 1) * limit : 0;
+    const where: any = { tutor_id: tutor_uid };
     if (level) where.level = level;
     if (type) where.type = type;
     if (status) where.status = status;
@@ -186,7 +223,9 @@ export class QuestionService {
             category: { 
                 select: { 
                     category_id: true, category_name: true, 
-                    subject: true, grades: true 
+                    Books: {
+                      select:  {title: true, subject: true, grade: true}
+                    }
                 } 
             },
         },  
@@ -203,7 +242,10 @@ export class QuestionService {
             type: true,
             level: true,
             status: true,
-            category: { select: { category_id: true, category_name: true, subject: true, grades: true } },
+            category: { select: { 
+              category_id: true, category_name: true, 
+              Books: {select: {title: true, subject: true, grade: true}}
+            } },
             answers: { select: { aid: true, content: true, is_correct: true } },
         },  
     });
@@ -221,18 +263,56 @@ export class QuestionService {
     });
   }
 
+  async deleteQuestion(ques_id:string){
+    return this.prisma.$transaction(async(tx) => {
+      await tx.answers.deleteMany({where: {ques_id}})
+      await tx.questions.delete({where: {ques_id}})
+    })
+  }
+
   async updateAnswer(aid: number, ques_id: string, answer: Partial<AnswerDto>) {
     return this.prisma.answers.update({
-        where: { ques_id_aid: { ques_id, aid } },
+        where: { ques_id_aid: { ques_id, aid: Number(aid) } },
         data: {
            ...answer,
         },
     });
   }
 
+    async addAnswer(answers: Partial<AnswerDto>[], ques_id: string) {
+    return this.prisma.$transaction(async(tx) => {
+      var aid = 1 + await tx.answers.count({
+        where: {ques_id}
+      })
+
+      for (const answer of answers) {
+        await tx.answers.create({
+          data: {
+            aid: aid++,
+            content: (answer as AnswerDto).content,
+            is_correct: (answer as AnswerDto).is_correct,
+            explaination: (answer as AnswerDto).explaination,
+            question: { connect: { ques_id: ques_id } },
+          },
+        })
+      }
+      return {status: 200, message: "Add answers list successfully!"}
+    })
+  }
+
   async deleteAnswer(aid: number, ques_id: string) {
-    return this.prisma.answers.delete({
-        where: { ques_id_aid: { ques_id, aid } },
-    });
+    return this.prisma.$transaction(async(tx) => {
+      const idx: number = await tx.answers.delete({
+        where: { ques_id_aid: { ques_id, aid: Number(aid) } }
+      }).then(() => {return aid})
+
+      await tx.answers.updateMany({
+        where: {aid: {gt: Number(idx)}},
+        data: {
+          aid: {decrement: 1}
+        }
+      })
+      return {status: 200, message: "Delete successfully!"}
+    })
   }
 }

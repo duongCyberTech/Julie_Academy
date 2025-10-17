@@ -16,7 +16,7 @@ export class ExamDto {
     @ApiProperty()
     updateAt: Date;
     @ApiProperty()
-    questionLst: string[]; // list of question IDs
+    questionLst?: string[]; // list of question IDs
 }
 
 export class ExamSessionDto {
