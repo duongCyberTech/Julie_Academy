@@ -387,6 +387,83 @@ enum AccountStatus {
   inactive
 }
 
+enum Difficulty {
+  Easy
+  Medium
+  Hard
+}
+
+model User {
+  uid        String        @id @default(uuid())
+  username   String        @unique
+  fname      String
+  mname      String
+  lname      String
+  email      String        @unique
+  password   String
+  role       UserRole      @default(student)
+  status     AccountStatus @default(inactive)
+  avata_url  String?
+
+  tutor      Tutor?   
+  parents    Parents?     
+  student    Student?     
+  thread     Thread[]
+  comments   Comments[]
+  follow     Follow[]
+}
+
+model Tutor {
+  uid           String @id @default(uuid())
+  phone_number  String @unique
+  experiences   String?
+  user          User   @relation(fields: [uid], references: [uid])
+  feedback      Feedback[]
+  class         Class[]
+  resources     Resources[]
+  folder        Folders[]
+  questions     Questions[]
+  exams         Exams[]
+}
+
+model Parents {
+  uid        String @id @default(uuid())
+  phone_number  String @unique
+  user          User   @relation(fields: [uid], references: [uid])
+  family       is_family[]
+}
+
+model Student {
+  uid        String @id @default(uuid())
+  school     String
+  dob        DateTime
+  family    is_family[]
+  feedback  Feedback[]
+  learning  Learning[]
+  exam_taken Exam_taken[]
+  user      User   @relation(fields: [uid], references: [uid])
+}
+
+model is_family {
+  student_uid  String
+  parents_uid  String
+
+  student      Student @relation(fields: [student_uid], references: [uid])
+  parents      Parents @relation(fields: [parents_uid], references: [uid])
+
+  @@id([student_uid, parents_uid])
+}
+
+model Feedback {
+  feed_id   String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  tutor_uid String
+  student_uid String
+  student   Student  @relation(fields: [student_uid], references: [uid])
+  tutor     Tutor    @relation(fields: [tutor_uid], references: [uid])
+}
+
 enum ClassStatus {
   pending
   ongoing
@@ -418,3 +495,51 @@ enum ExamType {
   test
   final
 }
+<<<<<<< HEAD
+model Exam_session {
+  exam_id   String
+  session_id Int
+  @@id([exam_id, session_id])
+  exam      Exams @relation(fields: [exam_id], references: [exam_id])
+  startAt  DateTime @default(now())
+  expireAt DateTime
+  exam_type ExamType @default(practice)
+  limit_taken Int @default(1)
+  total_student_done Int @default(0)
+  exam_open_in Exam_open_in[]
+  exam_taken Exam_taken[]
+}
+
+model Exam_open_in {
+  session_id Int
+  exam_id    String
+  class_id   String
+  @@id([session_id, exam_id, class_id])
+  exam_session Exam_session @relation(fields: [session_id, exam_id], references: [session_id, exam_id])
+  class      Class      @relation(fields: [class_id], references: [class_id])
+}
+
+model Exam_taken {
+  et_id   String   @id @default(uuid())
+  final_score     Int
+  total_ques_completed Int
+  startAt   DateTime @default(now())
+  doneAt    DateTime @default(now())
+  exam_id   String
+  session_id Int
+  student_uid String
+  exam_session Exam_session @relation(fields: [session_id, exam_id], references: [session_id, exam_id])
+  student   Student  @relation(fields: [student_uid], references: [uid])
+  answers   Answer_for_exam[]
+}
+
+model Answer_for_exam {
+  et_id   String
+  ques_id String
+  aid     Int
+  @@id([et_id, ques_id, aid])
+  exam_taken Exam_taken @relation(fields: [et_id], references: [et_id])
+  answer   Answers    @relation(fields: [ques_id, aid], references: [ques_id, aid])
+}
+=======
+>>>>>>> 876408410bd4139e11b32af8c4df6e7e757c19dd
