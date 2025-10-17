@@ -5,6 +5,14 @@ enum QuestionStatus {
     PUBLIC = 'public',
     PRIVATE = 'private'
 }
+
+export class BookDto {
+    title: string;
+    subject: string;
+    grade: number;
+    description?: string
+}
+
 export class CategoryDto {
     @ApiProperty()
     category_name: string;
@@ -14,10 +22,6 @@ export class CategoryDto {
     createdAt: Date;
     @ApiProperty()
     updateAt: Date;
-    @ApiProperty()
-    grades: number;
-    @ApiProperty()
-    subject: string;
 }
 
 export class QuestionDto {
@@ -46,4 +50,5 @@ export class AnswerDto {
     content: string;
     @ApiProperty()
     is_correct: boolean;
+    explaination?:string
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Query, Req, Body } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Param, Query, Req, Body, Search } from "@nestjs/common";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { ExamService } from "./exam.service";
 import { ExamDto, ExamSessionDto, ExamTakenDto, SubmitAnswerDto } from "./dto/exam.dto";
@@ -17,7 +17,7 @@ export class ExamController {
     })
     createExam(
         @Param('tutor_id') tutor_id,
-        @Body() exam: ExamDto
+        @Body() exam: Partial<ExamDto>
     ){
         return this.examService.createExam(exam, tutor_id);
     }
@@ -42,10 +42,26 @@ export class ExamController {
         return this.examService.removeQuestionFromExam(exam_id, ques_id)
     }
 
-    @Post('create/session/:exam_id')
-    createExamSession(
-
+    @Get('get')
+    getAllExam(
+        @Query() query: any
     ){
-
+        return this.examService.getAllExams(query.number, query.limit, query.search, query.level)
     }
+
+    @Get('get/tutor/:tutor_id')
+    getExamByTutor(
+        @Param('tutor_id') tutor_id: string,
+        @Query() query: any
+    ){
+        return this.examService.getExamByTutor(tutor_id, query.page, query.limit, query.search, query.level)
+    }
+
+    @Get('get/detail/:exam_id')
+    getDetailExam(
+        @Param('exam_id') exam_id: string,
+    ){
+        return this.examService.getExamDetail(exam_id)
+    }
+
 }
