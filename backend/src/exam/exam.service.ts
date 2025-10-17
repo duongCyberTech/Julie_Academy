@@ -2,7 +2,6 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuestionService } from '../question/question.service';
 import { ExamDto, ExamSessionDto, ExamTakenDto, SubmitAnswerDto } from './dto/exam.dto';
-import { connect } from 'http2';
 
 @Injectable()
 export class ExamService {
@@ -11,7 +10,7 @@ export class ExamService {
         private questionService: QuestionService,
     ) {}
 
-    async createExam(dto: ExamDto, tutor_uid: string) {
+    async createExam(dto: Partial<ExamDto>, tutor_uid: string) {
         return this.prisma.$transaction(async (tx) => {
             const newExam = await tx.exams.create({
                 data: {
@@ -19,16 +18,17 @@ export class ExamService {
                     description: dto.description,
                     duration: dto.duration,
                     total_score: dto.total_score,
-                    total_ques: dto.questionLst.length,
+                    total_ques: dto?.questionLst?.length | 0,
                     level: dto.level,
                     createdAt: new Date(),
                     updateAt: new Date(),
                     tutor: { connect: { uid: tutor_uid } },
                 },
             });
-            for (const ques_id of dto.questionLst) {
+            for (const ques_id of (dto.questionLst ? dto.questionLst : [] as string[])) {
                 await tx.question_of_exam.create({
                     data: {
+                        score: newExam.total_score / newExam.total_ques,
                         exam: { connect: { exam_id: newExam.exam_id } },
                         question: { connect: { ques_id: ques_id } },
                     },
@@ -53,6 +53,25 @@ export class ExamService {
                     },
                 });
             }
+            await tx.exams.update({
+                where: {exam_id},
+                data: {total_ques: {increment: ques.length}}
+            })
+
+            const num_ques = await tx.question_of_exam.count({
+                where: {exam_id}
+            })
+
+            const total_score = await tx.exams.findUnique({
+                where:{exam_id}
+            }).then((exam) => {return exam.total_score})
+
+            await tx.question_of_exam.updateMany({
+                where: {exam_id},
+                data: {score: total_score/num_ques}
+            })
+
+            return {status: 200, message: "Add question successfully!"}
         })
     }
 
@@ -68,6 +87,23 @@ export class ExamService {
                     question: { ques_id: ques_id },
                 },
             });
+            await tx.exams.update({
+                where: {exam_id},
+                data: {total_ques: {decrement: 1}}
+            })
+            const num_ques = await tx.question_of_exam.count({
+                where: {exam_id}
+            })
+            if (num_ques == 0) return {status: 200, message: "Delete Successfully!"}
+
+            const total_score = await tx.exams.findUnique({
+                where:{exam_id}
+            }).then((exam) => {return exam.total_score})
+
+            await tx.question_of_exam.updateMany({
+                where: {exam_id},
+                data: {score: total_score/num_ques}
+            })
         });
     }
 
@@ -107,9 +143,8 @@ export class ExamService {
                     total_ques_completed: 0,
                     startAt: new Date(),
                     doneAt: new Date(new Date().getTime() + 60*60*1000),
-                    exam_session: (exam_taken?.session_id && exam_taken?.exam_id) 
-                        ? { connect: { exam_id_session_id: { exam_id: exam_taken.exam_id, session_id: exam_taken.session_id } } } 
-                        : undefined
+                    session_id: exam_taken.session_id,
+                    exam_id: exam_taken.exam_id
                 },
             });
         })
@@ -157,7 +192,7 @@ export class ExamService {
     }
 
     async getAllExams(page?: number, limit?: number, search?: string, level?: string) {
-        const skip:number = (page - 1) * limit;
+        const skip:number = page && limit ? (page - 1) * limit : 0;
         const where: any = {};
         if (level) where.level = level;
         if (search) {
@@ -198,8 +233,8 @@ export class ExamService {
         tutor_uid: string, page?: number, limit?: number, 
         search?: string, level?: string
     ) {
-        const skip:number = (page - 1) * limit;
-        const where: any = { tutor_uid };
+        const skip:number = page && limit ?  (page - 1) * limit : 0;
+        const where: any = { tutor_id: tutor_uid };
         if (level) where.level = level;
         if (search) {
             where.OR = [
