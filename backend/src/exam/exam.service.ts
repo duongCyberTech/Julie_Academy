@@ -81,7 +81,7 @@ export class ExamService {
             if (!exam) {
                 throw new Error('Exam not found');
             }
-            await tx.question_of_exam.deleteMany({
+            const deleted = await tx.question_of_exam.deleteMany({
                 where: {
                     exam: { exam_id: exam.exam_id },
                     question: { ques_id: ques_id },
@@ -89,7 +89,7 @@ export class ExamService {
             });
             await tx.exams.update({
                 where: {exam_id},
-                data: {total_ques: {decrement: 1}}
+                data: {total_ques: {decrement: deleted.count}}
             })
             const num_ques = await tx.question_of_exam.count({
                 where: {exam_id}
@@ -107,7 +107,7 @@ export class ExamService {
         });
     }
 
-    async createExamSession(exam_id: string, class_id: string, dto: ExamSessionDto) {
+    async createExamSession(exam_id: string, classes: string[], dto: ExamSessionDto) {
         return this.prisma.$transaction(async (tx) => {
             const sessionIndex = await tx.exam_session.count({ where: { exam_id } }) + 1;
             const newSession = await tx.exam_session.create({
@@ -121,16 +121,31 @@ export class ExamService {
                     total_student_done: 0,
                 },
             });
+            var cnt_ = 0
+            for (const class_id of classes){
+                const openTest = await tx.exam_open_in.create({
+                    data:{
+                        class: { connect: { class_id } },
+                        exam_session: { connect: { exam_id_session_id: { exam_id, session_id: newSession.session_id } } }
+                    }
+                })
+                cnt_ = openTest ? (cnt_ + 1) : cnt_;
+            }
 
-            const openTest = await tx.exam_open_in.create({
-                data:{
-                    class: { connect: { class_id } },
-                    exam_session: { connect: { exam_id_session_id: { exam_id, session_id: newSession.session_id } } }
+
+            if (cnt_ != classes.length) throw new BadRequestException("Create session failed!");
+            return {status: 201, message: 'Exam session created successfully', session: newSession.session_id};
+        })
+    }
+
+    async updateSession(exam_id: string, session_id: number, data: Partial<ExamSessionDto>){
+        return this.prisma.$transaction(async(tx) => {
+            await tx.exam_session.update({
+                where: {exam_id_session_id: {exam_id, session_id}},
+                data: {
+                    ...data
                 }
             })
-
-            if (!openTest) throw new BadRequestException("Create session failed!");
-            return {status: 201, message: 'Exam session created successfully', session: newSession.session_id};
         })
     }
 
@@ -310,5 +325,16 @@ export class ExamService {
             if (question) questions.push(question);
         }
         return questions;
+    }
+
+    async updateExam(exam_id: string, data: Partial<ExamDto>){
+        return this.prisma.$transaction(async(tx) => {
+            return await tx.exams.update({
+                where: {exam_id},
+                data: {
+                    ...data
+                }
+            })
+        })
     }
 }
