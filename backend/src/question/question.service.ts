@@ -279,7 +279,7 @@ export class QuestionService {
     });
   }
 
-    async addAnswer(answers: Partial<AnswerDto>[], ques_id: string) {
+  async addAnswer(answers: Partial<AnswerDto>[], ques_id: string) {
     return this.prisma.$transaction(async(tx) => {
       var aid = 1 + await tx.answers.count({
         where: {ques_id}
@@ -304,10 +304,10 @@ export class QuestionService {
     return this.prisma.$transaction(async(tx) => {
       const idx: number = await tx.answers.delete({
         where: { ques_id_aid: { ques_id, aid: Number(aid) } }
-      }).then(() => {return aid})
+      }).then((answer) => {return answer.aid})
 
       await tx.answers.updateMany({
-        where: {aid: {gt: Number(idx)}},
+        where: {ques_id, aid: {gt: Number(idx)}},
         data: {
           aid: {decrement: 1}
         }

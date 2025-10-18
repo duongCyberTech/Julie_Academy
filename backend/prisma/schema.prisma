@@ -101,11 +101,11 @@ model Class {
 model Schedule {
   schedule_id  Int
   class_id     String
-  meeting_date DateTime
   startAt      String
   endAt        String
   link_meet    String
-  class        Class    @relation(fields: [class_id], references: [class_id])
+  meeting_date Decimal @db.Decimal
+  class        Class   @relation(fields: [class_id], references: [class_id])
 
   @@id([schedule_id, class_id])
 }
