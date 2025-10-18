@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Query, Param, Put, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ClassService } from './class.service';
-import { ClassDto } from './dto/class.dto';
+import { ClassService, ScheduleService } from './class.service';
+import { ClassDto, ScheduleDto } from './dto/class.dto';
 
 @Controller('classes')
 export class ClassController {
@@ -37,5 +37,39 @@ export class ClassController {
   @Post('enroll/:classId/:studentId')
   async enrollClass(@Param('classId') classId: string, @Param('studentId') studentId: string) {
     return this.classService.enrollClass(classId, studentId);
+  }
+}
+
+@Controller('schedule')
+export class ScheduleController {
+  constructor(private readonly schedule: ScheduleService){}
+
+  @Post('create/:class_id')
+  createSchedule(
+    @Param('class_id') class_id: string,
+    @Body() data: ScheduleDto[] 
+  ){
+    return this.schedule.createSchedule(class_id, data)
+  }
+
+  @Post('delete/:class_id')
+  deleteSchedule(
+    @Param('class_id') class_id: string,
+    @Query('mode') mode: boolean,
+    @Body('data') data: number[]
+  ){
+    return this.schedule.deleteSchedule(class_id, mode, data)
+  }
+
+  @Get('get/all')
+  getAllSchedule(){
+    return this.schedule.getAllSchedule()
+  }
+
+  @Get('get/class/:class_id')
+  getScheduleByClass(
+    @Param('class_id') class_id: string 
+  ){
+    return this.schedule.getScheduleByClass(class_id)
   }
 }
