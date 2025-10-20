@@ -89,4 +89,24 @@ export class QuestionController {
     updateAnswer(@Param('ques_id') ques_id: string, @Param('aid') aid: number, @Body() dto: Partial<AnswerDto>) {
         return this.questionService.updateAnswer(aid, ques_id, dto);
     }
+
+    @Delete('delete/question/:ques_id')
+    deleteQuestion(
+        @Param('ques_id') ques_id: string
+    ){
+        return this.questionService.deleteQuestion(ques_id)
+    }
+
+    @Post('add/answer/:ques_id')
+    addAnswer(
+        @Param('ques_id') ques_id: string,
+        @Body() dto: Partial<AnswerDto>[]
+    ){
+        return this.questionService.addAnswer(dto, ques_id)
+    }
+
+    @Delete('delete/answer/:ques_id/:aid')
+    deleteAnswer(@Param('ques_id') ques_id: string, @Param('aid') aid: number) {
+        return this.questionService.deleteAnswer(aid, ques_id);
+    }
 }
