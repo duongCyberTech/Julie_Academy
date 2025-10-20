@@ -64,4 +64,41 @@ export class ExamController {
         return this.examService.getExamDetail(exam_id)
     }
 
+    @Get('get/questions/:exam_id')
+    getQuestionsOfExam(
+        @Param('exam_id') exam_id: string
+    ){
+        return this.examService.getQuestionsOfExam(exam_id)
+    }
+
+    @Patch('update/:exam_id')
+    updateExamMetaData(
+        @Param('exam_id') exam_id: string,
+        @Body() dto: Partial<ExamDto>
+    ){
+        return this.examService.updateExam(exam_id, dto)
+    }
+}
+
+@Controller('exam/session')
+export class ExamSessionController {
+    constructor(private readonly examService: ExamService){}
+
+    @Post('new/:exam_id')
+    createExamSession(
+        @Param('exam_id') exam_id: string,
+        @Body('classLst') classes: string[],
+        @Body('session') session: ExamSessionDto 
+    ){
+        return this.examService.createExamSession(exam_id, classes, session)
+    }
+
+    @Patch('update/:exam_id/:session_id')
+    updateSession(
+        @Param('exam_id') exam_id: string,
+        @Param('session_id') session_id: number,
+        @Body() data: Partial<ExamSessionDto>
+    ){  
+        return this.examService.updateSession(exam_id, session_id, data)
+    }
 }
