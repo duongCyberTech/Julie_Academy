@@ -120,7 +120,7 @@ const Footer = React.memo(function Footer() {
           justifyContent="space-between"
         >
           {/* Cột giới thiệu */}
-          <Grid xs="auto">
+          <Grid size={{ xs: 12, md: 4 }}>
             <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
               <Typography
                 variant="h5"
@@ -155,10 +155,11 @@ const Footer = React.memo(function Footer() {
             </Stack>
           </Grid>
 
-          <Grid xs={11} md={7} lg={8}>
+          {/* SỬA DÒNG NÀY: Dùng `xs: 12` thay vì `xs: 11` */}
+          <Grid size={{ xs: 12, md: 7, lg: 8 }}>
             <Grid container spacing={2}>
               {footerSections.map(({ title, links }) => (
-                <Grid xs={6} sm={3} key={title}>
+                <Grid size={{ xs: 6, sm: 3 }} key={title}>
                   <Typography
                     variant="overline"
                     gutterBottom
@@ -190,6 +191,8 @@ const Footer = React.memo(function Footer() {
           </Grid>
         </Grid>
       </Container>
+      
+      {/* ... (Phần Box bản quyền ở dưới giữ nguyên) ... */}
       <Box
         component="section"
         sx={{

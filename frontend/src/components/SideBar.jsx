@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import {
   Box, Tooltip, Drawer, List, ListItemButton, ListItemIcon,
   ListItemText, Typography, useTheme, styled, alpha, IconButton,
 } from '@mui/material';
+import { jwtDecode } from 'jwt-decode';
 
 // --- Icons ---
 import DashboardIcon from '@mui/icons-material/DashboardCustomizeOutlined';
@@ -13,17 +14,37 @@ import SettingsIcon from '@mui/icons-material/SettingsOutlined';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Logo from '../assets/images/logo.png';
+import GroupOutlined from '@mui/icons-material/GroupOutlined';
+import AutoStoriesOutlined from '@mui/icons-material/AutoStoriesOutlined';
+
 
 // --- CONSTANTS ---
 const COLLAPSED_WIDTH = 80;
 const FULL_WIDTH_DEFAULT_FOR_MOBILE = 260;
 
-const menuItemsConfig = [
+// --- CẤU HÌNH MENU THEO ROLE ---
+
+// Cấu hình cho Tutor
+const tutorMenuItems = [
   { label: 'Trang tổng quan', to: '/tutor/dashboard', Icon: DashboardIcon },
   { label: 'Thư viện câu hỏi', to: '/tutor/question', Icon: LibraryIcon },
   { label: 'Hồ sơ', to: '/tutor/profile', Icon: AccountBoxIcon },
   { label: 'Cài đặt', to: '/tutor/settings', Icon: SettingsIcon },
 ];
+
+// Cấu hình cho Admin
+const adminMenuItems = [
+  { label: 'Bảng điều khiển', to: '/admin/dashboard', Icon: DashboardIcon },
+  { label: 'Quản lý người dùng', to: '/admin/users', Icon: GroupOutlined },
+  { label: 'Quản lý khóa học', to: '/admin/courses', Icon: AutoStoriesOutlined },
+  { label: 'Cài đặt', to: '/admin/settings', Icon: SettingsIcon },
+];
+
+const menuConfigByRole = {
+  tutor: tutorMenuItems,
+  admin: adminMenuItems,
+};
+
 
 // --- STYLED COMPONENTS ---
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
@@ -36,8 +57,8 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
     backgroundColor: alpha(theme.palette.background.paper, 0.7),
     backdropFilter: 'blur(10px)',
     transition: theme.transitions.create('width', {
-      easing: theme.transitions.easing.easeInOut, 
-      duration: theme.transitions.duration.shorter, 
+      easing: theme.transitions.easing.easeInOut,
+      duration: theme.transitions.duration.shorter,
     }),
   },
 }));
@@ -64,20 +85,20 @@ const NavButton = styled(ListItemButton, {
       fontWeight: 600,
     }
   }),
-  
+
   '& .MuiListItemIcon-root': {
     minWidth: 'auto',
     marginRight: theme.spacing(2),
     justifyContent: 'center',
-    transition: theme.transitions.create('color'), 
+    transition: theme.transitions.create('color'),
   },
 }));
 
 const BrandBox = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  padding: theme.spacing(2.5, 3), 
-  height: '80px', 
+  padding: theme.spacing(2.5, 3),
+  height: '80px',
 }));
 
 const SidebarFooter = styled(Box)({
@@ -102,27 +123,45 @@ const CollapseButton = styled(IconButton)(({ theme }) => ({
 
 // --- MAIN COMPONENT ---
 const Sidebar = ({
-  width, 
+  width,
   onToggleCollapse,
   isMobileOpen,
   onMobileClose
 }) => {
   const location = useLocation();
-  const theme = useTheme(); // Dùng theme để lấy transition
+  const theme = useTheme();
   const isCollapsed = width <= COLLAPSED_WIDTH;
-  
+  const [token] = useState(() => localStorage.getItem('token'));
+
+  const userRole = useMemo(() => {
+    try {
+      if (token) {
+        const decodedToken = jwtDecode(token);
+        return decodedToken.role;
+      }
+    } catch (error) {
+      console.error("Invalid token:", error);
+    }
+    return null;
+  }, [token]);
+
+  const menuItems = useMemo(() => {
+    const roleKey = userRole?.toLowerCase();
+    return menuConfigByRole[roleKey] || [];
+  }, [userRole]);
+
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <BrandBox>
-        <Box 
-          component="img" 
-          src={Logo} 
-          alt="Logo" 
-          sx={{ width: 40, height: 40, flexShrink: 0 }} 
+        <Box
+          component="img"
+          src={Logo}
+          alt="Logo"
+          sx={{ width: 40, height: 40, flexShrink: 0 }}
         />
-        <Typography 
-          variant="h6" 
-          noWrap 
+        <Typography
+          variant="h6"
+          noWrap
           sx={{
             ml: 1.5,
             fontWeight: 700,
@@ -138,23 +177,23 @@ const Sidebar = ({
           Julie Academy
         </Typography>
       </BrandBox>
-      
+
       <List component="nav" sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
-        {menuItemsConfig.map(({ label, to, Icon }) => {
+        {menuItems.map(({ label, to, Icon }) => {
           const active = location.pathname.startsWith(to);
           return (
             <Tooltip title={isCollapsed ? label : ''} placement="right" key={to} arrow>
-              <NavButton 
-                active={active} 
-                component={RouterLink} 
+              <NavButton
+                active={active}
+                component={RouterLink}
                 to={to}
               >
                 <ListItemIcon>
                   <Icon sx={{ fontSize: 24 }} />
                 </ListItemIcon>
-                <ListItemText 
-                  primary={label} 
-                  primaryTypographyProps={{ fontWeight: 500, noWrap: true, variant: 'body2' }} 
+                <ListItemText
+                  primary={label}
+                  primaryTypographyProps={{ fontWeight: 500, noWrap: true, variant: 'body2' }}
                   sx={{
                     transition: theme.transitions.create('opacity', {
                       duration: theme.transitions.duration.shorter,
@@ -178,22 +217,22 @@ const Sidebar = ({
 
   const drawerForMobile = (
     <Drawer
-        variant="temporary" 
-        open={isMobileOpen} 
-        onClose={onMobileClose}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', lg: 'none' },
-          '& .MuiDrawer-paper': { 
-            width: FULL_WIDTH_DEFAULT_FOR_MOBILE, 
-            boxSizing: 'border-box',
-            backgroundColor: alpha(theme.palette.background.paper, 0.8),
-            backdropFilter: 'blur(10px)',
-          },
-        }}
-      >
-        {drawerContent}
-      </Drawer>
+      variant="temporary"
+      open={isMobileOpen}
+      onClose={onMobileClose}
+      ModalProps={{ keepMounted: true }}
+      sx={{
+        display: { xs: 'block', lg: 'none' },
+        '& .MuiDrawer-paper': {
+          width: FULL_WIDTH_DEFAULT_FOR_MOBILE,
+          boxSizing: 'border-box',
+          backgroundColor: alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: 'blur(10px)',
+        },
+      }}
+    >
+      {drawerContent}
+    </Drawer>
   );
 
   return (

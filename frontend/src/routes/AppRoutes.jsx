@@ -10,6 +10,7 @@ import Layout from "../components/Layout";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import TutorDashboard from "../pages/tutor/TutorDashboard";
 import QuestionPage from "../pages/tutor/QuestionPage";
+import ClassPage from "../pages/tutor/ClassPage";
 import { Typography } from "@mui/material";
 import NewQuestion from "../pages/tutor/NewQuestion";
 function AppRoutes(props) {
@@ -22,19 +23,19 @@ function AppRoutes(props) {
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* Nhóm các route cho Admin */}
-      <Route
-        path="/admin"
-        element={<ProtectedRoute allowedRoles={["admin"]} />}
-      >
-        <Route path="dashboard" element={<AdminDashboard />} />
+      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+        <Route path="/admin" element={<Layout />}>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          
+        </Route>
       </Route>
-
       {/* Nhóm các route cho Tutor */}
       <Route element={<ProtectedRoute allowedRoles={["tutor"]} />}>
         <Route path="/tutor" element={<Layout />}>
           <Route path="dashboard" element={<TutorDashboard />} />
           <Route path="question" element={<QuestionPage />} />
           <Route path="new" element={<NewQuestion />} />
+          <Route path="class" element={<ClassPage />} />
         </Route>
       </Route>
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}

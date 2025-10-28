@@ -43,7 +43,6 @@ const DifficultyRating = ({ value, onChange }) => {
 const EditorHeader = ({ questionType, onTypeChange, difficulty, onDifficultyChange, onSubmit }) => (
   <Box
     component={Paper}
-    elevation={0}
     square
     sx={{
       display: "flex", alignItems: "center", p: "8px 16px",
@@ -73,7 +72,6 @@ const OptionsSidebar = ({ category, onCategoryChange, categories, explanation, o
   return (
     <Box
       component={Paper}
-      elevation={0}
       square
       sx={{
         width: 320, p: 2.5, borderLeft: 1, borderColor: "divider",
