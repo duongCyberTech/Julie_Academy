@@ -16,7 +16,6 @@ import { UserService } from './user.service';
 import { UserDto } from './dto/user.dto'; 
 
 @Controller('users')
-@UseGuards(AuthGuard('jwt'))
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -79,22 +78,8 @@ export class UserController {
    * PUT /users/:id
    * Cập nhật toàn bộ thông tin user (nên dùng Partial DTO nếu có)
    */
-  @Put(':id')
-  updateUser(@Param('id') id: string, @Body() dto: UserDto) {
+  @Patch(':id')
+  updateUser(@Param('id') id: string, @Body() dto: Partial<UserDto>) {
     return this.userService.updateUser(id, dto);
   }
-
-  /**
-   * PATCH /users/:id/status
-   * Chỉ cập nhật trạng thái
-   */
-  @Patch(':id/status') 
-  updateUserStatus(
-    @Param('id') id: string,
-    @Body() data: { status: 'active' | 'inactive' } 
-  ) {
-    return this.userService.updateUser(id, { status: data.status } as UserDto);
-  }
-
-
 }

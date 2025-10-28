@@ -135,7 +135,7 @@ export class UserService {
     });
   }
 
-  async updateUser(id: string, data: UserDto) {
+  async updateUser(id: string, data: Partial<UserDto>) {
     if (data.password) {
       data.password = await bcrypt.hash(data.password, 12);
     }
