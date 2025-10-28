@@ -1,9 +1,14 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserDto, StudentDto, TutorDto, ParentsDto } from './dto/user.dto';
+import { AccountStatus } from '@prisma/client';
 
-const bcrypt = require('bcrypt')
-require('dotenv').config()
+const bcrypt = require('bcrypt');
+require('dotenv').config();
 
 @Injectable()
 export class UserService {
@@ -69,15 +74,36 @@ export class UserService {
         throw new BadRequestException('Invalid role');
       }
 
-      return (newUser !== null ? {status: 201, message: 'User created successfully'} : {status: 400, message: 'User creation failed'})
+      return newUser !== null
+        ? { status: 201, message: 'User created successfully' }
+        : { status: 400, message: 'User creation failed' };
     });
   }
 
-  findAll(role?: string, status?: string, page: number = 1, limit: number = 10, filter: string = '') {
-    const skip:number = (page - 1) * limit;
+  findAll(
+    role?: string,
+    status?: string,
+    page: number = 1,
+    limit: number = 10,
+    filter: string = '',
+  ) {
+    const skip: number = (page - 1) * limit;
     const where: any = {};
-    if (role) where.role = role;
-    if (status) where.status = status;
+    if (role && role !== 'all') {
+      if (['admin', 'tutor', 'student', 'parents'].includes(role)) {
+        where.role = role as any;
+      } else {
+        console.warn(`Invalid role filter received: ${role}`);
+      }
+    }
+
+    if (status && status !== 'all') {
+      if (['active', 'inactive'].includes(status)) {
+        where.status = status as any;
+      } else {
+        console.warn(`Invalid status filter received: ${status}`);
+      }
+    }
     if (filter) {
       where.OR = [
         { fname: { contains: filter, mode: 'insensitive' } },
@@ -101,12 +127,12 @@ export class UserService {
     });
   }
 
-  findByEmail(email: string){
+  findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: {
         email: email,
-      }
-    })
+      },
+    });
   }
 
   async updateUser(id: string, data: UserDto) {
@@ -118,6 +144,21 @@ export class UserService {
         uid: id,
       },
       data,
+    });
+  }
+
+  async updateUserStatus(id: string, status: AccountStatus) {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return this.prisma.user.update({
+      where: { uid: id },
+      data: { status: status },
+      select: {
+        uid: true,
+        status: true,
+      },
     });
   }
 }

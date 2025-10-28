@@ -13,6 +13,7 @@ import QuestionPage from "../pages/tutor/QuestionPage";
 import ClassPage from "../pages/tutor/ClassPage";
 import { Typography } from "@mui/material";
 import NewQuestion from "../pages/tutor/NewQuestion";
+import UserManagement from "../pages/admin/UserManagement";
 function AppRoutes(props) {
   return (
     <Routes>
@@ -26,6 +27,7 @@ function AppRoutes(props) {
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
         <Route path="/admin" element={<Layout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<UserManagement />} />
           
         </Route>
       </Route>

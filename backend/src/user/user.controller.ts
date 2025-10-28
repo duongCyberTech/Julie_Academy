@@ -1,46 +1,100 @@
-import { Controller, Get, Post, Body, Query, Param, Put, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Param,
+  Put,
+  Patch,  
+  UseGuards,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from './user.service';
-import {UserDto} from './dto/user.dto';
+import { UserDto } from './dto/user.dto'; 
 
 @Controller('users')
+@UseGuards(AuthGuard('jwt'))
 export class UserController {
   constructor(private readonly userService: UserService) {}
-  
+
+  /**
+   * GET /users
+   * Lấy danh sách user (đã hỗ trợ phân trang và filter)
+   */
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   getAllUsers(
     @Query('role') role: string,
     @Query('status') status: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('filter') filter: string = '',
-  ){
-    return this.userService.findAll(role, status, page, limit, filter);
+  ) {
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    return this.userService.findAll(role, status, pageNum, limitNum, filter);
   }
 
+  /**
+   * GET /users/e
+   * Lấy user theo email
+   */
   @Get('e')
-  @UseGuards(AuthGuard('jwt'))
-  getUserByEmail(@Query('email') email: string){
-    if (!email) return {status: 400, message: 'Email query is required'};
-    return this.userService.findByEmail(email);
+  async getUserByEmail(@Query('email') email: string) { 
+    if (!email) {
+       throw new BadRequestException('Email query parameter is required'); 
+    }
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+        throw new NotFoundException(`User with email ${email} not found`);
+    }
+    return user;
   }
 
+  /**
+   * GET /users/:id
+   * Lấy user theo ID
+   */
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
-  getUserById(@Param('id') id: string) {
-    return this.userService.findById(id);
+  async getUserById(@Param('id') id: string) { 
+    const user = await this.userService.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
   }
 
+  /**
+   * (MỚI) POST /users
+   * Tạo user mới
+   */
+  @Post()
+  createUser(@Body() dto: UserDto) {
+    return this.userService.createUser(dto);
+  }
+
+  /**
+   * PUT /users/:id
+   * Cập nhật toàn bộ thông tin user (nên dùng Partial DTO nếu có)
+   */
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'))
   updateUser(@Param('id') id: string, @Body() dto: UserDto) {
     return this.userService.updateUser(id, dto);
   }
 
-  @Put(':id')
-  @UseGuards(AuthGuard('jwt'))
-  disableAccount(@Param('id') id: string) {
-    return this.userService.updateUser(id, {status: 'inactive'} as UserDto);
+  /**
+   * PATCH /users/:id/status
+   * Chỉ cập nhật trạng thái
+   */
+  @Patch(':id/status') 
+  updateUserStatus(
+    @Param('id') id: string,
+    @Body() data: { status: 'active' | 'inactive' } 
+  ) {
+    return this.userService.updateUser(id, { status: data.status } as UserDto);
   }
+
+
 }
