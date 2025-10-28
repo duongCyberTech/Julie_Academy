@@ -6,14 +6,15 @@ import {
   Query,
   Param,
   Put,
-  Patch,  
+  Patch,
   UseGuards,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from './user.service';
-import { UserDto } from './dto/user.dto'; 
+import { UserDto } from './dto/user.dto';
+import { AccountStatus } from '@prisma/client';
 
 @Controller('users')
 export class UserController {
@@ -41,13 +42,13 @@ export class UserController {
    * Lấy user theo email
    */
   @Get('e')
-  async getUserByEmail(@Query('email') email: string) { 
+  async getUserByEmail(@Query('email') email: string) {
     if (!email) {
-       throw new BadRequestException('Email query parameter is required'); 
+      throw new BadRequestException('Email query parameter is required');
     }
     const user = await this.userService.findByEmail(email);
     if (!user) {
-        throw new NotFoundException(`User with email ${email} not found`);
+      throw new NotFoundException(`User with email ${email} not found`);
     }
     return user;
   }
@@ -57,7 +58,7 @@ export class UserController {
    * Lấy user theo ID
    */
   @Get(':id')
-  async getUserById(@Param('id') id: string) { 
+  async getUserById(@Param('id') id: string) {
     const user = await this.userService.findById(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -66,7 +67,7 @@ export class UserController {
   }
 
   /**
-   * (MỚI) POST /users
+   * POST /users
    * Tạo user mới
    */
   @Post()
@@ -75,11 +76,19 @@ export class UserController {
   }
 
   /**
-   * PUT /users/:id
-   * Cập nhật toàn bộ thông tin user (nên dùng Partial DTO nếu có)
+   * PATCH /users/:id
+   * Cập nhật thông tin user
    */
   @Patch(':id')
   updateUser(@Param('id') id: string, @Body() dto: Partial<UserDto>) {
     return this.userService.updateUser(id, dto);
+  }
+
+  @Patch(':id/status')
+  updateUserStatus(
+    @Param('id') id: string,
+    @Body('status') status: AccountStatus,
+  ) {
+    return this.userService.updateUserStatus(id, status);
   }
 }

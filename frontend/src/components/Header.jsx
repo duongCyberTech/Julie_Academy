@@ -34,8 +34,6 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
-
-// =============== Styled Components ===============
 const StyledAppBar = styled(AppBar, {
   shouldForwardProp: (prop) =>
     !["isSidebarExpanded", "isSidebarMounted"].includes(prop),
@@ -103,7 +101,6 @@ const HeaderIconButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
-// =============== Menu Config ===============
 const USER_MENU_CONFIG = [
   {
     text: "Hồ sơ",
@@ -122,7 +119,7 @@ const USER_MENU_CONFIG = [
   },
 ];
 
-// =============== Header Component ===============
+
 const Header = React.memo(function Header({
   mode,
   toggleMode,

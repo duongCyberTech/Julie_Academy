@@ -84,7 +84,6 @@ const TYPOGRAPHY = {
 const defaultTheme = createTheme();
 const SHADOWS = [...defaultTheme.shadows];
 
-
 export const createAppTheme = (mode = "light") => {
   const isDark = mode === "dark";
 
@@ -92,14 +91,26 @@ export const createAppTheme = (mode = "light") => {
     mode,
     ...PALETTE,
     ...(isDark
-      ? { 
-          background: { default: PALETTE.neutral[800], paper: PALETTE.neutral[700] },
-          text: { primary: PALETTE.neutral[100], secondary: PALETTE.neutral[400] },
+      ? {
+          background: {
+            default: PALETTE.neutral[800],
+            paper: PALETTE.neutral[700],
+          },
+          text: {
+            primary: PALETTE.neutral[100],
+            secondary: PALETTE.neutral[400],
+          },
           divider: alpha(PALETTE.neutral[200], 0.1),
         }
       : {
-          background: { default: PALETTE.neutral[100], paper: PALETTE.neutral[50] },
-          text: { primary: PALETTE.neutral[900], secondary: PALETTE.neutral[600] },
+          background: {
+            default: PALETTE.neutral[100],
+            paper: PALETTE.neutral[50],
+          },
+          text: {
+            primary: PALETTE.neutral[900],
+            secondary: PALETTE.neutral[600],
+          },
           divider: alpha(PALETTE.neutral[600], 0.12),
         }),
   };
@@ -116,7 +127,8 @@ export const createAppTheme = (mode = "light") => {
       styleOverrides: {
         root: {
           borderRadius: baseTheme.shape.borderRadius,
-          transition: "transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out",
+          transition:
+            "transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out",
           border: `1px solid ${baseTheme.palette.divider}`,
           "&:hover": {
             transform: "translateY(-4px)",
@@ -137,6 +149,54 @@ export const createAppTheme = (mode = "light") => {
           "&:hover": {
             boxShadow: `0 0 15px ${alpha(baseTheme.palette.primary.main, 0.4)}`,
           },
+        },
+      },
+    },
+    MuiAlert: {
+      styleOverrides: {
+        root: ({ theme, ownerState }) => ({
+          borderRadius: baseTheme.shape.borderRadius,
+          fontWeight: baseTheme.typography.fontWeightMedium,
+          boxShadow: baseTheme.shadows[2],
+          ...(ownerState.variant === "standard" && {
+            background: alpha(
+              baseTheme.palette[ownerState.severity].light,
+              0.15
+            ),
+            color: baseTheme.palette[ownerState.severity].dark,
+            borderLeft: `4px solid ${
+              baseTheme.palette[ownerState.severity].main
+            }`,
+            ...(baseTheme.palette.mode === "dark" && {
+              color: baseTheme.palette[ownerState.severity].light,
+            }),
+          }),
+          ...(ownerState.variant === "filled" && {
+            background: baseTheme.palette[ownerState.severity].main,
+            border: `1px solid ${baseTheme.palette[ownerState.severity].dark}`,
+            color: baseTheme.palette[ownerState.severity].contrastText,
+          }),
+        }),
+        icon: ({ theme, ownerState }) => ({
+          fontSize: "1.5rem",
+          marginRight: baseTheme.spacing(1.5),
+          ...(ownerState.variant === "standard" && {
+            color: baseTheme.palette[ownerState.severity].main,
+          }),
+          ...(ownerState.variant === "filled" && {
+            color: baseTheme.palette[ownerState.severity].contrastText,
+          }),
+        }),
+        message: {
+          padding: baseTheme.spacing(0.5, 0),
+        },
+      },
+    },
+    MuiAlertTitle: {
+      styleOverrides: {
+        root: {
+          fontWeight: baseTheme.typography.fontWeightBold,
+          marginBottom: baseTheme.spacing(0.5),
         },
       },
     },

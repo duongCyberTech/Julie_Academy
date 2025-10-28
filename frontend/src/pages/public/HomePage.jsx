@@ -23,7 +23,6 @@ import homepage1 from "../../assets/images/homepage1.webp";
 import homepage2 from "../../assets/images/homepage2.webp";
 import homepage3 from "../../assets/images/homepage3.webp";
 
-// --- CÁC HẰNG SỐ VÀ STYLED COMPONENT ---
 
 const MOTION_VARIANTS = {
   fadeInUp: {
@@ -99,7 +98,6 @@ const StyledImageBox = React.memo(({ src, alt, isFirst }) => {
   );
 });
 
-// --- CÁC COMPONENT CON CỦA TRANG ---
 
 const HeroSection = React.memo(() => {
   const theme = useTheme();
@@ -339,7 +337,6 @@ const ContentSection = React.memo(
   }
 );
 
-// --- COMPONENT CHÍNH CỦA TRANG ---
 
 function HomePage({ mode, toggleMode }) {
   const PAGE_SECTIONS = useMemo(

@@ -5,11 +5,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserDto, StudentDto, TutorDto, ParentsDto } from './dto/user.dto';
-import { AccountStatus } from '@prisma/client';
+import { AccountStatus, UserRole, Prisma } from '@prisma/client';
 
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 
+type PrismaTransaction = Prisma.TransactionClient;
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
@@ -23,7 +24,7 @@ export class UserService {
         },
       });
       if (user) {
-        throw new Error('User already exists');
+        throw new BadRequestException('User with this email already exists');
       }
       const newUser = await tx.user.create({
         data: {
@@ -38,10 +39,11 @@ export class UserService {
           avata_url: data.avata_url || '',
         },
       });
+
       if (data.role === 'student') {
-        const studentData: StudentDto = {
+        const studentData: Partial<StudentDto> = {
           school: data.school || '',
-          dob: data.dob || new Date('2000-01-01'),
+          dob: data.dob ? new Date(data.dob) : null,
         };
         await tx.student.create({
           data: {
@@ -50,7 +52,7 @@ export class UserService {
           },
         });
       } else if (data.role === 'tutor') {
-        const tutorData: TutorDto = {
+        const tutorData: Partial<TutorDto> = {
           phone_number: data.phone_number || '',
           experiences: data.experiences || '',
         };
@@ -61,7 +63,7 @@ export class UserService {
           },
         });
       } else if (data.role === 'parents') {
-        const parentsData: ParentsDto = {
+        const parentsData: Partial<ParentsDto> = {
           phone_number: data.phone_number || '',
         };
         await tx.parents.create({
@@ -70,17 +72,20 @@ export class UserService {
             ...parentsData,
           },
         });
-      } else {
-        throw new BadRequestException('Invalid role');
+      } else if (data.role !== 'admin') {
+        throw new BadRequestException('Invalid role specified');
       }
 
-      return newUser !== null
-        ? { status: 201, message: 'User created successfully' }
-        : { status: 400, message: 'User creation failed' };
+      const { password, ...result } = newUser;
+      return {
+        status: 201,
+        message: 'User created successfully',
+        data: result,
+      };
     });
   }
 
-  findAll(
+  async findAll(
     role?: string,
     status?: string,
     page: number = 1,
@@ -88,18 +93,19 @@ export class UserService {
     filter: string = '',
   ) {
     const skip: number = (page - 1) * limit;
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
+
     if (role && role !== 'all') {
-      if (['admin', 'tutor', 'student', 'parents'].includes(role)) {
-        where.role = role as any;
+      if (Object.values(UserRole).includes(role as UserRole)) {
+        where.role = role as UserRole;
       } else {
         console.warn(`Invalid role filter received: ${role}`);
       }
     }
 
     if (status && status !== 'all') {
-      if (['active', 'inactive'].includes(status)) {
-        where.status = status as any;
+      if (Object.values(AccountStatus).includes(status as AccountStatus)) {
+        where.status = status as AccountStatus;
       } else {
         console.warn(`Invalid status filter received: ${status}`);
       }
@@ -116,6 +122,20 @@ export class UserService {
       where,
       skip,
       take: Number(limit),
+      select: {
+        uid: true,
+        username: true,
+        email: true,
+        fname: true,
+        mname: true,
+        lname: true,
+        role: true,
+        status: true,
+        avata_url: true,
+        student: true,
+        tutor: true,
+        parents: true,
+      },
     });
   }
 
@@ -123,6 +143,20 @@ export class UserService {
     return this.prisma.user.findUnique({
       where: {
         uid: id,
+      },
+      select: {
+        uid: true,
+        username: true,
+        email: true,
+        fname: true,
+        mname: true,
+        lname: true,
+        role: true,
+        status: true,
+        avata_url: true,
+        student: true,
+        tutor: true,
+        parents: true,
       },
     });
   }
@@ -139,16 +173,75 @@ export class UserService {
     if (data.password) {
       data.password = await bcrypt.hash(data.password, 12);
     }
-    return this.prisma.user.update({
-      where: {
-        uid: id,
-      },
-      data,
+
+    const userData: Partial<Prisma.UserUpdateInput> = {};
+    const userModelKeys = [
+      'username',
+      'fname',
+      'mname',
+      'lname',
+      'email',
+      'password',
+      'role',
+      'status',
+      'avata_url',
+    ];
+
+    for (const key of userModelKeys) {
+      if (data[key] !== undefined) {
+        userData[key] = data[key];
+      }
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { uid: id },
+        data: userData,
+        select: {
+          uid: true,
+          username: true,
+          email: true,
+          fname: true,
+          mname: true,
+          lname: true,
+          role: true,
+          status: true,
+          avata_url: true,
+          student: true,
+          tutor: true,
+          parents: true,
+        },
+      });
+
+      if (!updatedUser) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      await this._updateProfile(tx, updatedUser.role, id, data);
+
+      const finalUser = await tx.user.findUnique({
+        where: { uid: id },
+        select: {
+          uid: true,
+          username: true,
+          email: true,
+          fname: true,
+          mname: true,
+          lname: true,
+          role: true,
+          status: true,
+          avata_url: true,
+          student: true,
+          tutor: true,
+          parents: true,
+        },
+      });
+      return finalUser;
     });
   }
 
   async updateUserStatus(id: string, status: AccountStatus) {
-    const user = await this.findById(id);
+    const user = await this.prisma.user.findUnique({ where: { uid: id } });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -160,5 +253,63 @@ export class UserService {
         status: true,
       },
     });
+  }
+
+  private async _updateProfile(
+    tx: PrismaTransaction,
+    role: UserRole,
+    uid: string,
+    data: Partial<UserDto>,
+  ) {
+    try {
+      if (role === 'student') {
+        const studentData: Partial<StudentDto> = {};
+        if (data.school !== undefined) studentData.school = data.school;
+        if (data.dob !== undefined)
+          studentData.dob = data.dob ? new Date(data.dob) : null;
+
+        if (Object.keys(studentData).length > 0) {
+          await tx.student.upsert({
+            where: { uid },
+            update: studentData,
+            create: { uid, ...studentData },
+          });
+        }
+      } else if (role === 'tutor') {
+        const tutorData: Partial<TutorDto> = {};
+        if (data.phone_number !== undefined)
+          tutorData.phone_number = data.phone_number;
+        if (data.experiences !== undefined)
+          tutorData.experiences = data.experiences;
+
+        if (Object.keys(tutorData).length > 0) {
+          await tx.tutor.upsert({
+            where: { uid },
+            update: tutorData,
+            create: { uid, ...tutorData },
+          });
+        }
+      } else if (role === 'parents') {
+        const parentsData: Partial<ParentsDto> = {};
+        if (data.phone_number !== undefined)
+          parentsData.phone_number = data.phone_number;
+
+        if (Object.keys(parentsData).length > 0) {
+          await tx.parents.upsert({
+            where: { uid },
+            update: parentsData,
+            create: { uid, ...parentsData },
+          });
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error updating profile for user ${uid} (role: ${role}):`,
+        error,
+      );
+      throw new BadRequestException(
+        `Failed to update profile: ${error.message}`,
+      );
+    }
   }
 }

@@ -104,11 +104,11 @@ export const createUser = async (userData, token) => {
 
 /**
  * Cập nhật toàn bộ thông tin người dùng
- * Tương ứng với: PUT /users/{id}
+ * Tương ứng với: PATCH /users/{id}
  */
 export const updateUser = async (userId, userData, token) => {
   try {
-    const response = await apiClient.put(
+    const response = await apiClient.patch(
       `/users/${userId}`,
       userData,
       getAuthHeaders(token)
