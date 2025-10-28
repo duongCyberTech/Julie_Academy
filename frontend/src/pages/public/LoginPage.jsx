@@ -128,7 +128,7 @@ const LoginPage = () => {
     <PageWrapper>
       <Container maxWidth="sm">
         <Fade in={true} timeout={600}>
-          <FormPaper elevation={0}>
+          <FormPaper>
             <Box sx={{ textAlign: "center", mb: 3 }}>
               <Box
                 component="img"
