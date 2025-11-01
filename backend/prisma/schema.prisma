@@ -16,6 +16,7 @@ model User {
   lname     String
   email     String        @unique
   password  String
+  createAt  DateTime      @default(now())
   role      UserRole      @default(student)
   status    AccountStatus @default(inactive)
   avata_url String?

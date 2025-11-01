@@ -14,6 +14,10 @@ import ClassPage from "../pages/tutor/ClassPage";
 import { Typography } from "@mui/material";
 import NewQuestion from "../pages/tutor/NewQuestion";
 import UserManagement from "../pages/admin/UserManagement";
+import AboutPage from "../pages/public/AboutPage";
+import ContactPage from "../pages/public/ContactPage";
+import ResourcesManagement from "../pages/admin/ResourcesManagement";
+import StudentDashboard from "../pages/student/StudentDashboard";
 function AppRoutes(props) {
   return (
     <Routes>
@@ -22,13 +26,15 @@ function AppRoutes(props) {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <Route path="/aboutus" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
 
       {/* Nhóm các route cho Admin */}
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
         <Route path="/admin" element={<Layout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
-          
+          <Route path="resources" element={<ResourcesManagement />} />
         </Route>
       </Route>
       {/* Nhóm các route cho Tutor */}
@@ -38,6 +44,12 @@ function AppRoutes(props) {
           <Route path="question" element={<QuestionPage />} />
           <Route path="new" element={<NewQuestion />} />
           <Route path="class" element={<ClassPage />} />
+        </Route>
+      </Route>
+      {/* Nhóm các route cho Student */}
+      <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
+        <Route path="/student" element={<Layout />}>
+          <Route path="dashboard" element={<StudentDashboard />} />
         </Route>
       </Route>
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}

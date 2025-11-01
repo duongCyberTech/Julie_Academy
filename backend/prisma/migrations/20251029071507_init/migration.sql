@@ -5,9 +5,6 @@ CREATE TYPE "public"."UserRole" AS ENUM ('admin', 'tutor', 'student', 'parents')
 CREATE TYPE "public"."AccountStatus" AS ENUM ('active', 'inactive');
 
 -- CreateEnum
-CREATE TYPE "public"."Difficulty" AS ENUM ('Easy', 'Medium', 'Hard');
-
--- CreateEnum
 CREATE TYPE "public"."ClassStatus" AS ENUM ('pending', 'ongoing', 'completed', 'cancelled');
 
 -- CreateEnum
@@ -15,6 +12,9 @@ CREATE TYPE "public"."QuestionType" AS ENUM ('single_choice', 'multiple_choice',
 
 -- CreateEnum
 CREATE TYPE "public"."DifficultyLevel" AS ENUM ('easy', 'medium', 'hard');
+
+-- CreateEnum
+CREATE TYPE "public"."QuestionStatus" AS ENUM ('public', 'private');
 
 -- CreateEnum
 CREATE TYPE "public"."ExamType" AS ENUM ('practice', 'test', 'final');
@@ -28,6 +28,7 @@ CREATE TABLE "public"."User" (
     "lname" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
+    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "role" "public"."UserRole" NOT NULL DEFAULT 'student',
     "status" "public"."AccountStatus" NOT NULL DEFAULT 'inactive',
     "avata_url" TEXT,
@@ -38,7 +39,7 @@ CREATE TABLE "public"."User" (
 -- CreateTable
 CREATE TABLE "public"."Tutor" (
     "uid" TEXT NOT NULL,
-    "phone_number" TEXT NOT NULL,
+    "phone_number" TEXT,
     "experiences" TEXT,
 
     CONSTRAINT "Tutor_pkey" PRIMARY KEY ("uid")
@@ -47,7 +48,7 @@ CREATE TABLE "public"."Tutor" (
 -- CreateTable
 CREATE TABLE "public"."Parents" (
     "uid" TEXT NOT NULL,
-    "phone_number" TEXT NOT NULL,
+    "phone_number" TEXT,
 
     CONSTRAINT "Parents_pkey" PRIMARY KEY ("uid")
 );
@@ -55,8 +56,8 @@ CREATE TABLE "public"."Parents" (
 -- CreateTable
 CREATE TABLE "public"."Student" (
     "uid" TEXT NOT NULL,
-    "school" TEXT NOT NULL,
-    "dob" TIMESTAMP(3) NOT NULL,
+    "school" TEXT,
+    "dob" TIMESTAMP(3),
 
     CONSTRAINT "Student_pkey" PRIMARY KEY ("uid")
 );
@@ -93,6 +94,7 @@ CREATE TABLE "public"."Class" (
     "grade" INTEGER NOT NULL,
     "subject" TEXT NOT NULL,
     "tutor_uid" TEXT NOT NULL,
+    "startat" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Class_pkey" PRIMARY KEY ("class_id")
 );
@@ -101,10 +103,10 @@ CREATE TABLE "public"."Class" (
 CREATE TABLE "public"."Schedule" (
     "schedule_id" INTEGER NOT NULL,
     "class_id" TEXT NOT NULL,
-    "meeting_date" TIMESTAMP(3) NOT NULL,
     "startAt" TEXT NOT NULL,
     "endAt" TEXT NOT NULL,
     "link_meet" TEXT NOT NULL,
+    "meeting_date" DECIMAL NOT NULL,
 
     CONSTRAINT "Schedule_pkey" PRIMARY KEY ("schedule_id","class_id")
 );
@@ -122,7 +124,7 @@ CREATE TABLE "public"."Thread" (
     "thread_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "uid" TEXT NOT NULL,
 
@@ -134,30 +136,11 @@ CREATE TABLE "public"."Comments" (
     "thread_id" TEXT NOT NULL,
     "comment_id" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "uid" TEXT NOT NULL,
 
     CONSTRAINT "Comments_pkey" PRIMARY KEY ("thread_id","comment_id")
-);
-
--- CreateTable
-CREATE TABLE "public"."t_image" (
-    "image_id" INTEGER NOT NULL,
-    "url" TEXT NOT NULL,
-    "thread_id" TEXT NOT NULL,
-
-    CONSTRAINT "t_image_pkey" PRIMARY KEY ("image_id","thread_id")
-);
-
--- CreateTable
-CREATE TABLE "public"."c_image" (
-    "image_id" INTEGER NOT NULL,
-    "url" TEXT NOT NULL,
-    "thread_id" TEXT NOT NULL,
-    "comment_id" TEXT NOT NULL,
-
-    CONSTRAINT "c_image_pkey" PRIMARY KEY ("image_id","thread_id","comment_id")
 );
 
 -- CreateTable
@@ -173,7 +156,7 @@ CREATE TABLE "public"."Resources" (
     "did" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "file_type" TEXT NOT NULL,
     "file_path" TEXT NOT NULL,
@@ -224,10 +207,9 @@ CREATE TABLE "public"."Categories" (
     "category_id" TEXT NOT NULL,
     "category_name" TEXT NOT NULL,
     "description" TEXT,
-    "grades" INTEGER NOT NULL,
-    "subject" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "book_id" TEXT NOT NULL,
 
     CONSTRAINT "Categories_pkey" PRIMARY KEY ("category_id")
 );
@@ -243,6 +225,7 @@ CREATE TABLE "public"."Questions" (
     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "category_id" TEXT NOT NULL,
     "tutor_id" TEXT NOT NULL,
+    "status" "public"."QuestionStatus" DEFAULT 'private',
 
     CONSTRAINT "Questions_pkey" PRIMARY KEY ("ques_id")
 );
@@ -253,6 +236,7 @@ CREATE TABLE "public"."Answers" (
     "aid" INTEGER NOT NULL,
     "content" TEXT NOT NULL,
     "is_correct" BOOLEAN NOT NULL DEFAULT false,
+    "explaination" TEXT,
 
     CONSTRAINT "Answers_pkey" PRIMARY KEY ("ques_id","aid")
 );
@@ -261,7 +245,7 @@ CREATE TABLE "public"."Answers" (
 CREATE TABLE "public"."Exams" (
     "exam_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
+    "description" TEXT,
     "level" "public"."DifficultyLevel" NOT NULL DEFAULT 'easy',
     "duration" INTEGER NOT NULL,
     "total_score" INTEGER NOT NULL,
@@ -277,6 +261,7 @@ CREATE TABLE "public"."Exams" (
 CREATE TABLE "public"."Question_of_exam" (
     "exam_id" TEXT NOT NULL,
     "ques_id" TEXT NOT NULL,
+    "score" DECIMAL(2,0) NOT NULL DEFAULT 0.00,
 
     CONSTRAINT "Question_of_exam_pkey" PRIMARY KEY ("exam_id","ques_id")
 );
@@ -310,8 +295,8 @@ CREATE TABLE "public"."Exam_taken" (
     "total_ques_completed" INTEGER NOT NULL,
     "startAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "doneAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "exam_id" TEXT NOT NULL,
-    "session_id" INTEGER NOT NULL,
+    "exam_id" TEXT,
+    "session_id" INTEGER,
     "student_uid" TEXT NOT NULL,
 
     CONSTRAINT "Exam_taken_pkey" PRIMARY KEY ("et_id")
@@ -324,6 +309,51 @@ CREATE TABLE "public"."Answer_for_exam" (
     "aid" INTEGER NOT NULL,
 
     CONSTRAINT "Answer_for_exam_pkey" PRIMARY KEY ("et_id","ques_id","aid")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Books" (
+    "book_id" VARCHAR(255) NOT NULL,
+    "title" VARCHAR(255) NOT NULL,
+    "subject" VARCHAR(20) NOT NULL,
+    "grade" SMALLINT NOT NULL,
+    "description" TEXT,
+
+    CONSTRAINT "Books_pkey" PRIMARY KEY ("book_id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Resource_of_Answer" (
+    "did" VARCHAR(255) NOT NULL,
+    "aid" SMALLINT NOT NULL,
+    "ques_id" VARCHAR(255) NOT NULL,
+
+    CONSTRAINT "Resource_of_Answer_pkey" PRIMARY KEY ("did","aid","ques_id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Resource_of_Comment" (
+    "thread_id" VARCHAR(255) NOT NULL,
+    "comment_id" VARCHAR(255) NOT NULL,
+    "did" VARCHAR(255) NOT NULL,
+
+    CONSTRAINT "Resource_of_Comment_pkey" PRIMARY KEY ("did","comment_id","thread_id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Resource_of_Question" (
+    "did" VARCHAR(255) NOT NULL,
+    "ques_id" VARCHAR(255) NOT NULL,
+
+    CONSTRAINT "Resource_of_Question_pkey" PRIMARY KEY ("did","ques_id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Resource_of_Thread" (
+    "thread_id" VARCHAR(255) NOT NULL,
+    "did" VARCHAR(255) NOT NULL,
+
+    CONSTRAINT "Resource_of_Thread_pkey" PRIMARY KEY ("did","thread_id")
 );
 
 -- CreateIndex
@@ -341,6 +371,9 @@ CREATE UNIQUE INDEX "Parents_phone_number_key" ON "public"."Parents"("phone_numb
 -- CreateIndex
 CREATE UNIQUE INDEX "Categories_category_name_key" ON "public"."Categories"("category_name");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Books_title_key" ON "public"."Books"("title");
+
 -- AddForeignKey
 ALTER TABLE "public"."Tutor" ADD CONSTRAINT "Tutor_uid_fkey" FOREIGN KEY ("uid") REFERENCES "public"."User"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -351,10 +384,10 @@ ALTER TABLE "public"."Parents" ADD CONSTRAINT "Parents_uid_fkey" FOREIGN KEY ("u
 ALTER TABLE "public"."Student" ADD CONSTRAINT "Student_uid_fkey" FOREIGN KEY ("uid") REFERENCES "public"."User"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."is_family" ADD CONSTRAINT "is_family_student_uid_fkey" FOREIGN KEY ("student_uid") REFERENCES "public"."Student"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."is_family" ADD CONSTRAINT "is_family_parents_uid_fkey" FOREIGN KEY ("parents_uid") REFERENCES "public"."Parents"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."is_family" ADD CONSTRAINT "is_family_parents_uid_fkey" FOREIGN KEY ("parents_uid") REFERENCES "public"."Parents"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."is_family" ADD CONSTRAINT "is_family_student_uid_fkey" FOREIGN KEY ("student_uid") REFERENCES "public"."Student"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Feedback" ADD CONSTRAINT "Feedback_student_uid_fkey" FOREIGN KEY ("student_uid") REFERENCES "public"."Student"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -384,12 +417,6 @@ ALTER TABLE "public"."Comments" ADD CONSTRAINT "Comments_thread_id_fkey" FOREIGN
 ALTER TABLE "public"."Comments" ADD CONSTRAINT "Comments_uid_fkey" FOREIGN KEY ("uid") REFERENCES "public"."User"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."t_image" ADD CONSTRAINT "t_image_thread_id_fkey" FOREIGN KEY ("thread_id") REFERENCES "public"."Thread"("thread_id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."c_image" ADD CONSTRAINT "c_image_thread_id_comment_id_fkey" FOREIGN KEY ("thread_id", "comment_id") REFERENCES "public"."Comments"("thread_id", "comment_id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "public"."Follow" ADD CONSTRAINT "Follow_thread_id_fkey" FOREIGN KEY ("thread_id") REFERENCES "public"."Thread"("thread_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -408,16 +435,19 @@ ALTER TABLE "public"."Resources_of_class" ADD CONSTRAINT "Resources_of_class_did
 ALTER TABLE "public"."Folders" ADD CONSTRAINT "Folders_tutor_id_fkey" FOREIGN KEY ("tutor_id") REFERENCES "public"."Tutor"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Resource_in_folder" ADD CONSTRAINT "Resource_in_folder_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "public"."Folders"("folder_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Resource_in_folder" ADD CONSTRAINT "Resource_in_folder_did_fkey" FOREIGN KEY ("did") REFERENCES "public"."Resources"("did") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Resource_in_folder" ADD CONSTRAINT "Resource_in_folder_did_fkey" FOREIGN KEY ("did") REFERENCES "public"."Resources"("did") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Resource_in_folder" ADD CONSTRAINT "Resource_in_folder_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "public"."Folders"("folder_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Folder_of_class" ADD CONSTRAINT "Folder_of_class_class_id_fkey" FOREIGN KEY ("class_id") REFERENCES "public"."Class"("class_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Folder_of_class" ADD CONSTRAINT "Folder_of_class_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "public"."Folders"("folder_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Categories" ADD CONSTRAINT "fk_categories_books" FOREIGN KEY ("book_id") REFERENCES "public"."Books"("book_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
 ALTER TABLE "public"."Questions" ADD CONSTRAINT "Questions_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "public"."Categories"("category_id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -441,13 +471,10 @@ ALTER TABLE "public"."Question_of_exam" ADD CONSTRAINT "Question_of_exam_ques_id
 ALTER TABLE "public"."Exam_session" ADD CONSTRAINT "Exam_session_exam_id_fkey" FOREIGN KEY ("exam_id") REFERENCES "public"."Exams"("exam_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Exam_open_in" ADD CONSTRAINT "Exam_open_in_session_id_exam_id_fkey" FOREIGN KEY ("session_id", "exam_id") REFERENCES "public"."Exam_session"("session_id", "exam_id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "public"."Exam_open_in" ADD CONSTRAINT "Exam_open_in_class_id_fkey" FOREIGN KEY ("class_id") REFERENCES "public"."Class"("class_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Exam_taken" ADD CONSTRAINT "Exam_taken_session_id_exam_id_fkey" FOREIGN KEY ("session_id", "exam_id") REFERENCES "public"."Exam_session"("session_id", "exam_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Exam_open_in" ADD CONSTRAINT "Exam_open_in_session_id_exam_id_fkey" FOREIGN KEY ("session_id", "exam_id") REFERENCES "public"."Exam_session"("session_id", "exam_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Exam_taken" ADD CONSTRAINT "Exam_taken_student_uid_fkey" FOREIGN KEY ("student_uid") REFERENCES "public"."Student"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -457,3 +484,27 @@ ALTER TABLE "public"."Answer_for_exam" ADD CONSTRAINT "Answer_for_exam_et_id_fke
 
 -- AddForeignKey
 ALTER TABLE "public"."Answer_for_exam" ADD CONSTRAINT "Answer_for_exam_ques_id_aid_fkey" FOREIGN KEY ("ques_id", "aid") REFERENCES "public"."Answers"("ques_id", "aid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Resource_of_Answer" ADD CONSTRAINT "Resource_of_Answer_did_fkey" FOREIGN KEY ("did") REFERENCES "public"."Resources"("did") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "public"."Resource_of_Answer" ADD CONSTRAINT "Resource_of_Answer_ques_id_aid_fkey" FOREIGN KEY ("ques_id", "aid") REFERENCES "public"."Answers"("ques_id", "aid") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "public"."Resource_of_Comment" ADD CONSTRAINT "Resource_of_Comment_did_fkey" FOREIGN KEY ("did") REFERENCES "public"."Resources"("did") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "public"."Resource_of_Comment" ADD CONSTRAINT "Resource_of_Comment_thread_id_comment_id_fkey" FOREIGN KEY ("thread_id", "comment_id") REFERENCES "public"."Comments"("thread_id", "comment_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "public"."Resource_of_Question" ADD CONSTRAINT "Resource_of_Question_did_fkey" FOREIGN KEY ("did") REFERENCES "public"."Resources"("did") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "public"."Resource_of_Question" ADD CONSTRAINT "Resource_of_Question_ques_id_fkey" FOREIGN KEY ("ques_id") REFERENCES "public"."Questions"("ques_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "public"."Resource_of_Thread" ADD CONSTRAINT "Resource_of_Thread_did_fkey" FOREIGN KEY ("did") REFERENCES "public"."Resources"("did") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "public"."Resource_of_Thread" ADD CONSTRAINT "Resource_of_Thread_thread_id_fkey" FOREIGN KEY ("thread_id") REFERENCES "public"."Thread"("thread_id") ON DELETE NO ACTION ON UPDATE NO ACTION;

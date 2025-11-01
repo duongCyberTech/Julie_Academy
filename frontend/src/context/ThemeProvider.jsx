@@ -152,54 +152,6 @@ export const createAppTheme = (mode = "light") => {
         },
       },
     },
-    MuiAlert: {
-      styleOverrides: {
-        root: ({ theme, ownerState }) => ({
-          borderRadius: baseTheme.shape.borderRadius,
-          fontWeight: baseTheme.typography.fontWeightMedium,
-          boxShadow: baseTheme.shadows[2],
-          ...(ownerState.variant === "standard" && {
-            background: alpha(
-              baseTheme.palette[ownerState.severity].light,
-              0.15
-            ),
-            color: baseTheme.palette[ownerState.severity].dark,
-            borderLeft: `4px solid ${
-              baseTheme.palette[ownerState.severity].main
-            }`,
-            ...(baseTheme.palette.mode === "dark" && {
-              color: baseTheme.palette[ownerState.severity].light,
-            }),
-          }),
-          ...(ownerState.variant === "filled" && {
-            background: baseTheme.palette[ownerState.severity].main,
-            border: `1px solid ${baseTheme.palette[ownerState.severity].dark}`,
-            color: baseTheme.palette[ownerState.severity].contrastText,
-          }),
-        }),
-        icon: ({ theme, ownerState }) => ({
-          fontSize: "1.5rem",
-          marginRight: baseTheme.spacing(1.5),
-          ...(ownerState.variant === "standard" && {
-            color: baseTheme.palette[ownerState.severity].main,
-          }),
-          ...(ownerState.variant === "filled" && {
-            color: baseTheme.palette[ownerState.severity].contrastText,
-          }),
-        }),
-        message: {
-          padding: baseTheme.spacing(0.5, 0),
-        },
-      },
-    },
-    MuiAlertTitle: {
-      styleOverrides: {
-        root: {
-          fontWeight: baseTheme.typography.fontWeightBold,
-          marginBottom: baseTheme.spacing(0.5),
-        },
-      },
-    },
   };
 
   return createTheme(baseTheme, { components: componentOverrides });

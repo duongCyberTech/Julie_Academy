@@ -16,7 +16,9 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
-    "db:seed:admin": "ts-node prisma/admin.seed.ts",
+    "db:seed:user": "ts-node prisma/user.seed.ts",
+    "db:seed:category": "ts-node prisma/category.seed.ts",
+    "db:seed:question": "ts-node prisma/question.seed.ts",
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "engines": {

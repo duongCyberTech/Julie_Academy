@@ -42,19 +42,24 @@ const adminMenuItems = [
   { label: "Bảng điều khiển", to: "/admin/dashboard", Icon: DashboardIcon },
   { label: "Quản lý người dùng", to: "/admin/users", Icon: GroupOutlined },
   {
-    label: "Quản lý học liệu",
-    to: "/admin/courses",
+    label: "Quản lý tài nguyên",
+    to: "/admin/resources",
     Icon: AutoStoriesOutlined,
   },
   { label: "Cài đặt", to: "/admin/settings", Icon: SettingsIcon },
 ];
 
+// cấu hình cho Student
+const studentMenuItems = [
+  { label: "Bảng điều khiển", to: "/student/dashboard", Icon: DashboardIcon },
+  { label: "Lớp học của tôi", to: "/student/myclass", Icon: GroupOutlined },
+];
 const menuConfigByRole = {
   tutor: tutorMenuItems,
   admin: adminMenuItems,
+  student: studentMenuItems,
 };
 
-// --- STYLED COMPONENTS ---
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   flexShrink: 0,
   whiteSpace: "nowrap",
@@ -128,7 +133,6 @@ const CollapseButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
-// --- MAIN COMPONENT ---
 const Sidebar = ({ width, onToggleCollapse, isMobileOpen, onMobileClose }) => {
   const location = useLocation();
   const theme = useTheme();

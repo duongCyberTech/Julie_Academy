@@ -41,9 +41,8 @@ const Footer = React.memo(function Footer() {
       {
         title: "Khám phá",
         links: [
-          { label: "Giới thiệu", href: "#" },
-          { label: "Khóa học", href: "#" },
-          { label: "Liên hệ", href: "#" },
+          { label: "Giới thiệu", href: "/aboutus" },
+          { label: "Liên hệ", href: "/contact" },
         ],
       },
       {
@@ -61,7 +60,7 @@ const Footer = React.memo(function Footer() {
             href: "mailto:julieacademy@gmail.com",
             icon: EmailIcon,
           },
-          { label: "0123 456 789", href: "tel:0123456789", icon: PhoneIcon },
+          { label: "0365 032 629", href: "tel:0365 032 629", icon: PhoneIcon },
         ],
       },
     ],
@@ -124,6 +123,7 @@ const Footer = React.memo(function Footer() {
             <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
               <Typography
                 variant="h5"
+                component="p"
                 sx={{ fontWeight: "bold", color: "text.primary" }}
               >
                 Julie Academy
@@ -134,7 +134,7 @@ const Footer = React.memo(function Footer() {
               color="text.secondary"
               sx={{ pr: { md: 2 } }}
             >
-              Hệ thống luyện tập thông minh giúp bạn chinh phục mọi thử thách
+              Hệ thống giúp bạn chinh phục mọi thử thách
               học tập.
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 2 }}>

@@ -1,4 +1,5 @@
 import { Type } from 'class-transformer';
+import { QuestionStatus } from '@prisma/client';
 import {
   IsString,
   IsEnum,
@@ -23,13 +24,16 @@ enum QuestionType {
   essay = 'essay',
 }
 
-class CreateAnswerDto {
+export class CreateAnswerDto {
   @IsNotEmpty()
   @IsString()
   content: string;
 
   @IsBoolean()
   isCorrect: boolean;
+  @IsOptional()
+  @IsString()
+  explaination?: string;
 }
 
 export class CreateQuestionDto {
@@ -57,4 +61,8 @@ export class CreateQuestionDto {
   @ValidateNested({ each: true })
   @Type(() => CreateAnswerDto)
   answers: CreateAnswerDto[];
+
+  @IsOptional()
+  @IsEnum(QuestionStatus)
+  status?: QuestionStatus;
 }

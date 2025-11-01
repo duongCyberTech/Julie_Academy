@@ -1,95 +1,140 @@
-import React from 'react';
+import React, { useState } from 'react'; 
 import { 
-    Box, Tooltip, TextField, Button, IconButton, Paper, useTheme, alpha, styled
+    Box, Tooltip, Button, IconButton, Paper, useTheme, alpha, styled,
+    Collapse 
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import NotesIcon from '@mui/icons-material/Notes'; 
+import RichTextEditor from '../RichTextEditor'; 
+import { v4 as uuidv4 } from 'uuid'; 
 
-const AnswerOptionWrapper = styled(Paper)(({ theme, color, isCorrect }) => ({
-    padding: theme.spacing(1, 1, 2, 2),
+const AnswerOptionWrapper = styled(Paper, {
+    shouldForwardProp: (prop) => prop !== 'isCorrect' 
+})(({ theme, color, isCorrect }) => ({
+    padding: theme.spacing(1, 1, 1, 2),
     borderRadius: theme.shape.borderRadius,
     border: '2px solid',
     borderColor: isCorrect ? color : 'transparent',
     backgroundColor: alpha(color, 0.1),
-    position: 'relative',
+    position: 'relative', 
     display: 'flex',
     flexDirection: 'column',
-    height: '150px',
     transition: theme.transitions.create(['border-color', 'background-color']),
 }));
 
-// --- Sub-component: Một ô đáp án ---
-const AnswerOption = ({ answer, index, questionType, onContentChange, onCorrectChange, onDelete, color }) => (
-    <AnswerOptionWrapper color={color} isCorrect={answer.isCorrect}>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Tooltip title="Đánh dấu là đáp án đúng">
-                <IconButton onClick={onCorrectChange} size="small">
-                    <CheckCircleIcon sx={{ color: answer.isCorrect ? color : 'action.disabled' }}/>
-                </IconButton>
-            </Tooltip>
-             <Tooltip title="Xóa lựa chọn này">
-                <IconButton onClick={onDelete} size="small">
-                    <HighlightOffIcon sx={{ fontSize: 20, color: 'action.disabled', '&:hover': { color: 'error.main' } }}/>
-                </IconButton>
-            </Tooltip>
-        </Box>
-        <TextField
-            fullWidth multiline variant="standard"
-            placeholder={`Lựa chọn ${index + 1}`}
-            value={answer.content}
-            onChange={onContentChange}
-            InputProps={{
-                disableUnderline: true,
-                sx: { 
-                    textAlign: 'center', fontWeight: 500,
-                    color: 'text.primary', flexGrow: 1
-                }
-            }}
-            sx={{
-                display: 'flex', flexGrow: 1,
-                '& .MuiInputBase-root': { height: '100%' }
-            }}
-        />
-    </AnswerOptionWrapper>
-);
+const AnswerOption = ({ 
+    answer, index, questionType, 
+    onFieldChange, // Gộp handler
+    onCorrectChange, onDelete, 
+    color 
+}) => {
+    const [showExplanation, setShowExplanation] = useState(Boolean(answer.explanation)); 
 
+    return (
+        <AnswerOptionWrapper color={color} isCorrect={answer.isCorrect}>
+            <Box sx={{ 
+                position: 'absolute', 
+                top: 4,               
+                right: 4,             
+                zIndex: 3             
+            }}>
+                <Tooltip title="Đánh dấu là đáp án đúng">
+                    <IconButton onClick={onCorrectChange} size="small">
+                        <CheckCircleIcon sx={{ color: answer.isCorrect ? color : 'action.disabled' }}/>
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title={showExplanation ? "Ẩn giải thích" : "Thêm giải thích"}>
+                    <IconButton onClick={() => setShowExplanation(!showExplanation)} size="small">
+                        <NotesIcon sx={{ fontSize: 20, color: showExplanation ? 'primary.main' : 'action.disabled' }}/>
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title="Xóa lựa chọn này">
+                    <IconButton onClick={onDelete} size="small">
+                        <HighlightOffIcon sx={{ fontSize: 20, color: 'action.disabled', '&:hover': { color: 'error.main' } }}/>
+                    </IconButton>
+                </Tooltip>
+            </Box>
+            
+            <RichTextEditor
+                toolbarType="minimal" 
+                placeholder={`Lựa chọn ${index + 1}`}
+                value={answer.content}
+                // Gọi handler gộp với field 'content'
+                onChange={(value) => onFieldChange(index, 'content', value)} 
+                style={{ 
+                    paddingTop: '32px', 
+                    flexGrow: 1, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    minHeight: '80px' 
+                }}
+            />
+            
+            <Collapse in={showExplanation} mountOnEnter unmountOnExit> 
+                <Box sx={{ pt: 1, borderTop: 1, borderColor: 'divider', mt: 1 }}>
+                    <RichTextEditor
+                        toolbarType="minimal" 
+                        placeholder="Thêm giải thích cho đáp án này..."
+                        value={answer.explanation || ''} 
+                        // Gọi handler gộp với field 'explanation'
+                        onChange={(value) => onFieldChange(index, 'explanation', value)} 
+                        style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            minHeight: '60px' 
+                        }}
+                    />
+                </Box>
+            </Collapse>
+            
+        </AnswerOptionWrapper>
+    );
+};
 
-// --- Component chính để soạn thảo đáp án trắc nghiệm ---
 export default function MultipleChoiceEditor({ questionType, answerData, setAnswerData }) {
     const theme = useTheme();
     
     const answerColors = [
         theme.palette.info.main, theme.palette.success.main,
         theme.palette.warning.main, theme.palette.error.main,
+        theme.palette.secondary.main, theme.palette.grey[500] 
     ];
 
-    const handleAnswerChange = (index, value) => {
-        const newAnswers = [...answerData];
-        newAnswers[index].content = value;
+    // Gộp 2 handler thành 1
+    const handleAnswerFieldChange = (index, field, value) => {
+        const newAnswers = answerData.map((ans, i) => 
+            i === index ? { ...ans, [field]: value } : ans
+        );
         setAnswerData(newAnswers);
     };
 
     const handleCorrectChange = (index) => {
-        const newAnswers = [...answerData];
+        let newAnswers;
         if (questionType === 'single_choice') {
-            newAnswers.forEach((answer, i) => {
-                answer.isCorrect = (i === index);
-            });
+            newAnswers = answerData.map((ans, i) => ({
+                 ...ans, 
+                 isCorrect: i === index 
+            }));
         } else {
-            newAnswers[index].isCorrect = !newAnswers[index].isCorrect;
+            newAnswers = answerData.map((ans, i) => 
+                i === index ? { ...ans, isCorrect: !ans.isCorrect } : ans
+            );
         }
         setAnswerData(newAnswers);
     };
 
     const addAnswerOption = () => {
-        if (answerData.length < 4) {
-            setAnswerData([...answerData, { content: '', isCorrect: false }]);
-        }
+        const newId = uuidv4(); 
+        setAnswerData([
+            ...answerData, 
+            { id: newId, content: '', isCorrect: false, explanation: '' } 
+        ]);
     };
 
     const removeAnswerOption = (indexToRemove) => {
-        if (answerData.length > 2) { // Luôn giữ lại ít nhất 2 đáp án
+        if (answerData.length > 1) { 
             setAnswerData(answerData.filter((_, index) => index !== indexToRemove));
         }
     };
@@ -103,37 +148,36 @@ export default function MultipleChoiceEditor({ questionType, answerData, setAnsw
             }}>
                 {answerData.map((answer, index) => (
                     <AnswerOption
-                        key={index}
+                        key={answer.id} 
                         answer={answer}
                         index={index}
                         questionType={questionType}
-                        onContentChange={(e) => handleAnswerChange(index, e.target.value)}
+                        // Truyền handler gộp xuống
+                        onFieldChange={handleAnswerFieldChange} 
                         onCorrectChange={() => handleCorrectChange(index)}
                         onDelete={() => removeAnswerOption(index)}
                         color={answerColors[index % answerColors.length]}
                     />
                 ))}
             
-                {answerData.length < 4 && (
-                    <Button 
-                        variant="dashed"
-                        onClick={addAnswerOption}
-                        sx={{ 
-                            height: '150px', 
-                            borderStyle: 'dashed', 
-                            borderWidth: 2, 
-                            borderColor: 'divider', 
-                            color: 'text.secondary',
-                            '&:hover': {
-                                borderColor: 'primary.main',
-                                bgcolor: 'action.hover'
-                            }
-                        }}
-                    >
-                        <AddCircleOutlineIcon sx={{ mr: 1 }}/>
-                        Thêm lựa chọn
-                    </Button>
-                )}
+                <Button 
+                    variant="dashed"
+                    onClick={addAnswerOption}
+                    sx={{ 
+                        minHeight: '80px', 
+                        borderStyle: 'dashed', 
+                        borderWidth: 2, 
+                        borderColor: 'divider', 
+                        color: 'text.secondary',
+                        '&:hover': {
+                            borderColor: 'primary.main',
+                            bgcolor: 'action.hover'
+                        }
+                    }}
+                >
+                    <AddCircleOutlineIcon sx={{ mr: 1 }}/>
+                    Thêm lựa chọn
+                </Button>
             </Box>
         </Box>
     );

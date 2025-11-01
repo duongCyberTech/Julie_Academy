@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, Link as RouterLink } from "react-router-dom"; 
 import { jwtDecode } from "jwt-decode";
 import {
   AppBar,
@@ -16,14 +16,12 @@ import {
   Tooltip,
   useTheme,
   Badge,
-  InputBase,
   styled,
   alpha,
 } from "@mui/material";
 
 import {
   Menu as MenuIcon,
-  Search as SearchIcon,
   ExitToApp as ExitToAppIcon,
   Brightness4 as Brightness4Icon,
   Brightness7 as Brightness7Icon,
@@ -34,6 +32,9 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
+import Logo from "../assets/images/logo.png"; 
+
+
 const StyledAppBar = styled(AppBar, {
   shouldForwardProp: (prop) =>
     !["isSidebarExpanded", "isSidebarMounted"].includes(prop),
@@ -56,49 +57,18 @@ const StyledAppBar = styled(AppBar, {
   },
 }));
 
-const SearchContainer = styled("form")(({ theme }) => ({
-  position: "relative",
-  borderRadius: theme.shape.borderRadius,
-  width: "100%",
-  maxWidth: 480,
-  display: "flex",
-  alignItems: "center",
-  backgroundColor:
-    theme.palette.mode === "light"
-      ? alpha(theme.palette.common.white, 0.5)
-      : alpha(theme.palette.text.primary, 0.06),
-  transition: theme.transitions.create("all", {
-    duration: theme.transitions.duration.shorter,
-  }),
-  "&:hover": {
-    border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
-  },
-}));
-
-const SearchIconWrapper = styled("div")(({ theme }) => ({
-  padding: theme.spacing(0, 2),
-  height: "100%",
-  position: "absolute",
-  pointerEvents: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: theme.palette.text.secondary,
-}));
-
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  width: "100%",
-  color: theme.palette.text.primary,
-  "& .MuiInputBase-input": {
-    padding: theme.spacing(1.2, 1, 1.2, `calc(1em + ${theme.spacing(4)})`),
-  },
-}));
-
 const HeaderIconButton = styled(IconButton)(({ theme }) => ({
   color: theme.palette.text.secondary,
   "&:hover": {
     backgroundColor: alpha(theme.palette.action.hover, 0.1),
   },
+}));
+
+const BrandBox = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  textDecoration: "none",
+  color: "inherit",
 }));
 
 const USER_MENU_CONFIG = [
@@ -119,7 +89,6 @@ const USER_MENU_CONFIG = [
   },
 ];
 
-
 const Header = React.memo(function Header({
   mode,
   toggleMode,
@@ -133,13 +102,10 @@ const Header = React.memo(function Header({
 
   const [userInfo, setUserInfo] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
 
-  // --- Auth ---
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-
     try {
       const decoded = jwtDecode(token);
       if (decoded.exp * 1000 > Date.now()) {
@@ -167,15 +133,6 @@ const Header = React.memo(function Header({
     [navigate]
   );
 
-  const handleSearchSubmit = useCallback(
-    (e) => {
-      e.preventDefault();
-      if (searchQuery.trim())
-        navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    },
-    [navigate, searchQuery]
-  );
-
   const isAuth = !!userInfo;
 
   return (
@@ -185,7 +142,7 @@ const Header = React.memo(function Header({
       isSidebarMounted={isSidebarMounted}
     >
       <Toolbar sx={{ minHeight: 64, px: { xs: 1, sm: 2 } }}>
-        {/* Sidebar toggles */}
+        {/* === Sidebar toggles (GIỮ NGUYÊN) === */}
         <HeaderIconButton
           edge="start"
           onClick={onMobileSidebarToggle}
@@ -202,27 +159,37 @@ const Header = React.memo(function Header({
           </HeaderIconButton>
         )}
 
-        {/* Search */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            display: { xs: "none", md: "flex" },
-            justifyContent: "center",
-          }}
+        <BrandBox
+          component={RouterLink}
+          to="/"
+          sx={{ flexGrow: 1, justifyContent: { xs: "center" }, ml: 20 }}
         >
-          <SearchContainer onSubmit={handleSearchSubmit}>
-            <SearchIconWrapper>
-              <SearchIcon fontSize="small" />
-            </SearchIconWrapper>
-            <StyledInputBase
-              placeholder="Tìm kiếm..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </SearchContainer>
-        </Box>
+          <Box
+            component="img"
+            src={Logo}
+            alt="Logo"
+            sx={{ width: 40, height: 40, flexShrink: 0 }}
+          />
+          <Typography
+            variant="h6"
+            noWrap
+            sx={{
+              ml: 1.5,
+              fontWeight: 700,
+              display: { xs: "none", sm: "block" }, 
+              background: `linear-gradient(45deg, #6a11cb 0%, #2575fc 100%)`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            Julie Academy
+          </Typography>
+        </BrandBox>
 
-        {/* Actions */}
+        {/* Box đẩy sang phải (thay thế flexGrow của BrandBox) */}
+        {/* <Box sx={{ flexGrow: 1 }} /> */}
+
+        {/* === Actions (GIỮ NGUYÊN) === */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Tooltip title="Thông báo">
             <HeaderIconButton>
@@ -253,7 +220,7 @@ const Header = React.memo(function Header({
             </Tooltip>
           ) : (
             <Button
-              component={Link}
+              component={RouterLink}
               to="/login"
               variant="contained"
               color="secondary"
@@ -264,7 +231,7 @@ const Header = React.memo(function Header({
         </Box>
       </Toolbar>
 
-      {/* Menu */}
+      {/* === Menu Avatar (GIỮ NGUYÊN) === */}
       {isAuth && (
         <Menu
           anchorEl={anchorEl}
@@ -277,12 +244,13 @@ const Header = React.memo(function Header({
               borderRadius: 2,
               border: `1px solid ${theme.palette.divider}`,
               backgroundColor: alpha(theme.palette.background.paper, 0.9),
-              backdropFilter: "blur(6px)", 
+              backdropFilter: "blur(6px)",
             },
           }}
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
           transformOrigin={{ vertical: "top", horizontal: "right" }}
         >
+          {/* ... (Nội dung menu giữ nguyên) ... */}
           <Box sx={{ px: 2, py: 1.5 }}>
             <Typography fontWeight={600}>{userInfo.name}</Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
