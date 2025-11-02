@@ -30,7 +30,9 @@ export class ClassService {
   }
 
   async getAllClasses(page?: number, limit?: number, search?: string, status?: string, startAt?: Date, endAt?: Date) {
-    const skip:number = (page - 1) * limit;
+    const _page: number = Number(page) && Number(page) > 0 ? Number(page) : 1;
+    const _limit: number = Number(limit) && Number(limit) > 0 ? Number(limit) : 10;
+    const skip:number = (_page - 1) * _limit;
     const where: any = {};
     if (status) where.status = status;
     if (startAt && endAt) {
@@ -50,7 +52,7 @@ export class ClassService {
     return this.prisma.class.findMany({
       where,
       skip,
-      take: limit,
+      take: _limit,
       orderBy: { createdAt: 'desc' },
       select:{
         class_id: true,
@@ -242,7 +244,7 @@ export class ScheduleService {
     })
   }
 
-  async deleteSchedule(class_id: string, mode:boolean = false, schedules?: number[]){
+  async deleteSchedule(class_id: string, mode: boolean = false, schedules?: number[]){
     return this.prisma.$transaction(async(tx) => {
       if (mode) {
         await tx.schedule.deleteMany({
@@ -293,6 +295,7 @@ export class ScheduleService {
         }
       }
     })
+
     const grouped = Object.values(
       sched.reduce((acc, item) => {
         const classId = item.class.class_id;
@@ -315,6 +318,7 @@ export class ScheduleService {
         return acc;
       }, {})
     );
+    
     return grouped
   }
   

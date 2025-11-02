@@ -215,14 +215,17 @@ model Folder_of_class {
 }
 
 model Categories {
-  category_id   String      @id @default(uuid())
-  category_name String      @unique
-  description   String?
-  createAt      DateTime    @default(now())
-  updateAt      DateTime    @default(now())
-  book_id       String
-  Books         Books       @relation(fields: [book_id], references: [book_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_categories_books")
-  questions     Questions[]
+  category_id      String       @id @default(uuid())
+  category_name    String       @unique
+  description      String?
+  createAt         DateTime     @default(now())
+  updateAt         DateTime     @default(now())
+  book_id          String
+  parent_id        String?
+  Books            Books        @relation(fields: [book_id], references: [book_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_categories_books")
+  Categories       Categories?  @relation("CategoriesToCategories", fields: [parent_id], references: [category_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recursive_cate")
+  other_Categories Categories[] @relation("CategoriesToCategories")
+  questions        Questions[]
 }
 
 model Questions {

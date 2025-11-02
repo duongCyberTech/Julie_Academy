@@ -1,5 +1,4 @@
 import { IsNotEmpty, IsString, Min, Max } from "class-validator";
-import { Url } from "url";
 
 export class ClassDto {
     @IsNotEmpty({ message: 'Classname is required' })
@@ -19,7 +18,6 @@ export class ClassDto {
     
     @IsNotEmpty({ message: 'Subject is required' })
     subject: string;
-
 }
 
 export class ScheduleDto {
