@@ -23,20 +23,20 @@ export class BookController {
 export class CategoryController {
   constructor(private readonly questionService: QuestionService) {}
 
-  @Post(':book_id')
-  createCategory( @Param('book_id') book_id: string, @Body('categories') dto: CategoryDto[] ) {
-    return this.questionService.createCategory(book_id, dto);
+  @Post()
+  createCategory(@Body() dto: CategoryDto[] ) {
+    return this.questionService.createCategory(dto);
   }
 
-  @Get(':book_id') 
-  getAllCategories( @Param('book_id') book_id: string, @Query() query: any ) {
-    return this.questionService.getAllCategories(book_id, query?.page, query?.limit, query?.search, query?.grade, query?.subject);
+  @Get() 
+  getAllCategories( 
+    @Query() query: any 
+  ) {
+    return this.questionService.getAllCategories(
+        query?.mode, query?.book_id, query?.page, 
+        query?.limit, query?.search, query?.grade, query?.subject
+    );
   }
-
-   @Get()
-   getAllCategoriesNoBookFilter(@Query() query: any) {
-       return this.questionService.getAllCategories(undefined, query?.page, query?.limit, query?.search, query?.grade, query?.subject);
-   }
 }
 
 @Controller('questions')

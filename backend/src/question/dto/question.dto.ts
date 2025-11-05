@@ -22,6 +22,10 @@ export class CategoryDto {
     createdAt: Date;
     @ApiProperty()
     updateAt: Date;
+    @ApiProperty()
+    children?: CategoryDto[];
+    @ApiProperty()
+    book_id?: string;
 }
 
 export class QuestionDto {
