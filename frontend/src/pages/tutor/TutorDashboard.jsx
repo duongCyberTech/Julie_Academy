@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { useTheme, alpha, styled } from "@mui/material/styles";
 import {
   Box,
@@ -14,47 +14,114 @@ import {
   LinearProgress,
   Grid,
   Fade,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Button,
 } from "@mui/material";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
 
-import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
-import PendingActionsOutlinedIcon from "@mui/icons-material/PendingActionsOutlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
+import TrendingDownOutlinedIcon from "@mui/icons-material/TrendingDownOutlined";
+import LocalFireDepartmentOutlinedIcon from "@mui/icons-material/LocalFireDepartmentOutlined";
+import ChevronRightOutlinedIcon from "@mui/icons-material/ChevronRightOutlined";
+import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
 
-// --- MOCK DATA (Không thay đổi) ---
 const mockData = {
-  tutorName: "Hung Pham",
-  engagementData: [
-    { name: "T2", "Tương tác": 32, "Hoàn thành": 28 },
-    { name: "T3", "Tương tác": 41, "Hoàn thành": 35 },
-    { name: "T4", "Tương tác": 28, "Hoàn thành": 25 },
-    { name: "T5", "Tương tác": 55, "Hoàn thành": 48 },
-    { name: "T6", "Tương tác": 47, "Hoàn thành": 40 },
-    { name: "T7", "Tương tác": 62, "Hoàn thành": 58 },
-    { name: "CN", "Tương tác": 58, "Hoàn thành": 51 },
+  kpiCards: [
+    {
+      id: 1,
+      title: "Tổng học sinh (Lớp 9)",
+      value: "85",
+      icon: <PeopleAltOutlinedIcon />,
+      color: "primary",
+    },
+    {
+      id: 2,
+      title: "Lớp phụ trách (Lớp 9)", 
+      value: "3",
+      icon: <SchoolOutlinedIcon />,
+      color: "secondary",
+    },
+    {
+      id: 4,
+      title: "Tin nhắn mới",
+      value: "3",
+      icon: <ForumOutlinedIcon />,
+      color: "success",
+    },
   ],
-  schedule: [
-    { time: "19:00 Hôm nay", title: "Lớp Vật Lý 9 - Sóng Cơ", type: "class" },
-    { time: "23:59 Ngày mai", title: "Hạn nộp bài tập Tuần 5", type: "deadline" },
+  todaySchedule: [
+    {
+      id: 1,
+      time: "09:00 - 10:00",
+      title: "Lớp 9A1 - Dạy online",
+      topic: "Chủ đề: Giải hệ phương trình",
+    },
+    {
+      id: 2,
+      time: "14:00 - 15:00",
+      title: "Lớp 9A2 - Dạy online",
+      topic: "Chủ đề: Căn bậc hai",
+    },
+    {
+      id: 3,
+      time: "16:00",
+      title: "Hạn chót nộp bài",
+      topic: "Kiểm tra 15 phút (Lớp 9A1)",
+    },
   ],
-  leaderboard: [
-    { name: "Nguyễn Thị Thu", change: "+15%", avatar: "/logo.png" },
-    { name: "Hoàng Văn Long", change: "+12%", avatar: "/logo.png" },
-    { name: "Trần Minh Anh", change: "+9%", avatar: "/logo.png" },
+  classProgress: [
+    { id: 1, name: "Lớp 9A1", completed: 24, total: 30, color: "primary" },
+    { id: 2, name: "Lớp 9A2", completed: 18, total: 25, color: "secondary" },
+    { id: 3, name: "Lớp 9A3", completed: 29, total: 30, color: "success" },
   ],
-  contentPerformance: [
-    { name: "Quiz Sóng", "Tỷ lệ": 92, color: "primary" },
-    { name: "Bài giảng Dao động", "Tỷ lệ": 88, color: "secondary" },
-    { name: "Bài tập Con lắc", "Tỷ lệ": 76, color: "success" },
+  studentsToWatch: [
+    {
+      id: 1,
+      name: "Trần Văn B",
+      class: "9A2",
+      metricType: "Điểm giảm",
+      metricValue: "-1.5 điểm TB",
+    },
+    {
+      id: 3,
+      name: "Lê Hoàng D",
+      class: "9A1",
+      metricType: "Điểm giảm",
+      metricValue: "-2.1 điểm TB",
+    },
+    {
+      id: 4,
+      name: "Phạm Thị E",
+      class: "9A1",
+      metricType: "Bỏ bài",
+      metricValue: "3 bài trễ",
+    },
+  ],
+  // (Yêu cầu 2) Chỉ Lớp 9
+  hotTopics: [
+    {
+      id: 1,
+      name: "Bài 3: Giải hệ phương trình (Lớp 9A1)",
+      errorRate: 65,
+    },
+    {
+      id: 2,
+      name: "Câu 5: Biểu thức chứa căn (Lớp 9A2)",
+      errorRate: 58,
+    },
+    {
+      id: 3,
+      name: "Bài 1: Hệ thức lượng (Lớp 9A1)",
+      errorRate: 52,
+    },
   ],
 };
 
@@ -63,91 +130,78 @@ const DashboardWidget = styled(Card)(({ theme }) => ({
   height: "100%",
   backgroundColor: theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: 'none',
+  boxShadow: "none",
   border: `1px solid ${theme.palette.divider}`,
 }));
 
-const ChartTooltip = ({ active, payload, label }) => {
-  const theme = useTheme();
-  if (active && payload && payload.length) {
+// --- WIDGET COMPONENTS ---
+
+// 1. Widget cho Q1, Q5: Thẻ KPI
+const KpiCardWidget = memo(
+  ({ title, value, icon, color = "primary" }) => {
+    const theme = useTheme();
+    const bgColor = alpha(theme.palette[color].main, 0.1);
+    const iconColor = theme.palette[color].main;
+
     return (
-      <Box sx={{
-        bgcolor: alpha(theme.palette.background.paper, 0.95),
-        p: 1.5,
-        borderRadius: 2,
-        boxShadow: theme.shadows[10],
-        border: `1px solid ${theme.palette.divider}`,
-      }}>
-        <Typography variant="caption" display="block" sx={{ mb: 1, fontWeight: "bold" }}>{`Ngày: ${label}`}</Typography>
-        <Stack spacing={0.5}>
-          <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>{`Tương tác: ${payload[0].value}`}</Typography>
-          <Typography variant="caption" sx={{ color: theme.palette.success.main, fontWeight: 500 }}>{`Hoàn thành: ${payload[1].value}`}</Typography>
-        </Stack>
-      </Box>
+      <DashboardWidget>
+        <CardContent>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Avatar
+              sx={{
+                width: 52,
+                height: 52,
+                bgcolor: bgColor,
+                color: iconColor,
+              }}
+            >
+              {icon}
+            </Avatar>
+            <Box>
+              <Typography variant="h5" component="div" fontWeight="bold">
+                {value}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {title}
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </DashboardWidget>
     );
   }
-  return null;
-};
+);
 
-const ScheduleIcon = ({ type }) => {
-  const theme = useTheme();
-  const iconMapping = {
-    class: { icon: <VideocamOutlinedIcon />, color: theme.palette.secondary.main },
-    deadline: { icon: <PendingActionsOutlinedIcon />, color: theme.palette.warning.main },
-  };
-  const { icon, color } = iconMapping[type] || { icon: <CalendarTodayOutlinedIcon />, color: theme.palette.text.secondary };
-  return <Avatar sx={{ bgcolor: alpha(color, 0.15), color }}>{icon}</Avatar>;
-};
-
-// --- WIDGET COMPONENTS ---
-function EngagementWidget() {
-  const theme = useTheme();
-  return (
-    <DashboardWidget>
-      <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <Typography variant="h6" component="h2" fontWeight={600} mb={3}>
-          Tổng Quan Tương Tác Tuần
-        </Typography>
-        <Box sx={{ flexGrow: 1, minHeight: 280 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={mockData.engagementData} margin={{ top: 5, right: 25, left: -20, bottom: 5 }}>
-              <defs>
-                <linearGradient id="colorEngagement" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.6}/>
-                  <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorSuccess" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={theme.palette.success.main} stopOpacity={0.5}/>
-                  <stop offset="95%" stopColor={theme.palette.success.main} stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke={theme.palette.divider} strokeDasharray="3 3" vertical={false}/>
-              <XAxis dataKey="name" tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ top: -15, right: 0, }} />
-              <Area type="monotone" name="Tương tác" dataKey="Tương tác" stroke={theme.palette.primary.main} strokeWidth={2.5} fillOpacity={1} fill="url(#colorEngagement)"/>
-              <Area type="monotone" name="Hoàn thành" dataKey="Hoàn thành" stroke={theme.palette.success.main} strokeWidth={2.5} fillOpacity={1} fill="url(#colorSuccess)"/>
-            </AreaChart>
-          </ResponsiveContainer>
-        </Box>
-      </CardContent>
-    </DashboardWidget>
-  );
-}
-
-function ScheduleWidget() {
+// 2. Widget cho Q2: Lịch Dạy Hôm Nay
+const ScheduleWidget = memo(() => {
+  const theme = useTheme(); // Sửa lỗi: Thêm useTheme
   return (
     <DashboardWidget>
       <CardContent sx={{ p: 3 }}>
-        <Typography variant="h6" component="h2" fontWeight={600} mb={2}>Lịch Trình Sắp Tới</Typography>
+        <Typography variant="h6" component="h2" fontWeight={600} mb={2}>
+          Lịch hôm nay
+        </Typography>
         <List disablePadding>
-          {mockData.schedule.map((item, index) => (
-            <ListItem key={index} disableGutters sx={{ py: 1.5 }}>
-              <ListItemAvatar sx={{ minWidth: 52 }}><ScheduleIcon type={item.type} /></ListItemAvatar>
-              <ListItemText 
-                primary={<Typography variant="body1" fontWeight="500" >{item.title}</Typography>} 
-                secondary={<Typography variant="body2" color="text.secondary">{item.time}</Typography>}
+          {mockData.todaySchedule.map((item) => (
+            <ListItem key={item.id} disableGutters sx={{ py: 1.5 }}>
+              <ListItemAvatar>
+                <Avatar
+                  sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}
+                >
+                  <CalendarTodayOutlinedIcon color="primary" />
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  <Typography variant="body1" fontWeight="500">
+                    {item.title}
+                  </Typography>
+                }
+                secondary={
+                  <Typography variant="body2" color="text.secondary">
+                    {item.time} - {item.topic}
+                  </Typography>
+                }
               />
             </ListItem>
           ))}
@@ -155,71 +209,223 @@ function ScheduleWidget() {
       </CardContent>
     </DashboardWidget>
   );
-}
+});
 
-function LeaderboardWidget() {
+const ClassProgressWidget = memo(() => {
+  const theme = useTheme(); 
   return (
     <DashboardWidget>
       <CardContent sx={{ p: 3 }}>
-        <Typography variant="h6" component="h2" fontWeight={600} mb={2}>Tiến Bộ Học Sinh</Typography>
+        <Typography variant="h6" component="h2" fontWeight={600} mb={3}>
+          Tiến độ hoàn thành bài tập tuần này
+        </Typography>
+        <Stack spacing={3.5}>
+          {mockData.classProgress.map((item) => {
+            const percentage =
+              item.total > 0
+                ? Math.round((item.completed / item.total) * 100)
+                : 0;
+
+            return (
+              <Box key={item.id}>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  mb={1}
+                >
+                  <Typography variant="body1" fontWeight="500">
+                    {item.name}
+                  </Typography>
+                  {/* (Yêu cầu 3) Hiển thị X/Y (Z%) */}
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    fontWeight={600}
+                  >
+                    {`${item.completed}/${item.total} (${percentage}%)`}
+                  </Typography>
+                </Stack>
+                <LinearProgress
+                  variant="determinate"
+                  value={percentage} 
+                  color={item.color || "primary"}
+                  sx={{
+                    height: 8,
+                    borderRadius: 4,
+                    bgcolor: (theme) =>
+                      alpha(theme.palette[item.color || "primary"].main, 0.2),
+                  }}
+                />
+              </Box>
+            );
+          })}
+        </Stack>
+      </CardContent>
+    </DashboardWidget>
+  );
+});
+
+const StudentsToWatchWidget = memo(() => {
+  return (
+    <DashboardWidget>
+      <CardContent sx={{ p: 3 }}>
+        <Typography variant="h6" component="h2" fontWeight={600} mb={2}>
+          Học sinh cần chú ý
+        </Typography>
+        <TableContainer>
+          <Table sx={{ minWidth: 650 }} aria-label="Bảng học sinh cần chú ý">
+            <TableHead>
+              <TableRow>
+                <TableCell>Tên Học Sinh</TableCell>
+                <TableCell>Lớp</TableCell>
+                <TableCell>Vấn đề</TableCell>
+                <TableCell align="center">Chi tiết</TableCell>
+                <TableCell align="right">Hành Động</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {mockData.studentsToWatch.map((row) => {
+                const isWarning = row.metricType === "Bỏ bài";
+                const chipColor = isWarning ? "warning" : "error";
+                const chipIcon = isWarning ? (
+                  <EventBusyOutlinedIcon />
+                ) : (
+                  <TrendingDownOutlinedIcon />
+                );
+
+                return (
+                  <TableRow
+                    key={row.id}
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      <Typography variant="subtitle2" fontWeight={600}>
+                        {row.name}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{row.class}</TableCell>
+                    <TableCell>
+                      <Chip
+                        icon={chipIcon}
+                        label={row.metricType}
+                        color={chipColor}
+                        size="small"
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color: `${chipColor}.main`,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {row.metricValue}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        endIcon={<ChevronRightOutlinedIcon />}
+                      >
+                        Xem
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </CardContent>
+    </DashboardWidget>
+  );
+});
+
+// 5. Widget cho Q7: Chủ Đề Gây Khó Khăn
+const HotTopicsWidget = memo(() => {
+  const theme = useTheme(); 
+  return (
+    <DashboardWidget>
+      <CardContent sx={{ p: 3 }}>
+        <Typography variant="h6" component="h2" fontWeight={600} mb={2}>
+          Chủ Đề cần ôn tập
+        </Typography>
         <List disablePadding>
-          {mockData.leaderboard.map((student) => (
-            <ListItem key={student.name} disableGutters sx={{ py: 1.2 }}>
+          {mockData.hotTopics.map((item) => (
+            <ListItem
+              key={item.id}
+              disableGutters
+              secondaryAction={
+                <Chip
+                  label={`${item.errorRate}% sai`}
+                  color="warning"
+                  size="small"
+                  sx={{ fontWeight: 600 }}
+                />
+              }
+            >
               <ListItemAvatar>
-                <Avatar alt={student.name} src={student.avatar} sx={{ width: 40, height: 40 }}/>
+                <Avatar
+                  sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1) }}
+                >
+                  <LocalFireDepartmentOutlinedIcon color="warning" />
+                </Avatar>
               </ListItemAvatar>
-              <ListItemText primary={<Typography variant="subtitle2" fontWeight="600" noWrap>{student.name}</Typography>}/>
-              <Typography variant="subtitle2" color="success.main" fontWeight="bold">{student.change}</Typography>
+              <ListItemText
+                primary={
+                  <Typography variant="body2" fontWeight="500">
+                    {item.name}
+                  </Typography>
+                }
+              />
             </ListItem>
           ))}
         </List>
       </CardContent>
     </DashboardWidget>
   );
-}
-
-function PerformanceWidget() {
-  return (
-    <DashboardWidget>
-      <CardContent sx={{ p: 3 }}>
-        <Typography variant="h6" component="h2" fontWeight={600} mb={3}>Hiệu Suất Nội Dung</Typography>
-        <Stack spacing={3}>
-          {mockData.contentPerformance.map((item) => (
-            <Box key={item.name}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography variant="body1" fontWeight="500">{item.name}</Typography>
-                <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>{`${item["Tỷ lệ"]}%`}</Typography>
-              </Stack>
-              <LinearProgress variant="determinate" value={item["Tỷ lệ"]} color={item.color || "primary"} sx={{ height: 8, borderRadius: 4, bgcolor: (theme) => alpha(theme.palette[item.color || "primary"].main, 0.2) }}/>
-            </Box>
-          ))}
-        </Stack>
-      </CardContent>
-    </DashboardWidget>
-  );
-}
+});
 
 // --- MAIN DASHBOARD LAYOUT ---
-export default function TutorDashboard() {
+function TutorDashboard() {
   return (
     <Fade in timeout={500}>
-      <Box>
-        <Grid container spacing={{ xs: 3, md: 4 }}>
-          {/* HOÀN LẠI: Sử dụng cú pháp 'size' theo yêu cầu của bạn */}
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+
+        <Grid container spacing={3}>
+          {/* HÀNG 1: KPI CARDS (3 Thẻ) */}
+          {mockData.kpiCards.map((item) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
+              <KpiCardWidget
+                title={item.title}
+                value={item.value}
+                icon={item.icon}
+                color={item.color}
+              />
+            </Grid>
+          ))}
+
+          {/* HÀNG 2: LỊCH DẠY (Q2) & TIẾN ĐỘ (Q3) */}
           <Grid size={{ xs: 12, lg: 8 }}>
-            <EngagementWidget />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
             <ScheduleWidget />
           </Grid>
-          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-            <LeaderboardWidget />
+          <Grid size={{ xs: 12, lg: 4 }}>
+            <ClassProgressWidget />
           </Grid>
+
+          {/* HÀNG 3: CAN THIỆP (Q6) & CHỦ ĐỀ NÓNG (Q7) */}
           <Grid size={{ xs: 12, lg: 8 }}>
-            <PerformanceWidget />
+            <StudentsToWatchWidget />
+          </Grid>
+          <Grid size={{ xs: 12, lg: 4 }}>
+            <HotTopicsWidget />
           </Grid>
         </Grid>
       </Box>
     </Fade>
   );
 }
+
+export default memo(TutorDashboard);

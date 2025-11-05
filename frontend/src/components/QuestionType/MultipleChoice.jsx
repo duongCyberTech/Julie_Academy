@@ -26,7 +26,7 @@ const AnswerOptionWrapper = styled(Paper, {
 
 const AnswerOption = ({ 
     answer, index, questionType, 
-    onFieldChange, // Gộp handler
+    onFieldChange, 
     onCorrectChange, onDelete, 
     color 
 }) => {
@@ -61,7 +61,6 @@ const AnswerOption = ({
                 toolbarType="minimal" 
                 placeholder={`Lựa chọn ${index + 1}`}
                 value={answer.content}
-                // Gọi handler gộp với field 'content'
                 onChange={(value) => onFieldChange(index, 'content', value)} 
                 style={{ 
                     paddingTop: '32px', 
@@ -78,7 +77,6 @@ const AnswerOption = ({
                         toolbarType="minimal" 
                         placeholder="Thêm giải thích cho đáp án này..."
                         value={answer.explanation || ''} 
-                        // Gọi handler gộp với field 'explanation'
                         onChange={(value) => onFieldChange(index, 'explanation', value)} 
                         style={{ 
                             display: 'flex', 
@@ -102,7 +100,6 @@ export default function MultipleChoiceEditor({ questionType, answerData, setAnsw
         theme.palette.secondary.main, theme.palette.grey[500] 
     ];
 
-    // Gộp 2 handler thành 1
     const handleAnswerFieldChange = (index, field, value) => {
         const newAnswers = answerData.map((ans, i) => 
             i === index ? { ...ans, [field]: value } : ans
@@ -152,7 +149,6 @@ export default function MultipleChoiceEditor({ questionType, answerData, setAnsw
                         answer={answer}
                         index={index}
                         questionType={questionType}
-                        // Truyền handler gộp xuống
                         onFieldChange={handleAnswerFieldChange} 
                         onCorrectChange={() => handleCorrectChange(index)}
                         onDelete={() => removeAnswerOption(index)}

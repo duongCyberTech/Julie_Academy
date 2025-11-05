@@ -22,6 +22,7 @@ export class ClassService {
                 subject: data.subject,
                 createdAt: new Date(),
                 updateAt: new Date(),
+                startAt: data.startAt,
                 tutor: { connect: { uid: tutor_uid } },
             },
         });
@@ -73,52 +74,82 @@ export class ClassService {
     });
   }
 
-  async getClassesByTutor(tutor_uid: string) {
-    return this.prisma.class.findMany({
+async getClassesByTutor(tutor_uid: string) {
+    const classes = await this.prisma.class.findMany({
       where: { tutor_uid },
       orderBy: { createdAt: 'desc' },
-      select:{
+      select: {
         class_id: true,
         classname: true,
         description: true,
-        tutor:{
-          select:{ user:{
-            select:{
-              uid: true,
-              fname: true,
-              lname: true,
-              username: true,
-            }
-          }
-          }
-        }
+        status: true,
+        _count: {
+          select: { learning: true },
+        },
       },
     });
+    return classes.map(cls => ({
+      ...cls,
+      studentCount: cls._count.learning,
+      _count: undefined, 
+    }));
   }
 
   async getDetailedClass(class_id: string) {
-    return this.prisma.class.findMany({
+    return this.prisma.class.findUnique({
       where: { class_id: class_id } ,
-      orderBy: { createdAt: 'desc' },
       select:{
         class_id: true,
         classname: true,
         description: true,
+        grade: true,
+        subject: true,
+        status: true,
+        nb_of_student: true,
+        duration_time: true,
+        createdAt: true,
+        startAt: true,
         tutor:{
-          select:{ user:{
-            select:{
-              uid: true,
-              fname: true,
-              lname: true,
-              username: true,
+          select:{ 
+            user:{
+              select:{
+                uid: true,
+                fname: true,
+                lname: true,
+              }
             }
           }
+        },
+        learning: {
+          select: {
+            student: {
+              select: {
+                uid: true,
+                user: {
+                  select: {
+                    fname: true,
+                    lname: true,
+                    email: true,
+                    avata_url: true 
+                  }
+                }
+              }
+            }
           }
-        }
+        },
+        schedule: {
+          orderBy: { meeting_date: 'asc' }, 
+          select: {
+            schedule_id: true,
+            meeting_date: true,
+            startAt: true,
+            endAt: true,
+            link_meet: true
+          }
+        },
       },
     });
   }
-
   async enrollClass(class_id: string, student_uid: string) {
     return this.prisma.$transaction(async (tx) => {
         const checkEnrollment = await tx.learning.findFirst({

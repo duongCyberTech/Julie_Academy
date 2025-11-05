@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import Role3 from "../../assets/images/role3.webp";  
+import React from "react";
+import Role3 from "../../assets/images/role3.webp";
 import {
   Container,
   Typography,
@@ -23,7 +23,6 @@ import {
   FormatQuoteOutlined,
   EmojiObjectsOutlined,
 } from "@mui/icons-material";
-
 
 const features = [
   {
@@ -63,7 +62,6 @@ const audienceItems = [
   },
 ];
 
-
 const MissionSection = React.memo(() => {
   const theme = useTheme();
   return (
@@ -99,13 +97,13 @@ const MissionSection = React.memo(() => {
 
 /**
  * SECTION 2: Tính năng
- * Dùng h2 cho tiêu đề mục, h3 cho tiêu đề của card
  */
 const FeaturesSection = React.memo(({ features }) => {
   const theme = useTheme();
   return (
     <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: "background.paper" }}>
       <Container maxWidth="lg">
+        {/* TỐI ƯU SEO: Tiêu đề mục dùng h2 */}
         <Typography
           variant="h4"
           component="h2"
@@ -124,9 +122,10 @@ const FeaturesSection = React.memo(({ features }) => {
           Vì sao chọn Julie Academy?
         </Typography>
 
+        {/* 4. TỐI ƯU MUI V6: Dùng Grid 'size' thay cho 'item' */}
         <Grid container spacing={4} sx={{ mt: 4 }} justifyContent="center">
           {features.map((feature) => (
-            <Grid item xs={12} sm={4} key={feature.title}>
+            <Grid size={{ xs: 12, sm: 4 }} key={feature.title}>
               <Paper
                 elevation={3}
                 sx={{
@@ -154,9 +153,10 @@ const FeaturesSection = React.memo(({ features }) => {
                 >
                   {React.cloneElement(feature.icon, { fontSize: "large" })}
                 </Avatar>
+                {/* TỐI ƯU SEO: Tiêu đề card dùng h3 (con của h2) */}
                 <Typography
                   variant="h6"
-                  component="h3" 
+                  component="h3"
                   fontWeight={600}
                   gutterBottom
                 >
@@ -176,18 +176,16 @@ const FeaturesSection = React.memo(({ features }) => {
 
 /**
  * SECTION 3: Đối tượng
- * Dùng h2 cho tiêu đề mục
  */
 const AudienceSection = React.memo(({ items }) => {
   const theme = useTheme();
   return (
     <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: "background.default" }}>
       <Container maxWidth="lg">
+        {/* TỐI ƯU MUI V6: Dùng Grid 'size' */}
         <Grid container spacing={5} alignItems="center">
           <Grid
-            item
-            xs={12}
-            md={6}
+            size={{ xs: 12, md: 6 }}
             sx={{
               display: "flex",
               justifyContent: "center",
@@ -196,21 +194,21 @@ const AudienceSection = React.memo(({ items }) => {
           >
             <Box
               component="img"
-              src={Role3} 
-              alt="Học viên và gia sư"
+              src={Role3}
+              alt="Học viên và gia sư tương tác trên Julie Academy" 
               sx={{
-                width: "50%",
-                maxWidth: 400,
-                height: "auto",
+                width: "100%", 
+                maxWidth: 250, 
+                height: "auto", 
                 borderRadius: 3,
                 boxShadow: theme.shadows[6],
               }}
             />
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography
               variant="h4"
-              component="h2" 
+              component="h2"
               fontWeight={600}
               gutterBottom
             >
@@ -245,7 +243,9 @@ const AudienceSection = React.memo(({ items }) => {
   );
 });
 
-
+/**
+ * SECTION 4: Đánh giá
+ */
 const TestimonialSection = React.memo(() => {
   const theme = useTheme();
   return (
@@ -253,7 +253,7 @@ const TestimonialSection = React.memo(() => {
       <Container maxWidth="md">
         <Typography
           variant="h4"
-          component="h2" 
+          component="h2"
           fontWeight={600}
           textAlign="center"
           gutterBottom
@@ -291,10 +291,6 @@ const TestimonialSection = React.memo(() => {
   );
 });
 
-/**
- * SECTION 5: Câu chuyện
- * Dùng h2 cho tiêu đề mục
- */
 const StorySection = React.memo(() => (
   <Box
     sx={{
@@ -315,12 +311,7 @@ const StorySection = React.memo(() => (
       >
         <EmojiObjectsOutlined />
       </Avatar>
-      <Typography
-        variant="h4"
-        component="h2" 
-        fontWeight={600}
-        gutterBottom
-      >
+      <Typography variant="h4" component="h2" fontWeight={600} gutterBottom>
         Câu chuyện của chúng tôi
       </Typography>
       <Typography variant="body1" component="p" color="text.secondary" sx={{ mb: 3 }}>
@@ -337,10 +328,6 @@ const StorySection = React.memo(() => (
   </Box>
 ));
 
-/**
- * SECTION 6: Kêu gọi hành động
- * Dùng h2 cho tiêu đề mục
- */
 const CtaSection = React.memo(() => (
   <Box
     sx={{
@@ -350,12 +337,7 @@ const CtaSection = React.memo(() => (
     }}
   >
     <Container maxWidth="md">
-      <Typography
-        variant="h4"
-        component="h2" 
-        fontWeight={600}
-        gutterBottom
-      >
+      <Typography variant="h4" component="h2" fontWeight={600} gutterBottom>
         Sẵn sàng để bắt đầu?
       </Typography>
       <Typography variant="h6" component="p" color="text.secondary" sx={{ mb: 3 }}>

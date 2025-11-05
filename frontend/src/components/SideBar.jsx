@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, memo } from "react";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import {
   Box,
@@ -22,44 +22,63 @@ import AccountBoxIcon from "@mui/icons-material/AccountBoxOutlined";
 import SettingsIcon from "@mui/icons-material/SettingsOutlined";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import Logo from "../assets/images/logo.png";
 import GroupOutlined from "@mui/icons-material/GroupOutlined";
 import AutoStoriesOutlined from "@mui/icons-material/AutoStoriesOutlined";
+import ArticleOutlined from "@mui/icons-material/ArticleOutlined"; 
+import ForumOutlined from "@mui/icons-material/ForumOutlined"; 
+import AssignmentTurnedInOutlined from "@mui/icons-material/AssignmentTurnedInOutlined"; 
+import HomeworkOutlined from "@mui/icons-material/HomeworkOutlined";
+
+import Logo from "../assets/images/logo.png";
 
 const COLLAPSED_WIDTH = 80;
 const FULL_WIDTH_DEFAULT_FOR_MOBILE = 260;
 
+
 // Cấu hình cho Tutor
 const tutorMenuItems = [
-  { label: "Trang tổng quan", to: "/tutor/dashboard", Icon: DashboardIcon },
+  { label: "Tổng quan", to: "/tutor/dashboard", Icon: DashboardIcon },
+  { label: "Lớp học của tôi", to: "/tutor/classes", Icon: GroupOutlined },
   { label: "Thư viện câu hỏi", to: "/tutor/question", Icon: LibraryIcon },
-  { label: "Hồ sơ", to: "/tutor/profile", Icon: AccountBoxIcon },
-  { label: "Cài đặt", to: "/tutor/settings", Icon: SettingsIcon },
+  { label: "Quản lý đề thi", to: "/tutor/exam", Icon: ArticleOutlined },
+  { label: "Giao bài", to: "/tutor/assignment", Icon: AssignmentTurnedInOutlined },
+  { label: "Diễn đàn", to: "/tutor/forum", Icon: ForumOutlined },
 ];
 
 // Cấu hình cho Admin
 const adminMenuItems = [
-  { label: "Bảng điều khiển", to: "/admin/dashboard", Icon: DashboardIcon },
+  { label: "Tổng quan", to: "/admin/dashboard", Icon: DashboardIcon },
   { label: "Quản lý người dùng", to: "/admin/users", Icon: GroupOutlined },
   {
-    label: "Quản lý tài nguyên",
+    label: "Quản lý học liệu",
     to: "/admin/resources",
     Icon: AutoStoriesOutlined,
   },
-  { label: "Cài đặt", to: "/admin/settings", Icon: SettingsIcon },
+  { label: "Cài đặt hệ thống", to: "/admin/settings", Icon: SettingsIcon },
 ];
 
-// cấu hình cho Student
+// Cấu hình cho Student
 const studentMenuItems = [
-  { label: "Bảng điều khiển", to: "/student/dashboard", Icon: DashboardIcon },
+  { label: "Góc học tập", to: "/student/dashboard", Icon: DashboardIcon },
   { label: "Lớp học của tôi", to: "/student/myclass", Icon: GroupOutlined },
+  { label: "Luyện tập", to: "/student/practice", Icon: LibraryIcon },
+  { label: "Bài tập", to: "/student/homework", Icon: HomeworkOutlined },
 ];
+
+// Cấu hình cho Parent
+const parentMenuItems = [
+  { label: "Tiến độ của con", to: "/parent/dashboard", Icon: DashboardIcon },
+  { label: "Hồ sơ của con", to: "/parent/profiles", Icon: AccountBoxIcon }, 
+];
+
 const menuConfigByRole = {
   tutor: tutorMenuItems,
   admin: adminMenuItems,
   student: studentMenuItems,
+  parent: parentMenuItems,
 };
 
+// --- STYLED COMPONENTS ---
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   flexShrink: 0,
   whiteSpace: "nowrap",
@@ -133,6 +152,7 @@ const CollapseButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
+// --- MAIN COMPONENT ---
 const Sidebar = ({ width, onToggleCollapse, isMobileOpen, onMobileClose }) => {
   const location = useLocation();
   const theme = useTheme();
@@ -169,7 +189,7 @@ const Sidebar = ({ width, onToggleCollapse, isMobileOpen, onMobileClose }) => {
         <Box
           component="img"
           src={Logo}
-          alt="Logo"
+          alt="Logo Julie Academy"
           sx={{ width: 40, height: 40, flexShrink: 0 }}
         />
         <Typography
@@ -272,4 +292,4 @@ const Sidebar = ({ width, onToggleCollapse, isMobileOpen, onMobileClose }) => {
   );
 };
 
-export default React.memo(Sidebar);
+export default memo(Sidebar);

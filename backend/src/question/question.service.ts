@@ -66,8 +66,6 @@ export class QuestionService {
     }
 
     async createCategory(data: CategoryDto[]) {
-        // console.log("Creating categories with data:", data);
-        // console.log("Data type:", typeof data);
         return this.prisma.$transaction(async (tx) => {
             for (const category of data) {
                 await this.upsertCategoryWithChildren(tx, category);
@@ -99,7 +97,7 @@ export class QuestionService {
 
     async getAllCategories(mode: string = 'tree', book_id?: string, page?: number | string, limit?: number | string, search?: string, grade?: number | string, subject?: string) {
         const pageNum = page ? parseInt(String(page), 10) : 1;
-        const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 200; // Default limit 20
+        const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 200;  
         const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
         const takeNum = limitNum > 0 ? limitNum : undefined;
 
@@ -328,14 +326,12 @@ export class QuestionService {
 
     async updateQuestion(ques_id: string, data: UpdateQuestionDto) {
         const { answers, categoryId, ...restData } = data;
-        // Explicitly type updateData for better safety
         const updateData: Prisma.QuestionsUpdateInput = { ...restData };
 
-        // Convert string values to enums if they exist in restData
         if (restData.level) {
              const levelKey = String(restData.level).toUpperCase() as keyof typeof DifficultyLevel;
              if (DifficultyLevel[levelKey]) { updateData.level = DifficultyLevel[levelKey]; }
-             else { console.warn(`Invalid level value during update: ${restData.level}`); delete updateData.level; } // Remove invalid value
+             else { console.warn(`Invalid level value during update: ${restData.level}`); delete updateData.level; } 
         }
          if (restData.type) {
              const typeKey = String(restData.type).toUpperCase() as keyof typeof QuestionType;
@@ -362,7 +358,7 @@ export class QuestionService {
             return await this.prisma.questions.update({
                 where: { ques_id },
                 data: updateData,
-                select: { ques_id: true, content: true, status: true, level: true, type: true } // Select updated fields
+                select: { ques_id: true, content: true, status: true, level: true, type: true } 
             });
         } catch (error) {
              console.error(`Error updating question ${ques_id}:`, error);
@@ -375,9 +371,7 @@ export class QuestionService {
         return this.prisma.$transaction(async (tx) => {
             const questionExists = await tx.questions.findUnique({ where: { ques_id } });
             if (!questionExists) { throw new NotFoundException(`Question with ID ${ques_id} not found`); }
-            // Consider relations: deleting questions might need checking exam_questions etc.
             await tx.answers.deleteMany({ where: { ques_id } });
-            // Add deletion for other related data if necessary (e.g., Question_of_exam)
             const deletedQuestion = await tx.questions.delete({ where: { ques_id } });
             return deletedQuestion;
         });
@@ -389,17 +383,17 @@ export class QuestionService {
         const existingAnswer = await this.prisma.answers.findUnique({ where: { ques_id_aid: { ques_id, aid: aidNum } } });
         if (!existingAnswer) { throw new NotFoundException(`Answer with AID ${aidNum} for Question ID ${ques_id} not found`); }
 
-        const { content, isCorrect, explaination } = answer; // Include explaination
+        const { content, isCorrect, explaination } = answer; 
         const updateData: Prisma.AnswersUpdateInput = {};
         if (content !== undefined) updateData.content = content;
         if (isCorrect !== undefined) updateData.is_correct = isCorrect;
-        if (explaination !== undefined) updateData.explaination = explaination; // Update explaination
+        if (explaination !== undefined) updateData.explaination = explaination;
 
         try {
             return await this.prisma.answers.update({
                 where: { ques_id_aid: { ques_id, aid: aidNum } },
                 data: updateData,
-                select: { aid: true, ques_id: true, content: true, is_correct: true, explaination: true } // Select updated fields
+                select: { aid: true, ques_id: true, content: true, is_correct: true, explaination: true } 
             });
         } catch (error) {
              console.error(`Error updating answer ${aidNum} for question ${ques_id}:`, error);

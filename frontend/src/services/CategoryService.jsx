@@ -39,14 +39,15 @@ export const getAllBooks = async (token) => {
   }
 };
 
+
 /**
  * Tạo một hoặc nhiều sách mới
  * Tương ứng với: POST /books
- * @param {Array<object>} bookData - Mảng các đối tượng sách (title, subject, grade, description?)
+ * (KHÔNG ĐỔI - Đã chính xác)
  */
+
 export const createBook = async (bookData, token) => {
   try {
-    // Controller nhận { "book": [...] }
     const response = await apiClient.post(
       "/books",
       { book: bookData },
@@ -63,17 +64,37 @@ export const createBook = async (bookData, token) => {
   }
 };
 
+
+// ======================================
+// === API LIÊN QUAN ĐẾN CATEGORY ===
+// ======================================
+
 /**
- * Cập nhật thông tin một sách
- * Tương ứng với: PATCH /books/{book_id} (Giả định endpoint)
- * @param {string} bookId - ID của sách cần cập nhật
- * @param {object} bookData - Dữ liệu cập nhật (Partial<BookDto>)
+ * Lấy danh sách categories (có filter/search/pagination)
+ * Tương ứng với: GET /categories
  */
-export const updateBook = async (bookId, bookData, token) => {
+export const getAllCategories = async (params = {}, token) => {
   try {
-    const response = await apiClient.patch(
-      `/books/${bookId}`, // Giả định endpoint là PATCH /books/:id
-      bookData,
+    const response = await apiClient.get("/categories", {
+      params,
+      ...getAuthHeaders(token),
+    });
+    return response.data; 
+  } catch (error) {
+    console.error(
+      `Error fetching categories:`,
+      error.response?.status,
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+export const updateBook = async (bookId, updatedData, token) => {
+  try {
+    const response = await apiClient.put(
+      `/books/${bookId}`,
+      updatedData,
       getAuthHeaders(token)
     );
     return response.data;
@@ -87,71 +108,16 @@ export const updateBook = async (bookId, bookData, token) => {
   }
 };
 
-// ======================================
-// === API LIÊN QUAN ĐẾN CATEGORY ===
-// ======================================
-
-/**
- * Lấy danh sách categories thuộc về một sách (có filter/search/pagination)
- * Tương ứng với: GET /categories/{book_id}
- */
-export const getAllCategories = async (bookId, params = {}, token) => {
+export const updateCategory = async (categoryId, updatedData, token) => {
   try {
-    const response = await apiClient.get(`/categories/${bookId}`, {
-      params,
-      ...getAuthHeaders(token),
-    });
-    return response.data; // Backend trả về { data: [], total: number }
-  } catch (error) {
-    console.error(
-      `Error fetching categories for book ${bookId}:`,
-      error.response?.status,
-      error.response?.data || error.message
-    );
-    throw error;
-  }
-};
-
-/**
- * Tạo một hoặc nhiều category mới cho một sách
- * Tương ứng với: POST /categories/{book_id}
- * @param {string} bookId
- * @param {Array<object>} categoryData - Mảng các đối tượng category (category_name, description?)
- */
-export const createCategory = async (bookId, categoryData, token) => {
-  try {
-    // Controller nhận { "categories": [...] }
-    const response = await apiClient.post(
-      `/categories/${bookId}`,
-      { categories: categoryData },
+    const response = await apiClient.put(
+      `/categories/${categoryId}`,
+      updatedData,
       getAuthHeaders(token)
     );
     return response.data;
   } catch (error) {
-    console.error(
-      `Error creating categories for book ${bookId}:`,
-      error.response?.status,
-      error.response?.data || error.message
-    );
-    throw error;
-  }
-};
 
-/**
- * Cập nhật thông tin một category
- * Tương ứng với: PATCH /categories/{category_id} (Giả định endpoint)
- * @param {string} categoryId - ID của category cần cập nhật
- * @param {object} categoryData - Dữ liệu cập nhật (Partial<CategoryDto>)
- */
-export const updateCategory = async (categoryId, categoryData, token) => {
-  try {
-    const response = await apiClient.patch(
-      `/categories/${categoryId}`, // Giả định endpoint là PATCH /categories/:id
-      categoryData,
-      getAuthHeaders(token)
-    );
-    return response.data;
-  } catch (error) {
     console.error(
       `Error updating category ${categoryId}:`,
       error.response?.status,
@@ -160,4 +126,26 @@ export const updateCategory = async (categoryId, categoryData, token) => {
     throw error;
   }
 };
-
+/**
+ * Tạo một hoặc nhiều category mới
+ * Tương ứng với: POST /categories
+ * @param {Array<object>} categoryData - Mảng các đối tượng category
+ * (Mỗi object PHẢI chứa book_id)
+ */
+export const createCategory = async (categoryData, token) => {
+  try {
+    const response = await apiClient.post(
+      "/categories",
+      categoryData, 
+      getAuthHeaders(token)
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error creating categories:`,
+      error.response?.status,
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
