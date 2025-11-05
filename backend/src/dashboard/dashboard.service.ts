@@ -27,19 +27,28 @@ export class DashboardService {
             },
             orderBy: { createAt: 'asc' },
         });
-        console.log('Users registered in last 7 days:', users);
-        const result = users.reduce((acc, user) => {
-            const dateKey = user.createAt.toISOString().split('T')[0];
-            if (!acc[dateKey]) {
-                acc[dateKey] = 0;
-            }
-            acc[dateKey]++;
-            return acc;
-        }, {});
-        return Object.entries(result).map(([date, value]) => (value));
+
+        stats = stats.map((item) => {
+            const userForDate = users.filter((user) => {
+                const dateKey = user.createAt.toISOString().split('T')[0];
+                return dateKey === item.date;
+            });
+            return {
+                date: item.date,
+                value: userForDate.length,
+            };
+        });
+
+        return stats.map(item => item.value);
     }
 
     async getClassCreatedStatsByWeek() {
+        var stats = Array(7).fill({ date: '', value: 0 }).map((item, index) => {
+            const date = new Date();
+            date.setDate(date.getDate() - (6 - index));
+            return { date: date.toISOString().split('T')[0], value: 0 };
+        });
+
         const nextOfToday = new Date();
         nextOfToday.setDate(nextOfToday.getDate() + 1);
         const _7daysAgo = new Date();
@@ -54,18 +63,27 @@ export class DashboardService {
             orderBy: { createdAt: 'asc' },
         });
         console.log('Classes created in last 7 days:', classes);
-        const result = classes.reduce((acc, cls) => {
-            const dateKey = cls.createdAt.toISOString().split('T')[0];
-            if (!acc[dateKey]) {
-                acc[dateKey] = 0;
-            }
-            acc[dateKey]++;
-            return acc;
-        }, {});
-        return Object.entries(result).map(([date, value]) => (value));
+        
+        stats = stats.map((item) => {
+            const classesForDate = classes.filter((cls) => {
+                const dateKey = cls.createdAt.toISOString().split('T')[0];
+                return dateKey === item.date;
+            });
+            return {
+                date: item.date,
+                value: classesForDate.length,
+            };
+        });
+        return stats.map(item => item.value);
     }
 
     async getNumberOfExamTakenByWeek() {
+        var stats = Array(7).fill({ date: '', value: 0 }).map((item, index) => {
+            const date = new Date();
+            date.setDate(date.getDate() - (6 - index));
+            return { date: date.toISOString().split('T')[0], value: 0 };
+        });
+
         const nextOfToday = new Date();
         nextOfToday.setDate(nextOfToday.getDate() + 1);
         const _7daysAgo = new Date();
@@ -79,16 +97,19 @@ export class DashboardService {
             },
             orderBy: { startAt: 'asc' },
         });
-        console.log('Exams taken in last 7 days:', examResults);
-        const result = examResults.reduce((acc, exam) => {
-            const dateKey = exam.startAt.toISOString().split('T')[0];
-            if (!acc[dateKey]) {
-                acc[dateKey] = 0;
-            }
-            acc[dateKey]++;
-            return acc;
-        }, {});
-        return Object.entries(result).map(([date, value]) => (value));
+
+        stats = stats.map((item) => {
+            const examsForDate = examResults.filter((exam) => {
+                const dateKey = exam.startAt.toISOString().split('T')[0];
+                return dateKey === item.date;
+            });
+            return {
+                date: item.date,
+                value: examsForDate.length,
+            };
+        });
+        
+        return stats.map(item => item.value);
     }
 
     async getNumberOfActiveClasses() {
