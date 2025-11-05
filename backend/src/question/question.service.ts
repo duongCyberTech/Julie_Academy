@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { 
+    BadRequestException, 
+    Injectable, 
+    InternalServerErrorException, 
+    NotFoundException 
+} from '@nestjs/common';
+import { ExceptionResponse } from 'src/exception/Exception.exception';
+import { ControlMode } from 'src/mode/control.mode';
 import { PrismaService } from '../prisma/prisma.service';
 import { BookDto, CategoryDto } from './dto/question.dto'; 
 import { CreateQuestionDto, CreateAnswerDto } from './dto/create-question.dto';
@@ -7,7 +14,7 @@ import { CategoriesOutputDto } from './dto/questionOutput.dto';
 import { DifficultyLevel, QuestionStatus, QuestionType, Prisma } from '@prisma/client';
 
 @Injectable()
-export class QuestionService {
+export class BookService {
     constructor(private prisma: PrismaService) {}
 
     async createBook(data: BookDto[]) {
@@ -37,6 +44,47 @@ export class QuestionService {
         });
     }
 
+    async getBookById(book_id: string) {
+        const book = await this.prisma.books.findUnique({
+            where: { book_id },
+        });
+        if (!book) {
+            throw new NotFoundException(`Book with ID ${book_id} not found`);
+        }
+        return book;
+    }
+
+    async updateBook(book_id: string, data: Partial<BookDto>) {
+        try {
+            return await this.prisma.books.update({
+                where: { book_id },
+                data,
+            });
+        } catch (error) {
+            return new ExceptionResponse().returnError(error, `book ${book_id}`);
+        }
+    }
+
+    async deleteBook(book_id: string, mode: ControlMode = ControlMode.SOFT) {
+        try {
+            if (mode == ControlMode.FORCE) {
+                return this.prisma.$transaction(async (tx) => {
+                    await tx.categories.deleteMany({ where: { book_id }});
+                    return await tx.books.delete({ where: { book_id } });
+                });
+            }
+            return await this.prisma.books.delete({
+                where: { book_id },
+            });
+        } catch (error) {
+            return new ExceptionResponse().returnError(error, `book ${book_id}`);
+        }
+    }
+}
+
+@Injectable()
+export class CategoryService {
+    constructor(private prisma: PrismaService) {}
     async upsertCategoryWithChildren(tx: Prisma.TransactionClient, categoryData: CategoryDto, parentId: string | null = null) {
         const existingCategory = await tx.categories.findUnique({
             where: {
@@ -68,12 +116,16 @@ export class QuestionService {
     async createCategory(data: CategoryDto[]) {
         // console.log("Creating categories with data:", data);
         // console.log("Data type:", typeof data);
-        return this.prisma.$transaction(async (tx) => {
-            for (const category of data) {
-                await this.upsertCategoryWithChildren(tx, category);
-            }
-            return data;
-        })
+        try {
+            return this.prisma.$transaction(async (tx) => {
+                for (const category of data) {
+                    await this.upsertCategoryWithChildren(tx, category);
+                }
+                return data;
+            });
+        } catch (error) {
+            return new ExceptionResponse().returnError(error, `categories`);
+        }
     }
 
     getRecursiveCategory(current: CategoriesOutputDto, all: CategoriesOutputDto[]) {
@@ -157,6 +209,38 @@ export class QuestionService {
         const total = await this.prisma.categories.count({ where });
         return { data: result, total };
     }
+
+    async updateCategory(category_id: string, data: Partial<CategoryDto>) {
+        try {
+            return await this.prisma.categories.update({
+                where: { category_id },
+                data,
+            });
+        } catch (error) {
+            return new ExceptionResponse().returnError(error, `categories`);
+        }
+    }
+
+    async deleteCategory(category_id: string, mode: ControlMode = ControlMode.SOFT) {
+        try {
+            if (mode == ControlMode.FORCE) {
+                return this.prisma.$transaction(async (tx) => {
+                    await tx.categories.deleteMany({ where: { parent_id: category_id }});
+                    return await tx.categories.delete({ where: { category_id } });
+                });
+            }
+            return await this.prisma.categories.delete({
+                where: { category_id },
+            });
+        } catch (error) {
+            return new ExceptionResponse().returnError(error, `categories`);
+        }
+    }
+}
+
+@Injectable()
+export class QuestionService {
+    constructor(private prisma: PrismaService) {}
 
     async createQuestion(data: CreateQuestionDto[], tutor_uid: string) {
         const tutorExists = await this.prisma.tutor.findUnique({ where: { uid: tutor_uid } });

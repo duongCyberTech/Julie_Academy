@@ -1,41 +1,75 @@
-import { Controller, Get, Post, Body, Query, Param, Put, UseGuards, Patch, Delete, ParseIntPipe } from '@nestjs/common'; 
+import { 
+    Controller, 
+    Get, Post, 
+    Body, Query, Param,
+    UseGuards, Patch, Delete, 
+    ParseIntPipe, BadRequestException 
+} from '@nestjs/common'; 
 import { AuthGuard } from '@nestjs/passport'; 
-import { QuestionService } from './question.service';
+import { ControlMode } from 'src/mode/control.mode';
+import { QuestionService, CategoryService, BookService } from './question.service';
 import { AnswerDto, CategoryDto, QuestionDto, BookDto } from './dto/question.dto';
 import { CreateAnswerDto, CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
+
 @Controller('books')
 export class BookController {
-    constructor(private readonly questionService: QuestionService){}
+    constructor(private readonly bookService: BookService){}
 
     @Post()
     createBook( @Body('book') book: BookDto[] ) {
-        return this.questionService.createBook(book);
+        return this.bookService.createBook(book);
     }
 
     @Get()
     getBook(){
-        return this.questionService.getAllBooks();
+        return this.bookService.getAllBooks();
+    }
+
+    @Patch(':book_id')
+    updateBook( @Param('book_id') book_id: string, @Body() dto: Partial<BookDto> ) {
+        return this.bookService.updateBook(book_id, dto);
+    }
+
+    @Delete(':book_id')
+    deleteBook( 
+        @Param('book_id') book_id: string,
+        @Query('mode') mode: ControlMode
+    ) {
+        return this.bookService.deleteBook(book_id, mode);
     }
 }
 
 @Controller('categories')
 export class CategoryController {
-  constructor(private readonly questionService: QuestionService) {}
+  constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
   createCategory(@Body() dto: CategoryDto[] ) {
-    return this.questionService.createCategory(dto);
+    return this.categoryService.createCategory(dto);
   }
 
   @Get() 
   getAllCategories( 
     @Query() query: any 
   ) {
-    return this.questionService.getAllCategories(
+    return this.categoryService.getAllCategories(
         query?.mode, query?.book_id, query?.page, 
         query?.limit, query?.search, query?.grade, query?.subject
     );
+  }
+
+  @Patch(':category_id')
+  updateCategory(@Param('category_id') category_id: string, @Body() dto: Partial<CategoryDto>) {
+    return this.categoryService.updateCategory(category_id, dto);
+  }
+
+  @Delete(':category_id')
+  deleteCategory( 
+    @Param('category_id') category_id: string,
+    @Query('mode') mode: ControlMode
+  ) {
+    return this.categoryService.deleteCategory(category_id, mode);
   }
 }
 
