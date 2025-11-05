@@ -10,6 +10,11 @@ export class DashboardService {
     ) {}
 
     async getRegisterStatsByWeek() {
+        var stats = Array(7).fill({ date: '', value: 0 }).map((item, index) => {
+            const date = new Date();
+            date.setDate(date.getDate() - (6 - index));
+            return { date: date.toISOString().split('T')[0], value: 0 };
+        });
         const nextOfToday = new Date();
         nextOfToday.setDate(nextOfToday.getDate() + 1);
         const _7daysAgo = new Date();
@@ -108,7 +113,7 @@ export class DashboardService {
                 value: examsForDate.length,
             };
         });
-        
+
         return stats.map(item => item.value);
     }
 

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {ClassDto, ScheduleDto} from './dto/class.dto';
 import { google } from 'googleapis';
 import { addDays, isBefore, setDate, setHours, setMinutes } from 'date-fns';
+import { ClassStatus } from '@prisma/client';
 require('dotenv').config()
 
 @Injectable()
@@ -22,7 +23,7 @@ export class ClassService {
                 subject: data.subject,
                 createdAt: new Date(),
                 updateAt: new Date(),
-                startAt: data.startAt,
+                startat: data.startAt || null,
                 tutor: { connect: { uid: tutor_uid } },
             },
         });
@@ -35,7 +36,7 @@ export class ClassService {
     const _limit: number = Number(limit) && Number(limit) > 0 ? Number(limit) : 10;
     const skip:number = (_page - 1) * _limit;
     const where: any = {};
-    if (status) where.status = status;
+    if (status) where.status = status as ClassStatus;
     if (startAt && endAt) {
         where.startAt = { gte: startAt, lte: endAt };
     } else if (startAt) {
@@ -74,82 +75,52 @@ export class ClassService {
     });
   }
 
-async getClassesByTutor(tutor_uid: string) {
-    const classes = await this.prisma.class.findMany({
+  async getClassesByTutor(tutor_uid: string) {
+    return this.prisma.class.findMany({
       where: { tutor_uid },
       orderBy: { createdAt: 'desc' },
-      select: {
-        class_id: true,
-        classname: true,
-        description: true,
-        status: true,
-        _count: {
-          select: { learning: true },
-        },
-      },
-    });
-    return classes.map(cls => ({
-      ...cls,
-      studentCount: cls._count.learning,
-      _count: undefined, 
-    }));
-  }
-
-  async getDetailedClass(class_id: string) {
-    return this.prisma.class.findUnique({
-      where: { class_id: class_id } ,
       select:{
         class_id: true,
         classname: true,
         description: true,
-        grade: true,
-        subject: true,
-        status: true,
-        nb_of_student: true,
-        duration_time: true,
-        createdAt: true,
-        startAt: true,
         tutor:{
-          select:{ 
-            user:{
-              select:{
-                uid: true,
-                fname: true,
-                lname: true,
-              }
+          select:{ user:{
+            select:{
+              uid: true,
+              fname: true,
+              lname: true,
+              username: true,
             }
           }
-        },
-        learning: {
-          select: {
-            student: {
-              select: {
-                uid: true,
-                user: {
-                  select: {
-                    fname: true,
-                    lname: true,
-                    email: true,
-                    avata_url: true 
-                  }
-                }
-              }
-            }
           }
-        },
-        schedule: {
-          orderBy: { meeting_date: 'asc' }, 
-          select: {
-            schedule_id: true,
-            meeting_date: true,
-            startAt: true,
-            endAt: true,
-            link_meet: true
-          }
-        },
+        }
       },
     });
   }
+
+  async getDetailedClass(class_id: string) {
+    return this.prisma.class.findMany({
+      where: { class_id: class_id } ,
+      orderBy: { createdAt: 'desc' },
+      select:{
+        class_id: true,
+        classname: true,
+        description: true,
+        tutor:{
+          select:{ user:{
+            select:{
+              uid: true,
+              fname: true,
+              lname: true,
+              username: true,
+            }
+          }
+          }
+        }
+      },
+    });
+  }
+
   async enrollClass(class_id: string, student_uid: string) {
     return this.prisma.$transaction(async (tx) => {
         const checkEnrollment = await tx.learning.findFirst({
@@ -349,7 +320,7 @@ export class ScheduleService {
         return acc;
       }, {})
     );
-    
+
     return grouped
   }
   
