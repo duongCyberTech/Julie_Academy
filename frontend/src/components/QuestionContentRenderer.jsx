@@ -6,9 +6,9 @@ import 'katex/dist/katex.min.css';
 const QuestionContentRenderer = ({ htmlContent }) => {
     const containerRef = useRef(null);
 
-    const cleanHtml = DOMPurify.sanitize(htmlContent || '', { // Thêm || '' để tránh lỗi nếu null
+    const cleanHtml = DOMPurify.sanitize(htmlContent || '', { 
         ADD_TAGS: ['span'], 
-        ADD_ATTR: ['class', 'data-value'] // Cho phép data-value
+        ADD_ATTR: ['class', 'data-value'] 
     });
 
     useEffect(() => {
@@ -16,7 +16,7 @@ const QuestionContentRenderer = ({ htmlContent }) => {
             const formulaElements = containerRef.current.querySelectorAll(".ql-formula");
             
             formulaElements.forEach(element => {
-                const latex = element.getAttribute('data-value') || element.textContent; // Ưu tiên data-value
+                const latex = element.getAttribute('data-value') || element.textContent; 
                 if (latex) {
                     try {
                         katex.render(latex, element, {
@@ -30,18 +30,16 @@ const QuestionContentRenderer = ({ htmlContent }) => {
                 }
             });
         }
-    }, [cleanHtml]); // Chạy lại khi nội dung thay đổi
+    }, [cleanHtml]); 
 
     return (
         <div 
             ref={containerRef} 
             dangerouslySetInnerHTML={{ __html: cleanHtml }} 
-            // Thêm style nếu cần (ví dụ: giới hạn chiều cao, font chữ)
             style={{ 
-                maxHeight: '3em', // Giới hạn chiều cao trong bảng
+                maxHeight: '3em', 
                 overflow: 'hidden', 
                 textOverflow: 'ellipsis',
-                // whiteSpace: 'nowrap' // Bỏ nowrap để xem nhiều dòng hơn nếu cần
             }}
         />
     );

@@ -18,6 +18,7 @@ import AboutPage from "../pages/public/AboutPage";
 import ContactPage from "../pages/public/ContactPage";
 import ResourcesManagement from "../pages/admin/ResourcesManagement";
 import StudentDashboard from "../pages/student/StudentDashboard";
+import ClassDetailPage from "../pages/tutor/ClassDetailPage";
 function AppRoutes(props) {
   return (
     <Routes>
@@ -43,7 +44,8 @@ function AppRoutes(props) {
           <Route path="dashboard" element={<TutorDashboard />} />
           <Route path="question" element={<QuestionPage />} />
           <Route path="new" element={<NewQuestion />} />
-          <Route path="class" element={<ClassPage />} />
+          <Route path="classes" element={<ClassPage />} />
+          <Route path="classes/:classId" element={<ClassDetailPage />} />
         </Route>
       </Route>
       {/* Nhóm các route cho Student */}

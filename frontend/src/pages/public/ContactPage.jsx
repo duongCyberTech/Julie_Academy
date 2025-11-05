@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import {
   Container,
   Typography,
@@ -21,7 +21,7 @@ import {
   SendOutlined,
 } from "@mui/icons-material";
 
-function ContactPage() {
+const ContactPage = memo(() => {
   const theme = useTheme();
 
   return (
@@ -30,11 +30,10 @@ function ContactPage() {
         elevation={3}
         sx={{ p: { xs: 3, md: 5 }, borderRadius: 3, overflow: "hidden" }}
       >
-        {/* === TIÊU ĐỀ === */}
         <Box textAlign="center" mb={4}>
           <Typography
             variant="h4"
-            component="h1"
+            component="h1" 
             gutterBottom
             fontWeight={600}
             color="primary.main"
@@ -46,18 +45,18 @@ function ContactPage() {
           </Typography>
         </Box>
 
-        <Grid container spacing={{ xs: 4, md: 16 }}>
-          <Grid item xs={13} md={5}>
+        {/* 4. TỐI ƯU MUI V6: Sử dụng Grid 'size' */}
+        <Grid container spacing={{ xs: 4, md: 8 }}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Typography
               variant="h5"
-              component="h2"
+              component="h2" 
               gutterBottom
               fontWeight={500}
             >
               Thông tin liên hệ
             </Typography>
             <List sx={{ width: "100%" }}>
-              {/* --- Email --- */}
               <ListItem disablePadding>
                 <ListItemIcon>
                   <EmailOutlined color="primary" />
@@ -75,7 +74,7 @@ function ContactPage() {
                   }
                 />
               </ListItem>
-              {/* --- Điện thoại --- */}
+              {/* --- Điện thoại (SEO: Dùng tel:) --- */}
               <ListItem disablePadding sx={{ mt: 2 }}>
                 <ListItemIcon>
                   <PhoneOutlined color="primary" />
@@ -104,6 +103,7 @@ function ContactPage() {
                 />
               </ListItem>
             </List>
+            
             {/* --- Google Maps --- */}
             <Box
               sx={{
@@ -116,22 +116,22 @@ function ContactPage() {
               }}
             >
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.493928172813!2d106.65651087501302!3d10.773021489374828!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752ec17709146b%3A0x43f20e1b138137ed!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBCw6FjaCBraG9hIC0gxJBIUUctVFAuSENN!5e0!3m2!1svi!2s!4v1698553018260!5m2!1svi!2s"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.494668100654!2d106.65843081533264!3d10.773374262180414!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752ec3c161a3fb%3A0xef77cd47a1cc691e!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBCw6FjaCBraG9hIC0gxJBIUUctVFAuSENN!5e0!3m2!1svi!2s!4v1678888888888!5m2!1svi!2s"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
                 allowFullScreen=""
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Bản đồ Google Maps của ĐH Bách Khoa TPHCM"
+                title="Bản đồ Google Maps của ĐH Bách Khoa TPHCM" 
               ></iframe>
             </Box>
           </Grid>
 
-          <Grid item xs={13} md={2}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Typography
               variant="h5"
-              component="h2"
+              component="h2" 
               gutterBottom
               fontWeight={500}
             >
@@ -146,7 +146,7 @@ function ContactPage() {
                 flexDirection: "column",
                 gap: 2.5,
                 mt: 0.5,
-                width: "180%", 
+                width: "100%", 
               }}
             >
               <TextField
@@ -180,7 +180,7 @@ function ContactPage() {
                 variant="contained"
                 size="large"
                 endIcon={<SendOutlined />}
-                sx={{ alignSelf: "flex-start", px: 4, py: 1.5 }}  
+                sx={{ alignSelf: "flex-start", px: 4, py: 1.5 }}
               >
                 Gửi tin nhắn
               </Button>
@@ -190,6 +190,6 @@ function ContactPage() {
       </Paper>
     </Container>
   );
-}
+});
 
 export default ContactPage;

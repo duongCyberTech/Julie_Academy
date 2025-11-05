@@ -28,7 +28,7 @@ import {
     Person,
 } from "@mui/icons-material";
 import AppSnackbar from '../../components/Snackbar'; 
-
+import logobk from '../../assets/images/logobk.png';
 const PageWrapper = styled(Box)(({ theme }) => ({
     minHeight: "100vh",
     display: "flex",
@@ -186,7 +186,7 @@ const RegisterPage = () => {
                         <Box sx={{ textAlign: "center", mb: 3 }}>
                             <Box
                                 component="img"
-                                src="https://hcmut.edu.vn/img/nhanDienThuongHieu/01_logobachkhoatoi.png"
+                                src={logobk}
                                 alt="Logo"
                                 sx={{
                                     width: 120,

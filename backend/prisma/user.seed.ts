@@ -118,7 +118,7 @@ async function main() {
   });
   console.log(`✅ Đã tạo/cập nhật Admin: ${adminUser.email}`);
 
-  const systemTutorEmail = 'system.tutor@julie.com';
+  const systemTutorEmail = 'tutor@gmail.com';
   const systemTutorData = {
     userData: {
       username: 'system.tutor',
@@ -192,7 +192,6 @@ async function main() {
   }
   console.log(`✅ -> Seeding 10 Tutors thông thường hoàn tất.`);
 
-  // --- 5. Seed 10 Students ---
   console.log(`🔄 Đang seeding 10 Students...`);
   const studentData = userNames.slice(10, 20).map((name) => {
     /* ... */
@@ -236,13 +235,10 @@ async function main() {
   }
   console.log(`✅ -> Seeding 10 Students hoàn tất.`);
 
-  // --- 6. Seed 10 Parents ---
   console.log(`🔄 Đang seeding 10 Parents...`);
   const parentData = userNames.slice(20, 30).map((name) => {
-    /* ... */
     const { username, email } = createCredentials(name, '.ph');
     const { fname, mname, lname } = splitName(name);
-    // Sửa lỗi: UserRole.parents không tồn tại, phải là UserRole.parent
     return {
       userData: {
         username,

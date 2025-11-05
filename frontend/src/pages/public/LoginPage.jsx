@@ -19,7 +19,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { Email, Lock, Visibility, VisibilityOff } from "@mui/icons-material";
 import AppSnackbar from '../../components/SnackBar'; 
-
+import logobk from '../../assets/images/logobk.png';
 
 const PageWrapper = styled(Box)(({ theme }) => ({
     minHeight: "100vh",
@@ -151,7 +151,7 @@ const LoginPage = () => {
                         <Box sx={{ textAlign: "center", mb: 3 }}>
                             <Box
                                 component="img"
-                                src="https://hcmut.edu.vn/img/nhanDienThuongHieu/01_logobachkhoatoi.png"
+                                src={logobk}
                                 alt="Logo"
                                 sx={{
                                     width: 120,

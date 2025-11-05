@@ -290,7 +290,6 @@ const UserManagement = () => {
             }
         } catch (err) {
             setAllUsers([]);
-            // Giữ lại setError cho lỗi tải dữ liệu cố định trên bảng
             setError(`Lỗi tải danh sách: ${err.response?.data?.message || err.message}`);
         } finally {
             setLoading(false);
