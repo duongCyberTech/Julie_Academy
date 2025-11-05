@@ -221,12 +221,22 @@ export class CategoryService {
         }
     }
 
+    async deleteWholeCategoryTree(tx: Prisma.TransactionClient, current_category_id: string) {
+        const childCategories = await tx.categories.findMany({ where: { parent_id: current_category_id }, select: { category_id: true } });
+        if (childCategories.length !== 0) {
+            for (const child of childCategories) {
+                await this.deleteWholeCategoryTree(tx, child.category_id);
+            }
+        }
+
+        return await tx.categories.delete({ where: { category_id: current_category_id } });
+    }
+
     async deleteCategory(category_id: string, mode: ControlMode = ControlMode.SOFT) {
         try {
             if (mode == ControlMode.FORCE) {
                 return this.prisma.$transaction(async (tx) => {
-                    await tx.categories.deleteMany({ where: { parent_id: category_id }});
-                    return await tx.categories.delete({ where: { category_id } });
+                    return await this.deleteWholeCategoryTree(tx, category_id);
                 });
             }
             return await this.prisma.categories.delete({
