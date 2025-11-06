@@ -24,6 +24,9 @@ import StudentProfilePage from "../pages/student/StudentProfilePage";
 import StudentMyClassPage from '../pages/student/StudentMyClassPage';
 import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
 import StudentThreadDetailPage from '../pages/student/StudentThreadDetailPage';
+import StudentPracticePage from '../pages/student/StudentPracticePage';
+import StudentPracticeSessionPage from "../pages/student/StudentPracticeSessionPage";
+import StudentAssignmentPage from "../pages/student/StudentAssignmentPage";
 function AppRoutes(props) {
   return (
     <Routes>
@@ -61,6 +64,9 @@ function AppRoutes(props) {
           <Route path="myclass" element={<StudentMyClassPage />} />
           <Route path="myclass/:classId" element={<StudentClassDetailPage />} />
           <Route path="myclass/:classId/:threadId" element={<StudentThreadDetailPage />} />  
+          <Route path="practice" element={<StudentPracticePage />} />
+          <Route path="practice/session/:sessionId" element={<StudentPracticeSessionPage />} />
+          <Route path="homework" element={<StudentAssignmentPage />} />
         </Route>
       </Route>
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}
