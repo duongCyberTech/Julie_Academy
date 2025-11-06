@@ -23,11 +23,11 @@ import StudentProfilePage from "../pages/student/StudentProfilePage";
 import StudentMyClassPage from '../pages/student/StudentMyClassPage';
 import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
 import StudentThreadDetailPage from '../pages/student/StudentThreadDetailPage';
-import StudentPracticePage from '../pages/student/StudentPracticePage';
-import StudentPracticeSessionPage from '../pages/student/StudentPracticeSessionPage';
-import StudentHomeworkPage from '../pages/student/StudentHomeworkPage';
-import StudentExamSessionPage from '../pages/student/StudentExamSessionPage';
-import StudentExamReviewPage from '../pages/student/StudentExamReviewPage'; 
+// import StudentPracticePage from '../pages/student/StudentPracticePage';
+// import StudentPracticeSessionPage from '../pages/student/StudentPracticeSessionPage';
+// import StudentHomeworkPage from '../pages/student/StudentHomeworkPage';
+// import StudentExamSessionPage from '../pages/student/StudentExamSessionPage';
+// import StudentExamReviewPage from '../pages/student/StudentExamReviewPage'; 
 
 function AppRoutes(props) {
   return (
@@ -67,11 +67,11 @@ function AppRoutes(props) {
           <Route path="myclass" element={<StudentMyClassPage />} />
           <Route path="myclass/:classId" element={<StudentClassDetailPage />} />
           <Route path="myclass/:classId/:threadId" element={<StudentThreadDetailPage />} />  
-          <Route path="practice" element={<StudentPracticePage />} />
+          {/* <Route path="practice" element={<StudentPracticePage />} />
           <Route path="practice/:categoryId/session" element={<StudentPracticeSessionPage />} />
           <Route path="homework" element={<StudentHomeworkPage />} /> 
           <Route path="exam/:sessionId" element={<StudentExamSessionPage />} /> 
-          <Route path="exam/review/:sessionId" element={<StudentExamReviewPage />} />
+          <Route path="exam/review/:sessionId" element={<StudentExamReviewPage />} /> */}
 
         </Route>
       </Route>
