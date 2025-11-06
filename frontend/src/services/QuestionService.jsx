@@ -20,9 +20,7 @@ const getAuthHeaders = (token) => {
 
 // --- QUESTION APIs ---
 
-// ==============================================================
-// === ĐÃ SỬA LỖI (FIXED) ===
-// ==============================================================
+
 /**
  * Tạo câu hỏi mới.
  * Tự động lấy tutorId từ token.
@@ -33,18 +31,15 @@ export const createQuestion = async (questionsData, token) => {
   try {
     // 1. Tự động giải mã token để lấy tutorId
     const decoded = jwtDecode(token);
-    const tutorId = decoded.sub; // Giả định 'sub' là tutorId
-
+    const tutorId = decoded.sub; 
     if (!tutorId) {
       console.error("Tutor ID is required (decoded from token).");
       throw new Error("Tutor ID is required.");
     }
-
-    // 2. Gửi request với tutorId trong URL (như endpoint yêu cầu)
     const response = await apiClient.post(
-      `/questions/create/${tutorId}`, // Endpoint vẫn cần tutorId
-      questionsData,                 // Dữ liệu payload
-      getAuthHeaders(token)          // Token để xác thực
+      `/questions/create/${tutorId}`, 
+      questionsData,                
+      getAuthHeaders(token)          
     );
     return response.data;
   } catch (error) {
@@ -96,7 +91,7 @@ export const getMyQuestions = async (params = {}, token) => {
       params,
       ...getAuthHeaders(token),
     });
-    return response.data; // Expect { data: [], total: number } or []
+    return response.data; 
   } catch (error) {
     console.error("Error fetching my questions:", error.response?.status, error.response?.data || error.message);
     throw error;

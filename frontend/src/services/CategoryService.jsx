@@ -92,7 +92,7 @@ export const getAllCategories = async (params = {}, token) => {
 
 export const updateBook = async (bookId, updatedData, token) => {
   try {
-    const response = await apiClient.put(
+    const response = await apiClient.patch(
       `/books/${bookId}`,
       updatedData,
       getAuthHeaders(token)
@@ -110,7 +110,7 @@ export const updateBook = async (bookId, updatedData, token) => {
 
 export const updateCategory = async (categoryId, updatedData, token) => {
   try {
-    const response = await apiClient.put(
+    const response = await apiClient.patch(
       `/categories/${categoryId}`,
       updatedData,
       getAuthHeaders(token)

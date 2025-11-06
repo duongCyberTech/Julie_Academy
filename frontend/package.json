@@ -15,6 +15,7 @@
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "@mui/x-date-pickers": "^8.16.0",
+    "@mui/x-tree-view": "^8.17.0",
     "axios": "^1.11.0",
     "dayjs": "^1.11.19",
     "dompurify": "^3.3.0",

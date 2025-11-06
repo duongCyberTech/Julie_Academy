@@ -8,10 +8,8 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
-// --- BỔ SUNG: Imports cho hiển thị ngày ---
-import dayjs from 'dayjs'; // Cần cài đặt: npm install dayjs
-import EventNoteIcon from '@mui/icons-material/EventNote'; // Icon ngày
-// --- (Kết thúc bổ sung) ---
+import dayjs from 'dayjs';
+import EventNoteIcon from '@mui/icons-material/EventNote'; 
 
 import GroupIcon from '@mui/icons-material/Group';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -24,10 +22,8 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
-// Giả sử StudentsTab nằm ở file './StudentTab'
 import StudentsTab from './StudentTab'; 
 
-// --- Styled Components ---
 const PageWrapper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
     backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.background.paper,
@@ -37,7 +33,6 @@ const PageWrapper = styled(Paper)(({ theme }) => ({
     minHeight: '80vh',
 }));
 
-// --- Component nội bộ (Chip Trạng thái) ---
 const StatusChip = memo(({ status }) => {
     const statusMap = {
         pending: { label: "Chờ mở lớp", color: "warning", icon: <PendingIcon /> },
@@ -50,9 +45,6 @@ const StatusChip = memo(({ status }) => {
 });
 
 
-// =======================
-// === Trang chính ====
-// =======================
 function ClassDetailPage() {
     const { classId } = useParams();
     const [token] = useState(() => localStorage.getItem('token'));
