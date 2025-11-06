@@ -83,11 +83,14 @@ export class ClassService {
         class_id: true,
         classname: true,
         description: true,
+        status: true,
+        nb_of_student: true,
         tutor:{
           select:{ user:{
             select:{
               uid: true,
               fname: true,
+              mname: true,
               lname: true,
               username: true,
             }
@@ -99,26 +102,54 @@ export class ClassService {
   }
 
   async getDetailedClass(class_id: string) {
-    return this.prisma.class.findMany({
-      where: { class_id: class_id } ,
-      orderBy: { createdAt: 'desc' },
-      select:{
+    const classDetails = await this.prisma.class.findUnique({
+      where: { class_id: class_id },
+      
+      select: {
         class_id: true,
         classname: true,
         description: true,
-        tutor:{
-          select:{ user:{
-            select:{
-              uid: true,
-              fname: true,
-              lname: true,
-              username: true,
+        grade: true,      
+        subject: true,    
+        status: true,      
+        nb_of_student: true,
+        createdAt: true,  
+        startat: true,   
+
+        tutor: { 
+          select: {
+            user: {
+              select: {
+                uid: true,
+                fname: true,
+                mname: true,
+                lname: true,
+                username: true,
+              }
             }
           }
+        },
+        learning: {
+          select: {
+            student: {
+              select: {
+                uid: true,
+                user: {
+                  select: {
+                    fname: true,
+                    mname: true,
+                    lname: true,
+                    email: true,
+                    avata_url: true 
+                  }
+                }
+              }
+            }
           }
         }
-      },
+      }
     });
+    return classDetails;
   }
 
   async enrollClass(class_id: string, student_uid: string) {

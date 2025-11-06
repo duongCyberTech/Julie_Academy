@@ -129,12 +129,6 @@ const RenderClassGrid = memo(({ classes, onNavigate, onDelete }) => {
                                 {classItem.description || "Lớp học chưa có mô tả."}
                             </Typography>
                             
-                            <Stack spacing={1} mt="auto">
-                                <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <GroupIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
-                                    {classItem.studentCount} học viên
-                                </Typography>
-                            </Stack>
                         </CardContent>
                         
                         <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, pt: 0, backgroundColor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>

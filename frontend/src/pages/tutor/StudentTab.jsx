@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { enrollStudentToClass } from '../../services/ClassService'; // Import API
+import { enrollStudentToClass } from '../../services/ClassService';
 
 /**
  * Nội dung cho Tab "Thành viên"
@@ -17,41 +17,37 @@ import { enrollStudentToClass } from '../../services/ClassService'; // Import AP
  */
 const StudentsTab = ({ classId, studentsData, onRefresh }) => {
     const [token] = useState(() => localStorage.getItem('token'));
-    const [studentId, setStudentId] = useState(''); // State cho ô input
+    const [studentId, setStudentId] = useState(''); 
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
     const handleEnroll = async () => {
         if (!studentId) {
-            setError('Vui lòng nhập ID hoặc Email của học sinh.');
+            setError('Vui lòng nhập ID của học sinh.');
             return;
         }
         setError('');
         setSuccess('');
         try {
-            // (Lưu ý: Backend của bạn dùng studentId (UUID), 
-            // bạn có thể cần thêm API 'findStudentByEmail' nếu muốn nhập Email)
             await enrollStudentToClass(classId, studentId, token);
             setSuccess(`Đã thêm học sinh ${studentId} vào lớp.`);
-            setStudentId(''); // Reset ô input
-            onRefresh(); // Tải lại toàn bộ chi tiết lớp
+            setStudentId(''); 
+            onRefresh();
         } catch (err) {
             setError(err.response?.data?.message || 'Thêm học sinh thất bại.');
         }
     };
 
-    // Rút gọn dữ liệu học sinh (từ { student: {...} } thành {...})
     const studentList = (studentsData || []).map(item => item.student);
 
     return (
         <Box>
-            {/* 1. Form Thêm Học Sinh */}
             <Typography variant="h6" component="h3" fontWeight={600} mb={2}>
                 Thêm thành viên
             </Typography>
             <Stack direction="row" spacing={2} mb={2}>
                 <TextField
-                    label="Nhập ID (hoặc Email) học sinh"
+                    label="Nhập ID học sinh"
                     variant="outlined"
                     size="small"
                     value={studentId}
@@ -88,14 +84,13 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
                                 <TableCell>
                                     <Stack direction="row" spacing={2} alignItems="center">
                                         <Avatar 
-                                            // API của bạn trả về { user: { avata_url: ... } }
                                             src={student.user.avata_url || ''} 
                                             sx={{ width: 32, height: 32 }}
                                         >
                                             {student.user.fname.charAt(0)}
                                         </Avatar>
                                         <Typography variant="body2" fontWeight={500}>
-                                            {student.user.fname} {student.user.lname}
+                                            {student.user.lname} {student.user.mname} {student.user.fname}
                                         </Typography>
                                     </Stack>
                                 </TableCell>
