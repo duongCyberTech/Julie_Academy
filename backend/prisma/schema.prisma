@@ -38,6 +38,7 @@ model Tutor {
   folder       Folders[]
   questions    Questions[]
   resources    Resources[]
+  lesson_plan  Lesson_Plan[]
   user         User        @relation(fields: [uid], references: [uid])
 }
 
@@ -57,6 +58,8 @@ model Student {
   learning   Learning[]
   user       User         @relation(fields: [uid], references: [uid])
   family     is_family[]
+  review     Review[]
+  badges     Claim[]
 }
 
 model is_family {
@@ -78,6 +81,32 @@ model Feedback {
   tutor       Tutor    @relation(fields: [tutor_uid], references: [uid])
 }
 
+model Review {
+  student_id   String
+  class_id     String
+  @@id([student_id, class_id])
+  createAt     DateTime @default(now())
+  content      String
+  rating       Decimal  @db.Decimal(3,1)
+  student      Student  @relation(fields: [student_id], references: [uid])
+  class        Class    @relation(fields: [class_id], references: [class_id])  
+}
+
+model Badge {
+  badge_id    String    @id @default(uuid())
+  title       String    
+  description String
+  badge_claimed Claim[]
+}
+
+model Claim {
+  student_id  String
+  badge_id    String
+  @@id([student_id, badge_id])
+  student     Student    @relation(fields: [student_id], references: [uid])
+  badge       Badge      @relation(fields: [badge_id], references: [badge_id])
+}
+
 model Class {
   class_id      String               @id @default(uuid())
   classname     String
@@ -90,6 +119,8 @@ model Class {
   grade         Int
   subject       String
   tutor_uid     String
+  plan_id       String?       
+  plan          Lesson_Plan?         @relation(fields: [plan_id], references: [plan_id])  
   startat       DateTime?            @default(now()) @db.Timestamp(6)
   tutor         Tutor                @relation(fields: [tutor_uid], references: [uid])
   exam_open_in  Exam_open_in[]
@@ -97,6 +128,7 @@ model Class {
   learning      Learning[]
   resources     Resources_of_class[]
   schedule      Schedule[]
+  reviews       Review[]
 }
 
 model Schedule {
@@ -167,11 +199,13 @@ model Resources {
   version              Int
   num_pages            Int
   tutor_id             String
+  cate_id              String?
   folders              Resource_in_folder[]
   Resource_of_Answer   Resource_of_Answer[]
   Resource_of_Comment  Resource_of_Comment[]
   Resource_of_Question Resource_of_Question[]
   Resource_of_Thread   Resource_of_Thread[]
+  category             Categories?             @relation(fields: [cate_id], references: [category_id])
   tutor                Tutor                  @relation(fields: [tutor_id], references: [uid])
   classes              Resources_of_class[]
 }
@@ -191,6 +225,8 @@ model Folders {
   createdAt   DateTime             @default(now())
   updateAt    DateTime             @default(now())
   tutor_id    String
+  cate_id     String?
+  category    Categories?          @relation(fields: [cate_id], references: [category_id])
   classes     Folder_of_class[]
   tutor       Tutor                @relation(fields: [tutor_id], references: [uid])
   resources   Resource_in_folder[]
@@ -220,28 +256,39 @@ model Categories {
   description      String?
   createAt         DateTime     @default(now())
   updateAt         DateTime     @default(now())
-  book_id          String
   parent_id        String?
-  Books            Books        @relation(fields: [book_id], references: [book_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_categories_books")
+  structure        Structure[]  
   Categories       Categories?  @relation("CategoriesToCategories", fields: [parent_id], references: [category_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recursive_cate")
   other_Categories Categories[] @relation("CategoriesToCategories")
   questions        Questions[]
+  resources        Resources[] 
+  folders          Folders[]
+}
+
+model Structure {
+  plan_id         String
+  cate_id         String
+  @@id([plan_id, cate_id])
+  Category        Categories     @relation(fields: [cate_id], references: [category_id])
+  Plan            Lesson_Plan    @relation(fields: [plan_id], references: [plan_id])
 }
 
 model Questions {
   ques_id              String                 @id @default(uuid())
+  title                String 
   content              String
   explaination         String?
   type                 QuestionType           @default(single_choice)
   level                DifficultyLevel        @default(easy)
   createAt             DateTime               @default(now())
   updateAt             DateTime               @default(now())
-  category_id          String
+  category_id          String?
   tutor_id             String
-  status               QuestionStatus?        @default(private)
+  accessMode           QuestionAccess         @default(private)
+  status               QuestionStatus         @default(draft)
   answers              Answers[]
   exam_questions       Question_of_exam[]
-  category             Categories             @relation(fields: [category_id], references: [category_id])
+  category             Categories?             @relation(fields: [category_id], references: [category_id])
   tutor                Tutor                  @relation(fields: [tutor_id], references: [uid])
   Resource_of_Question Resource_of_Question[]
 }
@@ -278,7 +325,7 @@ model Exams {
 model Question_of_exam {
   exam_id  String
   ques_id  String
-  score    Decimal   @default(0.00) @db.Decimal(2, 0)
+  score    Decimal   @default(0.00) @db.Decimal(4, 2)
   exam     Exams     @relation(fields: [exam_id], references: [exam_id])
   question Questions @relation(fields: [ques_id], references: [ques_id])
 
@@ -293,6 +340,7 @@ model Exam_session {
   exam_type          ExamType       @default(practice)
   limit_taken        Int            @default(1)
   total_student_done Int            @default(0)
+  ratio              Int?
   exam_open_in       Exam_open_in[]
   exam               Exams          @relation(fields: [exam_id], references: [exam_id])
 
@@ -332,13 +380,17 @@ model Answer_for_exam {
   @@id([et_id, ques_id, aid])
 }
 
-model Books {
-  book_id     String       @id @default(uuid()) @db.VarChar(255)
+model Lesson_Plan {
+  plan_id     String       @id @default(uuid()) @db.VarChar(255)
   title       String       @unique @db.VarChar(255)
   subject     String       @db.VarChar(20)
   grade       Int          @db.SmallInt
   description String?
-  Categories  Categories[]
+  type        PlanType     @default(custom)
+  tutor_id    String?
+  classes     Class[]
+  tutor       Tutor?       @relation(fields: [tutor_id], references: [uid])
+  structure   Structure[] 
 }
 
 model Resource_of_Answer {
@@ -413,12 +465,22 @@ enum DifficultyLevel {
 }
 
 enum QuestionStatus {
-  public
+  draft
+  ready
+}
+
+enum QuestionAccess {
   private
+  public
 }
 
 enum ExamType {
   practice
   test
   final
+}
+
+enum PlanType {
+  book
+  custom
 }

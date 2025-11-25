@@ -1,16 +1,18 @@
 import { isString } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
+import { PlanType } from "@prisma/client";
 
 enum QuestionStatus {
     PUBLIC = 'public',
     PRIVATE = 'private'
 }
 
-export class BookDto {
+export class LessonPlanDto {
     title: string;
     subject: string;
     grade: number;
     description?: string
+    type?: PlanType
 }
 
 export class CategoryDto {
@@ -24,11 +26,12 @@ export class CategoryDto {
     updateAt: Date;
     @ApiProperty()
     children?: CategoryDto[];
-    @ApiProperty()
-    book_id?: string;
+    plan_id: string
 }
 
 export class QuestionDto {
+    @ApiProperty()
+    title: string;
     @ApiProperty()
     content: string;
     @ApiProperty()
