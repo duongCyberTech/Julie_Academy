@@ -15,8 +15,12 @@ import { AuthGuard } from '@nestjs/passport';
 import { UserService } from './user.service';
 import { UserDto } from './dto/user.dto';
 import { AccountStatus } from '@prisma/client';
+import { Roles } from 'src/auth/decorator/roles.decorator';
+import { RolesGuard } from 'src/auth/guard/roles.guard';
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 
 @Controller('users')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -25,6 +29,7 @@ export class UserController {
    * Lấy danh sách user (đã hỗ trợ phân trang và filter)
    */
   @Get()
+  @Roles('admin')
   getAllUsers(
     @Query('role') role: string,
     @Query('status') status: string,
