@@ -19,6 +19,10 @@ import ContactPage from "../pages/public/ContactPage";
 import ResourcesManagement from "../pages/admin/ResourcesManagement";
 import StudentDashboard from "../pages/student/StudentDashboard";
 import ClassDetailPage from "../pages/tutor/ClassDetailPage";
+import ExamPage from "../pages/tutor/ExamPage";
+import ExamDetailPage from "../pages/tutor/ExamDetailPage";
+import AssignmentPage from "../pages/tutor/AssignmentPage";
+import SystemSetting from "../pages/admin/SystemSetting.jsx";
 function AppRoutes(props) {
   return (
     <Routes>
@@ -36,6 +40,7 @@ function AppRoutes(props) {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="resources" element={<ResourcesManagement />} />
+          <Route path="settings" element={<SystemSetting />} />
         </Route>
       </Route>
       {/* Nhóm các route cho Tutor */}
@@ -46,6 +51,10 @@ function AppRoutes(props) {
           <Route path="new" element={<NewQuestion />} />
           <Route path="classes" element={<ClassPage />} />
           <Route path="classes/:classId" element={<ClassDetailPage />} />
+          <Route path="exam" element={<ExamPage />} />
+          <Route path="exam/:examId" element={<ExamDetailPage />} />
+          <Route path="assignment" element={<AssignmentPage />} />
+
         </Route>
       </Route>
       {/* Nhóm các route cho Student */}

@@ -46,11 +46,6 @@ const FormPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: alpha(theme.palette.background.paper, 0.95),
     border: `1px solid ${theme.palette.divider}`,
     boxShadow: theme.shadows[5],
-    transition: "transform 0.3s ease, box-shadow 0.3s ease",
-    "&:hover": {
-        transform: "translateY(-4px)",
-        boxShadow: theme.shadows[8],
-    },
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({

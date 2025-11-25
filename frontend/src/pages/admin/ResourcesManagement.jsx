@@ -10,6 +10,11 @@ import {
     Search as SearchIcon, Add as AddIcon, Close as CloseIcon,
     Edit as EditIcon, Delete as DeleteIcon, RemoveCircleOutline as RemoveCircleOutlineIcon
 } from "@mui/icons-material";
+// SỬA: Import các component cho TreeView từ QuestionPage
+import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+
 import {
     getAllBooks, createBook, updateBook, 
     getAllCategories, createCategory, updateCategory, 
@@ -19,6 +24,8 @@ import {
     getQuestionById, createQuestion, updateQuestion, deleteQuestion,
 } from "../../services/QuestionService";
 
+// (Các hàm helper: useDebounce, truncateText, StatusChip, Modals... giữ nguyên)
+// --- START: Helpers & Modals ---
 function useDebounce(value, delay) {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -30,7 +37,7 @@ function useDebounce(value, delay) {
 const truncateText = (text = '', maxLength) => (text.length > maxLength ? `${text.substring(0, maxLength)}...` : text);
 
 const bookHeadCells = [ { id: "title", label: "Tiêu đề sách", minWidth: 200 }, { id: "subject", label: "Môn học", minWidth: 100 }, { id: "grade", label: "Khối", minWidth: 80, align: 'center' }, { id: "actions", label: "Hành động", minWidth: 100, align: 'right'} ];
-const categoryHeadCells = [ { id: "category_name", label: "Tên Danh mục", minWidth: 250 }, { id: "description", label: "Mô tả", minWidth: 150 }, { id: "actions", label: "Hành động", minWidth: 100, align: 'right'} ];
+// (Đã xóa categoryHeadCells vì dùng TreeView)
 const questionHeadCells = [ { id: "content", label: "Nội dung", minWidth: 300 }, { id: "type", label: "Loại", minWidth: 100 }, { id: "level", label: "Độ khó", minWidth: 80 }, { id: "status", label: "Trạng thái", minWidth: 100 }, { id: "actions", label: "Hành động", minWidth: 100, align: 'right'} ];
 
 const StatusChip = ({ status }) => {
@@ -56,7 +63,6 @@ const CategoryFormModal = ({ open, onClose, onSubmit, categoryToEdit }) => {
     return ( <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth> <DialogTitle>{isEditing ? "Sửa Danh mục" : "Tạo Danh mục mới"}</DialogTitle> <form onSubmit={handleSubmit}> <DialogContent> <Stack spacing={2} sx={{ mt: 1 }}> <TextField name="category_name" label="Tên danh mục" value={formData.category_name} onChange={handleChange} fullWidth required /> <TextField name="description" label="Mô tả (Tùy chọn)" value={formData.description} onChange={handleChange} fullWidth multiline rows={3} /> </Stack> </DialogContent> <DialogActions sx={{ p: 3, pt: 0 }}> <Button onClick={onClose} color="inherit">Hủy</Button> <Button type="submit" variant="contained">{isEditing ? "Lưu" : "Tạo"}</Button> </DialogActions> </form> </Dialog> );
 };
 
-// --- Question Form Modal (Hoàn thiện hơn) ---
 const QuestionFormModal = ({ open, onClose, onSubmit, questionToEdit, categoryId }) => {
     const isEditing = !!questionToEdit;
     const [formData, setFormData] = useState({ content: '', explaination: '', type: 'single_choice', level: 'easy', status: 'private' });
@@ -137,7 +143,6 @@ const QuestionFormModal = ({ open, onClose, onSubmit, questionToEdit, categoryId
     );
 };
 
-// --- Confirmation Dialog ---
 const ConfirmationDialog = ({ open, onClose, onConfirm, title, message }) => (
     <Dialog open={open} onClose={onClose} maxWidth="xs">
         <DialogTitle>{title || "Xác nhận"}</DialogTitle>
@@ -145,6 +150,20 @@ const ConfirmationDialog = ({ open, onClose, onConfirm, title, message }) => (
         <DialogActions> <Button onClick={onClose}>Hủy</Button> <Button onClick={onConfirm} color="error">Xác nhận</Button> </DialogActions>
     </Dialog>
 );
+
+// SỬA: Thêm hàm helper từ QuestionPage
+const transformCategoriesForTree = (nodes) => {
+    return nodes.map(node => ({
+        id: node.category_id,
+        label: node.category_name,
+        // Dùng lại logic để đảm bảo children luôn là mảng
+        children: Array.isArray(node.children) 
+            ? transformCategoriesForTree(node.children) 
+            : [],
+    }));
+};
+// --- END: Helpers & Modals ---
+
 
 // --- Component Chính ---
 const ResourcesManagement = () => {
@@ -158,35 +177,93 @@ const ResourcesManagement = () => {
     const [categories, setCategories] = useState([]); const [totalCategories, setTotalCategories] = useState(0); const [loadingCategories, setLoadingCategories] = useState(false); const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false); const [editingCategory, setEditingCategory] = useState(null); const [selectedCategory, setSelectedCategory] = useState(null);
     const [questions, setQuestions] = useState([]); const [totalQuestions, setTotalQuestions] = useState(0); const [loadingQuestions, setLoadingQuestions] = useState(false); const [questionPage, setQuestionPage] = useState(0); const [rowsPerQuestionPage, setRowsPerQuestionPage] = useState(5); const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false); const [editingQuestion, setEditingQuestion] = useState(null);
     const [itemToDelete, setItemToDelete] = useState(null); const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    
+    // SỬA: Thêm data cho TreeView
+    const categoryTreeData = useMemo(() => transformCategoriesForTree(categories), [categories]);
 
     // --- Fetch Functions ---
     const fetchBooks = useCallback(async () => { setLoadingBooks(true); setError(null); const token = getToken(); if (!token) { setError("Chưa đăng nhập."); setLoadingBooks(false); return; } try { const res = await getAllBooks(token); setBooks(Array.isArray(res) ? res : []); } catch (err) { setError(`Lỗi tải sách: ${err.message}`); setBooks([]); } finally { setLoadingBooks(false); } }, [getToken]);
-    const fetchCategories = useCallback(async () => { setCategories([]); setSelectedCategory(null); setQuestions([]); setTotalCategories(0); setTotalQuestions(0); if (!selectedBook?.book_id) return; setLoadingCategories(true); setError(null); const token = getToken(); if (!token) { setError("Chưa đăng nhập."); setLoadingCategories(false); return; } try { const res = await getAllCategories(selectedBook.book_id, {}, token); if (res && Array.isArray(res.data)) { setCategories(res.data); setTotalCategories(res.total || res.data.length); } else { setCategories([]); setTotalCategories(0); } } catch (err) { setError(`Lỗi tải danh mục: ${err.message}`); setCategories([]); setTotalCategories(0); } finally { setLoadingCategories(false); } }, [selectedBook, getToken]);
+    
+    // SỬA: fetchCategories
+    const fetchCategories = useCallback(async () => { 
+        setCategories([]); 
+        setSelectedCategory(null); 
+        setQuestions([]); 
+        setTotalCategories(0); 
+        setTotalQuestions(0); 
+        if (!selectedBook?.book_id) return; 
+        
+        setLoadingCategories(true); 
+        setError(null); 
+        const token = getToken(); 
+        if (!token) { setError("Chưa đăng nhập."); setLoadingCategories(false); return; } 
+        
+        try { 
+            // Sửa: Lấy data ở chế độ "tree"
+            const res = await getAllCategories({ book_id: selectedBook.book_id, mode: "tree" }, token); 
+            if (res && Array.isArray(res.data)) { 
+                setCategories(res.data); // Dữ liệu đã là cấu trúc cây
+                setTotalCategories(res.total || res.data.length); // Total có thể không chính xác cho tree
+            } else { 
+                setCategories([]); 
+                setTotalCategories(0); 
+            } 
+        } catch (err) { 
+            setError(`Lỗi tải danh mục: ${err.message}`); 
+            setCategories([]); 
+            setTotalCategories(0); 
+        } finally { 
+            setLoadingCategories(false); 
+        } 
+    }, [selectedBook, getToken]);
+
     const fetchQuestions = useCallback(async () => { setQuestions([]); setTotalQuestions(0); if (!selectedCategory?.category_id) return; setLoadingQuestions(true); setError(null); const token = getToken(); if (!token) { setError("Chưa đăng nhập."); setLoadingQuestions(false); return; } try { const params = { page: questionPage + 1, limit: rowsPerQuestionPage, category_id: selectedCategory.category_id }; const res = await getAllQuestions(params, token); if (res && Array.isArray(res.data)) { setQuestions(res.data); setTotalQuestions(res.total || 0); } else { setQuestions([]); setTotalQuestions(0); } } catch (err) { setError(`Lỗi tải câu hỏi: ${err.message}`); setQuestions([]); setTotalQuestions(0); } finally { setLoadingQuestions(false); } }, [selectedCategory, getToken, questionPage, rowsPerQuestionPage]);
 
     // --- Effects ---
     useEffect(() => { fetchBooks(); }, [fetchBooks]);
-    useEffect(() => { fetchCategories(); }, [fetchCategories]); // Tự gọi lại khi selectedBook đổi
-    useEffect(() => { fetchQuestions(); }, [fetchQuestions]); // Tự gọi lại khi selectedCategory, page, limit đổi
+    useEffect(() => { fetchCategories(); }, [fetchCategories]);
+    useEffect(() => { fetchQuestions(); }, [fetchQuestions]);
 
     // --- Lọc / Phân trang ---
     const filteredBooks = useMemo(() => { let r=[...books]; if(debouncedBookSearch){ const l=debouncedBookSearch.toLowerCase(); r=r.filter(b=>(b.title?.toLowerCase()||"").includes(l)||(b.subject?.toLowerCase()||"").includes(l)); } r.sort((a,b)=>(a.title||"").localeCompare(b.title||"")); return r; }, [books, debouncedBookSearch]);
     const paginatedBooks = useMemo(() => (filteredBooks || []).slice(bookPage * rowsPerBookPage, bookPage * rowsPerBookPage + rowsPerBookPage), [filteredBooks, bookPage, rowsPerBookPage]);
-    // Không cần paginatedQuestions
 
     // --- Handlers ---
     const handleSelectBook = useCallback((book) => { setSelectedBook(prev => (prev?.book_id === book.book_id ? null : book)); setSelectedCategory(null); setQuestions([]); setQuestionPage(0); }, []);
-    const handleSelectCategory = useCallback((category) => { setSelectedCategory(prev => (prev?.category_id === category.category_id ? null : category)); setQuestionPage(0); }, []);
+    
+    // SỬA: handleSelectCategory cho TreeView
+    const handleCategoryTreeSelect = useCallback((event, itemId) => {
+         if (!itemId) {
+             setSelectedCategory(null);
+             setQuestionPage(0);
+             return;
+         }
+         
+         let foundCat = null;
+         const findNode = (nodes, id) => {
+             for (const node of nodes) {
+                 if (node.category_id === id) return node;
+                 if (Array.isArray(node.children)) {
+                     const found = findNode(node.children, id);
+                     if (found) return found;
+                 }
+             }
+             return null;
+         };
+         foundCat = findNode(categories, itemId); // `categories` là cây gốc
+         
+         setSelectedCategory(prev => (prev?.category_id === itemId ? null : foundCat));
+         setQuestionPage(0);
+    }, [categories]);
+    
     const handleOpenModal = useCallback((setter, itemToEdit = null, editSetter) => () => { if(editSetter) editSetter(itemToEdit); setter(true); }, []);
     const handleCloseModal = useCallback((setter, editSetter) => () => { if(editSetter) editSetter(null); setter(false); }, []);
     const handleOpenConfirm = useCallback((type, id, name) => { setItemToDelete({ type, id, name }); setIsConfirmOpen(true); }, []);
     const handleCloseConfirm = useCallback(() => { setItemToDelete(null); setIsConfirmOpen(false); }, []);
 
-    // --- Submit Handlers ---
+    // --- Submit Handlers (Giữ nguyên) ---
     const handleSubmitBook = useCallback(async (formData, id) => { const t = getToken(); if (!t) return; setError(null); try { const m = id ? "Sửa sách thành công!" : "Tạo sách thành công!"; if (id) { await updateBook(id, formData, t); } else { await createBook([formData], t); } setToast({ open: true, message: m, severity: "success" }); setIsBookModalOpen(false); setEditingBook(null); fetchBooks(); } catch (e) { const msg = e.response?.data?.message || `Lỗi ${id ? 'sửa' : 'tạo'} sách.`; setError(msg); setToast({ open: true, message: msg, severity: "error" }); } }, [getToken, fetchBooks]);
     const handleSubmitCategory = useCallback(async (formData, id) => { if (!selectedBook?.book_id) return; const t = getToken(); if (!t) return; setError(null); try { const m = id ? "Sửa danh mục thành công!" : "Tạo danh mục thành công!"; if(id) { await updateCategory(id, formData, t); } else { await createCategory(selectedBook.book_id, [formData], t); } setToast({ open: true, message: m, severity: "success" }); setIsCategoryModalOpen(false); setEditingCategory(null); fetchCategories(); } catch (e) { const msg = e.response?.data?.message || `Lỗi ${id ? 'sửa' : 'tạo'} danh mục.`; setError(msg); setToast({ open: true, message: msg, severity: "error" }); } }, [selectedBook, getToken, fetchCategories]);
-    
-    // --- ĐÃ SỬA ---
     const handleSubmitQuestion = useCallback(async (formData, id) => {
         if (!selectedCategory?.category_id ) { setError("Chưa chọn danh mục."); return; }
         const t = getToken(); if (!t) return; 
@@ -196,21 +273,13 @@ const ResourcesManagement = () => {
             const m = id ? "Sửa câu hỏi thành công!" : "Tạo câu hỏi thành công!"; 
             if (id) { 
                 await updateQuestion(id, questionData, t); 
-                /* TODO: Cần xem lại API updateQuestion có cần gửi cả answers không. 
-                   Giả sử logic hiện tại là API updateQuestion chỉ cập nhật nội dung câu hỏi, 
-                   hoặc answers được update riêng (nếu cần). 
-                   Nếu API updateQuestion cần cả answers, bạn cần thay đổi payload:
-                   const updatePayload = { ...questionData, answers: answers.map(a => ({ content: a.content, isCorrect: a.is_correct })) };
-                   await updateQuestion(id, updatePayload, t);
-                */
             } else { 
-                // Admin tạo câu hỏi, không cần tutorId
                 const payload = [{ 
                     ...questionData, 
                     categoryId: selectedCategory.category_id, 
                     answers: answers.map(a => ({ content: a.content, isCorrect: a.is_correct })) 
                 }]; 
-                await createQuestion(payload, t); // Đã loại bỏ tutorId
+                await createQuestion(payload, t); 
             } 
             setToast({ open: true, message: m, severity: "success" }); 
             setIsQuestionModalOpen(false); 
@@ -221,18 +290,11 @@ const ResourcesManagement = () => {
             setError(msg); 
             setToast({ open: true, message: msg, severity: "error" }); 
         } 
-    }, [selectedCategory, getToken, fetchQuestions]); // Đã loại bỏ tutorId khỏi dependencies
-    // --- KẾT THÚC SỬA ---
-
-    // --- Delete Handler (ĐÃ SỬA) ---
-     const handleConfirmDelete = useCallback(async () => {
-        if (!itemToDelete || itemToDelete.type !== 'question') { // Chỉ xử lý 'question'
-            handleCloseConfirm();
-            return; 
-        }
+    }, [selectedCategory, getToken, fetchQuestions]);
+    const handleConfirmDelete = useCallback(async () => {
+        if (!itemToDelete || itemToDelete.type !== 'question') { handleCloseConfirm(); return; }
         const { type, id } = itemToDelete; 
-        const t = getToken(); 
-        if (!t) return; 
+        const t = getToken(); if (!t) return; 
         setError(null); 
         try { 
             let m = ""; 
@@ -249,16 +311,14 @@ const ResourcesManagement = () => {
         } finally { 
             handleCloseConfirm(); 
         } 
-    }, [itemToDelete, getToken, fetchQuestions, handleCloseConfirm]); // Bỏ fetchBooks, fetchCategories
+    }, [itemToDelete, getToken, fetchQuestions, handleCloseConfirm]); 
 
-    // --- Other Handlers ---
+    // --- Other Handlers (Giữ nguyên) ---
     const handleCloseToast = useCallback((event, reason) => { if (reason === "clickaway") return; setToast(prev => ({ ...prev, open: false })); }, []);
     const handleChangeBookPage = useCallback((event, newPage) => setBookPage(newPage), []);
     const handleChangeRowsPerBookPage = useCallback((event) => { setRowsPerBookPage(parseInt(event.target.value, 10)); setBookPage(0); }, []);
     const handleChangeQuestionPage = useCallback((event, newPage) => setQuestionPage(newPage), []);
     const handleChangeRowsPerQuestionPage = useCallback((event) => { setRowsPerQuestionPage(parseInt(event.target.value, 10)); setQuestionPage(0); }, []);
-
-    // --- Fetch Question Detail for Editing ---
     const handleEditQuestion = useCallback(async (question) => { const t = getToken(); if (!t) return; setError(null); try { const qDetail = await getQuestionById(question.ques_id, t); setEditingQuestion(qDetail); setIsQuestionModalOpen(true); } catch(e) { const msg = `Lỗi tải chi tiết câu hỏi: ${e.message}`; setError(msg); setToast({ open: true, message: msg, severity: "error" }); } }, [getToken]);
 
 
@@ -269,14 +329,14 @@ const ResourcesManagement = () => {
             {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>{error}</Alert>}
 
             <Grid container spacing={4}>
-                {/* --- Cột Sách --- */}
+                {/* --- Cột Sách (Giữ nguyên) --- */}
                 <Grid item xs={12} md={5}>
                     <Paper sx={{ overflow: 'hidden' }}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}> <Typography variant="h6">Sách</Typography> <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={handleOpenModal(setIsBookModalOpen, null, setEditingBook)}> Thêm Sách </Button> </Stack>
                         <Box sx={{ p: 2 }}> <TextField fullWidth size="small" placeholder="Tìm kiếm Sách..." value={bookSearchTerm} onChange={(e) => setBookSearchTerm(e.target.value)} InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>), }} /> </Box>
                         <TableContainer sx={{ maxHeight: 600 }}>
                             <Table stickyHeader size="medium">
-                                <TableHead> <TableRow> {bookHeadCells.map((hc) => (<TableCell key={hc.id} align={hc.align || "left"} sx={{ fontWeight: "bold", bgcolor: "action.selected", minWidth: hc.minWidth, py: 1.5, px: 2 }}> {hc.label === 'Hành động' ? '' : hc.label} </TableCell> ))} </TableRow> </TableHead> {/* Ẩn text "Hành động" */}
+                                <TableHead> <TableRow> {bookHeadCells.map((hc) => (<TableCell key={hc.id} align={hc.align || "left"} sx={{ fontWeight: "bold", bgcolor: "action.selected", minWidth: hc.minWidth, py: 1.5, px: 2 }}> {hc.label === 'Hành động' ? '' : hc.label} </TableCell> ))} </TableRow> </TableHead>
                                 <TableBody>
                                     {loadingBooks ? ( <TableRow><TableCell colSpan={bookHeadCells.length} align="center" sx={{ py: 3 }}><CircularProgress size={24}/></TableCell></TableRow> )
                                     : paginatedBooks.length === 0 ? ( <TableRow><TableCell colSpan={bookHeadCells.length} align="center" sx={{ py: 3 }}>Không tìm thấy sách.</TableCell></TableRow> )
@@ -287,7 +347,6 @@ const ResourcesManagement = () => {
                                             <TableCell align="center" sx={{ py: 1.5, px: 2 }}>{book.grade}</TableCell>
                                             <TableCell align="right" sx={{ py: 1, px: 1 }}>
                                                 <Tooltip title="Sửa Sách"><IconButton size="small" onClick={(e) => { e.stopPropagation(); handleOpenModal(setIsBookModalOpen, book, setEditingBook)(); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
-                                                {/* --- NÚT XÓA SÁCH ĐÃ BỊ XÓA --- */}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -300,31 +359,50 @@ const ResourcesManagement = () => {
 
                 {/* --- Cột Category & Question --- */}
                 <Grid item xs={12} md={7}>
+                     {/* SỬA: Panel Danh mục */}
                      <Paper sx={{ overflow: 'hidden', mb: 3 }}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}> <Typography variant="h6" noWrap sx={{ maxWidth: 'calc(100% - 160px)' }}> Danh mục {selectedBook ? `của "${selectedBook.title}"` : "(Chọn sách)"} </Typography> <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={handleOpenModal(setIsCategoryModalOpen, null, setEditingCategory)} disabled={!selectedBook || loadingCategories} sx={{ flexShrink: 0 }}> Thêm Danh mục </Button> </Stack>
-                        <TableContainer sx={{ maxHeight: 250 }}>
-                             <Table stickyHeader size="medium">
-                                <TableHead> <TableRow> {categoryHeadCells.map((hc) => ( <TableCell key={hc.id} align={hc.align || "left"} sx={{ fontWeight: "bold", bgcolor: "action.selected", minWidth: hc.minWidth, py: 1.5, px: 2 }}> {hc.label === 'Hành động' ? '' : hc.label} </TableCell> ))} </TableRow> </TableHead>
-                                 <TableBody>
-                                    {loadingCategories ? ( <TableRow><TableCell colSpan={categoryHeadCells.length} align="center" sx={{ py: 3 }}><CircularProgress size={24}/></TableCell></TableRow> )
-                                    : !selectedBook ? ( <TableRow><TableCell colSpan={categoryHeadCells.length} align="center" sx={{ py: 3, color: 'text.secondary' }}>Vui lòng chọn sách.</TableCell></TableRow> )
-                                    : categories.length === 0 ? ( <TableRow><TableCell colSpan={categoryHeadCells.length} align="center" sx={{ py: 3 }}>Sách này chưa có danh mục.</TableCell></TableRow> )
-                                    : categories.map((cat) => (
-                                        <TableRow key={cat.category_id} hover onClick={() => handleSelectCategory(cat)} selected={selectedCategory?.category_id === cat.category_id} sx={{ cursor: 'pointer', "&.Mui-selected": { bgcolor: alpha(theme.palette.secondary.light, 0.15) }, "&.Mui-selected:hover": { bgcolor: alpha(theme.palette.secondary.light, 0.25) } }}>
-                                            <TableCell sx={{ fontWeight: 500, py: 1.5, px: 2 }}>{cat.category_name}</TableCell>
-                                            <TableCell sx={{ py: 1.5, px: 2 }}>{truncateText(cat.description, 50)}</TableCell>
-                                            <TableCell align="right" sx={{ py: 1, px: 1 }}>
-                                                 <Tooltip title="Sửa DM"><IconButton size="small" onClick={(e) => { e.stopPropagation(); handleOpenModal(setIsCategoryModalOpen, cat, setEditingCategory)(); }}><EditIcon fontSize="small" /></IconButton></Tooltip>
-                                                 {/* --- NÚT XÓA CATEGORY ĐÃ BỊ XÓA --- */}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                         {/* Có thể thêm phân trang Category nếu nhiều */}
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}> 
+                            <Typography variant="h6" noWrap sx={{ maxWidth: 'calc(100% - 220px)' }}> 
+                                Danh mục {selectedBook ? `của "${selectedBook.title}"` : "(Chọn sách)"} 
+                            </Typography> 
+                            <Stack direction="row" spacing={1}>
+                                <Tooltip title="Sửa danh mục đã chọn">
+                                    <span>
+                                        <IconButton size="small" onClick={handleOpenModal(setIsCategoryModalOpen, selectedCategory, setEditingCategory)} disabled={!selectedCategory || loadingCategories}>
+                                            <EditIcon fontSize="small" />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                                <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={handleOpenModal(setIsCategoryModalOpen, null, setEditingCategory)} disabled={!selectedBook || loadingCategories} sx={{ flexShrink: 0 }}> 
+                                    Thêm Danh mục 
+                                </Button>
+                            </Stack>
+                        </Stack>
+                        
+                        {/* SỬA: Thay Table bằng TreeView */}
+                        <Box sx={{ maxHeight: 250, overflowY: 'auto', p: 1 }}>
+                            {loadingCategories ? ( <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={24}/></Box> )
+                            : !selectedBook ? ( <Typography sx={{ p: 3, color: 'text.secondary', textAlign: 'center' }}>Vui lòng chọn sách.</Typography> )
+                            : categoryTreeData.length === 0 ? ( <Typography sx={{ p: 3, textAlign: 'center' }}>Sách này chưa có danh mục.</Typography> )
+                            : (
+                                <RichTreeView
+                                    items={categoryTreeData}
+                                    slots={{
+                                        collapseIcon: ExpandMoreIcon,
+                                        expandIcon: ChevronRightIcon,
+                                    }}
+                                    // SỬA: Dùng handler mới cho TreeView
+                                    onSelectedItemsChange={handleCategoryTreeSelect}
+                                    selectedItems={selectedCategory?.category_id || null}
+                                    sx={{ flexGrow: 1, overflowY: 'auto' }}
+                                />
+                            )}
+                        </Box>
                     </Paper>
+                    {/* KẾT THÚC SỬA */}
 
+
+                    {/* Panel Câu hỏi (Giữ nguyên, chỉ kích hoạt khi selectedCategory) */}
                     {selectedCategory && (
                          <Paper sx={{ overflow: 'hidden' }}>
                             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}> <Typography variant="h6" noWrap sx={{ maxWidth: 'calc(100% - 160px)' }}> Câu hỏi: {selectedCategory.category_name} </Typography> <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={handleOpenModal(setIsQuestionModalOpen, null, setEditingQuestion)} disabled={loadingQuestions} sx={{ flexShrink: 0 }}> Thêm Câu hỏi </Button> </Stack>
@@ -334,7 +412,7 @@ const ResourcesManagement = () => {
                                     <TableBody>
                                         {loadingQuestions ? ( <TableRow><TableCell colSpan={questionHeadCells.length} align="center" sx={{ py: 3 }}><CircularProgress size={24}/></TableCell></TableRow> )
                                         : (questions || []).length === 0 ? ( <TableRow><TableCell colSpan={questionHeadCells.length} align="center" sx={{ py: 3 }}>Chưa có câu hỏi.</TableCell></TableRow> )
-                                        : questions.map((q) => ( // Dùng questions vì fetch theo trang
+                                        : questions.map((q) => (
                                             <TableRow key={q.ques_id} hover>
                                                 <TableCell sx={{ py: 1.5, px: 2 }}>{truncateText(q.content, 60)}</TableCell>
                                                 <TableCell sx={{ py: 1.5, px: 2, textTransform: 'capitalize' }}>{q.type?.replace('_', ' ')}</TableCell>
@@ -355,6 +433,7 @@ const ResourcesManagement = () => {
                 </Grid>
             </Grid>
 
+            {/* (Các Modals và Snackbar giữ nguyên) */}
             {isBookModalOpen && ( <BookFormModal open={isBookModalOpen} onClose={handleCloseModal(setIsBookModalOpen, setEditingBook)} onSubmit={handleSubmitBook} bookToEdit={editingBook} /> )}
             {isCategoryModalOpen && ( <CategoryFormModal open={isCategoryModalOpen} onClose={handleCloseModal(setIsCategoryModalOpen, setEditingCategory)} onSubmit={handleSubmitCategory} categoryToEdit={editingCategory} /> )}
             {isQuestionModalOpen && ( <QuestionFormModal open={isQuestionModalOpen} onClose={handleCloseModal(setIsQuestionModalOpen, setEditingQuestion)} onSubmit={handleSubmitQuestion} questionToEdit={editingQuestion} categoryId={selectedCategory?.category_id} /> )}

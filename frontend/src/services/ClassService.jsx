@@ -1,3 +1,4 @@
+/* eslint-disable */
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
@@ -22,14 +23,8 @@ const getTutorIdFromToken = (token) => {
     }
 }
 
-// ===================================
-// === API CỦA CLASS CONTROLLER ===
-// ===================================
+// --- Class Controller APIs ---
 
-/**
- * Tạo một lớp học mới.
- * API: POST /classes/create/:id
- */
 export const createClass = async (classData, token) => {
     try {
         const tutorId = getTutorIdFromToken(token);
@@ -41,15 +36,10 @@ export const createClass = async (classData, token) => {
     }
 };
 
-/**
- * Lấy danh sách tất cả các lớp (cho Admin/Tìm kiếm).
- * API: GET /classes/get
- */
 export const getAllClasses = async (params = {}, token) => {
     try {
-        // Đã khớp
         const response = await apiClient.get('/classes/get', {
-            params, // params = { page: 1, limit: 10, search: '...' }
+            params,
             ...getAuthHeaders(token)
         });
         return response.data;
@@ -59,10 +49,6 @@ export const getAllClasses = async (params = {}, token) => {
     }
 };
 
-/**
- * Lấy danh sách lớp học của gia sư đang đăng nhập.
- * API: GET /classes/get/tutor/:id
- */
 export const getMyClasses = async (token) => {
     try {
         const tutorId = getTutorIdFromToken(token);
@@ -74,13 +60,8 @@ export const getMyClasses = async (token) => {
     }
 };
 
-/**
- * Lấy chi tiết một lớp học.
- * API: GET /classes/get/detail/:id
- */
 export const getClassDetails = async (classId, token) => {
     try {
-        // Đã khớp (File service cũ của bạn đã đúng URL này)
         const response = await apiClient.get(`/classes/get/detail/${classId}`, getAuthHeaders(token));
         return response.data;
     } catch (error) {
@@ -89,13 +70,8 @@ export const getClassDetails = async (classId, token) => {
     }
 };
 
-/**
- * Thêm một học sinh vào lớp học.
- * API: POST /classes/enroll/:classId/:studentId
- */
 export const enrollStudentToClass = async (classId, studentId, token) => {
     try {
-        // Đã khớp
         const response = await apiClient.post(`/classes/enroll/${classId}/${studentId}`, {}, getAuthHeaders(token));
         return response.data;
     } catch (error) {
@@ -104,14 +80,9 @@ export const enrollStudentToClass = async (classId, studentId, token) => {
     }
 };
 
-/**
- * (CẢNH BÁO: API NÀY CHƯA TỒN TẠI TRÊN BACKEND)
- * Xóa một lớp học.
- */
 export const deleteClass = async (classId, token) => {
     try {
-        console.warn(`CẢNH BÁO: Đang gọi API DELETE /classes/${classId} không tồn tại trên ClassController.`);
-        // API này không tồn tại trong class.controller.ts, sẽ báo lỗi 404
+        console.warn(`Attempting to call non-existent API: DELETE /classes/${classId}`);
         const response = await apiClient.delete(`/classes/${classId}`, getAuthHeaders(token));
         return response.data;
     } catch (error) {
@@ -120,18 +91,10 @@ export const deleteClass = async (classId, token) => {
     }
 };
 
+// --- Schedule Controller APIs ---
 
-// =======================================
-// === API CỦA SCHEDULE CONTROLLER ===
-// =======================================
-
-/**
- * Tạo lịch học (một hoặc nhiều) cho một lớp.
- * API: POST /schedule/create/:class_id
- */
 export const createSchedule = async (classId, scheduleData, token) => {
     try {
-        // scheduleData là một mảng [ScheduleDto]
         const response = await apiClient.post(`/schedule/create/${classId}`, scheduleData, getAuthHeaders(token));
         return response.data;
     } catch (error) {
@@ -140,19 +103,13 @@ export const createSchedule = async (classId, scheduleData, token) => {
     }
 };
 
-/**
- * Xóa lịch học (một, nhiều, hoặc tất cả).
- * API: POST /schedule/delete/:class_id?mode=true/false
- */
 export const deleteSchedule = async (classId, mode, scheduleIds, token) => {
     try {
-        // scheduleIds là một mảng [number]
-        // mode là boolean (true = xóa hết, false = xóa theo mảng)
         const response = await apiClient.post(
             `/schedule/delete/${classId}`, 
-            { data: scheduleIds }, // Body là { data: [1, 2, 3] }
+            { data: scheduleIds }, 
             { 
-                params: { mode: mode }, // Query param
+                params: { mode: mode },
                 ...getAuthHeaders(token) 
             }
         );
@@ -163,10 +120,6 @@ export const deleteSchedule = async (classId, mode, scheduleIds, token) => {
     }
 };
 
-/**
- * Lấy lịch học của một lớp cụ thể.
- * API: GET /schedule/get/class/:class_id
- */
 export const getScheduleByClass = async (classId, token) => {
     try {
         const response = await apiClient.get(`/schedule/get/class/${classId}`, getAuthHeaders(token));
@@ -177,10 +130,6 @@ export const getScheduleByClass = async (classId, token) => {
     }
 };
 
-/**
- * Lấy toàn bộ lịch học (cho Admin).
- * API: GET /schedule/get/all
- */
 export const getAllSchedule = async (token) => {
     try {
         const response = await apiClient.get('/schedule/get/all', getAuthHeaders(token));
