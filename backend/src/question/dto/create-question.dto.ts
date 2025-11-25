@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { QuestionStatus } from '@prisma/client';
+import { QuestionStatus, QuestionAccess } from '@prisma/client';
 import {
   IsString,
   IsEnum,
@@ -39,6 +39,10 @@ export class CreateAnswerDto {
 export class CreateQuestionDto {
   @IsNotEmpty()
   @IsString()
+  title: string;
+
+  @IsNotEmpty()
+  @IsString()
   content: string;
 
   @IsNotEmpty()
@@ -61,6 +65,10 @@ export class CreateQuestionDto {
   @ValidateNested({ each: true })
   @Type(() => CreateAnswerDto)
   answers: CreateAnswerDto[];
+
+  @IsOptional()
+  @IsEnum(QuestionAccess)
+  accessMode?: QuestionAccess;
 
   @IsOptional()
   @IsEnum(QuestionStatus)
