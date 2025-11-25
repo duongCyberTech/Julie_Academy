@@ -1,35 +1,30 @@
 import { 
     Controller,
-    Get
+    Get,
+    Param,
+    UseGuards
 } from "@nestjs/common";
 import { DashboardService } from "./dashboard.service";
+import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
+import { RolesGuard } from "src/auth/guard/roles.guard";
+import { Roles } from "src/auth/decorator/roles.decorator";
 
 @Controller("dashboard")
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class DashboardController {
     constructor(private readonly dashboardService: DashboardService) {}
 
-    @Get("register-stats")
-    async getRegisterStats() {
-        return this.dashboardService.getRegisterStatsByWeek();
+    @Get('admin-stats')
+    @Roles('tutor')
+    getAdminStats(){
+        return this.dashboardService.getAdminStats()
     }
 
-    @Get("class-created-stats")
-    async getClassCreatedStats() {
-        return this.dashboardService.getClassCreatedStatsByWeek();
-    }
-
-    @Get("exam-taken-stats")
-    async getExamTakenStats() {
-        return this.dashboardService.getNumberOfExamTakenByWeek();
-    }
-
-    @Get("number-of-active-classes")
-    async getNumberOfActiveClasses() {
-        return this.dashboardService.getNumberOfActiveClasses();
-    }
-
-    @Get("number-of-questions")
-    async getNumberOfQuestions() {
-        return this.dashboardService.getNumberOfQuestions();
+    @Get('tutor-stats/:tutor_id')
+    @Roles('tutor')
+    getTutorStats(
+        @Param('tutor_id') tutor_id: string
+    ){
+        return this.dashboardService.getTutorStats(tutor_id)
     }
 }
