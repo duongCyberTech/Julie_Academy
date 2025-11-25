@@ -7,49 +7,75 @@ import {
 } from '@nestjs/common'; 
 import { AuthGuard } from '@nestjs/passport'; 
 import { ControlMode } from 'src/mode/control.mode';
-import { QuestionService, CategoryService, BookService } from './question.service';
-import { AnswerDto, CategoryDto, QuestionDto, BookDto } from './dto/question.dto';
+import { QuestionService, CategoryService, LessonPlanService } from './question.service';
+import { AnswerDto, CategoryDto, QuestionDto, LessonPlanDto } from './dto/question.dto';
 import { CreateAnswerDto, CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
+import { Roles } from 'src/auth/decorator/roles.decorator';
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guard/roles.guard';
 
 @Controller('books')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class BookController {
-    constructor(private readonly bookService: BookService){}
+    constructor(private readonly bookService: LessonPlanService){}
 
     @Post()
-    createBook( @Body('book') book: BookDto[] ) {
-        return this.bookService.createBook(book);
+    @Roles('admin')
+    createLessonPlan( @Body() book: LessonPlanDto[] ) {
+        return this.bookService.createLessonPlan(book);
+    }
+
+    @Post(':tutor_id')
+    @Roles('tutor')
+    createLessonPlanByTutor( 
+        @Body() book: LessonPlanDto[],
+        @Param('tutor_id') tutor_id: string 
+    ) {
+        return this.bookService.createLessonPlan(book, tutor_id);
     }
 
     @Get()
-    getBook(){
-        return this.bookService.getAllBooks();
+    @Roles('admin')
+    getAllLessonPlan(){
+        return this.bookService.getAllPlans();
     }
 
-    @Patch(':book_id')
-    updateBook( @Param('book_id') book_id: string, @Body() dto: Partial<BookDto> ) {
-        return this.bookService.updateBook(book_id, dto);
+    @Get(':tutor_id')
+    @Roles('tutor')
+    getLessonPlanByTutor(){
+        return this.bookService.getAllPlans();
     }
 
-    @Delete(':book_id')
+    @Patch(':plan_id')
+    @Roles('admin', 'tutor')
+    updateBook( @Param('plan_id') plan_id: string, @Body() dto: Partial<LessonPlanDto> ) {
+        return this.bookService.updatePlan(plan_id, dto);
+    }
+
+    @Delete(':plan_id')
+    @Roles('admin', 'tutor')
     deleteBook( 
-        @Param('book_id') book_id: string,
+        @Param('plan_id') plan_id: string,
         @Query('mode') mode: ControlMode
     ) {
-        return this.bookService.deleteBook(book_id, mode);
+        return this.bookService.deletePlan(plan_id, mode);
     }
 }
 
 @Controller('categories')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
+  @Roles('tutor', 'admin')
   createCategory(@Body() dto: CategoryDto[] ) {
     return this.categoryService.createCategory(dto);
   }
 
   @Get() 
+  @Roles('tutor', 'admin')
   getAllCategories( 
     @Query() query: any 
   ) {
@@ -60,11 +86,13 @@ export class CategoryController {
   }
 
   @Patch(':category_id')
+  @Roles('tutor', 'admin')
   updateCategory(@Param('category_id') category_id: string, @Body() dto: Partial<CategoryDto>) {
     return this.categoryService.updateCategory(category_id, dto);
   }
 
   @Delete(':category_id')
+  @Roles('tutor', 'admin')
   deleteCategory( 
     @Param('category_id') category_id: string,
     @Query('mode') mode: ControlMode
@@ -78,6 +106,7 @@ export class QuestionController {
     constructor(private readonly questionService: QuestionService) {}
 
     @Post('create/:tutor_id')
+    @Roles('tutor')
     createQuestion(@Param('tutor_id') tutor_id: string, @Body() dto: CreateQuestionDto[]) {
         return this.questionService.createQuestion(dto, tutor_id);
     }

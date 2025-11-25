@@ -4,7 +4,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class DashboardService {
+export class AdminDashboard {
     constructor(
         private readonly prisma: PrismaService,
     ) {}
@@ -129,5 +129,82 @@ export class DashboardService {
     async getNumberOfQuestions() {
         const questionsCount = await this.prisma.questions.count();
         return questionsCount;
+    }
+}
+
+@Injectable()
+export class TutorDashboard {
+    constructor(
+        private readonly prisma: PrismaService
+    ){}
+
+    async getNumStudentsOfTutor(tutor_id: string){
+        return this.prisma.student.count({
+            where: {
+                learning: {
+                    some: { class: {tutor: { uid: tutor_id }} }
+                }
+            }
+        })
+    }
+
+    async getNumClasses(tutor_id: string){
+        return this.prisma.class.count({
+            where: {tutor: {uid: tutor_id}}
+        })
+    }
+
+    async getNumLessonPlan(tutor_id: string){
+        return this.prisma.lesson_Plan.count({
+            where: {
+                tutor: { uid: tutor_id }
+            }
+        })
+    }
+
+    async getNumMyQuestion(tutor_id: string){
+        return this.prisma.questions.count({
+            where: {
+                tutor: {uid: tutor_id}
+            }
+        })
+    }
+}
+
+@Injectable()
+export class DashboardService {
+    constructor(
+        private readonly admin: AdminDashboard,
+        private readonly tutor: TutorDashboard
+    ) {}
+
+    async getAdminStats(){
+        const numRegByWeek = await this.admin.getRegisterStatsByWeek()
+        const numClassCreatedByWeek = await this.admin.getClassCreatedStatsByWeek()
+        const numExamTakenByWeek = await this.admin.getNumberOfExamTakenByWeek()
+        const numActiveClasses = await this.admin.getNumberOfActiveClasses()
+        const numQuestion = await this.admin.getNumberOfQuestions()
+
+        return {
+            numRegByWeek,
+            numClassCreatedByWeek,
+            numExamTakenByWeek,
+            numActiveClasses,
+            numQuestion
+        }
+    }   
+    
+    async getTutorStats(tutor_id) {
+        const numStudent = await this.tutor.getNumStudentsOfTutor(tutor_id)
+        const numClasses = await this.tutor.getNumClasses(tutor_id)
+        const numLessonPlan = await this.tutor.getNumLessonPlan(tutor_id)
+        const numQuestions = await this.tutor.getNumMyQuestion(tutor_id)
+
+        return {
+            numStudent,
+            numClasses,
+            numLessonPlan,
+            numQuestions
+        }
     }
 }
