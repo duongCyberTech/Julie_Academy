@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Query, Param, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, Patch, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ClassService, ScheduleService } from './class.service';
 import { ClassDto, ScheduleDto } from './dto/class.dto';
+import { ExceptionResponse } from 'src/exception/Exception.exception';
 
 @Controller('classes')
 export class ClassController {
@@ -37,6 +38,18 @@ export class ClassController {
   @Post('enroll/:classId/:studentId')
   async enrollClass(@Param('classId') classId: string, @Param('studentId') studentId: string) {
     return this.classService.enrollClass(classId, studentId);
+  }
+
+  @Patch(':class_id')
+  updateClass(
+    @Param('class_id') class_id: string,
+    @Body() data : Partial<ClassDto>
+  ){
+    try {
+      return this.classService.updateClass(class_id, data)
+    } catch (e) {
+      return new ExceptionResponse().returnError(e, `Class ${class_id}`)
+    }
   }
 }
 

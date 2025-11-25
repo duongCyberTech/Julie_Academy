@@ -141,6 +141,19 @@ export class ClassService {
         return (enrollment !== null ? {status: 201, message: 'Enrollment successful'} : {status: 400, message: 'Enrollment failed'})
     });
   }
+
+  async updateClass(class_id: string, data: Partial<ClassDto>) {
+    return this.prisma.$transaction(async (tx) => {
+      const { plan_id, ...rest } = data;
+      return tx.class.update({
+        where: { class_id },
+        data: {
+          ...rest,
+          ...(plan_id ? { plan: { connect: { plan_id } } } : {})
+        }
+      });
+    });
+  }
 }
 
 @Injectable()
