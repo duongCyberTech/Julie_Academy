@@ -154,6 +154,17 @@ export class ClassService {
       });
     });
   }
+
+  async cancelClassAtStudentSide(student_uid: string, class_id: string){
+    return this.prisma.learning.delete({
+      where: {
+        class_id_student_uid: {
+          class_id,
+          student_uid
+        }
+      }
+    })
+  }
 }
 
 @Injectable()
