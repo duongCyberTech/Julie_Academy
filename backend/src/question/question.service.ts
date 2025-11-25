@@ -7,77 +7,106 @@ import {
 import { ExceptionResponse } from 'src/exception/Exception.exception';
 import { ControlMode } from 'src/mode/control.mode';
 import { PrismaService } from '../prisma/prisma.service';
-import { BookDto, CategoryDto } from './dto/question.dto'; 
+import { LessonPlanDto, CategoryDto } from './dto/question.dto'; 
 import { CreateQuestionDto, CreateAnswerDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { CategoriesOutputDto } from './dto/questionOutput.dto';
-import { DifficultyLevel, QuestionStatus, QuestionType, Prisma } from '@prisma/client';
+import { DifficultyLevel, QuestionStatus, QuestionType, Prisma, QuestionAccess } from '@prisma/client';
+import { connect } from 'http2';
 
 @Injectable()
-export class BookService {
+export class LessonPlanService {
     constructor(private prisma: PrismaService) {}
 
-    async createBook(data: BookDto[]) {
-        const createdBooks = [];
-        for (const book of data) {
-            const existingBook = await this.prisma.books.findUnique({ where: { title: book.title } });
-            if (existingBook) {
-                console.warn(`Book with title "${book.title}" already exists. Skipping creation.`);
+    async createLessonPlan(data: LessonPlanDto[], tutor_id?: string) {
+        const createdLessonPlan = [];
+        for (const plan of data) {
+            const existingLessonPlan = await this.prisma.lesson_Plan.findUnique({ where: { title: plan.title, tutor_id: tutor_id } });
+            if (existingLessonPlan) {
+                console.warn(`Plan with title "${plan.title}" already exists in your storage. Skipping creation.`);
                 continue;
             }
-            const newBook = await this.prisma.books.create({
+            const newPlan = await this.prisma.lesson_Plan.create({
                 data: {
-                    title: book.title,
-                    subject: book.subject,
-                    grade: book.grade,
-                    description: book.description,
+                    title: plan.title,
+                    subject: plan.subject,
+                    grade: plan.grade,
+                    description: plan.description,
+                    type: plan.type || 'custom',
+                    ...(tutor_id ? { tutor: { connect: { uid: tutor_id } } } : {})
                 }
             });
-            createdBooks.push(newBook);
+            createdLessonPlan.push(newPlan);
         }
-        return createdBooks;
+        return createdLessonPlan;
     }
 
-    async getAllBooks() {
-        return this.prisma.books.findMany({
+    async getAllPlans(tutor_id?: string) {
+        if (!tutor_id)
+            return this.prisma.lesson_Plan.findMany({
+                where: {
+                    OR: [
+                        {tutor_id: tutor_id},
+                        {type: 'book'}
+                    ]
+                },
+                orderBy: { title: 'asc' }
+            })
+        return this.prisma.lesson_Plan.findMany({
             orderBy: { title: 'asc' }
         });
     }
 
-    async getBookById(book_id: string) {
-        const book = await this.prisma.books.findUnique({
-            where: { book_id },
+    async getPlanById(plan_id: string) {
+        const plan = await this.prisma.lesson_Plan.findUnique({
+            where: { plan_id },
         });
-        if (!book) {
-            throw new NotFoundException(`Book with ID ${book_id} not found`);
+        if (!plan) {
+            throw new NotFoundException(`Plan with ID ${plan_id} not found`);
         }
-        return book;
+        return plan;
     }
 
-    async updateBook(book_id: string, data: Partial<BookDto>) {
+    async updatePlan(plan_id: string, data: Partial<LessonPlanDto>) {
         try {
-            return await this.prisma.books.update({
-                where: { book_id },
+            return await this.prisma.lesson_Plan.update({
+                where: { plan_id },
                 data,
             });
         } catch (error) {
-            return new ExceptionResponse().returnError(error, `book ${book_id}`);
+            return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
         }
     }
 
-    async deleteBook(book_id: string, mode: ControlMode = ControlMode.SOFT) {
+    async deletePlan(plan_id: string, mode: ControlMode = ControlMode.SOFT) {
         try {
             if (mode == ControlMode.FORCE) {
                 return this.prisma.$transaction(async (tx) => {
-                    await tx.categories.deleteMany({ where: { book_id }});
-                    return await tx.books.delete({ where: { book_id } });
+                    const Cate_to_delete = await tx.categories.findMany({
+                        where: {
+                            AND: [
+                                {structure: {some: {plan_id}}},
+                                {structure: {none: {plan_id: { not: plan_id }}}}
+                            ]
+                        },
+                        select:{category_id: true}
+                    })
+                    
+                    const deleteCate = Cate_to_delete.map(i => i.category_id)
+
+                    if (deleteCate.length)
+                        await tx.categories.deleteMany({
+                            where: { category_id: {in: deleteCate} }
+                        })
+
+                    return await tx.lesson_Plan.delete({ where: { plan_id } });
                 });
             }
-            return await this.prisma.books.delete({
-                where: { book_id },
+            return await this.prisma.lesson_Plan.delete({
+                where: { plan_id },
             });
         } catch (error) {
-            return new ExceptionResponse().returnError(error, `book ${book_id}`);
+            return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
         }
     }
 }
@@ -89,22 +118,30 @@ export class CategoryService {
         const existingCategory = await tx.categories.findUnique({
             where: {
                 category_name: categoryData.category_name,
-                book_id: categoryData.book_id,
+                structure: {
+                    some: {
+                      plan_id: categoryData.plan_id 
+                    }
+                }
             },
         });
 
         const categoryDataForCreate = {
                 category_name: categoryData.category_name,
                 description: categoryData.description,
-                Books: {
-                connect: { book_id: categoryData.book_id },
-            },
-            ...(parentId ? { Categories: { connect: { category_id: parentId } } } : {}),
+                ...(parentId ? { Categories: { connect: { category_id: parentId } } } : {}),
         };
 
         const category = existingCategory ? existingCategory : await tx.categories.create({
             data: categoryDataForCreate,
         });
+
+        await tx.structure.create({
+            data: {
+                Plan: {connect: {plan_id: categoryData.plan_id}},
+                Category: {connect: {category_id: category.category_id}}
+            }
+        })
 
         if (categoryData.children?.length) {
             for (const child of categoryData.children) {
@@ -114,8 +151,7 @@ export class CategoryService {
     }
 
     async createCategory(data: CategoryDto[]) {
-        // console.log("Creating categories with data:", data);
-        // console.log("Data type:", typeof data);
+
         try {
             return this.prisma.$transaction(async (tx) => {
                 for (const category of data) {
@@ -149,27 +185,27 @@ export class CategoryService {
         return result;
     }
 
-    async getAllCategories(mode: string = 'tree', book_id?: string, page?: number | string, limit?: number | string, search?: string, grade?: number | string, subject?: string) {
+    async getAllCategories(mode: string = 'tree', plan_id?: string, page?: number | string, limit?: number | string, search?: string, grade?: number | string, subject?: string) {
         const pageNum = page ? parseInt(String(page), 10) : 1;
         const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 200;  
         const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
         const takeNum = limitNum > 0 ? limitNum : undefined;
 
         const where: Prisma.CategoriesWhereInput = {};
-        if (book_id) where.book_id = book_id;
+        if (plan_id) where.structure = {some: {plan_id: plan_id}};
 
         if (grade || subject) {
-            where.Books = {};
-            if (grade) { const gradeNum = parseInt(String(grade), 10); if (!isNaN(gradeNum)) where.Books.grade = gradeNum; }
-            if (subject) { where.Books.subject = { contains: subject, mode: 'insensitive' }; }
-            if (Object.keys(where.Books).length === 0) delete where.Books;
+            where.structure.some.Plan = {};
+            if (grade) { const gradeNum = parseInt(String(grade), 10); if (!isNaN(gradeNum)) where.structure.some.Plan.grade = gradeNum; }
+            if (subject) { where.structure.some.Plan.subject = { contains: subject, mode: 'insensitive' }; }
+            if (Object.keys(where.structure.some.Plan).length === 0) delete where.structure.some.Plan;
         }
 
         if (search) {
             where.OR = [
                 { category_name: { contains: search, mode: 'insensitive' } },
                 { description: { contains: search, mode: 'insensitive' } },
-                { Books: { title: { contains: search, mode: 'insensitive' } } },
+                { structure:  { some: {Plan: {title: {contains: search, mode: 'insensitive'}}}} },
             ];
         }
 
@@ -182,7 +218,17 @@ export class CategoryService {
                 category_name: true,
                 description: true,
                 parent_id: true,
-                Books: { select: { book_id: true, title: true, subject: true, grade: true } },
+                structure: {
+                    select: {
+                        Plan: {
+                            select: {
+                                title: true,
+                                subject: true,
+                                grade: true
+                            }
+                        }
+                    }
+                },
             },
             orderBy: { category_name: 'asc' },
         });
@@ -193,9 +239,9 @@ export class CategoryService {
                                     category_name: cat.category_name,
                                     description: cat.description,
                                     parent_id: cat.parent_id || null,
-                                    book_title: cat.Books.title || null,
-                                    grade: cat.Books.grade || null,
-                                    subject: cat.Books.subject || null,
+                                    plan_title: cat.structure[0].Plan.title || null,
+                                    grade: cat.structure[0].Plan.grade || null,
+                                    subject: cat.structure[0].Plan.subject || null,
                                     children: [],
                                 }));
 
@@ -262,15 +308,18 @@ export class QuestionService {
                 const categoryExists = await tx.categories.findUnique({ where: { category_id: question.categoryId } });
                 if (!categoryExists) { throw new NotFoundException(`Category with ID ${question.categoryId} not found for question: "${question.content.substring(0, 20)}..."`); }
 
-                const statusEnumValue = question.status?.toUpperCase() === 'PUBLIC' ? QuestionStatus.public : QuestionStatus.private;
-
+                const statusEnumValue = question.status?.toUpperCase() === 'DRAFT' ? QuestionStatus.draft : QuestionStatus.ready;
+                
+                const accessEnumValue = question.accessMode?.toUpperCase() === 'PUBLIC' ? QuestionAccess.public : QuestionAccess.private;
                 const newQuestion = await tx.questions.create({
                     data: {
+                        title: question.title,
                         content: question.content,
                         explaination: question.explaination,
                         type: question.type as QuestionType,
                         level: question.level as DifficultyLevel,
                         status: statusEnumValue,
+                        accessMode: accessEnumValue,
                         category: { connect: { category_id: question.categoryId } },
                         tutor: { connect: { uid: tutor_uid } },
                     },
@@ -301,7 +350,7 @@ export class QuestionService {
 
         const where: Prisma.QuestionsWhereInput = {
             category_id: category_id,
-            status: QuestionStatus.public
+            accessMode: QuestionAccess.public
         };
 
         if (level) { const levelKey = level.toLowerCase() as keyof typeof DifficultyLevel; if (DifficultyLevel[levelKey]) { where.level = DifficultyLevel[levelKey]; } }
@@ -311,7 +360,25 @@ export class QuestionService {
         try {
             const questions = await this.prisma.questions.findMany({
                 where, skip: skipNum, take: takeNum, orderBy: { createAt: 'desc' },
-                select: { ques_id: true, content: true, type: true, level: true, status: true, createAt: true, category: { select: { category_id: true, category_name: true, Books: { select: { book_id: true, title: true } } } } },
+                select: { 
+                    ques_id: true, content: true, type: true, level: true, status: true, createAt: true, 
+                    category: { 
+                        select: { 
+                            category_id: true, category_name: true, 
+                            structure: {
+                                select:{
+                                    Plan: {
+                                        select: {
+                                            title: true,
+                                            subject: true,
+                                            grade: true
+                                        }
+                                    }
+                                }
+                            } 
+                        } 
+                    } 
+                },
             });
             const total = await this.prisma.questions.count({ where });
             return { data: questions, total };
@@ -321,7 +388,7 @@ export class QuestionService {
         }
     }
 
-    async getAllQuestion( page?: number | string, limit?: number | string, search?: string, level?: string, type?: string, status?: string, category_id?: string, book_id?: string ) {
+    async getAllQuestion( page?: number | string, limit?: number | string, search?: string, level?: string, type?: string, status?: string, category_id?: string, plan_id?: string ) {
         const pageNum = page ? parseInt(String(page), 10) : 1;
         const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 10;
         const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
@@ -335,7 +402,7 @@ export class QuestionService {
 
         let categoryFilter: Prisma.CategoriesWhereInput = {};
         if (category_id) { categoryFilter.category_id = category_id; }
-        if (book_id) { categoryFilter.Books = { book_id: book_id }; }
+        if (plan_id) { categoryFilter.structure.some.Plan = { plan_id }; }
         if (Object.keys(categoryFilter).length > 0) { where.category = categoryFilter; }
 
         if (search) {
@@ -344,7 +411,7 @@ export class QuestionService {
                 { explaination: { contains: search, mode: 'insensitive' } },
                 { tutor: { user: { OR: [ { fname: { contains: search, mode: 'insensitive' } }, { lname: { contains: search, mode: 'insensitive' } } ]}}},
                 { category: { category_name: { contains: search, mode: 'insensitive' } } },
-                { category: { Books: { title: { contains: search, mode: 'insensitive' } } } }
+                { category: { structure: {some: { Plan: {title: {contains: search, mode: 'insensitive'}} }} } }
             ];
         }
 
@@ -353,7 +420,22 @@ export class QuestionService {
                 where, skip: skipNum, take: takeNum, orderBy: { createAt: 'desc' },
                 select: {
                     ques_id: true, content: true, type: true, level: true, status: true, createAt: true, updateAt: true,
-                    category: { select: { category_id: true, category_name: true, Books: { select: { book_id: true, title: true, subject: true, grade: true } } } },
+                    category: { 
+                        select: { 
+                            category_id: true, category_name: true, 
+                            structure: {
+                                select:{
+                                    Plan: {
+                                        select: {
+                                            title: true,
+                                            subject: true,
+                                            grade: true
+                                        }
+                                    }
+                                }
+                            } 
+                        } 
+                    },
                 },
             });
             const total = await this.prisma.questions.count({ where });
@@ -364,7 +446,7 @@ export class QuestionService {
         }
     }
 
-    async getMyQuestions( tutor_uid: string, page?: number | string, limit?: number | string, search?: string, level?: string, type?: string, status?: string, category_id?: string, book_id?: string ) {
+    async getMyQuestions( tutor_uid: string, page?: number | string, limit?: number | string, search?: string, level?: string, type?: string, status?: string, category_id?: string, plan_id?: string ) {
         const pageNum = page ? parseInt(String(page), 10) : 1;
         const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 10;
         const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
@@ -378,7 +460,7 @@ export class QuestionService {
 
         let categoryFilter: Prisma.CategoriesWhereInput = {};
         if (category_id) { categoryFilter.category_id = category_id; }
-        if (book_id) { categoryFilter.Books = { book_id: book_id }; }
+        if (plan_id) { categoryFilter.structure.some.Plan = { plan_id }; }
         if (Object.keys(categoryFilter).length > 0) { where.category = categoryFilter; }
 
         if (search) {
@@ -386,7 +468,7 @@ export class QuestionService {
                 { content: { contains: search, mode: 'insensitive' } },
                 { explaination: { contains: search, mode: 'insensitive' } },
                 { category: { category_name: { contains: search, mode: 'insensitive' }}},
-                { category: { Books: { title: { contains: search, mode: 'insensitive' } } } }
+                { category: { structure: {some: { Plan: {title: {contains: search, mode: 'insensitive'}} }} } }
              ];
         }
 
@@ -395,7 +477,22 @@ export class QuestionService {
                 where, skip: skipNum, take: takeNum, orderBy: { createAt: 'desc' },
                 select: {
                     ques_id: true, content: true, type: true, level: true, status: true, createAt: true, updateAt: true,
-                    category: { select: { category_id: true, category_name: true, Books: {select:  {book_id: true, title: true, subject: true, grade: true}} } },
+                    category: { 
+                        select: { 
+                            category_id: true, category_name: true, 
+                            structure: {
+                                select:{
+                                    Plan: {
+                                        select: {
+                                            title: true,
+                                            subject: true,
+                                            grade: true
+                                        }
+                                    }
+                                }
+                            } 
+                        } 
+                    },
                 },
             });
             const total = await this.prisma.questions.count({ where });
@@ -411,7 +508,22 @@ export class QuestionService {
             where: { ques_id },
             select: {
                 ques_id: true, content: true, explaination: true, type: true, level: true, status: true,
-                category: { select: { category_id: true, category_name: true, Books: {select: {book_id: true, title: true, subject: true, grade: true}} } },
+                category: { 
+                        select: { 
+                            category_id: true, category_name: true, 
+                            structure: {
+                                select:{
+                                    Plan: {
+                                        select: {
+                                            title: true,
+                                            subject: true,
+                                            grade: true
+                                        }
+                                    }
+                                }
+                            } 
+                        } 
+                    },
                 answers: { select: { aid: true, content: true, is_correct: true, explaination: true }, orderBy: { aid: 'asc'} },
                 tutor: { select: { user: { select: { uid: true, fname: true, lname: true }} } }
             },
