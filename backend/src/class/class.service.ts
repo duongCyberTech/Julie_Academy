@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {ClassDto, ScheduleDto} from './dto/class.dto';
 import { google } from 'googleapis';
 import { addDays, isBefore, setDate, setHours, setMinutes } from 'date-fns';
+import { ClassStatus } from '@prisma/client';
 require('dotenv').config()
 
 @Injectable()
@@ -22,6 +23,7 @@ export class ClassService {
                 subject: data.subject,
                 createdAt: new Date(),
                 updateAt: new Date(),
+                startat: data.startAt || null,
                 tutor: { connect: { uid: tutor_uid } },
             },
         });
@@ -34,7 +36,7 @@ export class ClassService {
     const _limit: number = Number(limit) && Number(limit) > 0 ? Number(limit) : 10;
     const skip:number = (_page - 1) * _limit;
     const where: any = {};
-    if (status) where.status = status;
+    if (status) where.status = status as ClassStatus;
     if (startAt && endAt) {
         where.startAt = { gte: startAt, lte: endAt };
     } else if (startAt) {
@@ -318,7 +320,7 @@ export class ScheduleService {
         return acc;
       }, {})
     );
-    
+
     return grouped
   }
   
