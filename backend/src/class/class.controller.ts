@@ -1,14 +1,23 @@
-import { Controller, Get, Post, Body, Query, Param, Patch, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { 
+  Controller, 
+  Get, Post, Patch, Delete,
+  Body, Query, Param, 
+  UseGuards 
+} from '@nestjs/common';
 import { ClassService, ScheduleService } from './class.service';
 import { ClassDto, ScheduleDto } from './dto/class.dto';
 import { ExceptionResponse } from 'src/exception/Exception.exception';
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guard/roles.guard';
+import { Roles } from 'src/auth/decorator/roles.decorator';
 
 @Controller('classes')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ClassController {
   constructor(private readonly classService: ClassService) {}
 
   @Post('create/:id')
+  @Roles('tutor')
   async createClass(@Param('id') id: string, @Body() classDto: ClassDto) {
     return this.classService.createClass(id, classDto);
   }
@@ -36,11 +45,13 @@ export class ClassController {
   }
 
   @Post('enroll/:classId/:studentId')
+  @Roles('parents', 'tutor')
   async enrollClass(@Param('classId') classId: string, @Param('studentId') studentId: string) {
     return this.classService.enrollClass(classId, studentId);
   }
 
   @Patch(':class_id')
+  @Roles('tutor', 'admin')
   updateClass(
     @Param('class_id') class_id: string,
     @Body() data : Partial<ClassDto>
@@ -51,13 +62,26 @@ export class ClassController {
       return new ExceptionResponse().returnError(e, `Class ${class_id}`)
     }
   }
+
+  @Delete(':student_id/:class_id')
+  cancelClass(
+    @Param() param: any
+  ){
+    try {
+      return this.classService.cancelClassAtStudentSide(param.student_id, param.class_id)
+    } catch(e){
+      return new ExceptionResponse().returnError(e, `Failure Canceling ${param.student_id} out class ${param.class_id}`)
+    }
+  }
 }
 
 @Controller('schedule')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ScheduleController {
   constructor(private readonly schedule: ScheduleService){}
 
   @Post('create/:class_id')
+  @Roles('tutor')
   createSchedule(
     @Param('class_id') class_id: string,
     @Body() data: ScheduleDto[] 
@@ -66,6 +90,7 @@ export class ScheduleController {
   }
 
   @Post('delete/:class_id')
+  @Roles('tutor')
   deleteSchedule(
     @Param('class_id') class_id: string,
     @Query('mode') mode: boolean,
