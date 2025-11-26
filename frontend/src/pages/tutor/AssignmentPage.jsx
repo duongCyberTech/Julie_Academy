@@ -11,7 +11,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 
 import { getMyExams, createExamSession } from '../../services/ExamService';
-import { getMyClasses } from '../../services/ClassService'; 
+import { getClassesByTutor } from '../../services/ClassService'; 
 
 const PageWrapper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
@@ -76,7 +76,7 @@ function AssignmentPage() {
             // Tải song song 2 API
             const [examsResponse, classesResponse] = await Promise.all([
                 getMyExams(token),
-                getMyClasses(token)
+                getClassesByTutor(token)
             ]);
 
             setMasterExams(Array.isArray(examsResponse) ? examsResponse : []);
