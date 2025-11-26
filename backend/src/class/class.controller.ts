@@ -44,10 +44,10 @@ export class ClassController {
     return this.classService.getDetailedClass(id);
   }
 
-  @Post('enroll/:classId/:studentId')
+  @Post('enroll/:classId')
   @Roles('parents', 'tutor')
-  async enrollClass(@Param('classId') classId: string, @Param('studentId') studentId: string) {
-    return this.classService.enrollClass(classId, studentId);
+  async enrollClass(@Param('classId') classId: string, @Body('email') email: string) {
+    return this.classService.enrollClass(classId, email);
   }
 
   @Patch(':class_id')
