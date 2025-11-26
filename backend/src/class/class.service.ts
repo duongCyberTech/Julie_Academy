@@ -172,6 +172,30 @@ export class ClassService {
         return (enrollment !== null ? {status: 201, message: 'Enrollment successful'} : {status: 400, message: 'Enrollment failed'})
     });
   }
+
+  async updateClass(class_id: string, data: Partial<ClassDto>) {
+    return this.prisma.$transaction(async (tx) => {
+      const { plan_id, ...rest } = data;
+      return tx.class.update({
+        where: { class_id },
+        data: {
+          ...rest,
+          ...(plan_id ? { plan: { connect: { plan_id } } } : {})
+        }
+      });
+    });
+  }
+
+  async cancelClassAtStudentSide(student_uid: string, class_id: string){
+    return this.prisma.learning.delete({
+      where: {
+        class_id_student_uid: {
+          class_id,
+          student_uid
+        }
+      }
+    })
+  }
 }
 
 @Injectable()

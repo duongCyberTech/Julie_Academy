@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -10,6 +11,8 @@ import { ClassModule } from './class/class.module';
 import { QuestionModule } from './question/question.module';
 import { ExamModule } from './exam/exam.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { CronModule } from './scron-job/cron.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -21,7 +24,10 @@ import { DashboardModule } from './dashboard/dashboard.module';
         limit: 10,  
       },
     ]),
-    UserModule, AuthModule, ClassModule, QuestionModule, ExamModule, DashboardModule
+    ScheduleModule.forRoot(),
+    UserModule, AuthModule, ClassModule, 
+    QuestionModule, ExamModule, DashboardModule, 
+    CronModule, MailModule
   ],
   controllers: [AppController],
   providers: [
