@@ -78,6 +78,8 @@ export class ClassService {
         class_id: true,
         classname: true,
         description: true,
+        subject: true,
+        grade: true,
         tutor:{
           select:{ user:{
             select:{
@@ -106,6 +108,8 @@ export class ClassService {
         description: true,
         status: true,
         nb_of_student: true,
+        subject: true,
+        grade: true,
         tutor:{
           select:{ user:{
             select:{
@@ -248,7 +252,24 @@ export class ClassService {
 
   async duplicateClass(data: Partial<ClassDto>, d_class_id: string, dupLst?: DuplicatingObject[]){
     try {
-      
+      return this.prisma.$transaction(async(tx) => {
+        const classCopy = await tx.class.findUnique({
+          where: {class_id: d_class_id}
+        })
+
+        const newClassData: ClassDto = {
+          classname: data.classname || classCopy.classname,
+          description: data.description || classCopy.description || "",
+          createdAt: new Date(),
+          updateAt: new Date(),
+          startAt: data.startAt || new Date(),
+          duration_time: data.duration_time || classCopy.duration_time,
+          nb_of_student: 0,
+          status: data.startAt ? 'ongoing' : 'pending',
+          grade: data.grade || classCopy.grade,
+          subject: data.subject || classCopy.subject
+        }
+      })
     } catch (error) {
       
     }
