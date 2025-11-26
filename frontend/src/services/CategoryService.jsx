@@ -8,85 +8,53 @@ const apiClient = axios.create({
 });
 
 const getAuthHeaders = (token) => {
-  if (!token) {
-    console.warn("Authentication token is missing for API request.");
-    return {};
-  }
+  if (!token) return {};
   return {
     headers: { Authorization: `Bearer ${token}` },
   };
 };
 
-// ===================================
-// === API LIÊN QUAN ĐẾN SÁCH (BOOK) ===
-// ===================================
-
-/**
- * Lấy danh sách tất cả các sách
- * Tương ứng với: GET /books
- */
 export const getAllBooks = async (token) => {
   try {
     const response = await apiClient.get("/books", getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    console.error(
-      "Error fetching books:",
-      error.response?.status,
-      error.response?.data || error.message
-    );
-    throw error;
+    throw error.response?.data || error;
   }
 };
 
-
-/**
- * Tạo một hoặc nhiều sách mới
- * Tương ứng với: POST /books
- * (KHÔNG ĐỔI - Đã chính xác)
- */
+export const getBooksByTutor = async (tutorId, token) => {
+  try {
+    const response = await apiClient.get(`/books/${tutorId}`, getAuthHeaders(token));
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
 
 export const createBook = async (bookData, token) => {
   try {
     const response = await apiClient.post(
       "/books",
-      { book: bookData },
+      bookData,
       getAuthHeaders(token)
     );
     return response.data;
   } catch (error) {
-    console.error(
-      "Error creating book(s):",
-      error.response?.status,
-      error.response?.data || error.message
-    );
-    throw error;
+    throw error.response?.data || error;
   }
 };
 
-
-// ======================================
-// === API LIÊN QUAN ĐẾN CATEGORY ===
-// ======================================
-
-/**
- * Lấy danh sách categories (có filter/search/pagination)
- * Tương ứng với: GET /categories
- */
-export const getAllCategories = async (params = {}, token) => {
+export const createBookByTutor = async (tutorId, bookData, token) => {
   try {
-    const response = await apiClient.get("/categories", {
-      params,
-      ...getAuthHeaders(token),
-    });
-    return response.data; 
-  } catch (error) {
-    console.error(
-      `Error fetching categories:`,
-      error.response?.status,
-      error.response?.data || error.message
+    const response = await apiClient.post(
+      `/books/${tutorId}`,
+      bookData,
+      getAuthHeaders(token)
     );
-    throw error;
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
   }
 };
 
@@ -99,12 +67,44 @@ export const updateBook = async (bookId, updatedData, token) => {
     );
     return response.data;
   } catch (error) {
-    console.error(
-      `Error updating book ${bookId}:`,
-      error.response?.status,
-      error.response?.data || error.message
+    throw error.response?.data || error;
+  }
+};
+
+export const deleteBook = async (bookId, mode, token) => {
+  try {
+    const response = await apiClient.delete(`/books/${bookId}`, {
+      params: { mode },
+      ...getAuthHeaders(token),
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const getAllCategories = async (params = {}, token) => {
+  try {
+    const response = await apiClient.get("/categories", {
+      params,
+      ...getAuthHeaders(token),
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const createCategory = async (categoryData, token) => {
+  try {
+    const response = await apiClient.post(
+      "/categories",
+      categoryData,
+      getAuthHeaders(token)
     );
-    throw error;
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
   }
 };
 
@@ -117,35 +117,18 @@ export const updateCategory = async (categoryId, updatedData, token) => {
     );
     return response.data;
   } catch (error) {
-
-    console.error(
-      `Error updating category ${categoryId}:`,
-      error.response?.status,
-      error.response?.data || error.message
-    );
-    throw error;
+    throw error.response?.data || error;
   }
 };
-/**
- * Tạo một hoặc nhiều category mới
- * Tương ứng với: POST /categories
- * @param {Array<object>} categoryData - Mảng các đối tượng category
- * (Mỗi object PHẢI chứa book_id)
- */
-export const createCategory = async (categoryData, token) => {
+
+export const deleteCategory = async (categoryId, mode, token) => {
   try {
-    const response = await apiClient.post(
-      "/categories",
-      categoryData, 
-      getAuthHeaders(token)
-    );
+    const response = await apiClient.delete(`/categories/${categoryId}`, {
+      params: { mode },
+      ...getAuthHeaders(token),
+    });
     return response.data;
   } catch (error) {
-    console.error(
-      `Error creating categories:`,
-      error.response?.status,
-      error.response?.data || error.message
-    );
-    throw error;
+    throw error.response?.data || error;
   }
 };

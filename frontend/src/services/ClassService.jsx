@@ -1,4 +1,3 @@
-/* eslint-disable */
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
@@ -11,28 +10,26 @@ const getAuthHeaders = (token) => ({
     headers: { Authorization: `Bearer ${token}` }
 });
 
-const getTutorIdFromToken = (token) => {
+const getUserIdFromToken = (token) => {
     try {
         const decoded = jwtDecode(token);
-        const userId = decoded.sub; 
-        if (!userId) throw new Error("Could not find user ID (sub) in token.");
-        return userId;
+        return decoded.sub;
     } catch (error) {
-        console.error('Invalid or missing token:', error.message);
-        throw new Error('Invalid or missing token.');
+        throw new Error('Invalid token');
     }
-}
-
-// --- Class Controller APIs ---
+};
 
 export const createClass = async (classData, token) => {
     try {
-        const tutorId = getTutorIdFromToken(token);
-        const response = await apiClient.post(`/classes/create/${tutorId}`, classData, getAuthHeaders(token));
+        const tutorId = getUserIdFromToken(token);
+        const response = await apiClient.post(
+            `/classes/create/${tutorId}`, 
+            classData, 
+            getAuthHeaders(token)
+        );
         return response.data;
     } catch (error) {
-        console.error('Error creating class:', error.response?.data || error.message);
-        throw error;
+        throw error.response?.data || error;
     }
 };
 
@@ -44,62 +41,83 @@ export const getAllClasses = async (params = {}, token) => {
         });
         return response.data;
     } catch (error) {
-        console.error('Error fetching all classes:', error.response?.data || error.message);
-        throw error;
+        throw error.response?.data || error;
     }
 };
 
-export const getMyClasses = async (token) => {
+export const getClassesByTutor = async (token, tutorId = null) => {
     try {
-        const tutorId = getTutorIdFromToken(token);
-        const response = await apiClient.get(`/classes/get/tutor/${tutorId}`, getAuthHeaders(token));
+        const id = tutorId || getUserIdFromToken(token);
+        const response = await apiClient.get(
+            `/classes/get/tutor/${id}`, 
+            getAuthHeaders(token)
+        );
         return response.data;
     } catch (error) {
-        console.error('Error fetching my classes:', error.response?.data || error.message);
-        throw error;
+        throw error.response?.data || error;
     }
 };
 
 export const getClassDetails = async (classId, token) => {
     try {
-        const response = await apiClient.get(`/classes/get/detail/${classId}`, getAuthHeaders(token));
+        const response = await apiClient.get(
+            `/classes/get/detail/${classId}`, 
+            getAuthHeaders(token)
+        );
         return response.data;
     } catch (error) {
-        console.error(`Error fetching details for class ${classId}:`, error.response?.data || error.message);
-        throw error;
+        throw error.response?.data || error;
     }
 };
 
-export const enrollStudentToClass = async (classId, studentId, token) => {
+export const enrollClass = async (classId, studentEmail, token) => {
     try {
-        const response = await apiClient.post(`/classes/enroll/${classId}/${studentId}`, {}, getAuthHeaders(token));
+        const response = await apiClient.post(
+            `/classes/enroll/${classId}/${studentEmail}`, 
+            {}, 
+            getAuthHeaders(token)
+        );
         return response.data;
     } catch (error) {
-        console.error(`Error enrolling student ${studentId} to class ${classId}:`, error.response?.data || error.message);
-        throw error;
+        throw error.response?.data || error;
     }
 };
 
-export const deleteClass = async (classId, token) => {
+export const updateClass = async (classId, data, token) => {
     try {
-        console.warn(`Attempting to call non-existent API: DELETE /classes/${classId}`);
-        const response = await apiClient.delete(`/classes/${classId}`, getAuthHeaders(token));
+        const response = await apiClient.patch(
+            `/classes/${classId}`, 
+            data, 
+            getAuthHeaders(token)
+        );
         return response.data;
     } catch (error) {
-        console.error(`Error deleting class ${classId}:`, error.response?.data || error.message);
-        throw error;
+        throw error.response?.data || error;
     }
 };
 
-// --- Schedule Controller APIs ---
+export const cancelClass = async (studentId, classId, token) => {
+    try {
+        const response = await apiClient.delete(
+            `/classes/${studentId}/${classId}`, 
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
 
 export const createSchedule = async (classId, scheduleData, token) => {
     try {
-        const response = await apiClient.post(`/schedule/create/${classId}`, scheduleData, getAuthHeaders(token));
+        const response = await apiClient.post(
+            `/schedule/create/${classId}`, 
+            scheduleData, 
+            getAuthHeaders(token)
+        );
         return response.data;
     } catch (error) {
-        console.error(`Error creating schedule for class ${classId}:`, error.response?.data || error.message);
-        throw error;
+        throw error.response?.data || error;
     }
 };
 
@@ -109,33 +127,36 @@ export const deleteSchedule = async (classId, mode, scheduleIds, token) => {
             `/schedule/delete/${classId}`, 
             { data: scheduleIds }, 
             { 
-                params: { mode: mode },
+                params: { mode },
                 ...getAuthHeaders(token) 
             }
         );
         return response.data;
     } catch (error) {
-        console.error(`Error deleting schedule for class ${classId}:`, error.response?.data || error.message);
-        throw error;
+        throw error.response?.data || error;
+    }
+};
+
+export const getAllSchedules = async (token) => {
+    try {
+        const response = await apiClient.get(
+            '/schedule/get/all', 
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
     }
 };
 
 export const getScheduleByClass = async (classId, token) => {
     try {
-        const response = await apiClient.get(`/schedule/get/class/${classId}`, getAuthHeaders(token));
+        const response = await apiClient.get(
+            `/schedule/get/class/${classId}`, 
+            getAuthHeaders(token)
+        );
         return response.data;
     } catch (error) {
-        console.error(`Error fetching schedule for class ${classId}:`, error.response?.data || error.message);
-        throw error;
-    }
-};
-
-export const getAllSchedule = async (token) => {
-    try {
-        const response = await apiClient.get('/schedule/get/all', getAuthHeaders(token));
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching all schedule:', error.response?.data || error.message);
-        throw error;
+        throw error.response?.data || error;
     }
 };
