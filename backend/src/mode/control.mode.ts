@@ -7,3 +7,8 @@ export enum Period {
     HOUR = 'hour',
     DAY = 'day'
 }
+
+export enum DuplicatingObject {
+    RESOURCE = 'resource',
+    SCHEDULE = 'schedule',
+}

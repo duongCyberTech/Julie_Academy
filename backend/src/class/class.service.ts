@@ -4,6 +4,7 @@ import {ClassDto, ScheduleDto} from './dto/class.dto';
 import { google } from 'googleapis';
 import { addDays, isBefore, setDate, setHours, setMinutes } from 'date-fns';
 import { ClassStatus } from '@prisma/client';
+import { DuplicatingObject } from 'src/mode/control.mode';
 require('dotenv').config()
 
 @Injectable()
@@ -15,7 +16,11 @@ export class ClassService {
         const checkExisted = await tx.class.findFirst({
           where: {
             classname: data.classname,
-            tutor: { uid: tutor_uid }
+            tutor: { uid: tutor_uid },
+            OR: [
+              {status: 'pending'},
+              {status: 'ongoing'}
+            ]
           }
         })
 
@@ -32,7 +37,7 @@ export class ClassService {
                 subject: data.subject,
                 createdAt: new Date(),
                 updateAt: new Date(),
-                startat: data.startAt || null,
+                startat: data.startAt || new Date(),
                 tutor: { connect: { uid: tutor_uid } },
             },
         });
@@ -88,20 +93,7 @@ export class ClassService {
       },
     });
 
-    const returnData = classLst.map( (item) => {
-      return {
-        class_id: item.class_id,
-        classname: item.classname,
-        description: item.description,
-        tutor_id: item.tutor.user.uid,
-        fname: item.tutor.user.fname,
-        mname: item.tutor.user.mname,
-        lname: item.tutor.user.lname,
-        username: item.tutor.user.username
-      }
-    })
-
-    return returnData
+    return classLst
   }
 
   async getClassesByTutor(tutor_uid: string) {
@@ -129,20 +121,7 @@ export class ClassService {
       },
     });
 
-    return class_.map((item) => {
-      return {
-        class_id: item.class_id,
-        classname: item.classname,
-        description: item.description,
-        nb_of_student: item.nb_of_student,
-        status: item.status,
-        tutor_id: item.tutor.user.uid,
-        fname: item.tutor.user.fname,
-        mname: item.tutor.user.mname,
-        lname: item.tutor.user.lname,
-        username: item.tutor.user.username
-      }
-    })[0]
+    return class_
   }
 
   async getDetailedClass(class_id: string) {
@@ -246,14 +225,33 @@ export class ClassService {
   }
 
   async cancelClassAtStudentSide(student_uid: string, class_id: string){
-    return this.prisma.learning.delete({
-      where: {
-        class_id_student_uid: {
-          class_id,
-          student_uid
-        }
-      }
-    })
+    try {
+      return this.prisma.$transaction(async(tx) => {
+        await tx.learning.delete({
+          where: {
+            class_id_student_uid: {
+              class_id,
+              student_uid
+            }
+          }
+        })
+
+        await tx.class.update({
+          where: { class_id },
+          data: { nb_of_student: {decrement: 1} }
+        })
+      })
+    } catch (error) {
+      throw new InternalServerErrorException("Fail when canceling class!")
+    }
+  }
+
+  async duplicateClass(data: Partial<ClassDto>, d_class_id: string, dupLst?: DuplicatingObject[]){
+    try {
+      
+    } catch (error) {
+      
+    }
   }
 }
 
