@@ -224,7 +224,10 @@ export class ClassService {
         });
 
         if (!enrollment) throw new InternalServerErrorException("Enrollment Fail")
-
+        await tx.class.update({
+          where: {class_id},
+          data: {nb_of_student: {increment: 1}}
+        })
         return {message: 'Enrollment successful'}
     });
   }
