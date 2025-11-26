@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {ClassDto, ScheduleDto} from './dto/class.dto';
 import { google } from 'googleapis';
@@ -12,6 +12,15 @@ export class ClassService {
 
   async createClass(tutor_uid: string, data: ClassDto) {
     return this.prisma.$transaction(async (tx) => {
+        const checkExisted = await tx.class.findFirst({
+          where: {
+            classname: data.classname,
+            tutor: { uid: tutor_uid }
+          }
+        })
+
+        if (checkExisted) throw new BadRequestException(`class ${data.classname} has been created!`)
+
         const newClass = await tx.class.create({
             data: {
                 classname: data.classname,
@@ -27,7 +36,10 @@ export class ClassService {
                 tutor: { connect: { uid: tutor_uid } },
             },
         });
-        return (newClass !== null ? {status: 201, message: 'Class created successfully'} : {status: 400, message: 'Class creation failed'})
+
+        if (!newClass) throw new InternalServerErrorException("Create class fail!")
+        
+        return {class: newClass.class_id}
     })
   }
 
@@ -51,7 +63,8 @@ export class ClassService {
         { subject: { contains: search, mode: 'insensitive' } },
       ];
     }
-    return this.prisma.class.findMany({
+
+    const classLst = await this.prisma.class.findMany({
       where,
       skip,
       take: _limit,
@@ -65,6 +78,7 @@ export class ClassService {
             select:{
               uid: true,
               fname: true,
+              mname: true,
               lname: true,
               username: true,
             }
@@ -73,10 +87,25 @@ export class ClassService {
         }
       },
     });
+
+    const returnData = classLst.map( (item) => {
+      return {
+        class_id: item.class_id,
+        classname: item.classname,
+        description: item.description,
+        tutor_id: item.tutor.user.uid,
+        fname: item.tutor.user.fname,
+        mname: item.tutor.user.mname,
+        lname: item.tutor.user.lname,
+        username: item.tutor.user.username
+      }
+    })
+
+    return returnData
   }
 
   async getClassesByTutor(tutor_uid: string) {
-    return this.prisma.class.findMany({
+    const class_ = await this.prisma.class.findMany({
       where: { tutor_uid },
       orderBy: { createdAt: 'desc' },
       select:{
@@ -99,6 +128,21 @@ export class ClassService {
         }
       },
     });
+
+    return class_.map((item) => {
+      return {
+        class_id: item.class_id,
+        classname: item.classname,
+        description: item.description,
+        nb_of_student: item.nb_of_student,
+        status: item.status,
+        tutor_id: item.tutor.user.uid,
+        fname: item.tutor.user.fname,
+        mname: item.tutor.user.mname,
+        lname: item.tutor.user.lname,
+        username: item.tutor.user.username
+      }
+    })[0]
   }
 
   async getDetailedClass(class_id: string) {
@@ -152,12 +196,21 @@ export class ClassService {
     return classDetails;
   }
 
-  async enrollClass(class_id: string, student_uid: string) {
+  async enrollClass(class_id: string, email: string) {
     return this.prisma.$transaction(async (tx) => {
+
+        const student = await tx.student.findFirst({
+          where: { user: { email } }
+        });
+
+        if (!student) {
+          throw new BadRequestException('Student not found');
+        }
+
         const checkEnrollment = await tx.learning.findFirst({
             where: {
-                class_id,
-                student_uid
+                class: { class_id },
+                student: { uid: student.uid }
             }
         });
         if (checkEnrollment) {
@@ -166,10 +219,13 @@ export class ClassService {
         const enrollment = await tx.learning.create({
             data: {
                 class: { connect: { class_id } },
-                student: { connect: { uid: student_uid } },
+                student: { connect: { uid: student.uid } },
             },
         });
-        return (enrollment !== null ? {status: 201, message: 'Enrollment successful'} : {status: 400, message: 'Enrollment failed'})
+
+        if (!enrollment) throw new InternalServerErrorException("Enrollment Fail")
+
+        return {message: 'Enrollment successful'}
     });
   }
 
