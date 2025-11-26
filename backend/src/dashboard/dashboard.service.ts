@@ -169,6 +169,8 @@ export class TutorDashboard {
             }
         })
     }
+
+    async getUpcomingSchedule(){}
 }
 
 @Injectable()
@@ -194,7 +196,7 @@ export class DashboardService {
         }
     }   
     
-    async getTutorStats(tutor_id) {
+    async getTutorStats(tutor_id: string) {
         const numStudent = await this.tutor.getNumStudentsOfTutor(tutor_id)
         const numClasses = await this.tutor.getNumClasses(tutor_id)
         const numLessonPlan = await this.tutor.getNumLessonPlan(tutor_id)

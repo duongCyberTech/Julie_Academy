@@ -15,7 +15,7 @@ export class DashboardController {
     constructor(private readonly dashboardService: DashboardService) {}
 
     @Get('admin-stats')
-    @Roles('tutor')
+    @Roles('admin')
     getAdminStats(){
         return this.dashboardService.getAdminStats()
     }
