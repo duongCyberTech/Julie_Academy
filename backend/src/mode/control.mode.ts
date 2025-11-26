@@ -11,4 +11,5 @@ export enum Period {
 export enum DuplicatingObject {
     RESOURCE = 'resource',
     SCHEDULE = 'schedule',
+    PLAN = 'plan'
 }
