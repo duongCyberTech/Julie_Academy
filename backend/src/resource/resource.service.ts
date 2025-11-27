@@ -1,6 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { FolderDto, ResourceDto } from "./dto/resource.dto";
+import { GoogleDriveService } from "./google/google.service";
+import * as fs from 'fs';
 
 @Injectable()
 export class FolderService {
@@ -58,21 +60,37 @@ export class FolderService {
 @Injectable()
 export class ResourceService {
     constructor(
-        private readonly prisma: PrismaService
+        private readonly prisma: PrismaService,
+        private readonly drive: GoogleDriveService
     ){}
 
-    async createNewDocs(tutor_id: string, data: ResourceDto){ 
+    async createNewDocs(tutor_id: string, data: ResourceDto, file: Express.Multer.File){ 
+        if (!file) throw new BadRequestException("File buffer not found.");
+
+        const fileStream = file.buffer
+        if (!fileStream) {
+            throw new InternalServerErrorException("File buffer not found. Check Multer configuration.");
+        }
+        const num_pages = file.size
+        const fileUploaded = await this.drive.uploadFile(
+            file.originalname,
+            file.mimetype,
+            fileStream
+        )
+
         return this.prisma.$transaction(async(tx) => {
+
             const newDocs = await tx.resources.create({
                 data: {
+                    did: fileUploaded.id,
                     title: data.title,
                     description: data.description,
                     createAt: new Date(),
                     updateAt: new Date(),
-                    file_path: data.file_path,
-                    file_type: data.file_type,
+                    file_path: fileUploaded.url,
+                    file_type: file.mimetype,
                     version: data.version || 1,
-                    num_pages: data.num_pages || 0,
+                    num_pages: data.num_pages || num_pages,
                     tutor: { connect: {uid: tutor_id} },
                 }
             })
@@ -96,6 +114,7 @@ export class ResourceService {
                     }
                 })
             }
+            return newDocs
         })
     }
 }
