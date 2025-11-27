@@ -1,41 +1,43 @@
-/* eslint-disable */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { getScheduleByClass, createSchedule, deleteSchedule } from '../../services/ClassService';
 import {
-    Box, Typography, Button, Paper, CircularProgress, Alert,
+    Box, Typography, Button, Paper, CircularProgress,
     Stack, Select, MenuItem, TextField, FormControl, InputLabel,
-    List, ListItem, ListItemText, IconButton, Divider, Link
+    List, ListItem, ListItemText, IconButton, Divider, Link,
+    Grid, Snackbar, Alert, Dialog, DialogTitle, DialogContent, 
+    DialogContentText, DialogActions, Chip
 } from '@mui/material';
+
+// Icons
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import LinkIcon from '@mui/icons-material/Link'; // Thêm icon link
+import LinkIcon from '@mui/icons-material/Link';
+import EventRepeatIcon from '@mui/icons-material/EventRepeat';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 
+// Date Utils
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import dayjs from 'dayjs';
 
-// --- Helpers (Giữ nguyên) ---
-
-const dayMap = {
+// --- Constants & Helpers ---
+const DAY_MAP = {
     2: 'Thứ 2', 3: 'Thứ 3', 4: 'Thứ 4', 5: 'Thứ 5', 6: 'Thứ 6', 7: 'Thứ 7', 8: 'Chủ Nhật'
 };
-const dayOptions = Object.entries(dayMap).map(([value, label]) => ({
+
+const DAY_OPTIONS = Object.entries(DAY_MAP).map(([value, label]) => ({
     value: parseInt(value, 10), label
 }));
 
-const formatTimeToAMPM = (timeString) => {
-    if (!timeString) return '';
-    try {
-        const [hours, minutes] = timeString.split(':').map(Number);
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        let hours12 = hours % 12;
-        if (hours12 === 0) hours12 = 12;
-        const paddedMinutes = String(minutes).padStart(2, '0');
-        return `${hours12}:${paddedMinutes} ${ampm}`;
-    } catch (e) { return timeString; }
+const INITIAL_FORM_STATE = {
+    meeting_date: 2,
+    startAt: '08:00',
+    endAt: '09:30',
+    link_meet: ''
 };
 
+// Helper chuyển đổi giờ
 const stringToDayjs = (timeString) => {
     if (!timeString) return null;
     const [hours, minutes] = timeString.split(':');
@@ -43,36 +45,44 @@ const stringToDayjs = (timeString) => {
 };
 
 const dayjsToString = (dayjsObject) => {
-    if (!dayjsObject) return null;
-    return dayjsObject.format('HH:mm');
+    return dayjsObject ? dayjsObject.format('HH:mm') : '';
 };
 
-// SỬA 1: Thêm link_meet vào trạng thái ban đầu
-const initialState = {
-    meeting_date: 2, 
-    startAt: '08:00', 
-    endAt: '09:00',
-    link_meet: '' // Thêm trường link_meet
+const formatTimeDisplay = (timeString) => {
+    if (!timeString) return '';
+    const [hours, minutes] = timeString.split(':');
+    return `${hours}:${minutes}`;
 };
 
-// --- Component ---
+// --- Main Component ---
 
-function ScheduleTab({ classId, token }) {
+const ScheduleTab = ({ classId, token }) => {
+    // Data States
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [submitting, setSubmitting] = useState(false);
-    const [newEntry, setNewEntry] = useState(initialState);
+    
+    // Form State
+    const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+
+    // UI States
+    const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+    const [deleteDialog, setDeleteDialog] = useState({ open: false, type: null, id: null }); // type: 'single' | 'all'
+
+    // --- API Handlers ---
 
     const fetchSchedules = useCallback(async () => {
         if (!token || !classId) return;
-        setLoading(true);
-        setError(null);
         try {
             const data = await getScheduleByClass(classId, token);
-            setSchedules(data || []);
+            // Sắp xếp lịch theo thứ tự ngày trong tuần -> giờ bắt đầu
+            const sorted = (data || []).sort((a, b) => {
+                if (a.meeting_date !== b.meeting_date) return a.meeting_date - b.meeting_date;
+                return a.startAt.localeCompare(b.startAt);
+            });
+            setSchedules(sorted);
         } catch (err) {
-            setError('Không thể tải lịch học của lớp.');
+            showToast('Không thể tải lịch học.', 'error');
         } finally {
             setLoading(false);
         }
@@ -82,160 +92,219 @@ function ScheduleTab({ classId, token }) {
         fetchSchedules();
     }, [fetchSchedules]);
 
-    // SỬA 2: Hàm này sẽ tự động xử lý link_meet
-    const handleFormChange = (event) => {
-        const { name, value } = event.target;
-        setNewEntry(prev => ({ ...prev, [name]: value }));
-    };
-    
-    const handleTimeChange = (name, dayjsValue) => {
-        setNewEntry(prev => ({
-            ...prev,
-            [name]: dayjsToString(dayjsValue)
-        }));
+    // --- Form Handlers ---
+
+    const handleFormChange = (e) => {
+        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    // SỬA 3: Hàm này đã bao gồm link_meet khi gửi
+    const handleTimeChange = (name, newValue) => {
+        setFormData(prev => ({ ...prev, [name]: dayjsToString(newValue) }));
+    };
+
+    const showToast = (message, severity = 'success') => {
+        setToast({ open: true, message, severity });
+    };
+
+    const validateForm = () => {
+        const start = stringToDayjs(formData.startAt);
+        const end = stringToDayjs(formData.endAt);
+        
+        if (!start || !end) return "Vui lòng chọn giờ bắt đầu và kết thúc.";
+        if (end.isBefore(start) || end.isSame(start)) return "Giờ kết thúc phải sau giờ bắt đầu.";
+        return null;
+    };
+
     const handleAddSchedule = async () => {
-        if (!newEntry.startAt || !newEntry.endAt) {
-            setError("Vui lòng nhập giờ bắt đầu và kết thúc.");
+        const errorMsg = validateForm();
+        if (errorMsg) {
+            showToast(errorMsg, 'warning');
             return;
         }
+
         setSubmitting(true);
-        setError(null);
         try {
-            // newEntry (từ state) đã chứa link_meet
-            await createSchedule(classId, [newEntry], token);
-            setNewEntry(initialState); // Reset form (bao gồm cả link_meet)
-            await fetchSchedules();
+            await createSchedule(classId, [formData], token);
+            showToast('Thêm lịch học thành công!');
+            setFormData(INITIAL_FORM_STATE);
+            fetchSchedules();
         } catch (err) {
-            setError('Lỗi khi thêm lịch học mới.');
+            showToast(err.message || 'Lỗi khi thêm lịch học.', 'error');
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleDeleteSchedule = async (scheduleIdToDelete) => {
-        if (!window.confirm("Bạn có chắc muốn xóa lịch học này?")) {
-            return;
-        }
-        setError(null);
+    // --- Delete Handlers ---
+
+    const openDeleteDialog = (type, id = null) => {
+        setDeleteDialog({ open: true, type, id });
+    };
+
+    const handleConfirmDelete = async () => {
+        const { type, id } = deleteDialog;
+        setDeleteDialog({ open: false, type: null, id: null }); // Close immediately for UX
+        
         try {
-            await deleteSchedule(classId, false, [scheduleIdToDelete], token);
-            await fetchSchedules();
+            if (type === 'all') {
+                await deleteSchedule(classId, true, [], token);
+                showToast('Đã xóa toàn bộ lịch học.', 'success');
+            } else {
+                await deleteSchedule(classId, false, [id], token);
+                showToast('Đã xóa lịch học.', 'success');
+            }
+            fetchSchedules();
         } catch (err) {
-            setError('Lỗi khi xóa lịch học.');
+            showToast('Xóa thất bại.', 'error');
         }
     };
 
+    // --- Render ---
+
     if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box>;
+        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
     }
 
     return (
         <Box>
-            {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
-
-            <Paper sx={{ p: 2, mb: 3, border: '1px solid', borderColor: 'divider' }} variant="outlined">
-                <Typography variant="h6" gutterBottom>
-                    Thêm buổi học cố định
+            {/* 1. Form Thêm Lịch */}
+            <Paper variant="outlined" sx={{ p: 3, mb: 4, borderRadius: 2, backgroundColor: 'background.default' }}>
+                <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <EventRepeatIcon color="primary" /> Thiết lập lịch học
                 </Typography>
-                
+                <Typography variant="body2" color="text.secondary" mb={3}>
+                    Thêm các khung giờ học cố định hàng tuần cho lớp này.
+                </Typography>
+
                 <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="en">
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="flex-start">
-                        
-                        <FormControl size="small" sx={{ minWidth: 150 }}>
-                            <InputLabel id="day-select-label">Ngày trong tuần</InputLabel>
-                            <Select
-                                labelId="day-select-label"
-                                label="Ngày trong tuần"
-                                name="meeting_date"
-                                value={newEntry.meeting_date}
-                                onChange={handleFormChange}
+                    <Grid container spacing={2} alignItems="center">
+                        <Grid item xs={12} md={3}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Ngày trong tuần</InputLabel>
+                                <Select
+                                    name="meeting_date"
+                                    value={formData.meeting_date}
+                                    label="Ngày trong tuần"
+                                    onChange={handleFormChange}
+                                >
+                                    {DAY_OPTIONS.map(opt => (
+                                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={6} md={3}>
+                            <TimePicker
+                                label="Giờ bắt đầu"
+                                value={stringToDayjs(formData.startAt)}
+                                onChange={(val) => handleTimeChange('startAt', val)}
+                                ampm={false} // Dùng định dạng 24h cho gọn
+                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                            />
+                        </Grid>
+                        <Grid item xs={6} md={3}>
+                            <TimePicker
+                                label="Giờ kết thúc"
+                                value={stringToDayjs(formData.endAt)}
+                                onChange={(val) => handleTimeChange('endAt', val)}
+                                ampm={false}
+                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                            <Button
+                                fullWidth
+                                variant="contained"
+                                onClick={handleAddSchedule}
+                                startIcon={submitting ? <CircularProgress size={20} color="inherit"/> : <AddCircleOutlineIcon />}
+                                disabled={submitting}
+                                sx={{ height: 40 }}
                             >
-                                {dayOptions.map(opt => (
-                                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                                Thêm lịch
+                            </Button>
+                        </Grid>
                         
-                        <TimePicker
-                            label="Giờ bắt đầu"
-                            value={stringToDayjs(newEntry.startAt)}
-                            onChange={(newValue) => handleTimeChange('startAt', newValue)}
-                            ampm={true}
-                            slotProps={{ textField: { size: 'small' } }}
-                        />
-                        
-                        <TimePicker
-                            label="Giờ kết thúc"
-                            value={stringToDayjs(newEntry.endAt)}
-                            onChange={(newValue) => handleTimeChange('endAt', newValue)}
-                            ampm={true}
-                            slotProps={{ textField: { size: 'small' } }}
-                        />
-
-                        <Button
-                            variant="contained"
-                            onClick={handleAddSchedule}
-                            startIcon={<AddCircleOutlineIcon />}
-                            disabled={submitting}
-                            sx={{ minWidth: 100 }}
-                        >
-                            {submitting ? <CircularProgress size={24} /> : "Thêm"}
-                        </Button>
-                    </Stack>
-
-                    {/* SỬA 4: Thêm TextField cho link_meet */}
-                    <TextField
-                        label="Link Google Meet"
-                        name="link_meet"
-                        value={newEntry.link_meet}
-                        onChange={handleFormChange}
-                        size="small"
-                        fullWidth
-                        sx={{ mt: 2 }} // Đặt ở hàng riêng cho đẹp
-                    />
-
+                        <Grid item xs={12}>
+                            <TextField
+                                label="Link Google Meet / Zoom (Tùy chọn)"
+                                name="link_meet"
+                                value={formData.link_meet}
+                                onChange={handleFormChange}
+                                size="small"
+                                fullWidth
+                                placeholder="https://meet.google.com/..."
+                                InputProps={{
+                                    startAdornment: <LinkIcon color="action" sx={{ mr: 1 }} />
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
                 </LocalizationProvider>
             </Paper>
 
-            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                Lịch học hiện tại
-            </Typography>
-            <Paper variant="outlined">
+            {/* 2. Danh sách Lịch */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" fontWeight={600}>
+                    Lịch học hiện tại ({schedules.length})
+                </Typography>
+                {schedules.length > 0 && (
+                    <Button 
+                        size="small" 
+                        color="error" 
+                        startIcon={<DeleteSweepIcon />}
+                        onClick={() => openDeleteDialog('all')}
+                        sx={{ textTransform: 'none' }}
+                    >
+                        Xóa tất cả
+                    </Button>
+                )}
+            </Box>
+
+            <Paper variant="outlined" sx={{ borderRadius: 2 }}>
                 <List disablePadding>
                     {schedules.length > 0 ? (
                         schedules.map((sched, index) => (
                             <React.Fragment key={sched.schedule_id}>
                                 <ListItem
                                     secondaryAction={
-                                        <IconButton edge="end" aria-label="xóa" onClick={() => handleDeleteSchedule(sched.schedule_id)}>
-                                            <DeleteIcon color="error" />
+                                        <IconButton edge="end" color="default" onClick={() => openDeleteDialog('single', sched.schedule_id)}>
+                                            <DeleteIcon fontSize="small" />
                                         </IconButton>
                                     }
+                                    sx={{ py: 1.5 }}
                                 >
-                                    {/* SỬA 5: Cập nhật ListItemText để hiển thị link */}
                                     <ListItemText
-                                        primary={`Buổi ${sched.schedule_id}: ${dayMap[sched.meeting_date] || 'Không rõ'}`}
-                                        secondary={
-                                            <Box component="span">
-                                                <Typography component="span" variant="body2" display="block">
-                                                    Thời gian: {formatTimeToAMPM(sched.startAt)} - {formatTimeToAMPM(sched.endAt)}
+                                        primary={
+                                            <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                                                <Chip 
+                                                    label={DAY_MAP[sched.meeting_date]} 
+                                                    color="primary" 
+                                                    size="small" 
+                                                    variant="soft" // Nếu dùng theme Joy, nếu Material thì bỏ prop này
+                                                    sx={{ fontWeight: 'bold', minWidth: 60 }}
+                                                />
+                                                <Typography variant="body1" fontWeight={500}>
+                                                    {formatTimeDisplay(sched.startAt)} - {formatTimeDisplay(sched.endAt)}
                                                 </Typography>
-                                                {sched.link_meet && (
-                                                    <Link
-                                                        href={sched.link_meet}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        variant="body2"
-                                                        sx={{ display: 'flex', alignItems: 'center', mt: 0.5, fontWeight: 500 }}
-                                                    >
-                                                        <LinkIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                                                        Link buổi học
-                                                    </Link>
-                                                )}
-                                            </Box>
+                                            </Stack>
+                                        }
+                                        secondary={
+                                            sched.link_meet ? (
+                                                <Link
+                                                    href={sched.link_meet}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    underline="hover"
+                                                    sx={{ display: 'inline-flex', alignItems: 'center', fontSize: '0.875rem', mt: 0.5 }}
+                                                >
+                                                    <LinkIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                                                    Vào phòng học
+                                                </Link>
+                                            ) : (
+                                                <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                                                    Chưa cập nhật link phòng học
+                                                </Typography>
+                                            )
                                         }
                                     />
                                 </ListItem>
@@ -243,14 +312,46 @@ function ScheduleTab({ classId, token }) {
                             </React.Fragment>
                         ))
                     ) : (
-                        <ListItem>
-                            <ListItemText primary="Lớp học này chưa có lịch học cố định." />
-                        </ListItem>
+                        <Box sx={{ p: 4, textAlign: 'center' }}>
+                            <Typography variant="body1" color="text.secondary">
+                                Lớp này chưa có lịch học cố định nào.
+                            </Typography>
+                        </Box>
                     )}
                 </List>
             </Paper>
+
+            {/* 3. Dialogs & Toasts */}
+            <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ ...deleteDialog, open: false })}>
+                <DialogTitle>Xác nhận xóa</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        {deleteDialog.type === 'all' 
+                            ? "Bạn có chắc chắn muốn xóa TOÀN BỘ lịch học của lớp này? Hành động này không thể hoàn tác."
+                            : "Bạn có chắc chắn muốn xóa khung giờ học này không?"
+                        }
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialog({ ...deleteDialog, open: false })}>Hủy</Button>
+                    <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
+                        Xóa
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Snackbar 
+                open={toast.open} 
+                autoHideDuration={4000} 
+                onClose={() => setToast(prev => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setToast(prev => ({ ...prev, open: false }))} severity={toast.severity} variant="filled" sx={{ width: '100%' }}>
+                    {toast.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }
 
-export default React.memo(ScheduleTab);
+export default memo(ScheduleTab);

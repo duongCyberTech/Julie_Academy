@@ -1,34 +1,35 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMyClasses, deleteClass, createClass } from '../../services/ClassService';
+import { getClassesByTutor } from '../../services/ClassService';
+
 import {
     Box, Typography, Button, Paper, CircularProgress,
     Alert, SvgIcon, Grid, Card, CardContent, CardActions,
-    IconButton, Tooltip, Stack, Chip
+    IconButton, Tooltip, Chip
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 
+// Icons
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import GroupIcon from '@mui/icons-material/Group';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import SchoolIcon from '@mui/icons-material/School';
 import PendingIcon from '@mui/icons-material/Pending';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
+// Components
 import CreateClassDialog from '../../components/CreateClassDialog';
+import UpdateClassDialog from '../../components/UpdateClassDialog';
 
-
-
+// --- Styled Components ---
 const PageWrapper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
     backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.background.paper,
     borderRadius: theme.shape.borderRadius * 2,
     border: `1px solid ${theme.palette.divider}`,
     boxShadow: 'none',
+    minHeight: '80vh'
 }));
 
 const Header = styled(Box)({
@@ -42,15 +43,17 @@ const ClassCardStyled = styled(Card)(({ theme }) => ({
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+    transition: 'all 0.2s ease-in-out',
     border: `1px solid ${theme.palette.divider}`,
     boxShadow: 'none',
     '&:hover': {
         transform: 'translateY(-4px)',
         boxShadow: theme.shadows[4],
+        borderColor: theme.palette.primary.light,
     }
 }));
 
+// --- Sub Components ---
 
 const EmptyIllustration = () => (
     <SvgIcon
@@ -63,41 +66,37 @@ const EmptyIllustration = () => (
     </SvgIcon>
 );
 
-const RenderEmptyState = memo(({ onOpenCreateDialog }) => {
-    return (
-        <Paper
-            variant="outlined"
-            sx={{
-                mt: 4, p: { xs: 3, md: 6 }, textAlign: 'center',
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                borderColor: 'divider',
-                backgroundColor: (theme) =>
-                    theme.palette.mode === 'light' ? 'grey.50' : 'grey.900',
-                borderRadius: 2.5
-            }}
+const RenderEmptyState = memo(({ onOpenCreateDialog }) => (
+    <Paper
+        variant="outlined"
+        sx={{
+            mt: 4, p: { xs: 3, md: 6 }, textAlign: 'center',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            borderColor: 'divider',
+            backgroundColor: (theme) => theme.palette.mode === 'light' ? 'grey.50' : 'grey.900',
+            borderRadius: 2.5
+        }}
+    >
+        <EmptyIllustration />
+        <Typography variant="h5" component="h2" fontWeight={600} mt={2} color="text.primary">
+            Bạn chưa có lớp học nào
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 1.5, mb: 3, maxWidth: '450px' }}>
+            Hãy bắt đầu tạo lớp học đầu tiên của bạn để quản lý học sinh, 
+            giao bài tập và theo dõi tiến độ.
+        </Typography>
+        <Button
+            variant="contained"
+            size="large"
+            onClick={onOpenCreateDialog} 
+            startIcon={<AddCircleOutlineIcon />}
+            sx={{ fontWeight: 'bold', px: 4, py: 1.5 }}
         >
-            <EmptyIllustration />
-            <Typography variant="h5" component="h2" fontWeight={600} mt={2} color="text.primary">
-                Bạn chưa có lớp học nào
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mt: 1.5, mb: 3, maxWidth: '450px' }}>
-                Hãy bắt đầu tạo lớp học đầu tiên của bạn để quản lý học sinh, 
-                giao bài tập và theo dõi tiến độ.
-            </Typography>
-            <Button
-                variant="contained"
-                size="large"
-                onClick={onOpenCreateDialog} 
-                startIcon={<AddCircleOutlineIcon />}
-                sx={{ fontWeight: 'bold', px: 4, py: 1.5 }}
-            >
-                Tạo lớp học đầu tiên
-            </Button>
-        </Paper>
-    );
-});
-
+            Tạo lớp học đầu tiên
+        </Button>
+    </Paper>
+));
 
 const StatusChip = memo(({ status }) => {
     const statusMap = {
@@ -110,83 +109,97 @@ const StatusChip = memo(({ status }) => {
     return <Chip icon={icon} label={label} color={color} size="small" variant="outlined" />;
 });
 
-const RenderClassGrid = memo(({ classes, onNavigate, onDelete }) => {
-    return (
-        <Grid container spacing={3} sx={{ mt: 2 }}>
-            {classes.map((classItem) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={classItem.class_id}>
-                    <ClassCardStyled>
-                        <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                            <Box sx={{ mb: 1.5 }}>
-                                <StatusChip status={classItem.status} />
-                            </Box>
-                            
-                            <Typography variant="h6" component="h2" fontWeight={600} noWrap title={classItem.classname}>
-                                {classItem.classname}
-                            </Typography>
-                            
-                            <Typography variant="body2" color="text.secondary" paragraph sx={{ mt: 0.5, mb: 2, flexGrow: 1, minHeight: '40px' }}>
-                                {classItem.description || "Lớp học chưa có mô tả."}
-                            </Typography>
-                            
-                        </CardContent>
+const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
+    <Grid container spacing={3} sx={{ mt: 2 }}>
+        {classes.map((classItem) => (
+            <Grid item xs={12} sm={6} md={4} key={classItem.class_id}>
+                <ClassCardStyled>
+                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                        <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <StatusChip status={classItem.status} />
+                        </Box>
                         
-                        <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, pt: 0, backgroundColor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>
-                            <Box>
-                                <Tooltip title="Chỉnh sửa (Chưa hỗ trợ)">
-                                    <span>
-                                        <IconButton size="small" disabled><EditIcon /></IconButton>
-                                    </span>
-                                </Tooltip>
-                                <Tooltip title="Xóa lớp">
-                                    <IconButton size="small" onClick={() => onDelete(classItem)}>
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </Tooltip>
-                            </Box>
-                            <Button
-                                size="small"
-                                variant="contained"
-                                endIcon={<ArrowForwardIcon />}
-                                onClick={() => onNavigate(classItem.class_id)}
-                            >
-                                Quản lý lớp
-                            </Button>
-                        </CardActions>
-                    </ClassCardStyled>
-                </Grid>
-            ))}
-        </Grid>
-    );
-});
+                        <Typography variant="h6" component="h2" fontWeight={600} noWrap title={classItem.classname} gutterBottom>
+                            {classItem.classname}
+                        </Typography>
+                        
+                        <Typography 
+                            variant="body2" 
+                            color="text.secondary" 
+                            sx={{ 
+                                mb: 2, 
+                                flexGrow: 1, 
+                                minHeight: '40px',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            }}
+                        >
+                            {classItem.description || "Chưa có mô tả cho lớp học này."}
+                        </Typography>
+                        
+                        <Typography variant="caption" color="text.secondary">
+                            Môn: {classItem.subject || 'N/A'} • Khối: {classItem.grade || 'N/A'}
+                        </Typography>
+                    </CardContent>
+                    
+                    <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, pt: 0, backgroundColor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>
+                        <Box>
+                            <Tooltip title="Chỉnh sửa thông tin">
+                                <IconButton size="small" onClick={() => onEdit(classItem)}>
+                                    <EditIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                        <Button
+                            size="small"
+                            variant="contained"
+                            endIcon={<ArrowForwardIcon />}
+                            onClick={() => onNavigate(classItem.class_id)}
+                        >
+                            Chi tiết
+                        </Button>
+                    </CardActions>
+                </ClassCardStyled>
+            </Grid>
+        ))}
+    </Grid>
+));
 
-
+// --- Main Page Component ---
 
 function ClassPage() {
     const navigate = useNavigate();
-    const [token] = useState(() => localStorage.getItem('token'));
     
+    // API States
     const [classes, setClasses] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Dialog States
     const [openCreateDialog, setOpenCreateDialog] = useState(false);
-    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-    const [classToDelete, setClassToDelete] = useState(null);
+    const [openEditDialog, setOpenEditDialog] = useState(false);
+    const [selectedClass, setSelectedClass] = useState(null);
+
+    const token = localStorage.getItem('token');
 
     const fetchClasses = useCallback(async () => {
         if (!token) {
-            setError("Bạn chưa đăng nhập hoặc phiên đã hết hạn.");
+            setError("Vui lòng đăng nhập lại.");
             setLoading(false);
             return;
         }
         try {
             setLoading(true);
             setError(null);
-            const response = await getMyClasses(token); 
+            const response = await getClassesByTutor(token); 
+            console.log("Fetched classes:", response);
             setClasses(Array.isArray(response) ? response : []);
         } catch (err) {
-            setError("Không thể tải danh sách lớp học.");
+            console.error(err);
+            setError("Không thể tải danh sách lớp học. Vui lòng thử lại.");
         } finally {
             setLoading(false);
         }
@@ -196,52 +209,45 @@ function ClassPage() {
         fetchClasses();
     }, [fetchClasses]);
 
-    const handleOpenCreateDialog = () => setOpenCreateDialog(true);
-    const handleCloseCreateDialog = () => setOpenCreateDialog(false);
-    
     const handleNavigateToDetail = (classId) => navigate(`/tutor/classes/${classId}`);
-    const handleOpenDeleteDialog = (classInfo) => {
-        setClassToDelete(classInfo);
-        setOpenDeleteDialog(true);
-    };
-    const handleCloseDeleteDialog = () => {
-        setClassToDelete(null);
-        setOpenDeleteDialog(false);
-    };
     
-    const handleConfirmDelete = async () => {
-        if (!classToDelete || !token) return;
-        try {
-            await deleteClass(classToDelete.class_id, token);
-            fetchClasses();
-            handleCloseDeleteDialog();
-        } catch (err) {
-            setError("Xóa lớp học thất bại. (Lưu ý: API Delete chưa tồn tại ở backend)");
-            handleCloseDeleteDialog();
-        }
+    const handleOpenEdit = (classInfo) => {
+        setSelectedClass(classInfo);
+        setOpenEditDialog(true);
+    };
+
+    const handleCloseEdit = () => {
+        setOpenEditDialog(false);
+        setSelectedClass(null);
     };
 
     const renderContent = () => {
         if (loading) {
             return (
-                <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
                     <CircularProgress />
                 </Box>
             );
         }
         
         if (error) {
-            return <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>;
+            return (
+                <Alert severity="error" sx={{ mt: 2 }} action={
+                    <Button color="inherit" size="small" onClick={fetchClasses}>Thử lại</Button>
+                }>
+                    {error}
+                </Alert>
+            );
         }
 
         if (classes.length === 0) {
-            return <RenderEmptyState onOpenCreateDialog={handleOpenCreateDialog} />;
+            return <RenderEmptyState onOpenCreateDialog={() => setOpenCreateDialog(true)} />;
         }
     
         return (
             <RenderClassGrid 
                 classes={classes}
-                onDelete={handleOpenDeleteDialog}
+                onEdit={handleOpenEdit}
                 onNavigate={handleNavigateToDetail}
             />
         );
@@ -251,17 +257,17 @@ function ClassPage() {
         <PageWrapper>
             <Header>
                 <Typography variant="h4" component="h1" fontWeight="bold">
-                    Quản lý Lớp học
+                    Lớp học của tôi
                 </Typography>
                 {!loading && !error && classes.length > 0 && (
                     <Button
                         variant="contained"
                         color="primary"
-                        onClick={handleOpenCreateDialog}
+                        onClick={() => setOpenCreateDialog(true)}
                         startIcon={<AddCircleOutlineIcon />}
                         sx={{ fontWeight: 'bold' }}
                     >
-                        Tạo lớp học mới
+                        Tạo lớp mới
                     </Button>
                 )}
             </Header>
@@ -269,25 +275,15 @@ function ClassPage() {
             {renderContent()}
             <CreateClassDialog 
                 open={openCreateDialog} 
-                onClose={handleCloseCreateDialog} 
+                onClose={() => setOpenCreateDialog(false)} 
                 onRefresh={fetchClasses} 
             />
-
-            {/* Dialog Xóa (chỉ render khi cần) */}
-            {classToDelete && (
-                <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
-                    <DialogTitle>Xác nhận xóa lớp học?</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                            Bạn có chắc chắn muốn xóa lớp học "{classToDelete?.classname}" không?
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleCloseDeleteDialog}>Hủy</Button>
-                        <Button onClick={handleConfirmDelete} color="error" autoFocus>Xóa</Button>
-                    </DialogActions>
-                </Dialog>
-            )}
+             <UpdateClassDialog
+                open={openEditDialog}
+                onClose={handleCloseEdit}
+                onRefresh={fetchClasses}
+                initialData={selectedClass}
+            />
         </PageWrapper>
     );
 }
