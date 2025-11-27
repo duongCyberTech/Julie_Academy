@@ -132,7 +132,7 @@ const QuestionFilters = memo(
                 <em>Tất cả Sách</em>
               </MenuItem>
               {books.map((option) => (
-                <MenuItem key={option.book_id} value={option.book_id}>
+                <MenuItem key={option.plan_id} value={option.planid}>
                   {`${option.title} (Lớp ${option.grade})`}
                 </MenuItem>
               ))}
@@ -284,7 +284,7 @@ function AddQuestionDialog({ open, onClose, onRefresh, examId, existingQuestionI
         setLoadingCategories(true);
         try {
             const catData = await getAllCategories(
-                { book_id: filters.bookId, mode: "tree" },
+                { plan_id: filters.bookId, mode: "tree" },
                 token
             );
             setCategories(Array.isArray(catData?.data) ? catData.data : []);
@@ -308,7 +308,7 @@ function AddQuestionDialog({ open, onClose, onRefresh, examId, existingQuestionI
         level: filters.level || undefined,
         type: filters.type || undefined,
         category_id: filters.categoryId || undefined,
-        book_id: filters.bookId || undefined,
+        plan_id: filters.plan_id || undefined,
         search: debouncedSearch || undefined,
       };
       const response =

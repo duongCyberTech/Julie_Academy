@@ -172,8 +172,6 @@ const Header = React.memo(function Header({
               width: 40,
               height: 40,
               flexShrink: 0,
-              // CẢI THIỆN LOGO DARKMODE:
-              // Thêm viền sáng nhẹ và tăng độ sáng để nổi bật trên nền tối
               filter: mode === "dark" 
                 ? "drop-shadow(0 0 5px rgba(100, 181, 246, 0.6)) brightness(1.1)" 
                 : "none",
@@ -187,15 +185,11 @@ const Header = React.memo(function Header({
               ml: 1.5,
               fontWeight: 700,
               display: { xs: "none", sm: "block" },
-              // CẢI THIỆN TEXT DARKMODE:
-              // - Light Mode: Giữ màu đậm (Tím -> Xanh dương đậm)
-              // - Dark Mode: Chuyển sang màu Neon sáng (Xanh ngọc -> Tím hồng)
               background: mode === "dark"
-                ? `linear-gradient(45deg, #22d3ee 0%, #e879f9 100%)` // Neon sáng
-                : `linear-gradient(45deg, #6a11cb 0%, #2575fc 100%)`, // Màu gốc
+                ? `linear-gradient(45deg, #22d3ee 0%, #e879f9 100%)` 
+                : `linear-gradient(45deg, #6a11cb 0%, #2575fc 100%)`, 
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              // Thêm hiệu ứng text-shadow nhẹ trong darkmode để chữ trông rực rỡ hơn
               filter: mode === "dark" ? "drop-shadow(0 0 10px rgba(34, 211, 238, 0.3))" : "none",
               transition: "all 0.3s ease",
             }}
@@ -203,11 +197,6 @@ const Header = React.memo(function Header({
             Julie Academy
           </Typography>
         </BrandBox>
-
-        {/* Box đẩy sang phải (thay thế flexGrow của BrandBox) */}
-        {/* <Box sx={{ flexGrow: 1 }} /> */}
-
-        {/* === Actions (GIỮ NGUYÊN) === */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Tooltip title="Thông báo">
             <HeaderIconButton>

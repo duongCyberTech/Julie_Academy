@@ -7,7 +7,6 @@ import {
 } from '@prisma/client';
 
 const prisma = new PrismaClient();
-
 function parseContentToTitle(content, maxLength = 50) {
     // 1. Kiểm tra đầu vào
     if (!content || typeof content !== 'string') {

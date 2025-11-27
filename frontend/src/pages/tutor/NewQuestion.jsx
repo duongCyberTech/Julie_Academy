@@ -1,14 +1,13 @@
-/* eslint-disable */
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuestion } from "../../services/QuestionService";
-import { getAllBooks, getAllCategories } from "../../services/CategoryService";
+import { getPlansByTutor, getAllCategories } from "../../services/CategoryService"; 
 import MultipleChoiceEditor from "../../components/QuestionType/MultipleChoice";
 
 import {
   Box, Typography, Button, FormControl, Select, MenuItem,
   Divider, useTheme, Tooltip, Paper, InputLabel, Alert,
-  Collapse, Stack, CircularProgress
+  Collapse, Stack, CircularProgress, TextField
 } from "@mui/material";
 import RichTextEditor from "../../components/RichTextEditor";
 import { jwtDecode } from 'jwt-decode';
@@ -22,7 +21,6 @@ import AppSnackbar from '../../components/SnackBar';
 import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-
 
 const DifficultyRating = ({ value, onChange }) => {
   const theme = useTheme();
@@ -95,8 +93,9 @@ const transformCategoriesForTree = (nodes) => {
 };
 
 const OptionsSidebar = ({
-  books, selectedBookId, onBookChange, loadingBooks,
+  plans, selectedPlanId, onPlanChange, loadingPlans,
   categories, category, onCategoryChange, loadingCategories,
+  accessMode, onAccessModeChange,
   status, onStatusChange,
   explanation, onExplanationChange
 }) => {
@@ -128,39 +127,52 @@ const OptionsSidebar = ({
       >
         <Typography variant="h6" fontWeight={600}>Tùy chọn</Typography>
 
-        {/* 1. Sách */}
-        <FormControl fullWidth size="small" disabled={loadingBooks}>
-          <InputLabel id="book-select-label">Sách</InputLabel>
+        <FormControl fullWidth size="small" disabled={loadingPlans}>
+          <InputLabel id="plan-select-label">Giáo án</InputLabel>
           <Select
-            labelId="book-select-label"
-            value={selectedBookId}
-            label="Sách"
-            onChange={onBookChange}
+            labelId="plan-select-label"
+            value={selectedPlanId}
+            label="Giáo án"
+            onChange={onPlanChange}
           >
-            <MenuItem value=""><em>{loadingBooks ? "Đang tải sách..." : "Chọn sách"}</em></MenuItem>
-            {books.map((book) => (
-              <MenuItem key={book.book_id} value={book.book_id}>
-                {`${book.title} (Lớp ${book.grade})`}
+            <MenuItem value=""><em>{loadingPlans ? "Đang tải giáo án..." : "Chọn giáo án"}</em></MenuItem>
+            {plans.map((plan) => (
+              <MenuItem key={plan.plan_id} value={plan.plan_id}>
+                {`${plan.title} (Lớp ${plan.grade})`}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
 
         <FormControl fullWidth size="small">
-          <InputLabel id="status-select-label">Ai có thể xem?</InputLabel>
+          <InputLabel id="access-mode-select-label">Quyền xem</InputLabel>
+          <Select
+            labelId="access-mode-select-label"
+            value={accessMode}
+            label="Quyền xem"
+            onChange={onAccessModeChange}
+          >
+            <MenuItem value="private">Riêng tư (Private)</MenuItem>
+            <MenuItem value="public">Công khai (Public)</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth size="small">
+          <InputLabel id="status-select-label">Trạng thái</InputLabel>
           <Select
             labelId="status-select-label"
             value={status}
-            label="Ai có thể xem?"
+            label="Trạng thái"
             onChange={onStatusChange}
           >
-            <MenuItem value="private">Chỉ riêng tôi</MenuItem>
-            <MenuItem value="public">Với mọi người</MenuItem>
+            <MenuItem value="draft">Bản nháp (Draft)</MenuItem>
+            <MenuItem value="ready">Sẵn sàng (Ready)</MenuItem>
           </Select>
         </FormControl>
-        <Collapse in={!!selectedBookId} sx={{ width: '100%' }}>
-          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
-            Danh mục
+
+        <Collapse in={!!selectedPlanId} sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1, mt: 1 }}>
+            Chuyên đề / Danh mục
           </Typography>
           <Paper
             variant="outlined"
@@ -190,19 +202,14 @@ const OptionsSidebar = ({
               />
             ) : (
               <Typography variant="caption" sx={{ p: 2, display: 'block' }}>
-                {selectedBookId ? "Sách này chưa có danh mục." : "Vui lòng chọn sách."}
+                {selectedPlanId ? "Giáo án này chưa có danh mục." : "Vui lòng chọn giáo án."}
               </Typography>
             )}
           </Paper>
         </Collapse>
       </Box>
-      <Box
-        sx={{
-          p: 2,
-          pt: 0,
-          flexShrink: 0
-        }}
-      >
+      
+      <Box sx={{ p: 2, pt: 0, flexShrink: 0 }}>
         <Divider sx={{ mb: 2 }} />
         <Button
           fullWidth
@@ -235,23 +242,25 @@ export default function CreateNewQuestionPage() {
 
   const userInfo = useMemo(() => {
     try { return token ? jwtDecode(token) : null; }
-    catch (e) { console.error("Invalid token:", e); return null; }
+    catch (e) { return null; }
   }, [token]);
 
   const [questionType, setQuestionType] = useState("single_choice");
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [explanation, setExplanation] = useState("");
   const [difficulty, setDifficulty] = useState("easy");
-  const [status, setStatus] = useState("private");
+  const [accessMode, setAccessMode] = useState("private");
+  const [status, setStatus] = useState("ready");
 
-  const [books, setBooks] = useState([]);
-  const [selectedBookId, setSelectedBookId] = useState("");
+  // Changed book -> plan
+  const [plans, setPlans] = useState([]);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const [categories, setCategories] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
 
-  const [loadingBooks, setLoadingBooks] = useState(true);
+  const [loadingPlans, setLoadingPlans] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(false);
-
   const [apiError, setApiError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
@@ -259,39 +268,50 @@ export default function CreateNewQuestionPage() {
   const [answerData, setAnswerData] = useState([]);
 
   useEffect(() => {
-    const fetchBooks = async () => {
-      if (!token) { setApiError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại."); setLoadingBooks(false); return; }
-      try { setLoadingBooks(true); const allBooks = await getAllBooks(token); setBooks(Array.isArray(allBooks) ? allBooks : []); setApiError(null); }
-      catch (err) { setApiError("Lỗi tải danh sách sách."); console.error(err); }
-      finally { setLoadingBooks(false); }
+    const fetchPlans = async () => {
+      if (!token || !userInfo?.sub) { 
+        setApiError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại."); 
+        setLoadingPlans(false); 
+        return; 
+      }
+      try { 
+        setLoadingPlans(true); 
+        const tutorPlans = await getPlansByTutor(userInfo.sub, token); 
+        setPlans(Array.isArray(tutorPlans) ? tutorPlans : []); 
+        setApiError(null); 
+      }
+      catch (err) { 
+        setApiError("Lỗi tải danh sách giáo án."); 
+      }
+      finally { setLoadingPlans(false); }
     };
-    fetchBooks();
-  }, [token]);
+    fetchPlans();
+  }, [token, userInfo]);
 
-  const handleBookChange = (e) => {
-    const newBookId = e.target.value;
-    setSelectedBookId(newBookId);
+  const handlePlanChange = (e) => {
+    const newPlanId = e.target.value;
+    setSelectedPlanId(newPlanId);
     setCategories([]);
     setSelectedCategoryId("");
   };
 
   useEffect(() => {
     const fetchCategories = async () => {
-      if (!selectedBookId || !token) return;
+      if (!selectedPlanId || !token) return;
       try {
         setLoadingCategories(true);
         setApiError(null);
         const catData = await getAllCategories(
-          { book_id: selectedBookId, mode: 'tree' },
+          { plan_id: selectedPlanId, mode: 'tree' }, // Dùng đúng plan_id
           token
         );
         setCategories(Array.isArray(catData?.data) ? catData.data : []);
       }
-      catch (err) { setApiError("Lỗi tải danh mục cho sách này."); console.error(err); }
+      catch (err) { setApiError("Lỗi tải danh mục cho giáo án này."); }
       finally { setLoadingCategories(false); }
     };
     fetchCategories();
-  }, [selectedBookId, token]);
+  }, [selectedPlanId, token]);
 
   useEffect(() => {
     const initialAnswers = Array.from({ length: 4 }, () => ({
@@ -313,25 +333,31 @@ export default function CreateNewQuestionPage() {
       setToast({ open: true, message: "Phiên đăng nhập hết hạn.", severity: 'error' });
       return;
     }
+    if (!title.trim()) {
+      setToast({ open: true, message: "Vui lòng nhập tiêu đề câu hỏi.", severity: 'warning' });
+      return;
+    }
     if (!content.trim() || content === '<p><br></p>') {
       setToast({ open: true, message: "Vui lòng nhập nội dung câu hỏi.", severity: 'warning' });
       return;
     }
-    if (!selectedBookId) {
-      setToast({ open: true, message: "Vui lòng chọn sách.", severity: 'warning' });
+    if (!selectedPlanId) {
+      setToast({ open: true, message: "Vui lòng chọn giáo án.", severity: 'warning' });
       return;
     }
     if (!selectedCategoryId) {
-      setToast({ open: true, message: "Vui lòng chọn danh mục cho câu hỏi.", severity: 'warning' });
+      setToast({ open: true, message: "Vui lòng chọn chuyên đề/danh mục.", severity: 'warning' });
       return;
     }
 
     const payload = {
+      title,
       content,
       explanation,
       type: questionType,
       level: difficulty,
       categoryId: selectedCategoryId,
+      accessMode: accessMode,
       status: status,
       tutorId: userInfo.sub,
       answers: answerData
@@ -341,11 +367,10 @@ export default function CreateNewQuestionPage() {
 
     setIsSubmitting(true);
     try {
-      await createQuestion([payload], token);
+      await createQuestion(userInfo.sub, [payload], token);
       setToast({ open: true, message: "Tạo câu hỏi thành công!", severity: 'success' });
       navigate("/tutor/question");
     } catch (error) {
-      console.error("Failed to create question:", error);
       const msg = "Lỗi tạo câu hỏi: " + (error.response?.data?.message || error.message);
       setApiError(msg);
       setToast({ open: true, message: "Tạo câu hỏi thất bại.", severity: 'error' });
@@ -358,7 +383,6 @@ export default function CreateNewQuestionPage() {
     if (reason === 'clickaway') return;
     setToast(prev => ({ ...prev, open: false }));
   };
-
 
   return (
     <Box sx={{
@@ -380,10 +404,20 @@ export default function CreateNewQuestionPage() {
           {apiError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApiError(null)}>{apiError}</Alert>}
 
           <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+            <TextField
+              label="Tiêu đề câu hỏi"
+              variant="outlined"
+              fullWidth
+              size="small"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Nhập tiêu đề ngắn gọn..."
+              sx={{ mb: 2 }}
+            />
 
             <RichTextEditor
               label="Nội dung câu hỏi"
-              placeholder="Nhập câu hỏi tại đây..."
+              placeholder="Nhập nội dung câu hỏi tại đây..."
               value={content}
               onChange={setContent}
               toolbarType="full"
@@ -405,14 +439,16 @@ export default function CreateNewQuestionPage() {
           </Paper>
         </Box>
         <OptionsSidebar
-          books={books}
-          selectedBookId={selectedBookId}
-          onBookChange={handleBookChange}
-          loadingBooks={loadingBooks}
+          plans={plans}
+          selectedPlanId={selectedPlanId}
+          onPlanChange={handlePlanChange}
+          loadingPlans={loadingPlans}
           categories={categories}
           category={selectedCategoryId}
           onCategoryChange={(e) => setSelectedCategoryId(e.target.value)}
           loadingCategories={loadingCategories}
+          accessMode={accessMode}
+          onAccessModeChange={(e) => setAccessMode(e.target.value)}
           status={status}
           onStatusChange={(e) => setStatus(e.target.value)}
           explanation={explanation}

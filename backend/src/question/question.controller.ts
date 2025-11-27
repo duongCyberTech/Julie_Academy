@@ -43,8 +43,8 @@ export class BookController {
 
     @Get(':tutor_id')
     @Roles('tutor')
-    getLessonPlanByTutor(){
-        return this.bookService.getAllPlans();
+    getLessonPlanByTutor(@Param('tutor_id') tutor_id: string){
+        return this.bookService.getAllPlans(tutor_id);
     }
 
     @Patch(':plan_id')
@@ -80,7 +80,7 @@ export class CategoryController {
     @Query() query: any 
   ) {
     return this.categoryService.getAllCategories(
-        query?.mode, query?.book_id, query?.page, 
+        query?.mode, query?.plan_id, query?.page, 
         query?.limit, query?.search, query?.grade, query?.subject
     );
   }
@@ -116,7 +116,7 @@ export class QuestionController {
         return this.questionService.getAllQuestion(
             query?.page, query?.limit, query?.search,
             query?.level, query?.type, query?.status, 
-            query?.category_id, query?.book_id 
+            query?.category_id, query?.plan_id
         );
     }
 

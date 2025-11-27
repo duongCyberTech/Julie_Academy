@@ -73,7 +73,7 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
     setDeleteDialog({
       open: true,
       studentId: student.uid,
-      studentName: `${student.user.lname} ${student.user.fname}`,
+      studentName: `${student.user.lname} ${student.user.mname} ${student.user.fname}`,
     });
   };
 

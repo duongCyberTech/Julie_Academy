@@ -23,6 +23,7 @@ import ExamPage from "../pages/tutor/ExamPage";
 import ExamDetailPage from "../pages/tutor/ExamDetailPage";
 import AssignmentPage from "../pages/tutor/AssignmentPage";
 import SystemSetting from "../pages/admin/SystemSetting.jsx";
+import QuestionDetailPage from "../pages/tutor/QuestionDetailPage.jsx";
 function AppRoutes(props) {
   return (
     <Routes>
@@ -54,6 +55,7 @@ function AppRoutes(props) {
           <Route path="exam" element={<ExamPage />} />
           <Route path="exam/:examId" element={<ExamDetailPage />} />
           <Route path="assignment" element={<AssignmentPage />} />
+          <Route path="question/:questionId" element={<QuestionDetailPage />} />
 
         </Route>
       </Route>

@@ -105,7 +105,6 @@ const mockData = {
       metricValue: "3 bài trễ",
     },
   ],
-  // (Yêu cầu 2) Chỉ Lớp 9
   hotTopics: [
     {
       id: 1,

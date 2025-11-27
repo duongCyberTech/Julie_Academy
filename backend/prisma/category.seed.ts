@@ -73,6 +73,7 @@ async function main() {
     create: {
       title: 'Toán 9 - Cánh Diều',
       subject: 'Toán',
+      type: 'book',
       grade: 9,
       description: 'Sách giáo khoa Toán lớp 9 - Bộ sách Cánh Diều',
     },
@@ -86,6 +87,7 @@ async function main() {
     create: {
       title: 'Toán 9 - Chân Trời Sáng Tạo',
       subject: 'Toán',
+      type: 'book',
       grade: 9,
       description: 'Sách giáo khoa Toán lớp 9 - Bộ sách Chân Trời Sáng Tạo',
     },
@@ -99,6 +101,7 @@ async function main() {
     create: {
       title: 'Toán 9 - Kết Nối Tri Thức Với Cuộc Sống',
       subject: 'Toán',
+      type: 'book',
       grade: 9,
       description:
         'Sách giáo khoa Toán lớp 9 - Bộ sách Kết Nối Tri Thức Với Cuộc Sống',

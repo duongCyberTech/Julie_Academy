@@ -7,7 +7,6 @@ import {
     removeQuestionFromExam 
 } from '../../services/ExamService';
 
-// Import component thật (có trong QuestionPage.jsx)
 import QuestionContentRenderer from '../../components/QuestionContentRenderer';
 
 import {
@@ -25,10 +24,8 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import TimerIcon from '@mui/icons-material/Timer';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 
-// Import Dialog thêm câu hỏi
 import AddQuestionDialog from '../../components/AddQuestionDialog'; 
 
-// --- START: Code copy từ QuestionPage.jsx ---
 const PageWrapper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
     backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.background.paper,
@@ -74,10 +71,8 @@ const LevelChip = memo(({ level }) => {
     const { label, color } = levelMap[level] || { label: level, color: "default" };
     return <Chip icon={<StarBorderIcon />} label={label} color={color} size="small" variant="outlined" />;
 });
-// --- END: Code copy từ QuestionPage.jsx ---
 
 
-// Bảng hiển thị câu hỏi
 const headCells = [
   { id: 'content', label: 'Nội dung', minWidth: 250 },
   { id: 'level', label: 'Độ khó', minWidth: 100 },

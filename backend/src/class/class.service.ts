@@ -333,7 +333,7 @@ export class ClassService {
         nb_of_student: true,
         createdAt: true,  
         startat: true,   
-
+        plan_id: true,
         tutor: { 
           select: {
             user: {

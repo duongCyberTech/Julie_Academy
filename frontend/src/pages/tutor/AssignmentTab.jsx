@@ -11,12 +11,8 @@ import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 
-// Import APIs
 import { getMyExams, createExamSession } from '../../services/ExamService';
-// Tạm thời comment API này lại vì bạn chưa tạo nó
-// import { getSessionsByClassId } from '../../services/ExamService'; 
 
-// Icons
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -24,8 +20,6 @@ import PendingIcon from '@mui/icons-material/Pending';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-// --- Dữ liệu giả (Mock Data) ---
-// (Xóa cái này khi bạn có API thật `getSessionsByClassId`)
 const MOCK_SESSIONS = [
     {
         session_id: 1,
@@ -230,7 +224,7 @@ const SessionCard = memo(({ session }) => {
     }
 
     return (
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid size={{ xs: 12 ,sm: 6, md: 4}}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
                 <CardContent sx={{ flexGrow: 1 }}>
                     <Chip

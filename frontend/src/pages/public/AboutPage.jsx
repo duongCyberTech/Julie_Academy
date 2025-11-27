@@ -80,8 +80,6 @@ const StyledFeatureCard = styled(Paper)(({ theme }) => ({
   },
 }));
 
-// --- SECTIONS ---
-
 const MissionSection = React.memo(() => {
   const theme = useTheme();
   return (
@@ -283,7 +281,7 @@ const TestimonialSection = React.memo(() => {
         <Paper
           elevation={0}
           sx={{
-            p: { xs: 4, md: 5 }, // Reduced padding slightly
+            p: { xs: 4, md: 5 }, 
             textAlign: "center",
             borderRadius: 4,
             bgcolor: alpha(theme.palette.primary.main, 0.04),

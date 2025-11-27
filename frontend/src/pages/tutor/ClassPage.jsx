@@ -9,7 +9,6 @@ import {
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 
-// Icons
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -18,11 +17,9 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
-// Components
 import CreateClassDialog from '../../components/CreateClassDialog';
 import UpdateClassDialog from '../../components/UpdateClassDialog';
 
-// --- Styled Components ---
 const PageWrapper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
     backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.background.paper,
@@ -53,7 +50,6 @@ const ClassCardStyled = styled(Card)(({ theme }) => ({
     }
 }));
 
-// --- Sub Components ---
 
 const EmptyIllustration = () => (
     <SvgIcon
@@ -112,7 +108,7 @@ const StatusChip = memo(({ status }) => {
 const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
     <Grid container spacing={3} sx={{ mt: 2 }}>
         {classes.map((classItem) => (
-            <Grid item xs={12} sm={6} md={4} key={classItem.class_id}>
+            <Grid size={{ xs: 12 ,sm: 6, md: 4}} key={classItem.class_id}>
                 <ClassCardStyled>
                     <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                         <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -168,17 +164,14 @@ const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
     </Grid>
 ));
 
-// --- Main Page Component ---
 
 function ClassPage() {
     const navigate = useNavigate();
     
-    // API States
     const [classes, setClasses] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Dialog States
     const [openCreateDialog, setOpenCreateDialog] = useState(false);
     const [openEditDialog, setOpenEditDialog] = useState(false);
     const [selectedClass, setSelectedClass] = useState(null);
@@ -195,7 +188,6 @@ function ClassPage() {
             setLoading(true);
             setError(null);
             const response = await getClassesByTutor(token); 
-            console.log("Fetched classes:", response);
             setClasses(Array.isArray(response) ? response : []);
         } catch (err) {
             console.error(err);

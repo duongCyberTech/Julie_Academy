@@ -14,10 +14,16 @@ CREATE TYPE "public"."QuestionType" AS ENUM ('single_choice', 'multiple_choice',
 CREATE TYPE "public"."DifficultyLevel" AS ENUM ('easy', 'medium', 'hard');
 
 -- CreateEnum
-CREATE TYPE "public"."QuestionStatus" AS ENUM ('public', 'private');
+CREATE TYPE "public"."QuestionStatus" AS ENUM ('draft', 'ready');
+
+-- CreateEnum
+CREATE TYPE "public"."QuestionAccess" AS ENUM ('private', 'public');
 
 -- CreateEnum
 CREATE TYPE "public"."ExamType" AS ENUM ('practice', 'test', 'final');
+
+-- CreateEnum
+CREATE TYPE "public"."PlanType" AS ENUM ('book', 'custom');
 
 -- CreateTable
 CREATE TABLE "public"."User" (
@@ -82,6 +88,34 @@ CREATE TABLE "public"."Feedback" (
 );
 
 -- CreateTable
+CREATE TABLE "public"."Review" (
+    "student_id" TEXT NOT NULL,
+    "class_id" TEXT NOT NULL,
+    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "content" TEXT NOT NULL,
+    "rating" DECIMAL(3,1) NOT NULL,
+
+    CONSTRAINT "Review_pkey" PRIMARY KEY ("student_id","class_id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Badge" (
+    "badge_id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+
+    CONSTRAINT "Badge_pkey" PRIMARY KEY ("badge_id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Claim" (
+    "student_id" TEXT NOT NULL,
+    "badge_id" TEXT NOT NULL,
+
+    CONSTRAINT "Claim_pkey" PRIMARY KEY ("student_id","badge_id")
+);
+
+-- CreateTable
 CREATE TABLE "public"."Class" (
     "class_id" TEXT NOT NULL,
     "classname" TEXT NOT NULL,
@@ -95,6 +129,7 @@ CREATE TABLE "public"."Class" (
     "subject" TEXT NOT NULL,
     "tutor_uid" TEXT NOT NULL,
     "startat" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+    "plan_id" TEXT,
 
     CONSTRAINT "Class_pkey" PRIMARY KEY ("class_id")
 );
@@ -163,6 +198,7 @@ CREATE TABLE "public"."Resources" (
     "version" INTEGER NOT NULL,
     "num_pages" INTEGER NOT NULL,
     "tutor_id" TEXT NOT NULL,
+    "cate_id" TEXT,
 
     CONSTRAINT "Resources_pkey" PRIMARY KEY ("did")
 );
@@ -182,6 +218,8 @@ CREATE TABLE "public"."Folders" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "tutor_id" TEXT NOT NULL,
+    "cate_id" TEXT,
+    "parent_id" TEXT,
 
     CONSTRAINT "Folders_pkey" PRIMARY KEY ("folder_id")
 );
@@ -209,9 +247,17 @@ CREATE TABLE "public"."Categories" (
     "description" TEXT,
     "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "book_id" TEXT NOT NULL,
+    "parent_id" TEXT,
 
     CONSTRAINT "Categories_pkey" PRIMARY KEY ("category_id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Structure" (
+    "plan_id" TEXT NOT NULL,
+    "cate_id" TEXT NOT NULL,
+
+    CONSTRAINT "Structure_pkey" PRIMARY KEY ("plan_id","cate_id")
 );
 
 -- CreateTable
@@ -223,9 +269,11 @@ CREATE TABLE "public"."Questions" (
     "level" "public"."DifficultyLevel" NOT NULL DEFAULT 'easy',
     "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "category_id" TEXT NOT NULL,
+    "category_id" TEXT,
     "tutor_id" TEXT NOT NULL,
-    "status" "public"."QuestionStatus" DEFAULT 'private',
+    "status" "public"."QuestionStatus" NOT NULL DEFAULT 'draft',
+    "accessMode" "public"."QuestionAccess" NOT NULL DEFAULT 'private',
+    "title" TEXT NOT NULL,
 
     CONSTRAINT "Questions_pkey" PRIMARY KEY ("ques_id")
 );
@@ -261,7 +309,7 @@ CREATE TABLE "public"."Exams" (
 CREATE TABLE "public"."Question_of_exam" (
     "exam_id" TEXT NOT NULL,
     "ques_id" TEXT NOT NULL,
-    "score" DECIMAL(2,0) NOT NULL DEFAULT 0.00,
+    "score" DECIMAL(4,2) NOT NULL DEFAULT 0.00,
 
     CONSTRAINT "Question_of_exam_pkey" PRIMARY KEY ("exam_id","ques_id")
 );
@@ -275,6 +323,7 @@ CREATE TABLE "public"."Exam_session" (
     "exam_type" "public"."ExamType" NOT NULL DEFAULT 'practice',
     "limit_taken" INTEGER NOT NULL DEFAULT 1,
     "total_student_done" INTEGER NOT NULL DEFAULT 0,
+    "ratio" INTEGER,
 
     CONSTRAINT "Exam_session_pkey" PRIMARY KEY ("exam_id","session_id")
 );
@@ -312,14 +361,16 @@ CREATE TABLE "public"."Answer_for_exam" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."Books" (
-    "book_id" VARCHAR(255) NOT NULL,
+CREATE TABLE "public"."Lesson_Plan" (
+    "plan_id" VARCHAR(255) NOT NULL,
     "title" VARCHAR(255) NOT NULL,
     "subject" VARCHAR(20) NOT NULL,
     "grade" SMALLINT NOT NULL,
     "description" TEXT,
+    "type" "public"."PlanType" NOT NULL DEFAULT 'custom',
+    "tutor_id" TEXT,
 
-    CONSTRAINT "Books_pkey" PRIMARY KEY ("book_id")
+    CONSTRAINT "Lesson_Plan_pkey" PRIMARY KEY ("plan_id")
 );
 
 -- CreateTable
@@ -372,7 +423,7 @@ CREATE UNIQUE INDEX "Parents_phone_number_key" ON "public"."Parents"("phone_numb
 CREATE UNIQUE INDEX "Categories_category_name_key" ON "public"."Categories"("category_name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Books_title_key" ON "public"."Books"("title");
+CREATE UNIQUE INDEX "Lesson_Plan_title_key" ON "public"."Lesson_Plan"("title");
 
 -- AddForeignKey
 ALTER TABLE "public"."Tutor" ADD CONSTRAINT "Tutor_uid_fkey" FOREIGN KEY ("uid") REFERENCES "public"."User"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -394,6 +445,21 @@ ALTER TABLE "public"."Feedback" ADD CONSTRAINT "Feedback_student_uid_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "public"."Feedback" ADD CONSTRAINT "Feedback_tutor_uid_fkey" FOREIGN KEY ("tutor_uid") REFERENCES "public"."Tutor"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Review" ADD CONSTRAINT "Review_class_id_fkey" FOREIGN KEY ("class_id") REFERENCES "public"."Class"("class_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Review" ADD CONSTRAINT "Review_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."Student"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Claim" ADD CONSTRAINT "Claim_badge_id_fkey" FOREIGN KEY ("badge_id") REFERENCES "public"."Badge"("badge_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Claim" ADD CONSTRAINT "Claim_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."Student"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Class" ADD CONSTRAINT "Class_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "public"."Lesson_Plan"("plan_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Class" ADD CONSTRAINT "Class_tutor_uid_fkey" FOREIGN KEY ("tutor_uid") REFERENCES "public"."Tutor"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -423,6 +489,9 @@ ALTER TABLE "public"."Follow" ADD CONSTRAINT "Follow_thread_id_fkey" FOREIGN KEY
 ALTER TABLE "public"."Follow" ADD CONSTRAINT "Follow_uid_fkey" FOREIGN KEY ("uid") REFERENCES "public"."User"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."Resources" ADD CONSTRAINT "Resources_cate_id_fkey" FOREIGN KEY ("cate_id") REFERENCES "public"."Categories"("category_id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Resources" ADD CONSTRAINT "Resources_tutor_id_fkey" FOREIGN KEY ("tutor_id") REFERENCES "public"."Tutor"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -430,6 +499,12 @@ ALTER TABLE "public"."Resources_of_class" ADD CONSTRAINT "Resources_of_class_cla
 
 -- AddForeignKey
 ALTER TABLE "public"."Resources_of_class" ADD CONSTRAINT "Resources_of_class_did_fkey" FOREIGN KEY ("did") REFERENCES "public"."Resources"("did") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Folders" ADD CONSTRAINT "Child_folder_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."Folders"("folder_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "public"."Folders" ADD CONSTRAINT "Folders_cate_id_fkey" FOREIGN KEY ("cate_id") REFERENCES "public"."Categories"("category_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Folders" ADD CONSTRAINT "Folders_tutor_id_fkey" FOREIGN KEY ("tutor_id") REFERENCES "public"."Tutor"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -447,10 +522,16 @@ ALTER TABLE "public"."Folder_of_class" ADD CONSTRAINT "Folder_of_class_class_id_
 ALTER TABLE "public"."Folder_of_class" ADD CONSTRAINT "Folder_of_class_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "public"."Folders"("folder_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Categories" ADD CONSTRAINT "fk_categories_books" FOREIGN KEY ("book_id") REFERENCES "public"."Books"("book_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "public"."Categories" ADD CONSTRAINT "fk_recursive_cate" FOREIGN KEY ("parent_id") REFERENCES "public"."Categories"("category_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "public"."Questions" ADD CONSTRAINT "Questions_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "public"."Categories"("category_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Structure" ADD CONSTRAINT "Structure_cate_id_fkey" FOREIGN KEY ("cate_id") REFERENCES "public"."Categories"("category_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Structure" ADD CONSTRAINT "Structure_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "public"."Lesson_Plan"("plan_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Questions" ADD CONSTRAINT "Questions_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "public"."Categories"("category_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Questions" ADD CONSTRAINT "Questions_tutor_id_fkey" FOREIGN KEY ("tutor_id") REFERENCES "public"."Tutor"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -484,6 +565,9 @@ ALTER TABLE "public"."Answer_for_exam" ADD CONSTRAINT "Answer_for_exam_et_id_fke
 
 -- AddForeignKey
 ALTER TABLE "public"."Answer_for_exam" ADD CONSTRAINT "Answer_for_exam_ques_id_aid_fkey" FOREIGN KEY ("ques_id", "aid") REFERENCES "public"."Answers"("ques_id", "aid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Lesson_Plan" ADD CONSTRAINT "Lesson_Plan_tutor_id_fkey" FOREIGN KEY ("tutor_id") REFERENCES "public"."Tutor"("uid") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Resource_of_Answer" ADD CONSTRAINT "Resource_of_Answer_did_fkey" FOREIGN KEY ("did") REFERENCES "public"."Resources"("did") ON DELETE NO ACTION ON UPDATE NO ACTION;

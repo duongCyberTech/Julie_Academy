@@ -27,7 +27,6 @@ const Header = styled(Box)({
     alignItems: 'center',
     marginBottom: '24px',
 });
-// --- Kết thúc Styled Components ---
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -44,12 +43,10 @@ function AssignmentPage() {
     const navigate = useNavigate();
     const [token] = useState(() => localStorage.getItem('token'));
     
-    // State cho việc tải dữ liệu
     const [masterExams, setMasterExams] = useState([]);
     const [tutorClasses, setTutorClasses] = useState([]);
     const [loadingData, setLoadingData] = useState(true);
 
-    // State cho form
     const [selectedExamId, setSelectedExamId] = useState('');
     const [selectedClassIds, setSelectedClassIds] = useState([]);
     const [startAt, setStartAt] = useState(dayjs());
@@ -57,13 +54,11 @@ function AssignmentPage() {
     const [limitTaken, setLimitTaken] = useState(1);
     const [examType, setExamType] = useState('practice');
 
-    // State cho submit
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
 
 
-    // Tải dữ liệu (Đề thi và Lớp học) khi component mount
     const fetchInitialData = useCallback(async () => {
         if (!token) {
             setError("Không tìm thấy token. Vui lòng đăng nhập lại.");
@@ -73,7 +68,6 @@ function AssignmentPage() {
         setLoadingData(true);
         setError(null);
         try {
-            // Tải song song 2 API
             const [examsResponse, classesResponse] = await Promise.all([
                 getMyExams(token),
                 getClassesByTutor(token)
@@ -104,7 +98,6 @@ function AssignmentPage() {
     const handleSubmit = async () => {
         setSuccessMessage(null);
 
-        // Validation
         if (!selectedExamId) {
             setError("Vui lòng chọn một đề thi.");
             return;
@@ -121,7 +114,6 @@ function AssignmentPage() {
         setIsSubmitting(true);
         setError(null);
 
-        // Chuẩn bị dữ liệu cho API
         const sessionData = {
             startAt: startAt.toISOString(),
             expireAt: expireAt.toISOString(),
@@ -130,7 +122,6 @@ function AssignmentPage() {
         };
 
         try {
-            // Gọi API createExamSession
             await createExamSession(
                 selectedExamId, 
                 selectedClassIds, 
@@ -139,14 +130,11 @@ function AssignmentPage() {
             );
             
             setSuccessMessage("Giao bài thành công!");
-            // Reset form
             setSelectedExamId('');
             setSelectedClassIds([]);
             setStartAt(dayjs());
             setExpireAt(dayjs().add(1, 'hour'));
             
-            // Tùy chọn: Chuyển hướng sau khi thành công
-            // setTimeout(() => navigate('/tutor/classes'), 2000); 
 
         } catch (err) {
             setError(err.response?.data?.message || "Giao bài thất bại.");
