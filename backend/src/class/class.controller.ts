@@ -10,9 +10,9 @@ import { ExceptionResponse } from 'src/exception/Exception.exception';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
+import { DuplicatingObject } from 'src/mode/control.mode';
 
 @Controller('classes')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class ClassController {
   constructor(private readonly classService: ClassService) {}
 
@@ -20,6 +20,16 @@ export class ClassController {
   @Roles('tutor')
   async createClass(@Param('id') id: string, @Body() classDto: ClassDto) {
     return this.classService.createClass(id, classDto);
+  }
+
+  @Post('duplicate/:tutor_id/:class_id')
+  duplicateClass(
+    @Param('tutor_id') tutor_id: string,
+    @Param('class_id') class_id: string,
+    @Body('data') data: Partial<ClassDto>,
+    @Body('dupLst') dupLst: DuplicatingObject[]
+  ){
+    return this.classService.duplicateClass(tutor_id, data, class_id, dupLst)
   }
 
   @Get('get')
