@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useParams } from 'react-router-dom';
 import { getClassDetails } from '../../services/ClassService';
@@ -23,7 +24,9 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
 import StudentsTab from './StudentTab'; 
-
+import ScheduleTab from './ScheduleTab'; 
+import ResourceTab from './ResourceTab';
+import AssignmentTab from './AssignmentTab';
 const PageWrapper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
     backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.background.paper,
@@ -95,9 +98,7 @@ function ClassDetailPage() {
 
     return (
         <PageWrapper>
-            {/* 1. Header (ĐÃ CẬP NHẬT) */}
             <Box>
-                {/* Hàng 1: Tên lớp và Trạng thái */}
                 <Stack 
                     direction={{ xs: 'column', md: 'row' }} 
                     spacing={2} 
@@ -110,7 +111,6 @@ function ClassDetailPage() {
                     <StatusChip status={classData.status} />
                 </Stack>
                 
-                {/* Hàng 2: Thông tin phụ (Khối, Môn, Sĩ số) */}
                 <Stack direction="row" spacing={3} color="text.secondary" mt={1.5} flexWrap="wrap">
                     <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, mb: 1 }}>
                         <SchoolIcon fontSize="small" sx={{ mr: 1, opacity: 0.8 }} />
@@ -127,13 +127,11 @@ function ClassDetailPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, mb: 1 }}>
                         <GroupIcon fontSize="small" sx={{ mr: 1, opacity: 0.8 }} />
                         <Typography variant="body1">
-                            {/* Dữ liệu `learning` là mảng học sinh, `nb_of_student` là sĩ số tối đa */}
                             {classData.learning?.length || 0} / {classData.nb_of_student} học viên
                         </Typography>
                     </Box>
                 </Stack>
 
-                {/* BỔ SUNG: Hàng 3: Ngày tạo và Ngày bắt đầu */}
                 <Stack direction="row" spacing={3} color="text.secondary" mt={1.5} flexWrap="wrap">
                     <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, mb: 1 }}>
                         <EventNoteIcon fontSize="small" sx={{ mr: 1, opacity: 0.8 }} />
@@ -149,13 +147,11 @@ function ClassDetailPage() {
                     </Box>
                 </Stack>
                 
-                {/* Hàng 4: Mô tả */}
                 <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
                     {classData.description}
                 </Typography>
             </Box>
 
-            {/* 2. Thanh điều hướng Tab */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3, mt: 2 }}>
                 <Tabs value={currentTab} onChange={handleChangeTab} aria-label="Class Details Tabs">
                     <Tab label="Thành viên" value="students" icon={<GroupIcon />} iconPosition="start" />
@@ -165,26 +161,35 @@ function ClassDetailPage() {
                 </Tabs>
             </Box>
 
-            {/* 3. Nội dung Tab (Thay đổi) */}
             <Container maxWidth="lg" disableGutters>
                 {currentTab === 'students' && (
                     <StudentsTab 
                         studentsData={classData.learning} 
                         classId={classId}
+                        token={token}
                         onRefresh={fetchClassDetails} 
                     />
                 )}
                 
+                {/* THAY THẾ PHẦN NÀY */}
                 {currentTab === 'schedule' && (
-                    <Typography>
-                        Đây là Tab Lịch học (sử dụng data: classData.schedule)
-                    </Typography>
+                    <ScheduleTab 
+                        classId={classId} 
+                        token={token} 
+                    />
                 )}
+                
                 {currentTab === 'documents' && (
-                    <Typography>Đây là Tab Tài liệu</Typography>
+                    <ResourceTab 
+                        classId={classId} 
+                        token={token} 
+                    />
                 )}
                 {currentTab === 'assignments' && (
-                    <Typography>Đây là Tab Bài tập</Typography>
+                    <AssignmentTab 
+                        classId={classId} 
+                        token={token} 
+                    />  
                 )}
             </Container>
 

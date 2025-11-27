@@ -1,178 +1,12 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {ClassDto, ScheduleDto} from './dto/class.dto';
 import { google } from 'googleapis';
 import { addDays, isBefore, setDate, setHours, setMinutes } from 'date-fns';
 import { ClassStatus } from '@prisma/client';
+import { DuplicatingObject } from 'src/mode/control.mode';
 require('dotenv').config()
 
-@Injectable()
-export class ClassService {
-  constructor(private prisma: PrismaService) {}
-
-  async createClass(tutor_uid: string, data: ClassDto) {
-    return this.prisma.$transaction(async (tx) => {
-        const newClass = await tx.class.create({
-            data: {
-                classname: data.classname,
-                description: data.description,
-                duration_time: data.duration_time,
-                nb_of_student: data.nb_of_student,
-                status: data.status,
-                grade: data.grade,
-                subject: data.subject,
-                createdAt: new Date(),
-                updateAt: new Date(),
-                startat: data.startAt || null,
-                tutor: { connect: { uid: tutor_uid } },
-            },
-        });
-        return (newClass !== null ? {status: 201, message: 'Class created successfully'} : {status: 400, message: 'Class creation failed'})
-    })
-  }
-
-  async getAllClasses(page?: number, limit?: number, search?: string, status?: string, startAt?: Date, endAt?: Date) {
-    const _page: number = Number(page) && Number(page) > 0 ? Number(page) : 1;
-    const _limit: number = Number(limit) && Number(limit) > 0 ? Number(limit) : 10;
-    const skip:number = (_page - 1) * _limit;
-    const where: any = {};
-    if (status) where.status = status as ClassStatus;
-    if (startAt && endAt) {
-        where.startAt = { gte: startAt, lte: endAt };
-    } else if (startAt) {
-        where.startAt = { gte: startAt };
-    } else if (endAt) {
-        where.startAt = { lte: endAt };
-    }
-    if (search) {
-      where.OR = [
-        { classname: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { subject: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-    return this.prisma.class.findMany({
-      where,
-      skip,
-      take: _limit,
-      orderBy: { createdAt: 'desc' },
-      select:{
-        class_id: true,
-        classname: true,
-        description: true,
-        tutor:{
-          select:{ user:{
-            select:{
-              uid: true,
-              fname: true,
-              lname: true,
-              username: true,
-            }
-          }
-          }
-        }
-      },
-    });
-  }
-
-  async getClassesByTutor(tutor_uid: string) {
-    return this.prisma.class.findMany({
-      where: { tutor_uid },
-      orderBy: { createdAt: 'desc' },
-      select:{
-        class_id: true,
-        classname: true,
-        description: true,
-        status: true,
-        nb_of_student: true,
-        tutor:{
-          select:{ user:{
-            select:{
-              uid: true,
-              fname: true,
-              mname: true,
-              lname: true,
-              username: true,
-            }
-          }
-          }
-        }
-      },
-    });
-  }
-
-  async getDetailedClass(class_id: string) {
-    const classDetails = await this.prisma.class.findUnique({
-      where: { class_id: class_id },
-      
-      select: {
-        class_id: true,
-        classname: true,
-        description: true,
-        grade: true,      
-        subject: true,    
-        status: true,      
-        nb_of_student: true,
-        createdAt: true,  
-        startat: true,   
-
-        tutor: { 
-          select: {
-            user: {
-              select: {
-                uid: true,
-                fname: true,
-                mname: true,
-                lname: true,
-                username: true,
-              }
-            }
-          }
-        },
-        learning: {
-          select: {
-            student: {
-              select: {
-                uid: true,
-                user: {
-                  select: {
-                    fname: true,
-                    mname: true,
-                    lname: true,
-                    email: true,
-                    avata_url: true 
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-    return classDetails;
-  }
-
-  async enrollClass(class_id: string, student_uid: string) {
-    return this.prisma.$transaction(async (tx) => {
-        const checkEnrollment = await tx.learning.findFirst({
-            where: {
-                class_id,
-                student_uid
-            }
-        });
-        if (checkEnrollment) {
-            throw new BadRequestException('Student already enrolled in this class');
-        }
-        const enrollment = await tx.learning.create({
-            data: {
-                class: { connect: { class_id } },
-                student: { connect: { uid: student_uid } },
-            },
-        });
-        return (enrollment !== null ? {status: 201, message: 'Enrollment successful'} : {status: 400, message: 'Enrollment failed'})
-    });
-  }
-}
 
 @Injectable()
 export class ScheduleService {
@@ -359,5 +193,315 @@ export class ScheduleService {
     return this.prisma.schedule.findMany({
       where: {class_id}
     })
+  }
+}
+@Injectable()
+export class ClassService {
+  constructor(
+    private prisma: PrismaService,
+    private readonly schedule: ScheduleService
+  ) {}
+
+  async createClass(tutor_uid: string, data: ClassDto) {
+    return this.prisma.$transaction(async (tx) => {
+        const checkExisted = await tx.class.findFirst({
+          where: {
+            classname: data.classname,
+            tutor: { uid: tutor_uid },
+            OR: [
+              {status: 'pending'},
+              {status: 'ongoing'}
+            ]
+          }
+        })
+
+        if (checkExisted) throw new BadRequestException(`class ${data.classname} has been created!`)
+
+        const newClass = await tx.class.create({
+            data: {
+                classname: data.classname,
+                description: data.description,
+                duration_time: data.duration_time,
+                nb_of_student: data.nb_of_student,
+                status: data.status,
+                grade: data.grade,
+                subject: data.subject,
+                createdAt: new Date(),
+                updateAt: new Date(),
+                startat: data.startAt || new Date(),
+                tutor: { connect: { uid: tutor_uid } },
+            },
+        });
+
+        if (!newClass) throw new InternalServerErrorException("Create class fail!")
+        
+        return {class: newClass.class_id}
+    })
+  }
+
+  async getAllClasses(page?: number, limit?: number, search?: string, status?: string, startAt?: Date, endAt?: Date) {
+    const _page: number = Number(page) && Number(page) > 0 ? Number(page) : 1;
+    const _limit: number = Number(limit) && Number(limit) > 0 ? Number(limit) : 10;
+    const skip:number = (_page - 1) * _limit;
+    const where: any = {};
+    if (status) where.status = status as ClassStatus;
+    if (startAt && endAt) {
+        where.startAt = { gte: startAt, lte: endAt };
+    } else if (startAt) {
+        where.startAt = { gte: startAt };
+    } else if (endAt) {
+        where.startAt = { lte: endAt };
+    }
+    if (search) {
+      where.OR = [
+        { classname: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { subject: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const classLst = await this.prisma.class.findMany({
+      where,
+      skip,
+      take: _limit,
+      orderBy: { createdAt: 'desc' },
+      select:{
+        class_id: true,
+        classname: true,
+        description: true,
+        subject: true,
+        grade: true,
+        tutor:{
+          select:{ user:{
+            select:{
+              uid: true,
+              fname: true,
+              mname: true,
+              lname: true,
+              username: true,
+            }
+          }
+          }
+        }
+      },
+    });
+
+    return classLst
+  }
+
+  async getClassesByTutor(tutor_uid: string) {
+    const class_ = await this.prisma.class.findMany({
+      where: { tutor_uid },
+      orderBy: { createdAt: 'desc' },
+      select:{
+        class_id: true,
+        classname: true,
+        description: true,
+        status: true,
+        nb_of_student: true,
+        subject: true,
+        grade: true,
+        tutor:{
+          select:{ user:{
+            select:{
+              uid: true,
+              fname: true,
+              mname: true,
+              lname: true,
+              username: true,
+            }
+          }
+          }
+        }
+      },
+    });
+
+    return class_
+  }
+
+  async getDetailedClass(class_id: string) {
+    const classDetails = await this.prisma.class.findUnique({
+      where: { class_id: class_id },
+      
+      select: {
+        class_id: true,
+        classname: true,
+        description: true,
+        grade: true,      
+        subject: true,    
+        status: true,      
+        nb_of_student: true,
+        createdAt: true,  
+        startat: true,   
+
+        tutor: { 
+          select: {
+            user: {
+              select: {
+                uid: true,
+                fname: true,
+                mname: true,
+                lname: true,
+                username: true,
+              }
+            }
+          }
+        },
+        learning: {
+          select: {
+            student: {
+              select: {
+                uid: true,
+                user: {
+                  select: {
+                    fname: true,
+                    mname: true,
+                    lname: true,
+                    email: true,
+                    avata_url: true 
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+    return classDetails;
+  }
+
+  async enrollClass(class_id: string, email: string) {
+    return this.prisma.$transaction(async (tx) => {
+
+        const student = await tx.student.findFirst({
+          where: { user: { email } }
+        });
+
+        if (!student) {
+          throw new BadRequestException('Student not found');
+        }
+
+        const checkEnrollment = await tx.learning.findFirst({
+            where: {
+                class: { class_id },
+                student: { uid: student.uid }
+            }
+        });
+        if (checkEnrollment) {
+            throw new BadRequestException('Student already enrolled in this class');
+        }
+        const enrollment = await tx.learning.create({
+            data: {
+                class: { connect: { class_id } },
+                student: { connect: { uid: student.uid } },
+            },
+        });
+
+        if (!enrollment) throw new InternalServerErrorException("Enrollment Fail")
+        await tx.class.update({
+          where: {class_id},
+          data: {nb_of_student: {increment: 1}}
+        })
+        return {message: 'Enrollment successful'}
+    });
+  }
+
+  async updateClass(class_id: string, data: Partial<ClassDto>) {
+    return this.prisma.$transaction(async (tx) => {
+      const { plan_id, ...rest } = data;
+      return tx.class.update({
+        where: { class_id },
+        data: {
+          ...rest,
+          ...(plan_id ? { plan: { connect: { plan_id } } } : {})
+        }
+      });
+    });
+  }
+
+  async cancelClassAtStudentSide(student_uid: string, class_id: string){
+    try {
+      return this.prisma.$transaction(async(tx) => {
+        await tx.learning.delete({
+          where: {
+            class_id_student_uid: {
+              class_id,
+              student_uid
+            }
+          }
+        })
+
+        await tx.class.update({
+          where: { class_id },
+          data: { nb_of_student: {decrement: 1} }
+        })
+      })
+    } catch (error) {
+      throw new InternalServerErrorException("Fail when canceling class!")
+    }
+  }
+
+  async duplicateClass(tutor_id: string, data: Partial<ClassDto>, d_class_id: string, dupLst: DuplicatingObject[] = []){
+    try {
+      return this.prisma.$transaction(async(tx) => {
+        const classCopy = await tx.class.findUnique({
+          where: {class_id: d_class_id},
+          include: {schedule: true, resources: true, plan: true}
+        })
+
+        const newClassData: ClassDto = {
+          classname: data.classname || classCopy.classname,
+          description: data.description || classCopy.description || "",
+          createdAt: new Date(),
+          updateAt: new Date(),
+          startAt: data.startAt || new Date(),
+          duration_time: data.duration_time || classCopy.duration_time,
+          nb_of_student: 0,
+          status: data.startAt ? 'ongoing' : 'pending',
+          grade: data.grade || classCopy.grade,
+          subject: data.subject || classCopy.subject
+        }
+
+        const { plan_id, ...restClassData } = newClassData as any;
+
+        const newClass = await this.createClass(tutor_id, {
+            ...restClassData, 
+            tutor: {connect: {uid: tutor_id}},
+            ...(data.plan_id ? { plan: {connect: {plan_id: data.plan_id}} } : {})
+        })
+
+        if (dupLst && dupLst.length > 0) {
+          if (dupLst.includes(DuplicatingObject.RESOURCE)){
+            
+          }
+
+          if (dupLst.includes(DuplicatingObject.PLAN) && !data.plan_id && classCopy.plan_id){
+            await tx.class.update({
+              where: {class_id: newClass.class},
+              data: { plan: { connect: {plan_id: classCopy.plan_id} } }
+            })
+          }
+
+          if (dupLst.includes(DuplicatingObject.SCHEDULE)) {
+            const shedLst =  await tx.schedule.findMany({
+              where: { class_id: classCopy.class_id }
+            })
+
+            const schedLstData = shedLst.map((item) => {
+              const { schedule_id, class_id, meeting_date, ...resitem } = item
+              return {...resitem, meeting_date: Number(meeting_date)}
+            })
+            await this.schedule.createSchedule(newClass.class, schedLstData)
+          }
+        }
+
+        return tx.class.findUnique({
+          where: { class_id: newClass.class },
+          include: { schedule: true }
+        })
+      })
+    } catch (error) {
+      throw new InternalServerErrorException(error.message)
+    }
   }
 }

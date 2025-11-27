@@ -3,9 +3,45 @@ import {
   QuestionType,
   DifficultyLevel,
   QuestionStatus,
+  QuestionAccess,
 } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+function parseContentToTitle(content, maxLength = 50) {
+    // 1. Kiểm tra đầu vào
+    if (!content || typeof content !== 'string') {
+        return '';
+    }
+
+    // 2. Làm sạch cơ bản (loại bỏ khoảng trắng thừa ở đầu/cuối)
+    let cleanedContent = content.trim();
+
+    // Kiểm tra lại sau khi làm sạch
+    if (cleanedContent.length === 0) {
+        return '';
+    }
+
+    // Nếu nội dung đã ngắn hơn hoặc bằng độ dài tối đa, trả về nó
+    if (cleanedContent.length <= maxLength) {
+        return cleanedContent;
+    }
+
+    // 3. Trích xuất một phần chuỗi
+    let shortenedTitle = cleanedContent.substring(0, maxLength);
+
+    // 4. Cắt ở từ cuối cùng để tránh cắt ngang từ
+    // Tìm vị trí của khoảng trắng cuối cùng trong chuỗi đã cắt
+    let lastSpace = shortenedTitle.lastIndexOf(' ');
+
+    if (lastSpace > 0) {
+        // Cắt bỏ phần từ bị cắt ngang
+        shortenedTitle = shortenedTitle.substring(0, lastSpace);
+    }
+
+    // 5. Thêm dấu ba chấm
+    return shortenedTitle.trim() + '...';
+}
 
 function formatQuillContent(text) {
   if (!text) return null;
@@ -504,7 +540,8 @@ async function main() {
         'Để giải phương trình tích $(ax+b)(cx+d)=0$, ta giải $ax+b=0$ và $cx+d=0$. Nghiệm là tập hợp các giá trị tìm được.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+      accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -526,7 +563,8 @@ async function main() {
         'Điều kiện xác định của phương trình chứa ẩn ở mẫu là điều kiện để tất cả các mẫu thức khác 0.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+      accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -560,7 +598,8 @@ async function main() {
         'Phương trình bậc nhất một ẩn có dạng $ax+b=0$ ($a \\ne 0$). Một số phương trình có thể biến đổi về dạng này.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+      accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -595,7 +634,8 @@ async function main() {
         'Phân tích vế trái thành $4(x-2)(x+2)$, chuyển vế và đặt nhân tử chung $(x+2)$ để đưa về phương trình tích.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -628,7 +668,8 @@ async function main() {
         'Tìm ĐKXĐ, quy đồng khử mẫu, giải phương trình hệ quả, sau đó kiểm tra nghiệm với ĐKXĐ.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -662,7 +703,8 @@ async function main() {
         'Tìm ĐKXĐ, quy đồng mẫu thức rồi khử mẫu, giải phương trình hệ quả và đối chiếu với ĐKXĐ.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -696,7 +738,8 @@ async function main() {
         'Phân tích $x^2-4$ thành $(x-2)(x+2)$, sau đó đặt nhân tử chung $(x+2)$ để đưa về phương trình tích.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -733,7 +776,8 @@ async function main() {
         'Gọi chiều dài và chiều rộng mảnh đất là $L, W$. Ta có $2(L+W)=52$. Kích thước vườn rau là $(L-2), (W-2)$. Lập phương trình diện tích vườn rau $(L-2)(W-2)=112$. Giải hệ phương trình này.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -767,7 +811,8 @@ async function main() {
         'Gọi giá dự định là $x$ (nghìn đồng/chiếc), $x>30$. Lập phương trình dựa trên mối quan hệ về số lượng mua được trước và sau khi giảm giá.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -805,7 +850,8 @@ async function main() {
         'Phương trình bậc nhất hai ẩn x, y có dạng $ax+by=c$, trong đó a, b, c là các số cho trước, với điều kiện $a \\ne 0$ hoặc $b \\ne 0$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -839,7 +885,8 @@ async function main() {
         'Một cặp số $(x_0; y_0)$ là nghiệm của phương trình $ax+by=c$ nếu $ax_0 + by_0 = c$ là một khẳng định đúng.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -876,7 +923,8 @@ async function main() {
         'Cặp số $(x_0; y_0)$ là nghiệm của hệ nếu nó là nghiệm của từng phương trình trong hệ.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -914,7 +962,8 @@ async function main() {
         'Tổng lượng protein từ x lạng thịt bò và y lạng thịt cá phải bằng 70g.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -949,7 +998,8 @@ async function main() {
         'Phương trình bậc nhất hai ẩn có vô số nghiệm. Có thể cho x một giá trị bất kỳ và tìm y tương ứng (hoặc ngược lại).',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -984,7 +1034,8 @@ async function main() {
         'Hệ hai phương trình bậc nhất hai ẩn gồm hai phương trình có dạng $ax+by=c$ ($a \\ne 0$ hoặc $b \\ne 0$).',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1022,7 +1073,8 @@ async function main() {
         'Lập phương trình tổng số tiền cho mỗi bạn Dũng và Huy dựa vào số lượng và giá tiền x, y.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1059,7 +1111,8 @@ async function main() {
         'Tổng tiền lãi từ khoản thứ nhất (8% của x) và khoản thứ hai (10% của y) bằng 160 triệu.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1093,7 +1146,8 @@ async function main() {
         'Phương trình $0x+by=c$ ($b \\ne 0$) có nghiệm là các cặp $(x_0; c/b)$ với $x_0$ bất kỳ. Tập hợp các điểm này tạo thành đường thẳng $y = c/b$, song song hoặc trùng với trục Ox.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1134,7 +1188,8 @@ async function main() {
         'Cộng vế theo vế hai phương trình để khử y, tìm x. Sau đó thay x vào một trong hai phương trình để tìm y.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1169,7 +1224,8 @@ async function main() {
         'Thế biểu thức $y=2x$ từ phương trình thứ nhất vào phương trình thứ hai để tìm x. Sau đó tìm y.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1202,7 +1258,8 @@ async function main() {
         "Hệ $\\begin{cases} ax+by=c \\\\ a''x+b''y=c'' \\end{cases}$ vô nghiệm nếu $\\frac{a}{a''} = \\frac{b}{b''} \\ne \\frac{c}{c''}$.",
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1240,7 +1297,8 @@ async function main() {
         'Từ phương trình (1), rút $y = 5-2x$. Thế vào phương trình (2) để tìm x, sau đó tìm y.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1275,7 +1333,8 @@ async function main() {
         'Nhân PT(1) với 2 và PT(2) với 3 để hệ số của x đối nhau. Cộng vế theo vế để tìm y, sau đó tìm x.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1310,7 +1369,8 @@ async function main() {
         "Quan sát tỉ lệ các hệ số. Nếu $\\frac{a}{a''} = \\frac{b}{b''} = \\frac{c}{c''}$ thì hệ có vô số nghiệm.",
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1345,7 +1405,8 @@ async function main() {
         'Có thể nhân hai vế của mỗi phương trình với một số thích hợp để khử mẫu số trước khi giải bằng phương pháp thế hoặc cộng đại số.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1382,7 +1443,8 @@ async function main() {
         'Gọi x, y là số quyển vở loại I và loại II. Lập hệ phương trình: một phương trình về tổng số quyển vở, một phương trình về tổng số tiền. Giải hệ phương trình này.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1416,7 +1478,8 @@ async function main() {
         'Cân bằng số nguyên tử Fe và O ở hai vế để lập hệ phương trình theo x và y. Giải hệ phương trình đó.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1454,7 +1517,8 @@ async function main() {
       explaination: 'Đây là ký hiệu toán học cơ bản cho bất đẳng thức không nghiêm ngặt.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1469,7 +1533,8 @@ async function main() {
       explaination: 'Theo tính chất liên hệ giữa thứ tự và phép cộng, khi cộng cùng một số vào hai vế, ta được BĐT mới cùng chiều.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1484,7 +1549,8 @@ async function main() {
       explaination: 'Cộng 5 vào cả hai vế của bất đẳng thức $x > 10$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1500,7 +1566,8 @@ async function main() {
       explaination: 'Khi nhân cả hai vế của BĐT với một số âm, ta phải đổi chiều BĐT.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1515,7 +1582,8 @@ async function main() {
       explaination: 'Ta có $A = 1 + \\frac{1}{2023}$ và $B = 1 + \\frac{1}{2024}$. So sánh hai phân số $\\frac{1}{2023}$ và $\\frac{1}{2024}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1530,7 +1598,8 @@ async function main() {
       explaination: 'Áp dụng các tính chất liên hệ giữa thứ tự và phép cộng/nhân.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1546,7 +1615,8 @@ async function main() {
       explaination: 'BĐT tương đương $(x-y)^2 \\ge 0$. Dấu "=" xảy ra khi $(x-y)^2 = 0$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1561,7 +1631,8 @@ async function main() {
       explaination: 'So sánh hai phân số dương có cùng tử số.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1576,7 +1647,8 @@ async function main() {
       explaination: 'Áp dụng các tính chất BĐT để kiểm tra từng khẳng định.',
       level: DifficultyLevel.hard,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1597,7 +1669,8 @@ async function main() {
       explaination: 'Bất phương trình bậc nhất một ẩn có dạng $ax+b>0$ (hoặc $<, \\ge, \\le$) với $a \\ne 0$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1612,7 +1685,8 @@ async function main() {
       explaination: 'Thay $x=3$ vào từng bất phương trình, BPT nào cho một khẳng định đúng thì $x=3$ là nghiệm của BPT đó.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1627,7 +1701,8 @@ async function main() {
       explaination: 'Sử dụng quy tắc chuyển vế và quy tắc nhân.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1643,7 +1718,8 @@ async function main() {
       explaination: 'Khi nhân (hoặc chia) hai vế của BĐT với một số âm, ta phải đổi chiều BĐT.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1658,7 +1734,8 @@ async function main() {
       explaination: 'Bỏ dấu ngoặc, chuyển các hạng tử chứa x về một vế, các hằng số về vế còn lại.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1673,7 +1750,8 @@ async function main() {
       explaination: 'Phép giải trên <b>sai</b> ở bước cuối cùng.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1688,7 +1766,8 @@ async function main() {
       explaination: 'Lượng xi măng còn lại sau $x$ ngày là $100 - 20x$. Lập BPT $100 - 20x \ge 10$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1704,7 +1783,8 @@ async function main() {
       explaination: 'Lập BPT: Gốc + Lãi $\ge$ 214,400,000. $x + 0.072x \ge 214400000$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1719,7 +1799,8 @@ async function main() {
       explaination: 'Quy đồng mẫu số (nhân hai vế với 2) để khử mẫu, sau đó giải BPT bậc nhất thu được.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat2_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1739,7 +1820,8 @@ async function main() {
       explaination: 'Một số dương $a$ có đúng hai căn bậc hai là hai số đối nhau: $\\sqrt{a}$ và $-\\sqrt{a}$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1754,7 +1836,8 @@ async function main() {
       explaination: 'Căn bậc ba của a là số x sao cho $x^3 = a$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1769,7 +1852,8 @@ async function main() {
       explaination: 'Số âm không có căn bậc hai.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1785,7 +1869,8 @@ async function main() {
       explaination: 'Đưa 3 vào trong dấu căn bậc hai: $3 = \\sqrt{9}$. Sau đó so sánh $\\sqrt{9}$ và $\\sqrt{10}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1800,7 +1885,8 @@ async function main() {
       explaination: 'Áp dụng hằng đẳng thức tổng hai lập phương: $(a+b)(a^2-ab+b^2) = a^3 + b^3$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1815,7 +1901,8 @@ async function main() {
       explaination: 'Đưa -10 vào trong dấu căn bậc ba: $-10 = \\sqrt[3]{(-10)^3} = \\sqrt[3]{-1000}$. So sánh $-1000$ và $-999$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1830,7 +1917,8 @@ async function main() {
       explaination: 'Kiểm tra từng phát biểu về tính chất của căn bậc hai và căn bậc ba.',
       level: DifficultyLevel.hard,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1846,7 +1934,8 @@ async function main() {
       explaination: 'Thay $h = 80$ vào công thức, ta giải phương trình $80 = 5t^2$ để tìm $t$. Lưu ý $t > 0$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1861,7 +1950,8 @@ async function main() {
       explaination: 'Nếu cạnh là $a$ thì thể tích là $V = a^3$. Vậy $a = \\sqrt[3]{V}$. Sử dụng máy tính cầm tay.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1881,7 +1971,8 @@ async function main() {
       explaination: 'Áp dụng hằng đẳng thức $\\sqrt{A^2} = |A|$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1896,7 +1987,8 @@ async function main() {
       explaination: 'Áp dụng quy tắc khai phương một tích: $\\sqrt{A \\cdot B} = \\sqrt{A} \\cdot \\sqrt{B}$ (với $A, B \\ge 0$).',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1911,7 +2003,8 @@ async function main() {
       explaination: 'Áp dụng quy tắc khai phương một thương: $\\sqrt{\\frac{A}{B}} = \\frac{\\sqrt{A}}{\\sqrt{B}}$ (với $A \\ge 0, B > 0$).',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1927,7 +2020,8 @@ async function main() {
       explaination: 'Tách 50 thành tích của một số chính phương và một số khác. $50 = 25 \\cdot 2 = 5^2 \\cdot 2$. Áp dụng $\\sqrt{A^2 B} = |A|\\sqrt{B}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1942,7 +2036,8 @@ async function main() {
       explaination: 'Áp dụng quy tắc: Với $a < 0$ và $b \\ge 0$, ta có $a\\sqrt{b} = -\\sqrt{a^2 b}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1957,7 +2052,8 @@ async function main() {
       explaination: 'Đưa thừa số $\\sqrt{20}$ ra ngoài dấu căn, sau đó thực hiện phép trừ các căn thức đồng dạng.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1973,7 +2069,8 @@ async function main() {
       explaination: 'Đưa thừa số ra ngoài dấu căn của cả ba hạng tử, sau đó cộng/trừ các căn thức đồng dạng.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -1988,7 +2085,8 @@ async function main() {
       explaination: 'Đưa thừa số $\\sqrt{12}$ ra ngoài dấu căn để xuất hiện hằng đẳng thức $(a+b)(a-b) = a^2 - b^2$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2003,7 +2101,8 @@ async function main() {
       explaination: 'Thay các giá trị $Q=500, R=80, t=1$ vào công thức và giải $I$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2023,7 +2122,8 @@ async function main() {
       explaination: 'Đây là định nghĩa của căn thức bậc hai.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2038,7 +2138,8 @@ async function main() {
       explaination: 'Căn thức bậc hai $\\sqrt{A}$ xác định khi $A \\ge 0$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2053,7 +2154,8 @@ async function main() {
       explaination: 'Căn thức bậc ba $\\sqrt[3]{A}$ xác định khi biểu thức A xác định. Biểu thức $\\frac{1}{x-9}$ xác định khi mẫu khác 0.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2069,7 +2171,8 @@ async function main() {
       explaination: 'Thay $x = \\sqrt{10}$ vào biểu thức và tính toán.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2084,7 +2187,8 @@ async function main() {
       explaination: 'Biểu thức $\\sqrt{A}$ xác định khi $A \\ge 0$. Xét dấu của biểu thức $x^2 + 1$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2099,7 +2203,8 @@ async function main() {
       explaination: 'Thay giá trị $x = -10$ vào biểu thức và tính toán.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2115,7 +2220,8 @@ async function main() {
       explaination: 'Thay các giá trị $r=400, g=9.8, \\mu=0.12$ vào công thức và dùng máy tính để tính toán.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2130,7 +2236,8 @@ async function main() {
       explaination: 'Thay $x = 180$ vào công thức $h = 0.4 \\cdot \\sqrt[3]{180}$ và dùng máy tính để tính.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2145,7 +2252,8 @@ async function main() {
       explaination: 'Biểu thức $\\sqrt{A}$ xác định khi $A \\ge 0$. Do đó, $\\frac{-5}{x-2} \\ge 0$. Vì tử số -5 là số âm, nên mẫu số $x-2$ cũng phải là số âm (và khác 0) để thương là số dương.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2165,7 +2273,8 @@ async function main() {
       explaination: 'Áp dụng hằng đẳng thức $\\sqrt{A^2} = |A|$. Vì $x \\ge 2$ nên $x-2 \\ge 0$, do đó $|x-2| = x-2$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2180,7 +2289,8 @@ async function main() {
       explaination: 'Áp dụng quy tắc khai phương một tích $\\sqrt{A \\cdot B} = \\sqrt{A} \\cdot \\sqrt{B}$ và hằng đẳng thức $\\sqrt{A^2} = |A|$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2195,7 +2305,8 @@ async function main() {
       explaination: 'Nhân cả tử và mẫu với $\\sqrt{3}$. Ta có $\\frac{A}{\\sqrt{B}} = \\frac{A\\sqrt{B}}{B}$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2211,7 +2322,8 @@ async function main() {
       explaination: 'Đưa biểu thức dưới dấu căn về dạng bình phương của một tổng: $(x+3)^2$. Áp dụng $\\sqrt{A^2} = |A|$ và xét dấu của $x+3$ khi $x < -3$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2226,7 +2338,8 @@ async function main() {
       explaination: 'Nhân cả tử và mẫu với biểu thức liên hợp của $2+\\sqrt{3}$ là $2-\\sqrt{3}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2241,7 +2354,8 @@ async function main() {
       explaination: 'Áp dụng quy tắc nhân hai căn thức bậc hai: $\\sqrt{A} \\cdot \\sqrt{B} = \\sqrt{AB}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2256,7 +2370,8 @@ async function main() {
       explaination: 'Áp dụng quy tắc khai phương một thương $\\sqrt{A/B} = \\sqrt{A}/\\sqrt{B}$ và hằng đẳng thức $\\sqrt{A^2} = |A|$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2272,7 +2387,8 @@ async function main() {
       explaination: 'Nhân cả tử và mẫu với biểu thức liên hợp là $\\sqrt{x+1} + \\sqrt{x}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2287,7 +2403,8 @@ async function main() {
       explaination: 'Quy đồng mẫu số. Mẫu số chung là $a-b = (\\sqrt{a}-\\sqrt{b})(\\sqrt{a}+\\sqrt{b})$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2302,7 +2419,8 @@ async function main() {
       explaination: 'Đây là bất đẳng thức giữa trung bình cộng và trung bình nhân.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat3_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2322,7 +2440,8 @@ async function main() {
       explaination: 'Đây là định nghĩa của $sin \\alpha$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2337,7 +2456,8 @@ async function main() {
       explaination: 'Đây là định nghĩa của $tan \\alpha$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2352,7 +2472,8 @@ async function main() {
       explaination: 'Nếu hai góc phụ nhau thì sin góc này bằng côsin góc kia, tang góc này bằng côtang góc kia.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2368,7 +2489,8 @@ async function main() {
       explaination: '$sin B = \\frac{\\text{Cạnh đối}}{\\text{Cạnh huyền}} = \\frac{AC}{BC}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2383,7 +2505,8 @@ async function main() {
       explaination: 'Đây là giá trị tỉ số lượng giác của góc đặc biệt.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2398,7 +2521,8 @@ async function main() {
       explaination: 'Đầu tiên, dùng định lý Pytago để tìm cạnh huyền $NP = \\sqrt{MN^2 + MP^2} = \\sqrt{3^2 + 4^2} = 5$ cm. Sau đó tính các tỉ số lượng giác của góc P.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2414,7 +2538,8 @@ async function main() {
       explaination: 'Sử dụng tỉ số lượng giác của hai góc phụ nhau ($25^{\\circ}$ và $65^{\\circ}$). $sin 65^{\\circ} = cos(90^{\\circ}-65^{\\circ}) = cos 25^{\\circ}$ và $cos 65^{\\circ} = sin(90^{\\circ}-65^{\\circ}) = sin 25^{\\circ}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2429,7 +2554,8 @@ async function main() {
       explaination: 'Kiểm tra các hệ thức lượng giác cơ bản.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2444,7 +2570,8 @@ async function main() {
       explaination: 'Vẽ tam giác vuông, 12m là cạnh huyền, 7m là cạnh đối của góc $\\alpha$ (góc giữa thang và tường).',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2459,7 +2586,8 @@ async function main() {
       explaination: 'Kiểm tra các hệ thức cơ bản dựa trên định nghĩa tỉ số lượng giác.',
       level: DifficultyLevel.hard,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2479,7 +2607,8 @@ async function main() {
       explaination: 'Trong tam giác vuông, mỗi cạnh góc vuông bằng cạnh huyền nhân với sin góc đối hoặc nhân với côsin góc kề.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2494,7 +2623,8 @@ async function main() {
       explaination: 'Trong tam giác vuông, mỗi cạnh góc vuông bằng cạnh góc vuông kia nhân với tang góc đối hoặc nhân với côtang góc kề.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2509,7 +2639,8 @@ async function main() {
       explaination: 'Đây là định nghĩa của bài toán "Giải tam giác vuông".',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2525,7 +2656,8 @@ async function main() {
       explaination: 'Sử dụng hệ thức: Cạnh góc vuông (AB) = Cạnh huyền (BC) $\\times$ cosin góc kề (cos B). $AB = 20 \\cdot cos(22^{\\circ})$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2540,7 +2672,8 @@ async function main() {
       explaination: 'Chiều cao cột cờ là cạnh đối, bóng là cạnh kề của góc $40^{\\circ}$. Dùng $h = 12 \\cdot tan(40^{\\circ})$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2555,7 +2688,8 @@ async function main() {
       explaination: 'Dùng Pytago tìm BC. Dùng $tan B = \\frac{AC}{AB}$ để tìm góc B. Dùng $\\hat{C} = 90^{\\circ} - \\hat{B}$ để tìm góc C.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2571,7 +2705,8 @@ async function main() {
       explaination: 'Xét tam giác vuông ABH và tam giác vuông ACH. Viết $AH$ theo hai cách.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2586,7 +2721,8 @@ async function main() {
       explaination: 'Gọi H là điểm trên tháp ngang với A. Tính khoảng cách ngang $AH = BD$ qua $\\Delta ABH$. Sau đó dùng $AH$ để tính $CH$ trong $\\Delta ACH$. Chiều cao tháp $BC = CH + HB$ (với $HB = AD = 68$m).',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2601,7 +2737,8 @@ async function main() {
       explaination: 'Áp dụng các hệ thức lượng trong tam giác vuông. Cạnh AC là cạnh đối của góc B.',
       level: DifficultyLevel.hard,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2622,7 +2759,8 @@ async function main() {
       explaination: 'Đây là định nghĩa về góc nâng (góc nghiêng lên).',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2637,7 +2775,8 @@ async function main() {
       explaination: 'Đây là định nghĩa về góc hạ (góc nghiêng xuống).',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2653,7 +2792,8 @@ async function main() {
       explaination: 'Xét tam giác ABC vuông tại C. Ta có $BC$ là cạnh đối, $AB$ là cạnh huyền của góc $20^{\\circ}$. Dùng $sin(20^{\\circ}) = \\frac{BC}{AB}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2668,7 +2808,8 @@ async function main() {
       explaination: 'Gọi chiều cao cây là $AH = AD + DH$. Ta có $DH = 1.64$m. $AD$ là cạnh đối của góc $38^{\\circ}$ trong tam giác vuông ADC, với cạnh kề $CD = 6$m. $AD = CD \\cdot tan(38^{\\circ})$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2683,7 +2824,8 @@ async function main() {
       explaination: 'Xét tam giác ABC vuông tại A (với AB là chiều rộng sông). $AB$ là cạnh kề, $BC$ là cạnh huyền của góc $\\hat{ABC} = 35^{\\circ}$. Ta có $cos(35^{\\circ}) = \\frac{AB}{BC}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2698,7 +2840,8 @@ async function main() {
       explaination: 'Xét tam giác ABC vuông tại C. $BC$ là cạnh đối, $AC$ là cạnh kề của góc $\\hat{BAC} = 81^{\\circ}$. Ta dùng $tan(A) = \\frac{BC}{AC}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2714,7 +2857,8 @@ async function main() {
       explaination: 'Góc hạ $27^{\\circ}$ bằng góc nâng từ thuyền lên đỉnh tháp (so le trong). Gọi $h=149$m là chiều cao (cạnh đối), $d$ là khoảng cách (cạnh kề). Ta có $tan(27^{\\circ}) = \\frac{h}{d}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2729,7 +2873,8 @@ async function main() {
       explaination: 'Đặt $BC = x$. Ta có $h = x \\cdot tan(75^{\\circ})$ và $h = (x+101) \\cdot tan(60^{\\circ})$. Giải hệ phương trình này để tìm $h$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2744,7 +2889,8 @@ async function main() {
       explaination: 'Chiều cao tháp $AD$ bằng tổng của phần $AB$ (tính được từ tam giác vuông OAB) và chiều cao giác kế $b = BD$ (lưu ý $BD = OC$). Ta có $AB = OB \\cdot tan(\\alpha) = a \\cdot tan(\\alpha)$. Vậy $AD = AB + BD = a \\cdot tan(\\alpha) + b$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat4_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2766,7 +2912,8 @@ async function main() {
         'Đây là định nghĩa cơ bản của đường tròn tâm O, bán kính R, kí hiệu là (O; R).',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2799,7 +2946,8 @@ async function main() {
         'So sánh khoảng cách ON với bán kính R (5 cm) để xác định vị trí tương đối của điểm N.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2831,7 +2979,8 @@ async function main() {
         'Dây đi qua tâm được gọi là đường kính. Trong các dây của đường tròn, dây lớn nhất là đường kính.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2863,7 +3012,8 @@ async function main() {
         'Đường tròn là hình có trục đối xứng. Mỗi đường thẳng đi qua tâm là một trục đối xứng của đường tròn đó. Vì có vô số đường thẳng đi qua tâm O, nên có vô số trục đối xứng.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2897,7 +3047,8 @@ async function main() {
         'Ta có $R=5, r=3$. Tính $R-r = 2$ và $R+r = 8$. So sánh $OO\'=6$ với hai giá trị này.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2931,7 +3082,8 @@ async function main() {
         'Ta có $R=4, r=2$. Tính $R+r = 4+2 = 6$ cm. So sánh $OO\'$ với $R+r$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2965,7 +3117,8 @@ async function main() {
         'Ta có $R=10, r=3$. Tính $R-r = 10-3 = 7$ cm. So sánh $OO\'$ với $R-r$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -2999,7 +3152,8 @@ async function main() {
         'Ta có $R=6, r=2$. Tính $R+r = 6+2 = 8$ cm. So sánh $OO\'=9$ cm với $R+r$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3034,7 +3188,8 @@ async function main() {
         'Trong một đường tròn, dây lớn nhất là đường kính. Đường kính bằng hai lần bán kính.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3069,7 +3224,8 @@ async function main() {
         'Ta có $R=9, r=3$. Tính $R-r = 9-3 = 6$ cm. So sánh $OO\'=5$ cm với $R-r$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3108,7 +3264,8 @@ async function main() {
         'Theo định nghĩa, đường thẳng $a$ tiếp xúc với đường tròn (O) nếu chúng có đúng 1 điểm chung. Điểm chung đó gọi là tiếp điểm.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3141,7 +3298,8 @@ async function main() {
         'So sánh khoảng cách $d$ từ tâm O đến $a$ với bán kính R. Ở đây $R=10$ cm và $d=12$ cm.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3175,7 +3333,8 @@ async function main() {
         'Đường thẳng $a$ và đường tròn (O) cắt nhau khi chúng có 2 điểm chung. Điều này xảy ra khi khoảng cách $d$ từ tâm O đến $a$ nhỏ hơn bán kính R.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3210,7 +3369,8 @@ async function main() {
         'Gọi H là hình chiếu của O lên $a$ (H là trung điểm AB). $d = OH$. Áp dụng định lí Pythagore trong tam giác vuông OHA: $OH^2 = OA^2 - AH^2$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3244,7 +3404,8 @@ async function main() {
         'Nếu $a$ và (O) có 1 điểm chung A, thì $a$ là tiếp tuyến của (O) tại A. Khi đó, $d=R$ và tiếp tuyến vuông góc với bán kính tại tiếp điểm.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3277,7 +3438,8 @@ async function main() {
         'Gọi A, B là giao điểm. Gọi H là hình chiếu của O lên $a$. $d = OH = 3$ cm, $R = OA = 5$ cm. Tam giác OHA vuông tại H. $AH = \\sqrt{OA^2 - OH^2} = \\sqrt{5^2 - 3^2} = \\sqrt{16} = 4$ cm. Dây cung $AB = 2 \\times AH$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3311,7 +3473,8 @@ async function main() {
         'Gọi H là hình chiếu của O lên $a$. $d = OH = 5$ cm. H là trung điểm của AB, nên $AH = AB/2 = 12$ cm. Áp dụng định lí Pythagore cho tam giác vuông OHA: $R = OA = \\sqrt{OH^2 + AH^2}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3345,7 +3508,8 @@ async function main() {
         'Đường tròn (B; BA) có tâm B và bán kính $R = BA$. Đường thẳng AC là đường thẳng đi qua A. Ta cần tìm khoảng cách $d$ từ tâm B đến đường thẳng AC. Vì tam giác ABC vuông tại A, $AC \\perp AB$ tại A. Khoảng cách từ B đến đường thẳng AC chính là độ dài đoạn $BA$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3379,7 +3543,8 @@ async function main() {
         'Bước 1: Tính khoảng cách $d_1$ từ O đến AB. $d_1 = \\sqrt{R^2 - (AB/2)^2} = \\sqrt{5^2 - 4^2} = 3$ cm. Bước 2: $a$ song song với AB, cách AB 7 cm. Có 2 trường hợp. TH1 (O, $a$ khác phía so với AB): $d_a = d_1 + 7 = 3+7=10$ cm. TH2 (O, $a$ cùng phía so với AB): $d_a = 7 - d_1 = 7-3=4$ cm.',
       level: DifficultyLevel.hard,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3419,7 +3584,8 @@ async function main() {
         'Tính chất cơ bản của tiếp tuyến: Một đường thẳng là tiếp tuyến của đường tròn thì nó vuông góc với bán kính đi qua tiếp điểm.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3452,7 +3618,8 @@ async function main() {
         'Theo định nghĩa, đường tròn nội tiếp tam giác là đường tròn tiếp xúc với ba cạnh của tam giác.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3485,7 +3652,8 @@ async function main() {
         'Theo tính chất hai tiếp tuyến cắt nhau: AM = AN, AO là phân giác góc MAN, OA là phân giác góc MON.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3520,7 +3688,8 @@ async function main() {
         'Vì AM là tiếp tuyến, $AM \\perp OM$ tại M. Tam giác OMA vuông tại M. Áp dụng định lí Pythagore: $OA^2 = OM^2 + AM^2$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3554,7 +3723,8 @@ async function main() {
         'Có hai dấu hiệu nhận biết chính: 1. Dựa vào số điểm chung (1 điểm). 2. Dựa vào khoảng cách $d=R$. 3. Dựa vào tính chất vuông góc với bán kính tại một điểm trên đường tròn.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3590,7 +3760,8 @@ async function main() {
         'Sử dụng tính chất hai tiếp tuyến cắt nhau: $AM=AP, BM=BN, CN=CP$. Đặt $AM=x$. Ta có $AP=x, BM = 10-x, CP = 9-x$. Từ $BC = BN + NC = BM + CP$, ta có $11 = (10-x) + (9-x)$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3625,7 +3796,8 @@ async function main() {
         'Xét tam giác OMA vuông tại M, có $OM = R$ và $AM = R$. Đây là tam giác vuông cân. Tính $\\widehat{MAO}$, sau đó $\\widehat{MAN} = 2 \\times \\widehat{MAO}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3659,7 +3831,8 @@ async function main() {
         'Theo tính chất hai tiếp tuyến cắt nhau, AO là phân giác $\\widehat{MAN}$, nên $\\widehat{MAO} = 30^{\\circ}$. Xét tam giác OMA vuông tại M. Ta có $OM = 2$ cm (bán kính).',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3693,7 +3866,8 @@ async function main() {
         'Tâm của đường tròn nội tiếp tam giác cách đều ba cạnh của tam giác. Giao điểm của ba đường phân giác trong là điểm cách đều ba cạnh.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3731,7 +3905,8 @@ async function main() {
         'Theo định nghĩa, góc ở tâm là góc có đỉnh trùng với tâm của đường tròn.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3763,7 +3938,8 @@ async function main() {
         'Số đo của cung nhỏ bằng số đo của góc ở tâm chắn cung đó.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3796,7 +3972,8 @@ async function main() {
         'Theo định nghĩa, góc nội tiếp là góc có đỉnh nằm trên đường tròn và hai cạnh chứa hai dây cung của đường tròn đó.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3829,7 +4006,8 @@ async function main() {
         'Số đo của góc nội tiếp bằng nửa số đo của cung bị chắn.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3863,7 +4041,8 @@ async function main() {
         'Áp dụng tính chất cộng cung: Nếu B là một điểm nằm trên cung AC thì $\\text{sđ } \\overparen{AC} = \\text{sđ } \\overparen{AB} + \\text{sđ } \\overparen{BC}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3897,7 +4076,8 @@ async function main() {
         'Sử dụng mối quan hệ giữa góc ở tâm, số đo cung và góc nội tiếp cùng chắn một cung.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3934,7 +4114,8 @@ async function main() {
         'Nếu AB là đường kính, thì $\\widehat{ACB}$ là góc nội tiếp chắn nửa đường tròn (chắn cung $\\overparen{AB}$ có số đo $180^{\\circ}$).',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -3968,7 +4149,8 @@ async function main() {
         'Tam giác ABC đều nên $AB = BC = CA$. Trong một đường tròn, các dây bằng nhau căng các cung bằng nhau. Ba cung $\\overparen{AB}, \\overparen{BC}, \\overparen{CA}$ bằng nhau và tổng của chúng là $360^{\\circ}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4002,7 +4184,8 @@ async function main() {
         'Góc nội tiếp $\\widehat{MBN}$ chắn cung nhỏ $\\overparen{MN}$. Số đo góc ở tâm $\\widehat{MON}$ cũng bằng số đo cung nhỏ $\\overparen{MN}$. Ta có $\\widehat{MON} = \\text{sđ } \\overparen{MN} = 2 \\times \\widehat{MBN}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4036,7 +4219,8 @@ async function main() {
         'Xét tam giác AHC. $\\widehat{HAC} + \\widehat{HCA} = 90^{\\circ}$. $\\widehat{HAC}$ (hay $\\widehat{DAC}$) là góc nội tiếp chắn cung $\\overparen{DC}$. $\\widehat{HCA}$ (hay $\\widehat{BCA}$) là góc nội tiếp chắn cung $\\overparen{BA}$. ... (Lỗi suy luận). Thử cách khác: $\\widehat{ADC}$ chắn cung $\\overparen{AC}$, $\\widehat{DAB}$ chắn cung $\\overparen{DB}$. Trong tam giác vuông ADH, $\\widehat{ADC} + \\widehat{DAB} = 90^{\\circ}$. Do đó $\\frac{1}{2}\\text{sđ } \\overparen{AC} + \\frac{1}{2}\\text{sđ } \\overparen{DB} = 90^{\\circ}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4075,7 +4259,8 @@ async function main() {
         'Độ dài $l$ của cung $n^{\\circ}$ được tính bằng công thức $l = \\frac{\\pi R n}{180}$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s5.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4107,7 +4292,8 @@ async function main() {
         'Diện tích $S$ của hình quạt tròn $n^{\\circ}$ được tính bằng công thức $S = \\frac{\\pi R^2 n}{360}$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s5.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4139,7 +4325,8 @@ async function main() {
         'Công thức tính diện tích hình vành khuyên là $S_{vk} = \\pi(R_1^2 - R_2^2)$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s5.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4174,7 +4361,8 @@ async function main() {
         'Áp dụng công thức $l = \\frac{\\pi R n}{180}$ với $R=12$ và $n=60$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s5.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4208,7 +4396,8 @@ async function main() {
         'Áp dụng công thức $S = \\frac{\\pi R^2 n}{360}$. Ta có $5\\pi = \\frac{\\pi \\times 5^2 \\times n}{360}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s5.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4242,7 +4431,8 @@ async function main() {
         'Khi biết độ dài cung $l$ và bán kính $R$, ta có thể dùng công thức $S = \\frac{lR}{2}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s5.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4275,7 +4465,8 @@ async function main() {
         'Kiểm tra các công thức tính độ dài cung và diện tích hình quạt tròn.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s5.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4310,7 +4501,8 @@ async function main() {
         'Áp dụng công thức $S_{vk} = \\pi(R_1^2 - R_2^2)$. Ta có $20\\pi = \\pi(6^2 - R_2^2)$. Giải phương trình tìm $R_2$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s5.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4344,7 +4536,8 @@ async function main() {
         'Toàn bộ bánh là $360^{\\circ}$. Cắt thành 6 miếng bằng nhau, mỗi miếng có góc ở tâm $n = 360^{\\circ} / 6 = 60^{\\circ}$. Bán kính $R = 15$ cm. Tính diện tích quạt tròn.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s5.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4378,7 +4571,8 @@ async function main() {
         'Kim phút quay $360^{\\circ}$ trong 60 phút. Vậy trong 20 phút, nó quay được một góc $n = (20/60) \\times 360^{\\circ} = 120^{\\circ}$. Bán kính $R = 12$ cm. Tính độ dài cung $l$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat5_s5.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4415,7 +4609,8 @@ async function main() {
       explaination: 'Biểu đồ hình quạt tròn được thiết kế để thể hiện tỉ lệ của từng phần so với tổng thể (100%).',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4430,7 +4625,8 @@ async function main() {
       explaination: 'Mục đích chính của biểu đồ cột là so sánh giá trị của các hạng mục khác nhau một cách trực quan.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4445,7 +4641,8 @@ async function main() {
       explaination: 'Biểu đồ đoạn thẳng (line chart) rất hiệu quả trong việc thể hiện xu hướng (trend) của dữ liệu theo một chuỗi thời gian.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4461,7 +4658,8 @@ async function main() {
       explaination: 'Một vòng tròn đầy đủ là $360^{\\circ}$. Góc ở tâm tương ứng với 30% là $30\\% \\times 360^{\\circ}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4476,7 +4674,8 @@ async function main() {
       explaination: 'Phân tích số liệu từ mô tả của biểu đồ cột.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4491,7 +4690,8 @@ async function main() {
       explaination: 'Mốt (Mode) của mẫu số liệu là giá trị có tần số xuất hiện cao nhất trong mẫu.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4507,7 +4707,8 @@ async function main() {
       explaination: 'Tỉ lệ % của học lực Tốt = $\\frac{\\text{Góc ở tâm}}{360^{\\circ}}$. Số học sinh = Tỉ lệ % $\times$ Tổng số học sinh.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4522,7 +4723,8 @@ async function main() {
       explaination: 'Phân tích dữ liệu để tìm xu hướng tăng/giảm và giá trị lớn nhất/nhỏ nhất.',
       level: DifficultyLevel.hard,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4537,7 +4739,8 @@ async function main() {
       explaination: 'Cần cộng tất cả học sinh (cả Nam và Nữ) của cả hai lớp lại.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4558,7 +4761,8 @@ async function main() {
         'Theo định nghĩa, số lần xuất hiện của một giá trị trong mẫu dữ liệu thống kê được gọi là tần số của giá trị đó.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4592,7 +4796,8 @@ async function main() {
         'Tần số tương đối $f_i$ là tỉ số giữa tần số $n_i$ và kích thước mẫu $N$. Ta thường viết dưới dạng phần trăm, $f_i = \\frac{n_i}{N} \\times 100\\%$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4622,7 +4827,8 @@ async function main() {
         'Tổng tần số của tất cả các giá trị khác nhau chính bằng tổng số phần tử của mẫu, tức là kích thước mẫu $N$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4655,7 +4861,8 @@ async function main() {
         'Ta có giá trị $x=7$ có tần số $n=10$. Kích thước mẫu $N=40$. Tính $f = (n/N) \\times 100\\%$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4689,7 +4896,8 @@ async function main() {
         'Đọc biểu đồ cột tại vị trí "4 Số sản phẩm" trên trục hoành và gióng sang trục tung "Tần số (n)".',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4722,7 +4930,8 @@ async function main() {
         'Đếm số lần xuất hiện của từng giá trị (1, 2, 3, 4, 5, 6, 7, 8, 9, 10) trong 33 nhân viên. $N=33$.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4756,7 +4965,8 @@ async function main() {
         'Ta có $f = 20\\%$ và $N=30$. Tần số $n = f \\times N$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4789,7 +4999,8 @@ async function main() {
         'Từ biểu đồ, "Điểm 8" có tần số tương đối $f = 30\\%$. Kích thước mẫu $N=40$. Tần số $n = f \\times N$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4823,7 +5034,8 @@ async function main() {
         'Giá trị $x=4$ có tần số $n=8$. Kích thước mẫu $N=32$. Tính $f = (n/N) \\times 100\\%$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4857,7 +5069,8 @@ async function main() {
         '$N=40, n=16$. $f = (16/40) \\times 100\\% = 0.4 \\times 100\\% = 40\\%$. Góc ở tâm $n^{\\circ} = f \\times 360^{\\circ} = 0.4 \\times 360^{\\circ}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4898,7 +5111,8 @@ async function main() {
         'Tập hợp tất cả các kết quả có thể xảy ra của một phép thử ngẫu nhiên được gọi là không gian mẫu của phép thử đó, kí hiệu là $\\Omega$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4930,7 +5144,8 @@ async function main() {
         'Không gian mẫu là tập hợp các kết quả có thể xảy ra. Con xúc xắc có 6 mặt, nên $\\Omega = \\{1; 2; 3; 4; 5; 6\\}$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4963,7 +5178,8 @@ async function main() {
         'Kết quả thuận lợi cho A là các số nguyên tố từ 1 đến 12, bao gồm: {2, 3, 5, 7, 11}.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -4997,7 +5213,8 @@ async function main() {
         'Tổng số kết quả có thể xảy ra $N(\\Omega) = 6$. Các kết quả thuận lợi cho A (số chấm chia hết cho 3) là {3; 6}. Số kết quả thuận lợi là 2.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5030,7 +5247,8 @@ async function main() {
         'Không gian mẫu $N(\\Omega) = 20$. Các số từ 1 đến 20 chia cho 7 dư 1 bao gồm: 1 ($0 \\times 7 + 1$), 8 ($1 \\times 7 + 1$), 15 ($2 \\times 7 + 1$). Có 3 kết quả thuận lợi.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5061,7 +5279,8 @@ async function main() {
         'Các số tự nhiên lẻ có hai chữ số là: 11, 13, 15, ..., 99. Đây là một dãy số cách đều 2 đơn vị. Số phần tử = (Số cuối - Số đầu) / khoảng cách + 1.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5096,7 +5315,8 @@ async function main() {
         'Bước 1: Liệt kê không gian mẫu (tất cả các cách chọn 2 bạn từ 6 bạn). Bước 2: Liệt kê các kết quả thuận lợi cho A (2 bạn đều là nam).',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5130,7 +5350,8 @@ async function main() {
         'Các số tự nhiên từ 500 đến 999. $N(\\Omega) = 999 - 500 + 1 = 500$. Ta tìm $x$ sao cho $500 \\le x^3 \\le 999$. $7^3 = 343$ (loại). $8^3 = 512$ (nhận). $9^3 = 729$ (nhận). $10^3 = 1000$ (loại). Có 2 kết quả thuận lợi.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5164,7 +5385,8 @@ async function main() {
         'Gọi 3 bông đỏ là $D_1, D_2, D_3$ và bông vàng là $V$. Không gian mẫu (chọn 2) $N(\\Omega) = 6$: $(D_1,D_2), (D_1,D_3), (D_2,D_3), (D_1,V), (D_2,V), (D_3,V)$. Kết quả thuận lợi cho R (1 đỏ, 1 vàng) là: $(D_1,V), (D_2,V), (D_3,V)$. Số kết quả thuận lợi là 3.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5198,7 +5420,8 @@ async function main() {
         'Bước 1: Tính tổng số học sinh (N). $N = (7+9) + (9+7) + (9+8) + (9+8) = 16+16+17+17 = 66$. Bước 2: Tìm số kết quả thuận lợi (Nữ VÀ không thuộc khối 9). $n_C = (Nữ K6) + (Nữ K7) + (Nữ K8) = 9 + 7 + 8 = 24$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat6_s4.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5236,7 +5459,8 @@ async function main() {
         'Tìm hàm số chỉ chứa $x^2$ và xác định hệ số $a$ của nó.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5268,7 +5492,8 @@ async function main() {
         'Thay $x = -2$ vào hàm số $y = -4x^2$. Chú ý $x^2 = (-2)^2 = 4$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5300,7 +5525,8 @@ async function main() {
         'Để tìm điểm cố định, ta thử thay $x=0$ vào phương trình hàm số.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5333,7 +5559,8 @@ async function main() {
         'Xét dấu của hệ số $a$ (ở đây $a = 0.5$) để xác định hình dạng (bề lõm) và vị trí (trên/dưới trục hoành) của parabol.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5365,7 +5592,8 @@ async function main() {
         'Điểm $M(2, -8)$ thuộc đồ thị nên tọa độ của nó thỏa mãn phương trình hàm số. Thay $x=2$ và $y=-8$ vào $y=ax^2$ để tìm $a$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5398,7 +5626,8 @@ async function main() {
         'Đồ thị hàm số $y=ax^2$ có tính chất đối xứng qua trục Oy. Một điểm $M(x_0, y_0)$ thuộc đồ thị thì điểm $N(-x_0, y_0)$ cũng thuộc đồ thị.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5431,7 +5660,8 @@ async function main() {
         'Một điểm thuộc đồ thị hàm số nếu tọa độ của nó thỏa mãn phương trình hàm số. Thay $x$ và $y$ của từng điểm vào phương trình $y = \\frac{1}{2}x^2$ để kiểm tra.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5465,7 +5695,8 @@ async function main() {
         'Khi vật chạm đất, nó đã đi được quãng đường $y = 125$ m. Thay $y = 125$ vào công thức và giải phương trình tìm $x$ (thời gian $x$ phải là số dương).',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5498,7 +5729,8 @@ async function main() {
         'Gốc O(0,0) là điểm cao nhất. Khi cá heo chạm mặt nước, vị trí đó ở bên phải 2 giây ($x=2$) và ở dưới 25 feet ($y=-25$). Điểm chạm mặt nước có tọa độ $(2, -25)$. Thay tọa độ điểm này vào $y=ax^2$ để tìm $a$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5537,7 +5769,8 @@ async function main() {
         'Phương trình bậc hai một ẩn $x$ có dạng $ax^2 + bx + c = 0$, trong đó $a, b, c$ là các hệ số và $a \\ne 0$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5571,7 +5804,8 @@ async function main() {
         'Đối chiếu phương trình $2x^2 - 5x + 3 = 0$ với dạng $ax^2 + bx + c = 0$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5602,7 +5836,8 @@ async function main() {
       explaination: 'Đây là công thức định nghĩa biệt thức delta.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5635,7 +5870,8 @@ async function main() {
         'Xác định $a=2, b=-1, c=-3$. Áp dụng công thức $\\Delta = b^2 - 4ac$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5668,7 +5904,8 @@ async function main() {
         'Xác định $a=9, b=6, c=1$. Tính $\\Delta = b^2 - 4ac = 6^2 - 4(9)(1) = 36 - 36 = 0$. Vì $\\Delta = 0$, phương trình có nghiệm kép $x = -b / (2a)$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5701,7 +5938,8 @@ async function main() {
         'Xác định $a=3, b=-2 \\implies b\' = -1, c=9$. Áp dụng công thức $\\Delta\' = (b\')^2 - ac$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5734,7 +5972,8 @@ async function main() {
         'Xác định $a=1, b=-5, c=6$. Tính $\\Delta = (-5)^2 - 4(1)(6) = 25 - 24 = 1 > 0$. Phương trình có 2 nghiệm phân biệt.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5769,7 +6008,8 @@ async function main() {
         'Xét các trường hợp của biệt thức $\\Delta$ để xác định số nghiệm của phương trình.',
       level: DifficultyLevel.hard,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5802,7 +6042,8 @@ async function main() {
         'Chiều cao mặt cắt là $x$ cm. Chiều rộng mặt cắt là $(32-2x)$ cm. Diện tích là $x(32-2x) = 120$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5836,7 +6077,8 @@ async function main() {
         'Sản lượng 2019: 5000. Sản lượng 2020: $5000(1 - x/100)$. Sản lượng 2021: $5000(1 - x/100)^2$. Sản lượng 2021 cũng bằng $5000(1 - 51/100) = 5000(0.49)$. Ta giải $(1 - x/100)^2 = 0.49$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5874,7 +6116,8 @@ async function main() {
         'Định lí Viète phát biểu mối liên hệ giữa tổng và tích của hai nghiệm với các hệ số của phương trình bậc hai.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5906,7 +6149,8 @@ async function main() {
         'Xác định các hệ số $a=5, b=-7, c=-3$. Áp dụng công thức $x_1+x_2 = -b/a$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5938,7 +6182,8 @@ async function main() {
         'Theo định lí Viète, $x_1 x_2 = c/a$. Nếu $x_1=1$, ta có $1 \\times x_2 = c/a \\implies x_2 = c/a$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -5971,7 +6216,8 @@ async function main() {
         'Kiểm tra các trường hợp đặc biệt: $a+b+c$ và $a-b+c$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6003,7 +6249,8 @@ async function main() {
         'Kiểm tra các trường hợp đặc biệt: $a+b+c$ và $a-b+c$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6035,7 +6282,8 @@ async function main() {
         'Hai số cần tìm là nghiệm của phương trình $x^2 - Sx + P = 0$, với $S=7$ và $P=12$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6068,7 +6316,8 @@ async function main() {
         'Gọi chiều dài là $L$, chiều rộng là $W$. Chu vi $2(L+W) = 68 \\implies$ Tổng $S = L+W = 34$. Diện tích (Tích) $P = L \\times W = 240$. Hai số $L, W$ là nghiệm của phương trình $x^2 - Sx + P = 0$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6100,7 +6349,8 @@ async function main() {
         'Sử dụng Viète: $S = x_1+x_2 = -b/a = -(-3)/2 = 3/2$. $P = x_1x_2 = c/a = -6/2 = -3$. Quy đồng biểu thức $A = \\frac{x_1+x_2}{x_1x_2} = S/P$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6132,7 +6382,8 @@ async function main() {
         'Kiểm tra $\\Delta\' = (-2)^2 - 1(1) = 3 > 0$, phương trình có 2 nghiệm. Tính $S = x_1+x_2 = 4$ và $P = x_1x_2 = 1$. Tính các biểu thức liên quan như $x_1^2 + x_2^2 = (x_1+x_2)^2 - 2x_1x_2 = S^2 - 2P$.',
       level: DifficultyLevel.hard,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat7_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6169,7 +6420,8 @@ async function main() {
         'Hãy nhớ lại định nghĩa về đường tròn liên quan đến ba đỉnh của tam giác.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6201,7 +6453,8 @@ async function main() {
         'Hãy nhớ lại định nghĩa về đường tròn liên quan đến ba cạnh của tam giác.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6233,7 +6486,8 @@ async function main() {
         'Tâm đường tròn ngoại tiếp phải cách đều ba đỉnh $A, B, C$ của tam giác. Điểm cách đều $A$ và $B$ nằm trên đường trung trực của $AB$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6266,7 +6520,8 @@ async function main() {
         'Tâm đường tròn nội tiếp phải cách đều ba cạnh $AB, BC, CA$ của tam giác. Điểm cách đều hai cạnh $AB$ và $AC$ nằm trên đường phân giác của góc $A$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6298,7 +6553,8 @@ async function main() {
         'Trong tam giác vuông, đường trung tuyến ứng với cạnh huyền bằng một nửa cạnh huyền. Gọi M là trung điểm $BC$, ta có $MA = MB = MC$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6330,7 +6586,8 @@ async function main() {
         'Trong tam giác đều, các đường đặc biệt (trung tuyến, trung trực, phân giác, đường cao) ứng với cùng một đỉnh đều trùng nhau.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6363,7 +6620,8 @@ async function main() {
         'Bán kính $R$ của đường tròn ngoại tiếp tam giác vuông bằng một nửa cạnh huyền. Cần dùng định lí Pythagore để tính cạnh huyền $BC$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6395,7 +6653,8 @@ async function main() {
         'Bán kính đường tròn ngoại tiếp $R$ của tam giác đều cạnh $a$ được tính bằng công thức $R = \\frac{a\\sqrt{3}}{3}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6427,7 +6686,8 @@ async function main() {
         'Bán kính đường tròn nội tiếp $r$ của tam giác đều cạnh $a$ được tính bằng công thức $r = \\frac{a\\sqrt{3}}{6}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6465,7 +6725,8 @@ async function main() {
         'Theo định nghĩa, tứ giác nội tiếp đường tròn là tứ giác có bốn đỉnh thuộc một đường tròn.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6500,7 +6761,8 @@ async function main() {
         'Trong một tứ giác nội tiếp, tổng số đo hai góc đối bằng $180^{\\circ}$. Góc A và góc C là hai góc đối nhau.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6535,7 +6797,8 @@ async function main() {
         'Một tứ giác nội tiếp nếu tổng hai góc đối bằng $180^{\\circ}$. Ta cần kiểm tra xem hình nào luôn thỏa mãn điều kiện này.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6573,7 +6836,8 @@ async function main() {
         'Áp dụng tính chất tứ giác nội tiếp: $\\widehat{A} + \\widehat{C} = 180^{\\circ}$ và $\\widehat{B} + \\widehat{D} = 180^{\\circ}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6609,7 +6873,8 @@ async function main() {
         'Tâm đường tròn ngoại tiếp hình chữ nhật là giao điểm 2 đường chéo. Bán kính R bằng một nửa độ dài đường chéo. Áp dụng định lí Pythagore cho tam giác ABC vuông tại B.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6644,7 +6909,8 @@ async function main() {
         'Trong một đường tròn, hai dây song song (AB và CD) sẽ chắn hai cung bằng nhau (cung AD và cung BC). Hai cung bằng nhau căng hai dây bằng nhau (AD=BC). Hình thang có hai cạnh bên bằng nhau là hình thang cân.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6681,7 +6947,8 @@ async function main() {
         'Tâm đường tròn ngoại tiếp là giao điểm O của 2 đường chéo. Bán kính R bằng một nửa độ dài đường chéo. Đường chéo $AC$ của hình vuông cạnh $a$ là $a\\sqrt{2}$ (theo định lí Pythagore).',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6716,7 +6983,8 @@ async function main() {
         'Tứ giác ABMC nội tiếp đường tròn (O). Theo tính chất tứ giác nội tiếp, tổng hai góc đối bằng $180^{\\circ}$. Do đó, $\\widehat{BMC} + \\widehat{BAC} = 180^{\\circ}$. Vì tam giác ABC đều nên $\\widehat{BAC} = 60^{\\circ}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6751,7 +7019,8 @@ async function main() {
         'Xét $\\triangle IAD$ và $\\triangle ICB$. Ta có $\\widehat{I}$ là góc chung. Vì ABCD nội tiếp nên $\\widehat{BCD} + \\widehat{BAD} = 180^{\\circ}$. Mà $\\widehat{BAD} + \\widehat{IAD} = 180^{\\circ}$ (kề bù). Suy ra $\\widehat{BCD} = \\widehat{IAD}$. Do đó $\\triangle IAD \\sim \\triangle ICB$ (g-g).',
       level: DifficultyLevel.hard,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6788,7 +7057,8 @@ async function main() {
         'Xét đường tròn (O; R) với $R=15$ m. $\\widehat{BAC}$ là góc nội tiếp chắn cung BC. $\\text{sđ } \\overparen{BC} = 2 \\times \\widehat{BAC} = 2 \\times 30^{\\circ} = 60^{\\circ}$. Dây $BC$ căng cung $60^{\\circ}$. Góc ở tâm $\\widehat{BOC} = \\text{sđ } \\overparen{BC} = 60^{\\circ}$. Tam giác BOC có $OB=OC=R$ và $\\widehat{BOC} = 60^{\\circ}$ nên là tam giác đều.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat8_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6829,7 +7099,8 @@ async function main() {
         'Một đa giác đều phải thỏa mãn đồng thời hai điều kiện về cạnh và góc.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6861,7 +7132,8 @@ async function main() {
         'Xét xem hình nào vi phạm định nghĩa "tất cả các cạnh bằng nhau VÀ tất cả các góc bằng nhau".',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6893,7 +7165,8 @@ async function main() {
         'Định nghĩa đa giác lồi dựa trên vị trí của đa giác so với đường thẳng chứa một cạnh bất kỳ của nó.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6926,7 +7199,8 @@ async function main() {
         'Tổng số đo các góc của đa giác n cạnh là $(n-2) \\times 180^\\circ$. Đối với ngũ giác ($n=5$), tổng là $(5-2) \\times 180^\\circ = 540^\\circ$. Chia đều cho 5 góc.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6958,7 +7232,8 @@ async function main() {
         'Tổng số đo các góc của đa giác n cạnh là $(n-2) \\times 180^\\circ$. Đối với lục giác ($n=6$), tổng là $(6-2) \\times 180^\\circ = 720^\\circ$. Chia đều cho 6 góc.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -6990,7 +7265,8 @@ async function main() {
         'Quan sát Hình 13 trong sách, ta thấy các ô của tổ ong có dạng hình 6 cạnh đều.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7022,7 +7298,8 @@ async function main() {
         'Áp dụng định nghĩa đa giác đều: "tất cả các cạnh bằng nhau" VÀ "tất cả các góc bằng nhau".',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7055,7 +7332,8 @@ async function main() {
         'Sử dụng công thức tính tổng số đo các góc trong của một đa giác $n$ cạnh: $S = (n-2) \\times 180^\\circ$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7087,7 +7365,8 @@ async function main() {
         'Phân tích quá trình gấp và cắt trong Hình 8 để hiểu tại sao các cạnh và các góc của hình 8e lại bằng nhau.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7125,7 +7404,8 @@ async function main() {
         'Theo định nghĩa, phép quay tâm O biến M thành M\' thì M\' phải nằm trên đường tròn (O; OM) và góc quay $\\widehat{MOM\'}$ phải bằng $\\alpha$ theo đúng chiều quay đã định.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7162,7 +7442,8 @@ async function main() {
         'Hình vuông ABCD có tâm O. Các góc $\\widehat{AOB}, \\widehat{BOC}, \\widehat{COD}, \\widehat{DOA}$ đều bằng $90^{\\circ}$. Quay thuận chiều (clockwise) là quay từ A $\\to$ D $\\to$ C $\\to$ B $\\to$ A.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7199,7 +7480,8 @@ async function main() {
         'Khi $M\'$ là ảnh của $M$ qua phép quay $180^{\\circ}$, ba điểm $M, O, M\'$ thẳng hàng và $OM = OM\'$. Đây chính là định nghĩa của phép đối xứng tâm O.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7237,7 +7519,8 @@ async function main() {
         'Lục giác đều có 6 đỉnh cách đều tâm O. Góc ở tâm giữa hai đỉnh kề nhau là $360^{\\circ}/6 = 60^{\\circ}$. Quay ngược chiều $120^{\\circ}$ (tức là $2 \\times 60^{\\circ}$) sẽ di chuyển điểm qua 2 đỉnh theo chiều $A_1 \\to A_2 \\to A_3$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7274,7 +7557,8 @@ async function main() {
         'Hình đa giác đều n-cạnh tâm O được giữ nguyên bởi phép quay góc $\\alpha = k \\cdot (360^{\\circ}/n)$. Với hình vuông $n=4$, các góc quay giữ nguyên hình là bội của $90^{\\circ}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7311,7 +7595,8 @@ async function main() {
         'Ngũ giác đều $n=5$. Góc quay cơ bản là $360^{\\circ}/5 = 72^{\\circ}$. Phép quay này sẽ dịch chuyển các đỉnh đi 1 bước ngược chiều kim đồng hồ (A $\\to$ B, B $\\to$ C, ...).',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7347,7 +7632,8 @@ async function main() {
         'Hình chong chóng này không phải là đa giác đều 18 cạnh. Nó được tạo bởi 6 "cánh" hoa văn giống hệt nhau. Phép quay giữ nguyên hình phải là bội của $360^{\\circ}/6 = 60^{\\circ}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7384,7 +7670,8 @@ async function main() {
         'Bát giác đều $n=8$. Góc quay cơ bản (từ đỉnh này sang đỉnh kề ngược chiều kim đồng hồ) là $360^{\\circ}/8 = 45^{\\circ}$. Quay ngược chiều từ A đến C là đi qua 2 đỉnh (A $\\to$ B $\\to$ C).',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7419,7 +7706,8 @@ async function main() {
         'Theo định nghĩa, phép quay tâm O giữ nguyên điểm O. Bất kỳ điểm M nào khác O ($M \\ne O$) sẽ bị quay đến vị trí M\' trên đường tròn (O; OM). $M\'$ chỉ trùng $M$ khi góc quay là bội của $360^{\\circ}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat9_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7459,7 +7747,8 @@ async function main() {
         'Hãy nhớ lại định nghĩa về cách tạo ra một hình trụ trong không gian.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7491,7 +7780,8 @@ async function main() {
         'Hình trụ có đặc điểm là hai mặt đáy là hai hình tròn bằng nhau và song song với nhau.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7523,7 +7813,8 @@ async function main() {
         'Xem lại các yếu tố của hình trụ (Hình 3). Đường sinh liên quan đến mặt xung quanh của hình trụ.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7556,7 +7847,8 @@ async function main() {
         'Diện tích xung quanh $S_{xq}$ bằng chu vi đáy nhân với chiều cao. Chu vi đáy của hình tròn là $C = 2\\pi r$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7588,7 +7880,8 @@ async function main() {
         'Thể tích $V$ bằng diện tích đáy nhân với chiều cao. Diện tích đáy của hình tròn là $S = \\pi r^2$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7620,7 +7913,8 @@ async function main() {
         'Phân tích các yếu tố cấu tạo nên hình trụ: hai đáy, đường sinh, và chiều cao.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7653,7 +7947,8 @@ async function main() {
         'Áp dụng công thức $V = \\pi r^2 h$ với $r=13$ cm và $h=43$ cm.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7685,7 +7980,8 @@ async function main() {
         'Đổi đơn vị: $d=30$ cm $= 0.3$ m $\\implies r = 0.15$ m. $h=350$ cm $= 3.5$ m. Tính $S_{xq} = 2\\pi rh$. Sau đó nhân với đơn giá 40 000 đồng/m². ',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7717,7 +8013,8 @@ async function main() {
         'Đổi đơn vị: $h=44,5$ mm $= 4,45$ cm. $d=10,5$ mm $= 1,05$ cm $\\implies r = 0,525$ cm. Tính $S_{tp} = S_{xq} + 2 \\times S_{đáy} = 2\\pi rh + 2\\pi r^2$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7749,7 +8046,8 @@ async function main() {
         'Đổi đơn vị: $V = 1 800 000$ lít $= 1 800 000 dm^3 = 1800 m^3$. Chiều cao $h = 30$ m. Từ $V = \\pi r^2 h$, suy ra $r^2 = V / (\\pi h)$. Tính $r$, sau đó tính đường kính $d=2r$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7787,7 +8085,8 @@ async function main() {
         'Theo định nghĩa, hình nón được tạo ra khi quay một tam giác vuông một vòng quanh một cạnh góc vuông cố định của nó.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7821,7 +8120,8 @@ async function main() {
         'Diện tích xung quanh của hình nón được tính bằng tích của $\\pi$, bán kính đáy $r$, và đường sinh $l$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7854,7 +8154,8 @@ async function main() {
         'Thể tích hình nón bằng một phần ba tích của diện tích đáy ($\\pi r^2$) và chiều cao $h$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7887,7 +8188,8 @@ async function main() {
         'Mối liên hệ giữa $r, h, l$ trong hình nón là $l^2 = h^2 + r^2$ (định lí Pythagore).',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7922,7 +8224,8 @@ async function main() {
         'Áp dụng công thức $S_{xq} = \\pi r l$ với $r=3$ và $l=7$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7955,7 +8258,8 @@ async function main() {
         'Áp dụng công thức $V = \\frac{1}{3} \\pi r^2 h$ với $r=6$ và $h=5$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -7990,7 +8294,8 @@ async function main() {
         'Mối liên hệ giữa $r, h, l$ trong hình nón là $l^2 = h^2 + r^2$. Do đó $h = \\sqrt{l^2 - r^2}$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8025,7 +8330,8 @@ async function main() {
         'Bước 1: Tính đường sinh $l = \\sqrt{h^2 + r^2}$. Bước 2: Tính diện tích xung quanh $S_{xq} = \\pi r l$. Bước 3: Tính diện tích đáy $S_đ = \\pi r^2$. Bước 4: $S_{tp} = S_{xq} + S_đ$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8060,7 +8366,8 @@ async function main() {
         'Bước 1: Từ chu vi đáy $C = 2\\pi r$, tìm bán kính $r$. $40\\pi = 2\\pi r \\implies r = 20$ cm. Bước 2: Tính đường sinh $l = \\sqrt{h^2 + r^2} = \\sqrt{15^2 + 20^2}$. Bước 3: Tính diện tích xung quanh $S_{xq} = \\pi r l$.',
       level: DifficultyLevel.hard,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8095,7 +8402,8 @@ async function main() {
         'Bước 1: Tìm bán kính $r = C / (2\\pi) = 12 / (2\\pi) = 6/\\pi$. Bước 2: Tính diện tích đáy $S_đ = \\pi r^2 = \\pi (6/\\pi)^2 = 36/\\pi$. Bước 3: Tính thể tích $V = \\frac{1}{3} S_đ h = \\frac{1}{3} \\times \\frac{36}{\\pi} \\times 2.5 = \\frac{12 \\times 2.5}{\\pi} = \\frac{30}{\\pi}$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8135,7 +8443,8 @@ async function main() {
         'Hãy nhớ lại định nghĩa về cách tạo ra một hình cầu.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8167,7 +8476,8 @@ async function main() {
         'Hãy tưởng tượng bạn dùng một con dao phẳng cắt một quả cam (dạng hình cầu). Mặt cắt luôn là một hình tròn.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8199,7 +8509,8 @@ async function main() {
         'Hình cầu là một vật thể tròn đều trong không gian, giống như một quả bóng.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8232,7 +8543,8 @@ async function main() {
         'Diện tích mặt cầu bằng 4 lần diện tích hình tròn lớn của nó. Diện tích hình tròn lớn là $\\pi R^2$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8264,7 +8576,8 @@ async function main() {
         'Hãy nhớ công thức tính thể tích khối cầu, công thức này chứa $R^3$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8296,7 +8609,8 @@ async function main() {
         'Đường kính $d = 22$ cm, vậy bán kính $R = 11$ cm. Áp dụng công thức $S = 4\\pi R^2$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8329,7 +8643,8 @@ async function main() {
         'Sử dụng công thức $V = \\frac{4}{3}\\pi R^3$. Thay $V = 36\\pi$ vào và giải phương trình tìm $R$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8361,7 +8676,8 @@ async function main() {
         'Từ $S = 4\\pi R^2 = 100\\pi$, tìm $R$. Sau đó, dùng $R$ để tính $V = \\frac{4}{3}\\pi R^3$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8393,7 +8709,8 @@ async function main() {
         '$d=10$ m $\\implies R=5$ m. Bể bơi là NỬA hình cầu. $S_{bề mặt} = S_{mặt cong} + S_{đáy} = \\frac{1}{2}S_{mặt cầu} + S_{hình tròn} = \\frac{1}{2}(4\\pi R^2) + \\pi R^2 = 2\\pi R^2 + \\pi R^2 = 3\\pi R^2$. $V = \\frac{1}{2}V_{hình cầu} = \\frac{1}{2}(\\frac{4}{3}\\pi R^3) = \\frac{2}{3}\\pi R^3$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: cd_cat10_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8438,7 +8755,8 @@ async function main() {
         'Phương trình này có dạng tích của hai biểu thức bậc nhất bằng 0.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8470,7 +8788,8 @@ async function main() {
         'Để giải phương trình tích $A \cdot B = 0$, ta giải $A=0$ hoặc $B=0$.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8502,7 +8821,8 @@ async function main() {
         'Điều kiện xác định (ĐKXĐ) của phương trình chứa ẩn ở mẫu là điều kiện để *tất cả* các mẫu thức khác 0.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8535,7 +8855,8 @@ async function main() {
         'Ta thấy $(x+6)$ là nhân tử chung. Đặt nhân tử chung để đưa về phương trình tích.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8567,7 +8888,8 @@ async function main() {
         'Cần tìm ĐKXĐ, quy đồng mẫu thức, khử mẫu để giải phương trình hệ quả, và cuối cùng đối chiếu nghiệm với ĐKXĐ.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8599,7 +8921,8 @@ async function main() {
         'Cần tìm ĐKXĐ, quy đồng và khử mẫu. Cẩn thận với nghiệm không thoả mãn điều kiện xác định.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8631,7 +8954,8 @@ async function main() {
         'Giải phương trình chứa ẩn ở mẫu yêu cầu tuân thủ một quy trình 4 bước để đảm bảo tìm đúng nghiệm.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8664,7 +8988,8 @@ async function main() {
         '"Chạm đất" nghĩa là độ cao $h=0$. Ta cần giải phương trình tích $t(20-5t) = 0$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8696,7 +9021,8 @@ async function main() {
         'Gọi $v > 0$ (km/h) là tốc độ lúc đi. Tốc độ lúc về là $v \cdot (1 + 20/100) = 1.2v$. Đổi 4 giờ 24 phút = $4 + 24/60 = 4.4$ giờ. Lập phương trình tổng thời gian: $\\frac{120}{v} + \\frac{120}{1.2v} = 4.4$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s1.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8734,7 +9060,8 @@ async function main() {
         'Phương trình bậc nhất hai ẩn $x, y$ có dạng $ax + by = c$, trong đó $a, b, c$ là các hệ số, và $a, b$ không đồng thời bằng 0.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s2.category_id, // Giả định ctst_cat1_s2 đã được định nghĩa
       tutor_id: tutor.uid,
       answers: [
@@ -8768,7 +9095,8 @@ async function main() {
         'Để kiểm tra, ta thay $x=1$ và $y=2$ vào từng phương trình. Nếu ta được một đẳng thức đúng (ví dụ: $1=1$ hoặc $4=4$) thì cặp số đó là nghiệm.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8805,7 +9133,8 @@ async function main() {
         'Một cặp số là nghiệm của hệ phương trình nếu nó là nghiệm của TẤT CẢ các phương trình trong hệ. Ta cần thay $x=1, y=2$ vào cả hai phương trình.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8843,7 +9172,8 @@ async function main() {
         'Rút gọn phương trình: $0x - \\frac{3}{2}y = 6 \\implies -\\frac{3}{2}y = 6 \\implies y = 6 / (-\\frac{3}{2}) = 6 \\times (-\\frac{2}{3}) = -4$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8877,7 +9207,8 @@ async function main() {
         'Khi hai xe đi ngược chiều và gặp nhau, tổng quãng đường hai xe đi được bằng khoảng cách AB. Quãng đường ô tô đi trong 2 giờ là $2x$. Quãng đường xe máy đi trong 2 giờ là $2y$.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8912,7 +9243,8 @@ async function main() {
         'Phương trình bậc nhất hai ẩn (với $a, b$ không đồng thời bằng 0) luôn có vô số nghiệm. Tập hợp các nghiệm này tạo thành một đường thẳng trên mặt phẳng tọa độ.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8947,7 +9279,8 @@ async function main() {
         'PT(1): "Mỗi người 5 trái thừa 5 trái" $\\implies$ Số trái hồng $y = 5x + 5$. PT(2): "Mỗi người 6 trái một người không" $\\implies$ có $(x-1)$ người được 6 trái, 1 người 0 trái. $\\implies$ Số trái hồng $y = 6(x-1) + 0$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -8982,7 +9315,8 @@ async function main() {
         'Ta thay lần lượt các cặp số (x; y) vào phương trình. Cặp số nào cho ra một đẳng thức SAI (ví dụ: $0=1$ hoặc $5 \\ne 1$) thì không phải là nghiệm.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9019,7 +9353,8 @@ async function main() {
         'PT(1): Tốc độ ô tô ($x$) hơn xe máy ($y$) 15 km/h $\\implies x - y = 15$. PT(2): Hai xe đi ngược chiều, gặp nhau sau 2h $\\implies$ Tổng quãng đường $2x + 2y = 210$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s2.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9059,7 +9394,8 @@ async function main() {
         'Phương pháp thế yêu cầu "thay thế" một ẩn bằng một biểu thức chứa ẩn còn lại.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9091,7 +9427,8 @@ async function main() {
         'Phương pháp này cộng (hoặc trừ) hai phương trình với nhau để đạt được một mục đích cụ thể.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9123,7 +9460,8 @@ async function main() {
         'Phương trình đầu tiên đã biểu diễn $x$ theo $y$. Ta dùng phương pháp thế: thế $x = 3y+1$ vào phương trình thứ hai.',
       level: DifficultyLevel.easy,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9156,7 +9494,8 @@ async function main() {
         'Hệ số của $y$ là $-3y$ và $3y$ đối nhau, ta dùng phương pháp cộng đại số.',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9188,7 +9527,8 @@ async function main() {
         'Sử dụng phương pháp thế. Từ (1) $\\implies x = 2y + 4$. Thế vào (2).',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9220,7 +9560,8 @@ async function main() {
         'Ta có thể dùng phương pháp thế: $y = 2 - 3x$. Thế vào (2).',
       level: DifficultyLevel.medium,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9252,7 +9593,8 @@ async function main() {
         'Đây là quy trình chuẩn để giải một bài toán thực tế bằng đại số.',
       level: DifficultyLevel.medium,
       type: QuestionType.multiple_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9285,7 +9627,8 @@ async function main() {
         'Gọi $x$ là giá 1kg thịt lợn, $y$ là giá 1kg thịt bò (nghìn đồng). Lập hai phương trình dựa trên hóa đơn của chị An và chị Ba.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9317,7 +9660,8 @@ async function main() {
         'Thay tọa độ điểm A vào hàm số ta được phương trình (1): $2a + b = -2$. Thay tọa độ điểm B vào ta được PT (2): $-a + b = 3$. Giải hệ hai phương trình này.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
-      status: QuestionStatus.public,
+            accessMode: QuestionAccess.public,
+      status: QuestionStatus.ready,
       category_id: ctst_cat1_s3.category_id,
       tutor_id: tutor.uid,
       answers: [
@@ -9373,6 +9717,7 @@ async function main() {
     if (!existingQuestion) {
       await prisma.questions.create({
         data: {
+          title: parseContentToTitle(formattedContent),
           content: formattedContent,
           explaination: formattedExplanation,
           level: qData.level,
@@ -9380,6 +9725,7 @@ async function main() {
           category_id: qData.category_id,
           tutor_id: qData.tutor_id,
           status: qData.status,
+          accessMode: qData.accessMode,
           answers: {
             createMany: {
               data: createAnswersData(qData.answers),

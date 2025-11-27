@@ -18,6 +18,8 @@ export class ClassDto {
     
     @IsNotEmpty({ message: 'Subject is required' })
     subject: string;
+
+    plan_id?: string
 }
 
 export class ScheduleDto {

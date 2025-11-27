@@ -84,5 +84,3 @@ pids
 *.pid.lock
 # Bỏ comment dòng dưới nếu dự án của bạn dùng Gatsby thay vì Next.js
 # public
-
-backend/julie-schedule-f99304b76d44.json

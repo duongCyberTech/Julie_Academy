@@ -23,7 +23,6 @@ import homepage1 from "../../assets/images/homepage1.webp";
 import homepage2 from "../../assets/images/homepage2.webp";
 import homepage3 from "../../assets/images/homepage3.webp";
 
-
 const MOTION_VARIANTS = {
   fadeInUp: {
     initial: { opacity: 0, y: 20 },
@@ -39,45 +38,51 @@ const StyledSectionWrapper = styled(Box, {
   shouldForwardProp: (prop) => prop !== "hasDivider",
 })(({ theme, hasDivider }) => ({
   width: "100%",
-  paddingBlock: theme.spacing(6),
+  paddingBlock: theme.spacing(4),
   overflow: "hidden",
   ...(hasDivider && { borderTop: `1px solid ${theme.palette.divider}` }),
   [theme.breakpoints.down("md")]: { paddingBlock: theme.spacing(5) },
 }));
 
-const ContentDisplayCard = styled(Paper)(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  height: "100%",
-  padding: theme.spacing(4),
-  borderRadius: theme.shape.borderRadius * 2,
-  background: theme.palette.background.paper,
-  boxShadow: theme.shadows[3],
-}));
+const ContentDisplayCard = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === "dark";
+  return {
+    display: "flex",
+    flexDirection: "column",
+    height: "100%",
+    padding: theme.spacing(4),
+    borderRadius: theme.shape.borderRadius * 2,
+    transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+    background: isDark
+      ? alpha(theme.palette.background.paper, 0.8)
+      : theme.palette.background.paper,
+    border: isDark ? `1px solid ${alpha(theme.palette.common.white, 0.08)}` : "none",
+    boxShadow: isDark ? "none" : theme.shadows[3],
+    "&:hover": {
+      transform: isDark ? "none" : "translateY(-5px)",
+      border: isDark ? `1px solid ${alpha(theme.palette.primary.main, 0.3)}` : "none",
+      boxShadow: isDark ? "none" : theme.shadows[10],
+    },
+  };
+});
 
-const GradientText = styled("span")(({ theme }) => ({
-  background:
-    theme.palette.mode === "dark"
-      ? `linear-gradient(45deg, ${alpha(
-          theme.palette.primary.light,
-          0.9
-        )}, ${alpha(theme.palette.secondary.main, 0.8)})`
-      : `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-  WebkitBackgroundClip: "text",
-  WebkitTextFillColor: "transparent",
-}));
 const StyledImageBox = React.memo(({ src, alt, isFirst }) => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+
   return (
     <Box
       sx={{
         p: 2,
         borderRadius: theme.shape.borderRadius * 2.5,
-        background: `linear-gradient(145deg, ${alpha(
-          theme.palette.primary.light,
-          0.3
-        )}, ${alpha(theme.palette.secondary.light, 0.25)})`,
-        boxShadow: theme.shadows[4],
+        background: isDark
+          ? `linear-gradient(145deg, ${alpha(theme.palette.primary.main, 0.15)}, ${alpha(theme.palette.secondary.main, 0.1)})`
+          : `linear-gradient(145deg, ${alpha(theme.palette.primary.light, 0.3)}, ${alpha(theme.palette.secondary.light, 0.25)})`,
+        border: isDark ? `1px solid ${alpha(theme.palette.primary.light, 0.1)}` : "none",
+        boxShadow: isDark
+          ? `0 0 20px ${alpha(theme.palette.primary.main, 0.1)}`
+          : theme.shadows[4],
+        transition: "all 0.3s ease",
       }}
     >
       <Box
@@ -92,38 +97,32 @@ const StyledImageBox = React.memo(({ src, alt, isFirst }) => {
           objectFit: "cover",
           borderRadius: theme.shape.borderRadius * 2,
           display: "block",
+          filter: isDark ? "brightness(0.9)" : "none",
         }}
       />
     </Box>
   );
 });
 
-
 const HeroSection = React.memo(() => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
 
   return (
     <StyledSectionWrapper
       sx={{
-        pt: { xs: 12, md: 14 },
-        pb: { xs: 10, md: 14 },
-        background:
-          theme.palette.mode === "dark"
-            ? `linear-gradient(180deg, ${alpha(
-                theme.palette.background.default,
-                1
-              )} 0%, ${alpha(theme.palette.primary.dark, 0.05)} 100%)`
-            : `linear-gradient(180deg, #fff 0%, ${alpha(
-                theme.palette.primary.light,
-                0.07
-              )} 100%)`,
+        pt: { xs: 6, md: 12 },
+        pb: { xs: 4, md: 4 },
+        background: isDark
+          ? theme.palette.background.default
+          : `linear-gradient(180deg, #fff 0%, ${alpha(theme.palette.primary.light, 0.07)} 100%)`,
         position: "relative",
         overflow: "hidden",
       }}
     >
       <Container
         maxWidth="md"
-        sx={{ textAlign: "center", position: "relative" }}
+        sx={{ textAlign: "center", position: "relative", zIndex: 1 }}
       >
         <motion.div
           initial="initial"
@@ -136,17 +135,13 @@ const HeroSection = React.memo(() => {
               variant="h1"
               fontWeight={900}
               sx={{
-                mb: 2,
-                background: `linear-gradient(90deg,
-                  ${theme.palette.primary.main} 0%,
-                  ${theme.palette.accent.main} 100%)`,
+                mb: 1,
+                background: isDark
+                  ? `linear-gradient(90deg, #FFFFFF 0%, ${theme.palette.primary.light} 100%)`
+                  : `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.accent.main} 100%)`,
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 letterSpacing: "-1px",
-                textShadow:
-                  theme.palette.mode === "dark"
-                    ? "0 4px 12px rgba(255,255,255,0.12)"
-                    : "0 4px 12px rgba(0,0,0,0.08)",
                 transition: "all 0.5s ease",
               }}
             >
@@ -154,7 +149,6 @@ const HeroSection = React.memo(() => {
             </Typography>
           </motion.div>
 
-          {/* --- Slogan --- */}
           <motion.div variants={MOTION_VARIANTS.fadeInUp}>
             <Typography
               component="h2"
@@ -162,23 +156,16 @@ const HeroSection = React.memo(() => {
               fontWeight={700}
               sx={{
                 mb: 3,
-                background: `linear-gradient(90deg,
-                  ${alpha(theme.palette.primary.main, 0.9)} 0%,
-                  ${alpha(theme.palette.accent.main, 0.8)} 100%)`,
+                background: `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.9)} 0%, ${alpha(theme.palette.accent.main, 0.8)} 100%)`,
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 opacity: 0.95,
-                textShadow:
-                  theme.palette.mode === "dark"
-                    ? "0 2px 10px rgba(255,255,255,0.1)"
-                    : "0 3px 8px rgba(0,0,0,0.05)",
               }}
             >
               Kiến tạo tri thức – Dẫn lối tương lai
             </Typography>
           </motion.div>
 
-          {/* --- Tagline --- */}
           <motion.div variants={MOTION_VARIANTS.fadeInUp}>
             <Typography
               variant="body1"
@@ -186,10 +173,9 @@ const HeroSection = React.memo(() => {
                 maxWidth: 800,
                 mx: "auto",
                 lineHeight: 1.9,
-                color:
-                  theme.palette.mode === "dark"
-                    ? alpha(theme.palette.text.primary, 0.85)
-                    : alpha(theme.palette.text.secondary, 0.95),
+                color: isDark
+                  ? alpha(theme.palette.text.primary, 0.85)
+                  : alpha(theme.palette.text.secondary, 0.95),
                 fontSize: "1.1rem",
               }}
             >
@@ -197,25 +183,6 @@ const HeroSection = React.memo(() => {
             </Typography>
           </motion.div>
         </motion.div>
-
-        {/* --- Ánh sáng mềm phía sau --- */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: "45%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 300,
-            height: 300,
-            borderRadius: "50%",
-            background: `radial-gradient(circle at center,
-              ${alpha(theme.palette.secondary.main, 0.25)} 0%,
-              transparent 70%)`,
-            filter: "blur(90px)",
-            zIndex: -1,
-            transition: "all 1s ease",
-          }}
-        />
       </Container>
     </StyledSectionWrapper>
   );
@@ -227,22 +194,19 @@ const FeatureSection = React.memo(() => {
       {
         icon: TrendingUpIcon,
         title: "Cá nhân hóa việc học",
-        description:
-          "Phân tích điểm mạnh, điểm yếu, tạo ra lộ trình học tập tối ưu và hiệu quả nhất dành riêng cho bạn.",
+        description: "Phân tích điểm mạnh, điểm yếu, tạo ra lộ trình học tập tối ưu và hiệu quả nhất dành riêng cho bạn.",
         variant: "primary",
       },
       {
         icon: MenuBookIcon,
         title: "Nội dung đáng tin cậy",
-        description:
-          "Hệ thống kiến thức chuẩn hóa từ nhiều bộ sách giáo khoa, được biên soạn và kiểm duyệt bởi các chuyên gia.",
+        description: "Hệ thống kiến thức chuẩn hóa từ nhiều bộ sách giáo khoa, được biên soạn và kiểm duyệt bởi các chuyên gia.",
         variant: "success",
       },
       {
         icon: VolunteerActivismIcon,
         title: "Công cụ hỗ trợ giáo viên",
-        description:
-          "Cung cấp công cụ mạnh mẽ giúp giáo viên và gia sư đổi mới phương pháp giảng dạy trong kỷ nguyên số.",
+        description: "Cung cấp công cụ mạnh mẽ giúp giáo viên và gia sư đổi mới phương pháp giảng dạy trong kỷ nguyên số.",
         variant: "warning",
       },
     ],
@@ -337,7 +301,6 @@ const ContentSection = React.memo(
   }
 );
 
-
 function HomePage({ mode, toggleMode }) {
   const PAGE_SECTIONS = useMemo(
     () => [
@@ -346,8 +309,7 @@ function HomePage({ mode, toggleMode }) {
         imgSrc: homepage1,
         imgAlt: "Học sinh sử dụng công nghệ học tập hiện đại",
         title: "Cùng chúng tôi tạo nên sự khác biệt",
-        content:
-          "Nền tảng học tập trực tuyến giúp chuẩn hóa kiến thức từ nhiều bộ sách, hỗ trợ gia sư cập nhật phương pháp giảng dạy mới, đồng thời nâng cao hiệu quả tự học và tự kiểm tra cho học sinh.",
+        content: "Nền tảng học tập trực tuyến giúp chuẩn hóa kiến thức từ nhiều bộ sách, hỗ trợ gia sư cập nhật phương pháp giảng dạy mới, đồng thời nâng cao hiệu quả tự học và tự kiểm tra cho học sinh.",
         showButton: true,
         direction: "row",
       },
@@ -357,8 +319,7 @@ function HomePage({ mode, toggleMode }) {
         imgSrc: homepage2,
         imgAlt: "Kiến Tạo Tri Thức",
         title: "Kiến Tạo Tri Thức, Dẫn Lối Tương Lai",
-        content:
-          "Julie Academy không chỉ là một trang web ôn tập thông thường mà là người bạn đồng hành thông minh cho hành trình học tập của bạn.",
+        content: "Julie Academy không chỉ là một trang web ôn tập thông thường mà là người bạn đồng hành thông minh cho hành trình học tập của bạn.",
         direction: "row-reverse",
       },
       {
@@ -366,8 +327,7 @@ function HomePage({ mode, toggleMode }) {
         imgSrc: homepage3,
         imgAlt: "Học sinh và gia sư cùng phát triển",
         title: "Cùng phát triển, cùng thành công",
-        content:
-          "Julie Academy là môi trường để gia sư, giáo viên cập nhật kiến thức, đổi mới phương pháp và cùng nhau phát triển trong kỷ nguyên giáo dục số.",
+        content: "Julie Academy là môi trường để gia sư, giáo viên cập nhật kiến thức, đổi mới phương pháp và cùng nhau phát triển trong kỷ nguyên giáo dục số.",
         direction: "row",
       },
     ],
@@ -377,9 +337,7 @@ function HomePage({ mode, toggleMode }) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Helmet>
-        <title>
-          Julie Academy - Nền tảng học tập trực tuyến, kết nối gia sư & học sinh
-        </title>
+        <title>Julie Academy - Nền tảng học tập trực tuyến</title>
         <meta
           name="description"
           content="Julie Academy - Nền tảng học tập AI kết nối gia sư và học sinh, cá nhân hóa lộ trình học, miễn phí trọn đời."

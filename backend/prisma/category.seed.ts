@@ -15,29 +15,41 @@ async function createChapterAndLessons(
 ) {
   const parentCategory = await prisma.categories.upsert({
     where: { category_name: chapterName },
-    update: {
-      book_id: bookId,
-    },
+    update: {},
     create: {
       category_name: chapterName,
       description: 'Chương trong sách',
-      book_id: bookId,
       parent_id: null, 
     },
   });
+
+  let CateInPlan = await prisma.structure.findFirst({
+    where: {
+      plan_id: bookId,
+      cate_id: parentCategory.category_id,
+    },
+  });
+
+  if (!CateInPlan) {
+    CateInPlan = await prisma.structure.create({
+      data: {
+        Category: { connect: { category_id: parentCategory.category_id } },
+        Plan: { connect: { plan_id: bookId } },
+      },
+    });
+  }
+
   console.log(`  Tạo/cập nhật Chương: ${parentCategory.category_name}`);
   const lessonPromises = lessonNames.map((lessonName) =>
     prisma.categories.upsert({
       where: { category_name: lessonName },
       update: {
-        book_id: bookId,
         parent_id: parentCategory.category_id, 
         description: chapterName,
       },
       create: {
         category_name: lessonName,
         description: chapterName,
-        book_id: bookId,
         parent_id: parentCategory.category_id, 
       },
     }),
@@ -55,7 +67,7 @@ async function main() {
   // ======================================================
 
   //Book: Toán 9 - Cánh Diều
-  const bookCD = await prisma.books.upsert({
+  const bookCD = await prisma.lesson_Plan.upsert({
     where: { title: 'Toán 9 - Cánh Diều' },
     update: {},
     create: {
@@ -68,7 +80,7 @@ async function main() {
   console.log(`Đã tạo/cập nhật Book: ${bookCD.title}`);
 
   //Book: Toán 9 - Chân trời sáng tạo
-  const bookCTST = await prisma.books.upsert({
+  const bookCTST = await prisma.lesson_Plan.upsert({
     where: { title: 'Toán 9 - Chân Trời Sáng Tạo' },
     update: {},
     create: {
@@ -81,7 +93,7 @@ async function main() {
   console.log(`Đã tạo/cập nhật Book: ${bookCTST.title}`);
 
   //Book: Toán 9 - Kết nối tri thức với cuộc sống
-  const bookKNTT = await prisma.books.upsert({
+  const bookKNTT = await prisma.lesson_Plan.upsert({
     where: { title: 'Toán 9 - Kết Nối Tri Thức Với Cuộc Sống' },
     update: {},
     create: {
@@ -101,7 +113,7 @@ async function main() {
   // ======================================================
   console.log('\n--- Đang seed Sách Cánh Diều ---');
   await createChapterAndLessons(
-    bookCD.book_id,
+    bookCD.plan_id,
     'Chương I: Phương trình và hệ phương trình bậc nhất',
     [
       '§1. Phương trình quy về phương trình bậc nhất một ẩn',
@@ -111,12 +123,12 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookCD.book_id,
+    bookCD.plan_id,
     'Chương II: Bất đẳng thức. Bất phương trình bậc nhất một ẩn',
     ['§1. Bất đẳng thức', '§2. Bất phương trình bậc nhất một ẩn'],
   );
 
-  await createChapterAndLessons(bookCD.book_id, 'Chương III: Căn thức', [
+  await createChapterAndLessons(bookCD.plan_id, 'Chương III: Căn thức', [
     '§1. Căn bậc hai và căn bậc ba của số thực',
     '§2. Một số phép tính về căn bậc hai của số thực',
     '§3. Căn thức bậc hai và căn thức bậc ba của biểu thức đại số',
@@ -124,7 +136,7 @@ async function main() {
   ]);
 
   await createChapterAndLessons(
-    bookCD.book_id,
+    bookCD.plan_id,
     'Chương IV: Hệ thức lượng trong tam giác vuông',
     [
       '§1. Tỉ số lượng giác của góc nhọn',
@@ -133,7 +145,7 @@ async function main() {
     ],
   );
 
-  await createChapterAndLessons(bookCD.book_id, 'Chương V: Đường tròn', [
+  await createChapterAndLessons(bookCD.plan_id, 'Chương V: Đường tròn', [
     '§1. Đường tròn. Vị trí tương đối của hai đường tròn',
     '§2. Vị trí tương đối của đường thẳng và đường tròn',
     '§3. Tiếp tuyến của đường tròn',
@@ -142,7 +154,7 @@ async function main() {
   ]);
 
   await createChapterAndLessons(
-    bookCD.book_id,
+    bookCD.plan_id,
     'Chương VI: Một số yếu tố thống kê và xác suất',
     [
       '§1. Mô tả và biểu diễn dữ liệu trên các bảng, biểu đồ',
@@ -153,7 +165,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookCD.book_id,
+    bookCD.plan_id,
     'Chương VII: Hàm số y = ax^2 (a \\ne 0). Phương trình bậc hai một ẩn',
     [
       '§1. Hàm số y = ax^2 (a \\ne 0)',
@@ -163,7 +175,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookCD.book_id,
+    bookCD.plan_id,
     'Chương VIII: Đường tròn ngoại tiếp và đường tròn nội tiếp',
     [
       '§1. Đường tròn ngoại tiếp tam giác. Đường tròn nội tiếp tam giác',
@@ -171,13 +183,13 @@ async function main() {
     ],
   );
 
-  await createChapterAndLessons(bookCD.book_id, 'Chương IX: Đa giác đều', [
+  await createChapterAndLessons(bookCD.plan_id, 'Chương IX: Đa giác đều', [
     '§1. Đa giác đều. Hình đa giác đều trong thực tiễn',
     '§2. Phép quay',
   ]);
 
   await createChapterAndLessons(
-    bookCD.book_id,
+    bookCD.plan_id,
     'Chương X: Hình học trực quan',
     ['§1. Hình trụ', '§2. Hình nón', '§3. Hình cầu'],
   );
@@ -187,7 +199,7 @@ async function main() {
   // ======================================================
   console.log('\n--- Đang seed Sách Chân Trời Sáng Tạo ---');
   await createChapterAndLessons(
-    bookCTST.book_id,
+    bookCTST.plan_id,
     'Chương 1: PHƯƠNG TRÌNH VÀ HỆ PHƯƠNG TRÌNH',
     [
       'Bài 1. Phương trình quy về phương trình bậc nhất một ẩn',
@@ -197,12 +209,12 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookCTST.book_id,
+    bookCTST.plan_id,
     'Chương 2: BẤT ĐẲNG THỨC. BẤT PHƯƠNG TRÌNH BẬC NHẤT MỘT ẨN',
     ['Bài 1. Bất đẳng thức', 'Bài 2. Bất phương trình bậc nhất một ẩn'],
   );
 
-  await createChapterAndLessons(bookCTST.book_id, 'Chương 3: CĂN THỨC', [
+  await createChapterAndLessons(bookCTST.plan_id, 'Chương 3: CĂN THỨC', [
     'Bài 1. Căn bậc hai',
     'Bài 2. Căn bậc ba',
     'Bài 3. Tính chất của phép khai phương',
@@ -210,7 +222,7 @@ async function main() {
   ]);
 
   await createChapterAndLessons(
-    bookCTST.book_id,
+    bookCTST.plan_id,
     'Chương 4: HỆ THỨC LƯỢNG TRONG TAM GIÁC VUÔNG',
     [
       'Bài 1. Tỉ số lượng giác của góc nhọn',
@@ -218,7 +230,7 @@ async function main() {
     ],
   );
 
-  await createChapterAndLessons(bookCTST.book_id, 'Chương 5: ĐƯỜNG TRÒN', [
+  await createChapterAndLessons(bookCTST.plan_id, 'Chương 5: ĐƯỜNG TRÒN', [
     'Bài 1. Đường tròn',
     'Bài 2. Tiếp tuyến của đường tròn',
     'Bài 3. Góc ở tâm, góc nội tiếp',
@@ -226,7 +238,7 @@ async function main() {
   ]);
 
   await createChapterAndLessons(
-    bookCTST.book_id,
+    bookCTST.plan_id,
     'Chương 6: HÀM SỐ y = ax^2 (a ≠ 0) VÀ PHƯƠNG TRÌNH BẬC HAI MỘT ẨN',
     [
       'Bài 1. Hàm số và đồ thị của hàm số y = ax^2 (a ≠ 0)',
@@ -236,7 +248,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookCTST.book_id,
+    bookCTST.plan_id,
     'Chương 7: MỘT SỐ YẾU TỐ THỐNG KÊ',
     [
       'Bài 1. Bảng tần số và biểu đồ tần số',
@@ -246,13 +258,13 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookCTST.book_id,
+    bookCTST.plan_id,
     'Chương 8: MỘT SỐ YẾU TỐ XÁC SUẤT',
     ['Bài 1. Không gian mẫu và biến cố', 'Bài 2. Xác suất của biến cố'],
   );
 
   await createChapterAndLessons(
-    bookCTST.book_id,
+    bookCTST.plan_id,
     'Chương 9: TỨ GIÁC NỘI TIẾP. ĐA GIÁC ĐỀU',
     [
       'Bài 1. Đường tròn ngoại tiếp tam giác. Đường tròn nội tiếp tam giác',
@@ -262,7 +274,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookCTST.book_id,
+    bookCTST.plan_id,
     'Chương 10: CÁC HÌNH KHỐI TRONG THỰC TIỄN',
     ['Bài 1. Hình trụ', 'Bài 2. Hình nón', 'Bài 3. Hình cầu'],
   );
@@ -273,7 +285,7 @@ async function main() {
   console.log('\n--- Đang seed Sách Kết Nối Tri Thức ---');
 
   await createChapterAndLessons(
-    bookKNTT.book_id,
+    bookKNTT.plan_id,
     'Chương 1. PHƯƠNG TRÌNH VÀ HỆ HAI PHƯƠNG TRÌNH BẬC NHẤT HAI ẨN',
     [
       'Bài 1. Khái niệm phương trình và hệ hai phương trình bậc nhất hai ẩn',
@@ -283,7 +295,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookKNTT.book_id,
+    bookKNTT.plan_id,
     'Chương II. PHƯƠNG TRÌNH VÀ BẤT PHƯƠNG TRÌNH BẬC NHẤT MỘT ẨN',
     [
       'Bài 4. Phương trình quy về phương trình bậc nhất một ẩn',
@@ -293,7 +305,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookKNTT.book_id,
+    bookKNTT.plan_id,
     'Chương III. CĂN BẬC HAI VÀ CĂN BẬC BA',
     [
       'Bài 7. Căn bậc hai và căn thức bậc hai',
@@ -304,7 +316,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookKNTT.book_id,
+    bookKNTT.plan_id,
     'Chương IV. HỆ THỨC LƯỢNG TRONG TAM GIÁC VUÔNG',
     [
       'Bài 11. Tỉ số lượng giác của góc nhọn',
@@ -312,7 +324,7 @@ async function main() {
     ],
   );
 
-  await createChapterAndLessons(bookKNTT.book_id, 'Chương V. ĐƯỜNG TRÒN', [
+  await createChapterAndLessons(bookKNTT.plan_id, 'Chương V. ĐƯỜNG TRÒN', [
     'Bài 13. Mở đầu về đường tròn',
     'Bài 14. Cung và dây của một đường tròn',
     'Bài 15. Độ dài của cung tròn. Diện tích hình quạt tròn và hình vành khuyên',
@@ -321,7 +333,7 @@ async function main() {
   ]);
 
   await createChapterAndLessons(
-    bookKNTT.book_id,
+    bookKNTT.plan_id,
     'Chương VI. HÀM SỐ y = ax^2 (a ≠ 0). PHƯƠNG TRÌNH BẬC HAI MỘT ẨN',
     [
       'Bài 18. Hàm số y = ax^2 (a ≠ 0)',
@@ -332,7 +344,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookKNTT.book_id,
+    bookKNTT.plan_id,
     'Chương VII. TẦN SỐ VÀ TẦN SỐ TƯƠNG ĐỐI',
     [
       'Bài 22. Bảng tần số và biểu đồ tần số',
@@ -342,7 +354,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookKNTT.book_id,
+    bookKNTT.plan_id,
     'Chương VIII. XÁC SUẤT CỦA BIẾN CỐ TRONG MỘT SỐ MÔ HÌNH XÁC SUẤT ĐƠN GIẢN',
     [
       'Bài 25. Phép thử ngẫu nhiên và không gian mẫu',
@@ -351,7 +363,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookKNTT.book_id,
+    bookKNTT.plan_id,
     'Chương IX. ĐƯỜNG TRÒN NGOẠI TIẾP VÀ ĐƯỜNG TRÒN NỘI TIẾP',
     [
       'Bài 27. Góc nội tiếp',
@@ -362,7 +374,7 @@ async function main() {
   );
 
   await createChapterAndLessons(
-    bookKNTT.book_id,
+    bookKNTT.plan_id,
     'Chương X. MỘT SỐ HÌNH KHỐI TRONG THỰC TIỄN',
     ['Bài 31. Hình trụ và hình nón', 'Bài 32. Hình cầu'],
   );

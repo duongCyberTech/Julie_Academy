@@ -17,16 +17,12 @@ import UserManagement from "../pages/admin/UserManagement";
 import AboutPage from "../pages/public/AboutPage";
 import ContactPage from "../pages/public/ContactPage";
 import ResourcesManagement from "../pages/admin/ResourcesManagement";
-import ClassDetailPage from "../pages/tutor/ClassDetailPage";
-
 import StudentDashboard from "../pages/student/StudentDashboard";
-import StudentProfilePage from "../pages/student/StudentProfilePage";
-import StudentMyClassPage from '../pages/student/StudentMyClassPage';
-import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
-import StudentThreadDetailPage from '../pages/student/StudentThreadDetailPage';
-import StudentPracticePage from '../pages/student/StudentPracticePage';
-import StudentPracticeSessionPage from "../pages/student/StudentPracticeSessionPage";
-import StudentAssignmentPage from "../pages/student/StudentAssignmentPage";
+import ClassDetailPage from "../pages/tutor/ClassDetailPage";
+import ExamPage from "../pages/tutor/ExamPage";
+import ExamDetailPage from "../pages/tutor/ExamDetailPage";
+import AssignmentPage from "../pages/tutor/AssignmentPage";
+import SystemSetting from "../pages/admin/SystemSetting.jsx";
 function AppRoutes(props) {
   return (
     <Routes>
@@ -44,6 +40,7 @@ function AppRoutes(props) {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="resources" element={<ResourcesManagement />} />
+          <Route path="settings" element={<SystemSetting />} />
         </Route>
       </Route>
       {/* Nhóm các route cho Tutor */}
@@ -54,19 +51,16 @@ function AppRoutes(props) {
           <Route path="new" element={<NewQuestion />} />
           <Route path="classes" element={<ClassPage />} />
           <Route path="classes/:classId" element={<ClassDetailPage />} />
+          <Route path="exam" element={<ExamPage />} />
+          <Route path="exam/:examId" element={<ExamDetailPage />} />
+          <Route path="assignment" element={<AssignmentPage />} />
+
         </Route>
       </Route>
       {/* Nhóm các route cho Student */}
       <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
         <Route path="/student" element={<Layout />}>
           <Route path="dashboard" element={<StudentDashboard />} />
-          <Route path="profile" element={<StudentProfilePage />} />
-          <Route path="myclass" element={<StudentMyClassPage />} />
-          <Route path="myclass/:classId" element={<StudentClassDetailPage />} />
-          <Route path="myclass/:classId/:threadId" element={<StudentThreadDetailPage />} />  
-          <Route path="practice" element={<StudentPracticePage />} />
-          <Route path="practice/session/:sessionId" element={<StudentPracticeSessionPage />} />
-          <Route path="homework" element={<StudentAssignmentPage />} />
         </Route>
       </Route>
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}

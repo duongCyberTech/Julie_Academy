@@ -4,7 +4,6 @@ import {
   Container,
   Typography,
   Box,
-  Grid,
   Button,
   Avatar,
   Paper,
@@ -14,158 +13,187 @@ import {
   ListItemText,
   alpha,
   useTheme,
+  Stack,
+  styled,
+  Grid,
 } from "@mui/material";
 import {
-  SchoolOutlined,
-  DevicesOutlined,
-  CheckCircleOutline,
-  GroupOutlined,
-  FormatQuoteOutlined,
-  EmojiObjectsOutlined,
+  Devices,
+  CheckCircle,
+  FormatQuote,
+  EmojiObjects,
+  RocketLaunch,
+  AutoAwesome,
+  Psychology,
+  LibraryBooks,
 } from "@mui/icons-material";
 
 const features = [
   {
-    icon: <CheckCircleOutline />,
+    icon: <Psychology />,
     color: "primary",
-    title: "Lộ trình học tập cá nhân hóa",
-    description:
-      "Hệ thống tự động điều chỉnh độ khó và nội dung dựa trên kết quả của bạn.",
+    title: "Lộ trình cá nhân hóa",
   },
   {
-    icon: <SchoolOutlined />,
+    icon: <LibraryBooks />,
     color: "secondary",
-    title: "Nguồn tài liệu phong phú",
-    description:
-      "Hàng ngàn câu hỏi, bài giảng và bài kiểm tra được biên soạn kỹ lưỡng.",
+    title: "Kho tài liệu chuẩn",
   },
   {
-    icon: <DevicesOutlined />,
+    icon: <Devices />,
     color: "success",
-    title: "Giao diện thân thiện",
-    description: "Thiết kế trực quan, dễ sử dụng trên mọi thiết bị.",
+    title: "Đa nền tảng",
   },
 ];
 
 const audienceItems = [
   {
     primary: "Học viên",
-    secondary: "Luyện tập theo lộ trình cá nhân hóa, nhận phản hồi tức thì.",
+    secondary: "Luyện tập chủ động, nhận phản hồi tức thì và cải thiện điểm số.",
   },
   {
     primary: "Gia sư & Giáo viên",
-    secondary: "Tạo lớp học, giao bài tập và theo dõi tiến độ chi tiết của học viên.",
+    secondary: "Quản lý lớp học dễ dàng, giao bài tập và xem báo cáo chi tiết.",
   },
   {
     primary: "Phụ huynh",
-    secondary: "Dễ dàng nắm bắt tình hình học tập và điểm mạnh/yếu của con.",
+    secondary: "Đồng hành cùng con, nắm bắt điểm mạnh và điểm cần cải thiện.",
   },
 ];
+
+const StyledFeatureCard = styled(Paper)(({ theme }) => ({
+  display: "flex", 
+  flexDirection: "row", 
+  alignItems: "center",
+  justifyContent: "center",
+  gap: theme.spacing(2),
+  padding: theme.spacing(2), 
+  height: "100%",
+  borderRadius: theme.shape.borderRadius * 2,
+  border: `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.background.paper,
+  transition: "all 0.3s ease",
+  "&:hover": {
+    transform: "translateY(-2px)",
+    boxShadow: theme.shadows[3],
+    borderColor: theme.palette.primary.main,
+  },
+}));
+
+// --- SECTIONS ---
 
 const MissionSection = React.memo(() => {
   const theme = useTheme();
   return (
     <Box
       sx={{
-        py: { xs: 6, md: 10 },
+        py: { xs: 6, md: 12 },
         textAlign: "center",
-        bgcolor: alpha(theme.palette.primary.main, 0.05),
-        borderBottom: `1px solid ${theme.palette.divider}`,
+        position: "relative",
+        overflow: "hidden",
+        bgcolor: theme.palette.mode === 'dark' 
+          ? alpha(theme.palette.background.default, 0.5) 
+          : alpha(theme.palette.primary.main, 0.02),
       }}
     >
-      <Container maxWidth="md">
+      <Box
+        sx={{
+          position: "absolute",
+          top: "-50%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "80%",
+          height: "200%",
+          background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.08)} 0%, transparent 70%)`,
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
+      
+      <Container maxWidth="md" sx={{ position: "relative", zIndex: 1 }}>
+        <Box 
+          display="inline-flex" 
+          alignItems="center" 
+          gap={1} 
+          mb={1} 
+          sx={{ 
+            py: 0.5, 
+            px: 1.5, 
+            borderRadius: 50, 
+            bgcolor: alpha(theme.palette.primary.main, 0.1),
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
+          }}
+        >
+          <AutoAwesome color="primary" sx={{ fontSize: 16 }} />
+          <Typography variant="caption" color="primary.main" fontWeight={600} textTransform="uppercase">
+            Sứ mệnh
+          </Typography>
+        </Box>
+        
         <Typography
           variant="h3"
-          component="h1" 
-          fontWeight={700}
+          component="h1"
+          fontWeight={600}
           gutterBottom
-          color="primary.main"
+          sx={{
+            color: "text.primary",
+            mb: 2,
+            letterSpacing: "-0.5px",
+            fontSize: { xs: "2rem", md: "2.75rem" }
+          }}
         >
-          Sứ mệnh của chúng tôi
+          Tiếp sức hành trình tri thức
         </Typography>
-        <Typography variant="h4" component="p" color="text.primary" sx={{ mb: 1 }}>
-          Tiếp sức cho người học trên hành trình làm chủ tri thức.
-        </Typography>
-        <Typography variant="h5" component="p" color="text.secondary" sx={{ mb: 3 }}>
-          Chúng tôi tin rằng một lộ trình học tập phù hợp là chìa khóa cho sự
-          tự tin và bứt phá.
+        
+        <Typography 
+          variant="h6" 
+          component="p" 
+          color="text.secondary" 
+          sx={{ 
+            mb: 0, 
+            lineHeight: 1.6, 
+            maxWidth: "700px", 
+            mx: "auto",
+            fontWeight: 400, 
+            fontSize: { xs: "1rem", md: "1rem" }
+          }}
+        >
+          Chúng tôi tin rằng một lộ trình học tập phù hợp chính là chìa khóa để mở ra sự tự tin và bứt phá giới hạn bản thân.
         </Typography>
       </Container>
     </Box>
   );
 });
 
-/**
- * SECTION 2: Tính năng
- */
 const FeaturesSection = React.memo(({ features }) => {
   const theme = useTheme();
   return (
-    <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: "background.paper" }}>
+    <Box sx={{ py: { xs: 4, md: 5 }, bgcolor: "background.paper" }}>
       <Container maxWidth="lg">
-        {/* TỐI ƯU SEO: Tiêu đề mục dùng h2 */}
-        <Typography
-          variant="h4"
-          component="h2"
-          fontWeight={600}
-          textAlign="center"
-          gutterBottom
-        >
-          <GroupOutlined
-            sx={{
-              mb: -0.5,
-              mr: 1,
-              color: "secondary.main",
-              fontSize: "2rem",
-            }}
-          />
-          Vì sao chọn Julie Academy?
-        </Typography>
+        <Box textAlign="center" mb={4}>
+          <Typography variant="h5" component="h2" fontWeight={600} color="text.primary">
+            Tại sao chọn Julie Academy?
+          </Typography>
+        </Box>
 
-        {/* 4. TỐI ƯU MUI V6: Dùng Grid 'size' thay cho 'item' */}
-        <Grid container spacing={4} sx={{ mt: 4 }} justifyContent="center">
+        <Grid container spacing={2} justifyContent="center">
           {features.map((feature) => (
-            <Grid size={{ xs: 12, sm: 4 }} key={feature.title}>
-              <Paper
-                elevation={3}
-                sx={{
-                  p: { xs: 2.5, md: 3.5 },
-                  textAlign: "center",
-                  height: "100%",
-                  borderRadius: 3,
-                  background: theme.palette.background.paper,
-                  transition: "transform 0.28s ease, box-shadow 0.28s ease",
-                  "&:hover": {
-                    boxShadow: theme.shadows[8],
-                    transform: "translateY(-6px) scale(1.01)",
-                  },
-                }}
-              >
+            <Grid size={{ xs: 12, md: 4 }} key={feature.title}>
+              <StyledFeatureCard elevation={0}>
                 <Avatar
                   sx={{
-                    bgcolor: `${feature.color}.main`,
-                    color: `${feature.color}.contrastText`,
-                    width: 64,
-                    height: 64,
-                    mx: "auto",
-                    mb: 2,
+                    bgcolor: alpha(theme.palette[feature.color].main, 0.1),
+                    color: `${feature.color}.main`,
+                    width: 40,
+                    height: 40,
                   }}
                 >
-                  {React.cloneElement(feature.icon, { fontSize: "large" })}
+                  {React.cloneElement(feature.icon, { fontSize: "small" })}
                 </Avatar>
-                {/* TỐI ƯU SEO: Tiêu đề card dùng h3 (con của h2) */}
-                <Typography
-                  variant="h6"
-                  component="h3"
-                  fontWeight={600}
-                  gutterBottom
-                >
+                <Typography variant="subtitle1" fontWeight={600} color="text.primary">
                   {feature.title}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {feature.description}
-                </Typography>
-              </Paper>
+              </StyledFeatureCard>
             </Grid>
           ))}
         </Grid>
@@ -174,64 +202,68 @@ const FeaturesSection = React.memo(({ features }) => {
   );
 });
 
-/**
- * SECTION 3: Đối tượng
- */
 const AudienceSection = React.memo(({ items }) => {
   const theme = useTheme();
   return (
     <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: "background.default" }}>
       <Container maxWidth="lg">
-        {/* TỐI ƯU MUI V6: Dùng Grid 'size' */}
-        <Grid container spacing={5} alignItems="center">
-          <Grid
-            size={{ xs: 12, md: 6 }}
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Box
-              component="img"
-              src={Role3}
-              alt="Học viên và gia sư tương tác trên Julie Academy" 
-              sx={{
-                width: "100%", 
-                maxWidth: 250, 
-                height: "auto", 
-                borderRadius: 3,
-                boxShadow: theme.shadows[6],
-              }}
-            />
+        <Grid container spacing={6} alignItems="center">
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Box sx={{ position: "relative", p: 1, maxWidth: 300, mx: "auto" }}>
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  transform: "rotate(-2deg)",
+                  borderRadius: 4,
+                  bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                  zIndex: 0
+                }}
+              />
+              <Box
+                component="img"
+                src={Role3}
+                alt="Interaction"
+                sx={{
+                  width: "100%",
+                  height: "auto",
+                  borderRadius: 3,
+                  boxShadow: theme.shadows[2],
+                  position: "relative",
+                  zIndex: 1,
+                  display: "block",
+                  bgcolor: "background.paper"
+                }}
+              />
+            </Box>
           </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography
-              variant="h4"
-              component="h2"
-              fontWeight={600}
-              gutterBottom
-            >
-              Công cụ cho mọi vai trò
+          
+          <Grid size={{ xs: 12, md: 8 }}>
+            <Typography variant="h4" component="h2" fontWeight={600} gutterBottom color="text.primary">
+              Giải pháp toàn diện
             </Typography>
-            <Typography
-              variant="body1"
-              component="p"
-              paragraph
-              sx={{ fontSize: "1.1rem" }}
-            >
-              Julie Academy được thiết kế cho mọi đối tượng tham gia vào quá
-              trình học tập.
+            <Typography variant="body1" color="text.secondary" paragraph sx={{ mb: 3, fontSize: "1rem", lineHeight: 1.7 }}>
+              Hệ sinh thái kết nối chặt chẽ giữa các vai trò giúp tối ưu hóa hiệu quả học tập và giảng dạy.
             </Typography>
-            <List>
+            <List disablePadding>
               {items.map((item) => (
-                <ListItem key={item.primary}>
-                  <ListItemIcon>
-                    <CheckCircleOutline color="primary" />
+                <ListItem key={item.primary} sx={{ px: 0, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
+                  <ListItemIcon sx={{ minWidth: 40 }}>
+                    <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), color: "primary.main", width: 32, height: 32 }}>
+                      <CheckCircle fontSize="small" />
+                    </Avatar>
                   </ListItemIcon>
                   <ListItemText
-                    primary={item.primary}
-                    secondary={item.secondary}
+                    primary={
+                      <Typography variant="subtitle1" fontWeight={600} color="text.primary">
+                        {item.primary}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {item.secondary}
+                      </Typography>
+                    }
                   />
                 </ListItem>
               ))}
@@ -243,117 +275,133 @@ const AudienceSection = React.memo(({ items }) => {
   );
 });
 
-/**
- * SECTION 4: Đánh giá
- */
 const TestimonialSection = React.memo(() => {
   const theme = useTheme();
   return (
     <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: "background.paper" }}>
       <Container maxWidth="md">
-        <Typography
-          variant="h4"
-          component="h2"
-          fontWeight={600}
-          textAlign="center"
-          gutterBottom
-        >
-          Học viên nói gì về Julie Academy?
-        </Typography>
         <Paper
           elevation={0}
-          variant="outlined"
           sx={{
-            p: 4,
-            mt: 4,
+            p: { xs: 4, md: 5 }, // Reduced padding slightly
             textAlign: "center",
-            borderRadius: 3,
-            borderColor: alpha(theme.palette.primary.main, 0.5),
-            bgcolor: alpha(theme.palette.primary.main, 0.05),
+            borderRadius: 4,
+            bgcolor: alpha(theme.palette.primary.main, 0.04),
+            border: `1px dashed ${alpha(theme.palette.primary.main, 0.2)}`,
+            position: "relative",
           }}
         >
-          <FormatQuoteOutlined color="primary" sx={{ fontSize: 40, mb: 1 }} />
+          <FormatQuote sx={{ fontSize: 48, color: "primary.main", opacity: 0.15, position: "absolute", top: 16, left: 16 }} />
           <Typography
             variant="h6"
             component="blockquote"
-            sx={{ fontStyle: "italic", mb: 2 }}
+            sx={{ 
+              fontStyle: "italic", 
+              mb: 3, 
+              lineHeight: 1.6, 
+              fontWeight: 400,
+              fontSize: { xs: "1rem", md: "1.1rem" },
+              color: "text.primary"
+            }}
           >
-            "Tôi đã sử dụng nhiều nền tảng, nhưng Julie Academy thực sự giúp
-            tôi xác định được lỗ hổng kiến thức của mình. Chức năng luyện tập
-            thông minh thật tuyệt vời!"
+            "Tôi đã sử dụng nhiều nền tảng, nhưng Julie Academy thực sự giúp tôi xác định được lỗ hổng kiến thức. 
+            Chức năng luyện tập thông minh giống như có một gia sư riêng bên cạnh."
           </Typography>
-          <Typography variant="subtitle1" component="cite" fontWeight={600}>
-            — Minh Quân, Sinh viên
-          </Typography>
+          <Stack direction="row" spacing={2} justifyContent="center" alignItems="center">
+            <Avatar sx={{ bgcolor: "secondary.main", width: 40, height: 40, fontWeight: "bold", fontSize: "0.9rem" }}>M</Avatar>
+            <Box textAlign="left">
+              <Typography variant="subtitle2" fontWeight={800} color="text.primary">Minh Quân</Typography>
+              <Typography variant="caption" color="text.secondary">Học viên THPT</Typography>
+            </Box>
+          </Stack>
         </Paper>
       </Container>
     </Box>
   );
 });
 
-const StorySection = React.memo(() => (
-  <Box
-    sx={{
-      py: { xs: 6, md: 8 },
-      textAlign: "center",
-      bgcolor: "background.default",
-    }}
-  >
-    <Container maxWidth="md">
-      <Avatar
-        sx={{
-          bgcolor: "secondary.main",
-          width: 56,
-          height: 56,
-          mx: "auto",
-          mb: 2,
-        }}
-      >
-        <EmojiObjectsOutlined />
-      </Avatar>
-      <Typography variant="h4" component="h2" fontWeight={600} gutterBottom>
-        Câu chuyện của chúng tôi
-      </Typography>
-      <Typography variant="body1" component="p" color="text.secondary" sx={{ mb: 3 }}>
-        Julie Academy được sinh ra từ niềm tin rằng vấn đề không nằm ở bạn. Tên
-        "Julie" đại diện cho tất cả những người học đó: những người đang tìm
-        kiếm một con đường khác, một cách sắp xếp kiến thức phù hợp với cách
-        tư duy duy nhất của họ. Chúng tôi không tin vào việc học vẹt hay chạy
-        đua mà tin vào sự thấu hiểu. Chúng tôi tin rằng khi bạn được
-        trao đúng công cụ để cá nhân hóa lộ trình, việc học sẽ trở thành một
-        hành trình khám phá, không còn là một gánh nặng. Đó là lý do Julie
-        Academy tồn tại.
-      </Typography>
-    </Container>
-  </Box>
-));
+const StorySection = React.memo(() => {
+  const theme = useTheme();
+  return (
+    <Box sx={{ py: { xs: 6, md: 8 }, textAlign: "center", bgcolor: "background.default" }}>
+      <Container maxWidth="md">
+        <Box mb={2} display="flex" justifyContent="center">
+          <Avatar 
+            sx={{ 
+              bgcolor: alpha(theme.palette.warning.main, 0.1), 
+              color: "warning.main", 
+              width: 56, 
+              height: 56,
+              boxShadow: theme.shadows[1]
+            }}
+          >
+            <EmojiObjects sx={{ fontSize: 28 }} />
+          </Avatar>
+        </Box>
+        <Typography variant="h4" component="h2" fontWeight={600} gutterBottom color="text.primary">
+          Câu chuyện khởi nguồn
+        </Typography>
+        <Typography 
+          variant="body1" 
+          color="text.secondary" 
+          paragraph 
+          sx={{ 
+            fontSize: "1rem", 
+            lineHeight: 1.8,
+            maxWidth: "700px", 
+            mx: "auto",
+            fontWeight: 400
+          }}
+        >
+          Julie Academy được sinh ra từ niềm tin rằng không có phương pháp nào phù hợp cho tất cả. 
+          Chúng tôi không tin vào việc học vẹt, mà tin vào sự thấu hiểu sâu sắc. 
+          Sứ mệnh của chúng tôi là biến việc học trở thành hành trình khám phá đầy thú vị.
+        </Typography>
+      </Container>
+    </Box>
+  );
+});
 
-const CtaSection = React.memo(() => (
-  <Box
-    sx={{
-      py: { xs: 6, md: 8 },
-      textAlign: "center",
-      bgcolor: "background.paper",
-    }}
-  >
-    <Container maxWidth="md">
-      <Typography variant="h4" component="h2" fontWeight={600} gutterBottom>
-        Sẵn sàng để bắt đầu?
-      </Typography>
-      <Typography variant="h6" component="p" color="text.secondary" sx={{ mb: 3 }}>
-        Tham gia cùng hàng ngàn học viên khác và nâng tầm kiến thức của bạn
-        ngay hôm nay.
-      </Typography>
-      <Button variant="contained" size="large" href="/register">
-        Đăng ký miễn phí
-      </Button>
-    </Container>
-  </Box>
-));
+const CtaSection = React.memo(() => {
+  const theme = useTheme();
+  return (
+    <Box sx={{ py: { xs: 8, md: 10 }, textAlign: "center", bgcolor: "background.paper" }}>
+      <Container maxWidth="md">
+        <Typography variant="h3" component="h2" fontWeight={600} gutterBottom sx={{ fontSize: { xs: "2rem", md: "2.5rem" }, color: "text.primary" }}>
+          Sẵn sàng bứt phá?
+        </Typography>
+        <Typography variant="body1" component="p" color="text.secondary" sx={{ mb: 4, maxWidth: 500, mx: "auto", lineHeight: 1.6 }}>
+          Tham gia cùng hàng ngàn học viên khác và nâng tầm kiến thức ngay hôm nay.
+        </Typography>
+        <Button 
+          variant="contained" 
+          size="medium" 
+          href="/register"
+          endIcon={<RocketLaunch fontSize="small" />}
+          sx={{ 
+            borderRadius: 50, 
+            px: 4, 
+            py: 1.25, 
+            fontSize: "0.95rem", 
+            fontWeight: 700,
+            textTransform: "none",
+            boxShadow: theme.shadows[3],
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: theme.shadows[6]
+            }
+          }}
+        >
+          Đăng ký miễn phí
+        </Button>
+      </Container>
+    </Box>
+  );
+});
 
 function AboutPage() {
   return (
-    <Box>
+    <Box sx={{ overflowX: "hidden" }}>
       <MissionSection />
       <FeaturesSection features={features} />
       <AudienceSection items={audienceItems} />
