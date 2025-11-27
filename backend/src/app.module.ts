@@ -13,6 +13,7 @@ import { ExamModule } from './exam/exam.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { CronModule } from './scron-job/cron.module';
 import { MailModule } from './mail/mail.module';
+import { ResourceModule } from './resource/resource.module';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { MailModule } from './mail/mail.module';
     ScheduleModule.forRoot(),
     UserModule, AuthModule, ClassModule, 
     QuestionModule, ExamModule, DashboardModule, 
-    CronModule, MailModule
+    CronModule, MailModule, ResourceModule
   ],
   controllers: [AppController],
   providers: [
