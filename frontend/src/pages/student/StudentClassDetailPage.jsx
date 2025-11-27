@@ -277,7 +277,7 @@ export default function StudentClassDetailPage() {
   };
 
   const handleViewThread = (threadId) => {
-    navigate(`/student/myclass/${classId}/${threadId}`);
+    navigate(`/student/classes/${classId}/${threadId}`);
   };
 
   // === HANDLERS CHO TÀI LIỆU ===

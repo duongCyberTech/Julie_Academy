@@ -1,12 +1,11 @@
 /*
  * File: frontend/src/pages/student/StudentPracticeReviewPage.jsx
  *
- * (TRANG XEM LẠI CHI TIẾT CÂU HỎI TRONG LUỒNG LUYỆN TẬP - ĐÃ KHẮC PHỤC LỖI HIỂN THỊ 9 CÂU)
+ * (TRANG XEM LẠI CHI TIẾT CÂU HỎI TRONG LUỒNG LUYỆN TẬP - ĐÃ ĐỒNG BỘ 9 CÂU)
  *
  * Tính năng:
- * 1. Đồng bộ 9 câu hỏi từ SessionPage.
- * 2. Đọc đáp án đã chọn (selectedAnswers) và tính toán trạng thái ĐÚNG/SAI/BỎ QUA động.
- * 3. Hiển thị Stepper, nội dung câu hỏi và Lời giải chi tiết.
+ * 1. Đọc đáp án đã chọn (selectedAnswers) từ sessionStorage.
+ * 2. Hiển thị Stepper và nội dung câu hỏi trong chế độ Review.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -15,6 +14,7 @@ import {
     Typography,
     Box,
     Button,
+    Grid,
     Chip,
     Paper,
     Stepper,
@@ -29,21 +29,23 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 // Import Katex
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
 
 // ======================================================
-// --- MOCK DATA ĐỒNG BỘ 9 CÂU (Lấy từ SessionPage) ---
+// --- MOCK DATA ĐỒNG BỘ 9 CÂU ---
 // ======================================================
 
 const MOCK_PRACTICE_ID = 'cd-c1-s1';
 
 const mockQuestionDatabase = [
-    // Q1: Đúng là {5; -3}
+    // --- 9 CÂU HỎI ĐƯỢC ĐỒNG BỘ TỪ SessionPage ---
     {
-        questionId: 'q1', content: 'Phương trình $(x - 5)(3x + 9) = 0$ có tập nghiệm là:', explanation: 'Để giải phương trình tích $(ax+b)(cx+d)=0$, ta giải $ax+b=0$ và $cx+d=0$. Nghiệm là tập hợp các giá trị tìm được.', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
+        questionId: 'q1', content: 'Phương trình $(x - 5)(3x + 9) = 0$ có tập nghiệm là:', explanation: 'Để giải phương trình tích...', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
         answers: [
             { answerId: 'q1a1', content: '$S = \\{5\\}$', is_correct: false, explanation: 'Chỉ có nghiệm $x=5$, thiếu $x=-3$.' },
             { answerId: 'q1a2', content: '$S = \\{-3\\}$', is_correct: false, explanation: 'Chỉ có nghiệm $x=-3$, thiếu $x=5$.' },
@@ -51,9 +53,8 @@ const mockQuestionDatabase = [
             { answerId: 'q1a4', content: '$S = \\{-5; 3\\}$', is_correct: false, explanation: 'Sai dấu các nghiệm.' },
         ],
     },
-    // Q2: Đúng là x ≠ 3/5 và x ≠ -2
     {
-        questionId: 'q2', content: 'Điều kiện xác định của phương trình $\\frac{2}{5x-3} = 1 + \\frac{1}{x+2}$ là gì?', explanation: 'Điều kiện xác định của phương trình chứa ẩn ở mẫu là điều kiện để tất cả các mẫu thức khác 0.', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
+        questionId: 'q2', content: 'Điều kiện xác định của phương trình $\\frac{2}{5x-3} = 1 + \\frac{1}{x+2}$ là gì?', explanation: 'Điều kiện xác định của phương trình chứa ẩn ở mẫu...', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
         answers: [
             { answerId: 'q2a1', content: '$x \\ne \\frac{3}{5}$', is_correct: false, explanation: 'Thiếu điều kiện cho mẫu $x+2$.' },
             { answerId: 'q2a2', content: '$x \\ne -2$', is_correct: false, explanation: 'Thiếu điều kiện cho mẫu $5x-3$.' },
@@ -61,7 +62,6 @@ const mockQuestionDatabase = [
             { answerId: 'q2a4', content: '$x \\ne 0$', is_correct: false, explanation: 'Mẫu số không phải là x.' },
         ],
     },
-    // Q3: Đúng là 1/x = 5
     {
         questionId: 'q3', content: 'Phương trình nào sau đây có thể quy về phương trình bậc nhất một ẩn?', explanation: 'Phương trình bậc nhất một ẩn có dạng $ax+b=0$ ($a \\ne 0$).', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
         answers: [
@@ -69,46 +69,39 @@ const mockQuestionDatabase = [
             { answerId: 'q3a2', content: '$\\frac{1}{x} = 5$', is_correct: true, explanation: 'Quy đồng: $5x - 1 = 0$.' },
         ],
     },
-    // Q4: Đúng là {-2; 13/4}
     {
-        questionId: 'q4', content: 'Tìm tập nghiệm của phương trình $4x^2 - 16 = 5(x + 2)$.', explanation: 'Phân tích vế trái thành $4(x-2)(x+2)$, chuyển vế và đặt nhân tử chung $(x+2)$ để đưa về phương trình tích.', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
+        questionId: 'q4', content: 'Tìm tập nghiệm của phương trình $4x^2 - 16 = 5(x + 2)$.', explanation: 'Phân tích vế trái thành $4(x-2)(x+2)$...', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
         answers: [
-            { answerId: 'q4a1', content: '$S = \\{2; -\\frac{13}{4}\\}$', is_correct: false, explanation: 'Sai nghiệm.' },
+             { answerId: 'q4a1', content: '$S = \\{2; -\\frac{13}{4}\\}$', is_correct: false, explanation: 'Sai nghiệm.' },
             { answerId: 'q4a2', content: '$S = \\{-2; \\frac{13}{4}\\}$', is_correct: true, explanation: '$(x+2)(4x-13)=0$.' },
-            { answerId: 'q4a3', content: '$S = \\{-2\\}$', is_correct: false, explanation: 'Thiếu nghiệm.' },
-            { answerId: 'q4a4', content: '$S = \\{\\frac{13}{4}\\}$', is_correct: false, explanation: 'Thiếu nghiệm.' },
         ],
     },
-    // Q5: Đúng là x = -4
     {
-        questionId: 'q5', content: 'Giải phương trình $\\frac{x^2 - 6}{x} = x + \\frac{3}{2}$.', explanation: 'Tìm ĐKXĐ, quy đồng khử mẫu, giải phương trình hệ quả, sau đó kiểm tra nghiệm với ĐKXĐ.', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
+        questionId: 'q5', content: 'Giải phương trình $\\frac{x^2 - 6}{x} = x + \\frac{3}{2}$.', explanation: 'Tìm ĐKXĐ, quy đồng khử mẫu...', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
         answers: [
             { answerId: 'q5a1', content: '$x = 4$', is_correct: false, explanation: 'Sai dấu.' },
             { answerId: 'q5a2', content: '$x = -4$', is_correct: true, explanation: 'Kết quả $x=-4$.' },
         ],
     },
-    // Q6: Đúng là Vô nghiệm
     {
-        questionId: 'q6', content: 'Giải phương trình $\\frac{4}{x(x-1)} + \\frac{3}{x} = \\frac{4}{x-1}$.', explanation: 'Tìm ĐKXĐ, quy đồng mẫu thức rồi khử mẫu, giải phương trình hệ quả và đối chiếu với ĐKXĐ.', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
+        questionId: 'q6', content: 'Giải phương trình $\\\frac{4}{x(x-1)} + \\frac{3}{x} = \\frac{4}{x-1}$.', explanation: 'Tìm ĐKXĐ, quy đồng mẫu thức rồi khử mẫu...', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
         answers: [
+            { answerId: 'q6a1', content: '$x = 1$', is_correct: false, explanation: 'Nghiệm này vi phạm ĐKXĐ.' },
             { answerId: 'q6a4', content: 'Phương trình vô nghiệm', is_correct: true, explanation: 'Nghiệm $x=1$, nhưng vi phạm ĐKXĐ nên vô nghiệm.' },
         ],
     },
-    // Q7: Đúng là (x+2)(3x-3)=0
     {
         questionId: 'q7_multi', content: 'Phương trình $x^2 - 4 + (x+2)(2x-1) = 0$ tương đương với phương trình nào sau đây? (Chọn các đáp án đúng)', explanation: 'Phân tích $x^2-4$ thành $(x-2)(x+2)$...', type: 'MULTIPLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
         answers: [
             { answerId: 'q7a1', content: '$(x+2)(3x-3) = 0$', is_correct: true, explanation: 'Dạng tương đương.' },
         ],
     },
-    // Q8: Đúng là 16 m
     {
         questionId: 'q8', content: 'Một mảnh đất hình chữ nhật có chu vi 52m...', explanation: 'Lập hệ phương trình chu vi và diện tích vườn rau...', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
         answers: [
             { answerId: 'q8a1', content: '16 m', is_correct: true, explanation: 'Chiều dài là 16m.' },
         ],
     },
-    // Q9: Đúng là 120 nghìn đồng
     {
         questionId: 'q9', content: 'Hoa dự định mua một số áo đồng giá hết 600 nghìn...', explanation: 'Gọi giá dự định là $x$... Lập phương trình $600/(x-30) = 1.25 \\times (600/x)$', type: 'SINGLE_CHOICE', assignTo: [MOCK_PRACTICE_ID],
         answers: [
@@ -116,6 +109,7 @@ const mockQuestionDatabase = [
         ],
     },
 ];
+
 // ======================================================
 // --- FUNCTIONAL HELPERS ---
 // ======================================================
@@ -148,11 +142,9 @@ const isQuestionCorrect = (q, selectedAnswers) => {
     const userAnswers = selectedAnswers[q.questionId];
 
     if (q.type === 'SINGLE_CHOICE') {
-        // SC: phải là string và khớp
         return userAnswers && typeof userAnswers === 'string' && userAnswers === correctAnswers[0];
     } else if (q.type === 'MULTIPLE_CHOICE') {
         const userArray = userAnswers || [];
-        // MC: phải khớp số lượng và mọi phần tử phải khớp
         return (
             userArray.length === correctAnswers.length &&
             userArray.every((id) => correctAnswers.includes(id))
@@ -177,7 +169,7 @@ export default function StudentPracticeReviewPage() {
     useEffect(() => {
         setIsLoading(true);
 
-        // 🔥 Đọc dữ liệu đã lưu trữ từ SessionStorage
+        // Đọc dữ liệu đã lưu trữ từ SessionStorage
         const storedAnswers = sessionStorage.getItem(`practice_answers_${sessionId}`);
         
         setTimeout(() => {
@@ -338,7 +330,7 @@ export default function StudentPracticeReviewPage() {
                                             }}
                                         >
                                             <Typography variant="body2" component="div" sx={{ fontWeight: 700, mb: 0.5 }}>
-                                                {getAnswerPrefix(index)}. {ans.is_correct ? 'Đúng' : 'Sai'}
+                                                {getAnswerPrefix(index)}. {ans.is_correct ? 'Đáp án ĐÚNG (Chi tiết):' : 'Đáp án SAI (Phân tích):'}
                                             </Typography>
                                             <LatexRenderer content={ans.explanation} />
                                         </Box>
@@ -354,7 +346,7 @@ export default function StudentPracticeReviewPage() {
                         variant="outlined"
                         onClick={() => navigate('/student/practice')}
                     >
-                        Quay lại Trang chính
+                        Quay lại Thư viện
                     </Button>
                     <Box>
                         <Button onClick={() => handleStepClick(activeStep - 1)} disabled={activeStep === 0}>

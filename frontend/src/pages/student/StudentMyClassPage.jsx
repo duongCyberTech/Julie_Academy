@@ -104,9 +104,9 @@ export default function StudentMyClassPage() {
       setToast(prev => ({ ...prev, open: false }));
   };
   
-  // (Sau này thay bằng navigate(`/student/myclass/${classId}`))
+
   const handleEnterClass = (classId) => {
-    navigate(`/student/myclass/${classId}`); // <-- SỬA DÒNG NÀY
+    navigate(`/student/classes/${classId}`); // <-- SỬA DÒNG NÀY
 };
 
   // Hiệu ứng (Giống các trang trước)

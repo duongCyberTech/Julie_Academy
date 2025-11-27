@@ -333,11 +333,11 @@ const mockCategoryTree = [
     children: [
       {
         categoryId: 'cst-c1',
-        categoryName: 'Chương 1: Căn thức (Mock)',
+        categoryName: 'Chương 1: Căn thức',
         children: [
           {
             categoryId: 'cst-c1-s1',
-            categoryName: '§1. Đại số (Mock)',
+            categoryName: '§1. Đại số',
             mastery: Math.random(),
             questionCount: 0,
             children: [],
@@ -353,11 +353,11 @@ const mockCategoryTree = [
     children: [
       {
         categoryId: 'kntt-c1',
-        categoryName: 'Chương 1: Biểu thức (Mock)',
+        categoryName: 'Chương 1: Biểu thức',
         children: [
           {
             categoryId: 'kntt-c1-s1',
-            categoryName: '§1. Biểu thức đại số (Mock)',
+            categoryName: '§1. Biểu thức đại số',
             mastery: Math.random(),
             questionCount: 0,
             children: [],

@@ -365,12 +365,12 @@ export default function StudentAssignmentPage() {
 
   const handleStartAssignment = (sessionId) => {
     console.log(`Bắt đầu làm bài tập có sessionId: ${sessionId}`);
-    navigate(`/student/practice/session/${sessionId}`);
+    navigate(`/student/assignment/session/${sessionId}`);
   };
 
   const handleViewResult = (sessionId) => {
     console.log(`Xem kết quả của sessionId: ${sessionId}`);
-    navigate(`/student/assignment/result/${sessionId}`);
+    navigate(`/student/assignment/session/${sessionId}/result`);
   };
 
   return (

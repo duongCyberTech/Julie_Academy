@@ -17,12 +17,32 @@ import UserManagement from "../pages/admin/UserManagement";
 import AboutPage from "../pages/public/AboutPage";
 import ContactPage from "../pages/public/ContactPage";
 import ResourcesManagement from "../pages/admin/ResourcesManagement";
-import StudentDashboard from "../pages/student/StudentDashboard";
+
 import ClassDetailPage from "../pages/tutor/ClassDetailPage";
 import ExamPage from "../pages/tutor/ExamPage";
 import ExamDetailPage from "../pages/tutor/ExamDetailPage";
 import AssignmentPage from "../pages/tutor/AssignmentPage";
 import SystemSetting from "../pages/admin/SystemSetting.jsx";
+
+//Student
+import StudentDashboard from "../pages/student/StudentDashboard";
+import StudentProfilePage from "../pages/student/StudentProfilePage";
+import StudentMyClassPage from "../pages/student/StudentMyClassPage";
+import StudentClassDetailPage from "../pages/student/StudentClassDetailPage";
+import StudentThreadDetailPage from "../pages/student/StudentThreadDetailPage";
+import StudentPracticePage from "../pages/student/StudentPracticePage";
+import StudentPracticeSessionPage from "../pages/student/StudentPracticeSessionPage";
+import StudentPracticeResultPage from "../pages/student/StudentPracticeResultPage";
+import StudentPracticeReviewPage from "../pages/student/StudentPracticeReviewPage";
+import StudentAssignmentPage from "../pages/student/StudentAssignmentPage";
+import StudentAssignmentSessionPage from "../pages/student/StudentAssignmentSessionPage";
+import StudentAssignmentResultPage from "../pages/student/StudentAssignmentResultPage";
+
+//Profile
+import TutorProfilePage from "../pages/tutor/TutorProfilePage.jsx";
+import AdminProfilePage from "../pages/admin/AdminProfilePage.jsx";
+import ParentProfilePage from "../pages/parent/ParentProfilePage.jsx";
+
 function AppRoutes(props) {
   return (
     <Routes>
@@ -41,6 +61,7 @@ function AppRoutes(props) {
           <Route path="users" element={<UserManagement />} />
           <Route path="resources" element={<ResourcesManagement />} />
           <Route path="settings" element={<SystemSetting />} />
+          <Route path="profile" element={<AdminProfilePage />} />
         </Route>
       </Route>
       {/* Nhóm các route cho Tutor */}
@@ -54,15 +75,57 @@ function AppRoutes(props) {
           <Route path="exam" element={<ExamPage />} />
           <Route path="exam/:examId" element={<ExamDetailPage />} />
           <Route path="assignment" element={<AssignmentPage />} />
-
+          <Route path="profile" element={<TutorProfilePage />} />
         </Route>
       </Route>
+
       {/* Nhóm các route cho Student */}
       <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
         <Route path="/student" element={<Layout />}>
+          {/* Dashboard */}
           <Route path="dashboard" element={<StudentDashboard />} />
+
+          {/* Hồ sơ cá nhân */}
+          <Route path="profile" element={<StudentProfilePage />} />
+
+          {/* Quản lý lớp học */}
+          <Route path="classes" element={<StudentMyClassPage />} />
+          <Route path="classes/:classId" element={<StudentClassDetailPage />} />
+
+          {/* Diễn đàn/Thảo luận trong lớp */}
+          <Route
+            path="classes/:classId/:threadId"
+            element={<StudentThreadDetailPage />}
+          />
+
+          {/* Luyện tập (Practice) */}
+          <Route path="practice" element={<StudentPracticePage />} />
+          <Route
+            path="practice/session/:sessionId"
+            element={<StudentPracticeSessionPage />}
+          />
+          <Route
+            path="practice/result/:resultId"
+            element={<StudentPracticeResultPage />}
+          />
+          <Route
+            path="practice/review/:reviewId"
+            element={<StudentPracticeReviewPage />}
+          />
+
+          {/* Bài tập được giao (Assignment) */}
+          <Route path="assignment" element={<StudentAssignmentPage />} />
+          <Route
+            path="assignment/session/:sessionId"
+            element={<StudentAssignmentSessionPage />}
+          />
+          <Route
+            path="assignment/session/:sessionId/result"
+            element={<StudentAssignmentResultPage />}
+          />
         </Route>
       </Route>
+
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}
       <Route
         path="*"

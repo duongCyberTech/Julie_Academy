@@ -1,14 +1,15 @@
 /*
  * File: frontend/src/pages/student/StudentPracticeResultPage.jsx
  *
- * (TRANG KẾT QUẢ CUỐI PHIÊN LUYỆN TẬP - ĐÃ SỬA LỖI ĐIỀU HƯỚNG REVIEW)
+ * (TRANG KẾT QUẢ CUỐI PHIÊN LUYỆN TẬP - GIAO DIỆN ĐẸP)
  *
  * Tính năng:
- * 1. Nhận điểm số (correct/total) qua state của useLocation.
- * 2. CUNG CẤP NÚT REVIEW ĐIỀU HƯỚNG ĐÚNG TỚI '/student/practice/review/:sessionId'.
+ * 1. Nhận điểm số từ useLocation state.
+ * 2. Hiển thị kết quả trực quan (Biểu đồ tròn, Stats).
+ * 3. Nút Review điều hướng đúng.
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
     Container,
     Typography,
@@ -18,35 +19,41 @@ import {
     Chip,
     Paper,
     Divider,
+    Stack,
+    Avatar,
+    alpha,
+    useTheme,
+    Card,
+    CardContent,
 } from '@mui/material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 // Icons
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ReplayIcon from '@mui/icons-material/Replay';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import AccessTimeIcon from '@mui/icons-material/AccessTime'; 
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import SchoolIcon from '@mui/icons-material/School';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 // ======================================================
-// --- MOCK DATA (Giả lập thông tin Session) ---
+// --- MOCK DATA ---
 // ======================================================
 
 const MOCK_SESSION_INFO = {
     'cd-c1-s1': {
         topic: 'Chương 1: Phương trình quy về PT bậc nhất 1 ẩn',
         subject: 'Toán 9 (Cánh Diều)',
-        duration_minutes: 10, // Giả định thời gian luyện tập
+        duration_minutes: 15,
     },
-};
-
-// Hàm giả định tính thời gian làm bài (nếu muốn)
-const calculateMockDuration = (durationMinutes) => {
-    // Giả định thời gian làm là 80% thời gian tối đa
-    const seconds = Math.floor(durationMinutes * 60 * 0.8); 
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes} phút ${remainingSeconds} giây`;
+    // Thêm mock mặc định cho các trường hợp khác để tránh "Không rõ"
+    'default': {
+        topic: 'Luyện tập Tổng hợp',
+        subject: 'Toán 9',
+        duration_minutes: 20,
+    }
 };
 
 // ======================================================
@@ -57,24 +64,23 @@ export default function StudentPracticeResultPage() {
     const { sessionId } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
+    const theme = useTheme();
 
     // Lấy score từ state (truyền từ StudentPracticeSessionPage)
     const score = location.state?.score; 
-    const sessionInfo = MOCK_SESSION_INFO[sessionId] || { 
-        topic: 'Phiên Luyện Tập Chung', 
-        subject: 'Không rõ',
-        duration_minutes: 15,
-    };
     
-    // Nếu không có điểm số, quay lại trang luyện tập
-    if (!score || !score.total || !score.correct) {
+    // Fallback thông tin session
+    const sessionInfo = MOCK_SESSION_INFO[sessionId] || MOCK_SESSION_INFO['default'];
+    
+    // Nếu không có điểm số (truy cập trực tiếp), quay lại
+    if (!score || !score.total) {
         return (
-            <Container maxWidth="md" sx={{ mt: 4, textAlign: 'center' }}>
+            <Container maxWidth="md" sx={{ mt: 8, textAlign: 'center' }}>
                 <Typography variant="h5" color="error" gutterBottom>
                     Không tìm thấy dữ liệu kết quả.
                 </Typography>
                 <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/student/practice')}>
-                    Quay lại Trang Luyện tập
+                    Quay lại Thư viện
                 </Button>
             </Container>
         );
@@ -82,94 +88,157 @@ export default function StudentPracticeResultPage() {
 
     const percentage = Math.round((score.correct / score.total) * 100);
     const isGoodResult = percentage >= 70;
-    const resultColor = isGoodResult ? 'success' : 'warning';
+    const resultColor = isGoodResult ? theme.palette.success.main : theme.palette.warning.main;
+    
+    // Data cho biểu đồ tròn
+    const chartData = [
+        { name: 'Đúng', value: score.correct, color: theme.palette.success.main },
+        { name: 'Sai', value: score.total - score.correct - (score.skipped || 0), color: theme.palette.error.main },
+        { name: 'Bỏ qua', value: score.skipped || 0, color: theme.palette.warning.main },
+    ];
 
-    // 🔥 XỬ LÝ NÚT XEM LẠI CHI TIẾT (Điều hướng đúng)
+    // Xử lý nút xem lại chi tiết
     const handleReview = () => {
-        // Điều hướng TỚI TRANG REVIEW chuyên biệt
-        navigate(`/student/practice/review/${sessionId}`); 
+        navigate(`/student/practice/review/${sessionId}`);
     };
 
     return (
-        <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-                Kết quả Phiên Luyện tập
-            </Typography>
+        <Container maxWidth="md" sx={{ mt: 4, mb: 6 }}>
+            
+            {/* Header Card */}
+            <Card elevation={0} sx={{ 
+                borderRadius: 4, 
+                mb: 4, 
+                border: `1px solid ${theme.palette.divider}`,
+                overflow: 'visible',
+                position: 'relative'
+            }}>
+                {/* Decorative top border */}
+                <Box sx={{ 
+                    height: 8, 
+                    width: '100%', 
+                    bgcolor: resultColor, 
+                    borderTopLeftRadius: 16, 
+                    borderTopRightRadius: 16 
+                }} />
+                
+                <CardContent sx={{ p: 4 }}>
+                    <Grid container spacing={4} alignItems="center">
+                        {/* Cột Trái: Thông tin & Điểm số */}
+                        <Grid item xs={12} md={7}>
+                            <Typography variant="overline" color="text.secondary" fontWeight={700} letterSpacing={1}>
+                                KẾT QUẢ LUYỆN TẬP
+                            </Typography>
+                            <Typography variant="h4" fontWeight={800} gutterBottom sx={{ mt: 1 }}>
+                                {sessionInfo.topic}
+                            </Typography>
+                            
+                            <Stack direction="row" spacing={2} sx={{ mb: 3, mt: 2 }}>
+                                <Chip icon={<SchoolIcon />} label={sessionInfo.subject} color="primary" variant="outlined" />
+                                <Chip icon={<AccessTimeIcon />} label="12 phút" variant="outlined" />
+                            </Stack>
 
-            {/* 1. KHUNG TỔNG QUAN VÀ ĐIỂM SỐ */}
-            <Paper elevation={3} sx={{ p: 3, mb: 4, borderLeft: `5px solid ${isGoodResult ? '#4CAF50' : '#FF9800'}` }}>
-                <Grid container spacing={3} alignItems="center">
-                    <Grid item xs={12} md={4} sx={{ textAlign: 'center', borderRight: { md: '1px solid #eee' } }}>
-                        <Typography variant="h3" sx={{ fontWeight: 700, color: `${resultColor}.main` }}>
-                            {percentage}%
-                        </Typography>
-                        <Typography variant="h6" color="text.secondary">
-                            Tỉ lệ chính xác
-                        </Typography>
-                    </Grid>
+                            <Divider sx={{ mb: 3 }} />
 
-                    <Grid item xs={12} md={8}>
-                        <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
-                            {sessionInfo.topic}
-                        </Typography>
-                        <Grid container spacing={1}>
-                            <Grid item xs={6}>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <MenuBookIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                                    <Typography variant="body1">Môn học: {sessionInfo.subject}</Typography>
-                                </Box>
-                            </Grid>
-                            <Grid item xs={6}>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <AccessTimeIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                                    <Typography variant="body1">
-                                        Thời gian: {calculateMockDuration(sessionInfo.duration_minutes)} (Giả định)
-                                    </Typography>
-                                </Box>
-                            </Grid>
-                            <Grid item xs={12} sx={{ mt: 2 }}>
-                                <Chip label={`Tổng câu: ${score.total}`} color="default" sx={{ mr: 1, fontWeight: 600 }} />
-                                <Chip label={`Đúng: ${score.correct}`} color="success" sx={{ mr: 1, fontWeight: 600 }} />
-                                <Chip label={`Sai: ${score.total - score.correct}`} color="error" sx={{ fontWeight: 600 }} />
+                            <Grid container spacing={2}>
+                                <Grid item xs={4}>
+                                    <Box textAlign="center">
+                                        <Typography variant="h3" fontWeight={700} color="success.main">{score.correct}</Typography>
+                                        <Typography variant="body2" color="text.secondary">Câu Đúng</Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Box textAlign="center">
+                                        <Typography variant="h3" fontWeight={700} color="error.main">
+                                            {score.total - score.correct - (score.skipped || 0)}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">Câu Sai</Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Box textAlign="center">
+                                        <Typography variant="h3" fontWeight={700} color="warning.main">{score.skipped || 0}</Typography>
+                                        <Typography variant="body2" color="text.secondary">Bỏ qua</Typography>
+                                    </Box>
+                                </Grid>
                             </Grid>
                         </Grid>
+
+                        {/* Cột Phải: Biểu đồ tròn */}
+                        <Grid item xs={12} md={5} sx={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+                             <Box sx={{ width: 200, height: 200 }}>
+                                <ResponsiveContainer>
+                                    <PieChart>
+                                        <Pie
+                                            data={chartData}
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            stroke="none"
+                                        >
+                                            {chartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                {/* Số phần trăm ở giữa */}
+                                <Box sx={{
+                                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center'
+                                }}>
+                                    <Typography variant="h4" fontWeight={800} color={resultColor}>
+                                        {percentage}%
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" display="block">
+                                        CHÍNH XÁC
+                                    </Typography>
+                                </Box>
+                             </Box>
+                        </Grid>
                     </Grid>
-                </Grid>
-            </Paper>
-            
-            {/* 2. KHUNG HÀNH ĐỘNG VÀ GỢI Ý */}
-            <Paper elevation={1} sx={{ p: 3, textAlign: 'center' }}>
-                <Typography variant="h6" gutterBottom>
-                    {isGoodResult ? 'Chúc mừng! Kiến thức đã vững vàng.' : 'Cần chú trọng cải thiện những câu sai.'}
-                </Typography>
-                <Divider sx={{ my: 2 }} />
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+                </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <Grid container spacing={2} justifyContent="center">
+                <Grid item>
                     <Button 
                         variant="contained" 
-                        color="primary" 
-                        onClick={handleReview} // Gọi hàm điều hướng đã sửa
-                        startIcon={<CheckCircleIcon />}
+                        size="large" 
+                        onClick={handleReview}
+                        startIcon={<AssignmentIcon />}
+                        sx={{ px: 4, borderRadius: 3, textTransform: 'none', fontWeight: 700 }}
                     >
                         Xem lại chi tiết bài làm
                     </Button>
+                </Grid>
+                <Grid item>
                     <Button 
                         variant="outlined" 
-                        color="secondary" 
-                        onClick={() => navigate('/student/practice')} 
+                        size="large" 
+                        color="secondary"
+                        onClick={() => navigate('/student/practice')}
                         startIcon={<ReplayIcon />}
+                        sx={{ px: 4, borderRadius: 3, textTransform: 'none', fontWeight: 600 }}
                     >
-                        Tiếp tục luyện tập khác
+                        Luyện tập bài khác
                     </Button>
+                </Grid>
+                <Grid item>
                     <Button 
-                        variant="outlined" 
-                        color="inherit" 
-                        onClick={() => navigate('/student/dashboard')} 
+                        variant="text" 
+                        size="large" 
+                        color="inherit"
+                        onClick={() => navigate('/student/dashboard')}
                         startIcon={<TrendingUpIcon />}
+                        sx={{ px: 4, borderRadius: 3, textTransform: 'none' }}
                     >
-                        Xem bản đồ kiến thức
+                        Về Dashboard
                     </Button>
-                </Box>
-            </Paper>
+                </Grid>
+            </Grid>
+
         </Container>
     );
 }
