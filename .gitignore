@@ -16,6 +16,12 @@ node_modules/
 bower_components/
 jspm_packages/
 web_modules/
+venv/
+/venv/
+.venv/
+__pycache__/
+**/__pycache__/
+**/**/__pycache__/
 
 # Build & Output
 # Các tệp và thư mục được tạo ra trong quá trình build.

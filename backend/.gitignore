@@ -8,6 +8,13 @@
 .idea/**/tasks.xml
 .idea/dictionaries
 
+venv/
+/venv/
+.venv/
+__pycache__/
+**/__pycache__/
+**/**/__pycache__/
+
 # Sensitive or high-churn files:
 .idea/**/dataSources/
 .idea/**/dataSources.ids
