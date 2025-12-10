@@ -1,17 +1,3 @@
-/*
- * File: frontend/src/pages/student/StudentPracticePage.jsx
- *
- * (PHIÊN BẢN SỬA LỖI ID)
- *
- * Cập nhật:
- * 1. Dùng ID mẫu ĐƠN GIẢN (ví dụ: 'cd-c1-s1')
- * để khớp 1-1 với file làm bài.
- * 2. Cập nhật mock data Sách Cánh Diều đầy đủ 10 chương
- * theo file seed bạn cung cấp.
- * 3. Đặt questionCount > 0 CHỈ cho 3 chủ đề đầu tiên
- * (cd-c1-s1, cd-c1-s2, cd-c1-s3) để khớp với file câu hỏi.
- */
-
 import React, { useState } from 'react';
 import {
   Container,

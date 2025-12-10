@@ -1,13 +1,3 @@
-/*
- * File: frontend/src/pages/student/StudentAssignmentSessionPage.jsx
- *
- * (CHẾ ĐỘ BÀI TẬP VỀ NHÀ - CÓ CHUYỂN HƯỚNG VÀ TRUYỀN KẾT QUẢ CHI TIẾT)
- *
- * Cập nhật:
- * 1. Cập nhật hàm handleSubmit để tính toán và lưu trữ detailedResults (kết quả chi tiết từng câu).
- * 2. Sử dụng navigate với state để truyền finalScore và detailedResults tới trang kết quả.
- */
-
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -41,17 +31,11 @@ import katex from 'katex';
 
 import AppSnackbar from '../../components/SnackBar';
 
-// ======================================================
-// --- MOCK DATA (Giữ nguyên) ---
-// ======================================================
-
 const PRACTICE_ID_1 = 'cd-c1-s1';
 const ASSIGNMENT_ID_1 = 'session_1';
 const ASSIGNMENT_ID_4 = 'session_4';
 
-// CSDL giả
 const mockQuestionDatabase = [
-  // --- 9 CÂU HỎI (Dùng cho Assignment 'session_1') ---
   {
     questionId: 'q1',
     content: 'Phương trình $(x - 5)(3x + 9) = 0$ có tập nghiệm là:',
@@ -405,13 +389,8 @@ const mockQuestionDatabase = [
     ],
   },
 ];
-// ======================================================
-// --- END MOCK DATA ---
-// ======================================================
 
-/*
- * Component render LaTeX từ văn bản thô
- */
+// Component để hiển thị công thức LaTeX
 const LatexRenderer = ({ content }) => {
   const renderMath = (text) => {
     if (!text) return null;
@@ -441,7 +420,7 @@ const LatexRenderer = ({ content }) => {
 };
 
 // Helper để tạo tiền tố A, B, C, D...
-const getAnswerPrefix = (index) => String.fromCharCode(65 + index); // 65 là mã ASCII của 'A'
+const getAnswerPrefix = (index) => String.fromCharCode(65 + index); 
 
 // Hàm kiểm tra đúng/sai (dùng cho Stepper và hiển thị lời giải)
 const isQuestionCorrect = (q, selectedAnswers) => {
@@ -490,7 +469,7 @@ export default function StudentAssignmentSessionPage() {
     setIsLoading(true);
 
     setTimeout(() => {
-      // Lọc câu hỏi CHỈ dành cho Assignment (Mock logic)
+      // Lọc câu hỏi CHỈ dành cho Assignment 
       const fetchedQuestions = mockQuestionDatabase.filter(
         (q) => q.assignTo && q.assignTo.includes(sessionId) && (q.assignTo.includes(ASSIGNMENT_ID_1) || q.assignTo.includes(ASSIGNMENT_ID_4))
       );
@@ -564,7 +543,7 @@ export default function StudentAssignmentSessionPage() {
     const totalQuestions = questions.length;
     let totalSkipped = 0;
     
-    // TÍNH ĐIỂM VÀ TẠO KẾT QUẢ CHI TIẾT
+    // Tạo mảng chi tiết kết quả cho từng câu hỏi
     const detailedResults = questions.map((q) => {
       const isCorrect = isQuestionCorrect(q, selectedAnswers);
       const userAnswers = selectedAnswers[q.questionId] || [];
@@ -594,11 +573,10 @@ export default function StudentAssignmentSessionPage() {
     setScore(finalScore);
     setIsFinished(true); 
     
-    // Đảm bảo có thể hiển thị kết quả tổng quan ngay trên session page (tùy chọn)
+    // Đảm bảo có thể hiển thị kết quả tổng quan ngay trên session page 
     showSnackBar(`Hoàn thành! Bạn đúng ${finalScore.correct} / ${finalScore.total} câu.`, 'success');
 
     // CHUYỂN HƯỚNG TỚI TRANG KẾT QUẢ CHI TIẾT
-    // Route: /student/assignment/session/:sessionId/result
     navigate(`/student/assignment/session/${sessionId}/result`, { 
         state: { 
             score: finalScore,
@@ -610,7 +588,6 @@ export default function StudentAssignmentSessionPage() {
   
   // 6. Làm lại (Chuyển hướng về trang danh sách Assignment)
   const handleRetry = () => {
-    // Tạm thời: Quay về trang Bài tập
     navigate('/student/assignment'); 
   }
 

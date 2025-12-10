@@ -19,7 +19,7 @@ import {
   ListItemAvatar,
   Divider,
   IconButton,
-  Modal, // Vẫn giữ import cho Modal của Diễn đàn
+  Modal,
   Backdrop,
   Fade,
   TextField,
@@ -48,11 +48,9 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import ClassBg1 from "../../assets/images/homepage1.webp";
 import AvatarTutor from "../../assets/images/Avatar.jpg";
 
-// (GIẢ LẬP ID USER ĐANG ĐĂNG NHẬP)
 const CURRENT_USER_ID = 'u_stu_001'; 
 
-// --- DỮ LIỆU MẪU (ĐÃ CẬP NHẬT) ---
-
+// --- Dữ liệu mẫu  ---
 const mockClassInfo = { 
   id: 'cls_001', 
   name: 'Toán 9A1 - Sách Cánh Diều', 
@@ -139,9 +137,7 @@ const mockMembers = [
     { id: 'u_stu_002', name: 'Nguyễn Văn A', role: 'Học sinh', avatar: null, email: 'a.nguyen@hcmut.edu.vn', joined_date: '02/10/2025' },
     { id: 'u_stu_003', name: 'Trần Thị B', role: 'Học sinh', avatar: null, email: 'b.tran@hcmut.edu.vn', joined_date: '03/10/2025' },
 ];
-// ------------------------------
 
-// --- STYLED COMPONENTS ---
 const ClassBanner = styled(Paper)(({ theme }) => ({
     borderRadius: theme.shape.borderRadius * 2,
     boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)',
@@ -200,13 +196,11 @@ export default function StudentClassDetailPage() {
   const [anchorEl, setAnchorEl] = useState(null); 
   const [selectedThread, setSelectedThread] = useState(null); 
   
-  // === STATE CHO TÀI LIỆU ===
+//State cho tài liệu
   const [currentFolderId, setCurrentFolderId] = useState('root');
   const [folderPath, setFolderPath] = useState([mockFileSystem['root']]); 
 
-  // === STATE CHO THÀNH VIÊN (ĐÃ XÓA MODAL) ===
-  // (Không cần state nữa)
-
+//State cho thành viên
   const handleChangeTab = (event, newValue) => {
       setTabValue(newValue);
   };
@@ -215,8 +209,7 @@ export default function StudentClassDetailPage() {
       if (reason === 'clickaway') return;
       setToast(prev => ({ ...prev, open: false }));
   };
-  
-  // === HANDLERS CHO DIỄN ĐÀN ===
+  //Handlers cho diễn đàn
   const handleOpenPostModal = (postToEdit = null) => {
     if (postToEdit) {
       setEditingPost(postToEdit);
@@ -280,7 +273,7 @@ export default function StudentClassDetailPage() {
     navigate(`/student/classes/${classId}/${threadId}`);
   };
 
-  // === HANDLERS CHO TÀI LIỆU ===
+//Handlers cho tài liệu
   const handleFolderClick = (folderId) => {
     const folder = mockFileSystem[folderId];
     if (folder && folder.type === 'folder') {
@@ -298,9 +291,6 @@ export default function StudentClassDetailPage() {
        setToast({ open: true, message: `Đang tải: ${fileName}...`, severity: 'info' });
   };
   
-  // === HANDLERS CHO THÀNH VIÊN (ĐÃ XÓA) ===
-  // (Không cần)
-
   const currentFolder = mockFileSystem[currentFolderId];
   const currentFolderItems = currentFolder.children.map(id => mockFileSystem[id]);
   
@@ -464,7 +454,7 @@ export default function StudentClassDetailPage() {
                 </TabContentCard>
             </TabPanel>
 
-            {/* === TAB 3: THÀNH VIÊN (ĐÃ SỬA LỖI) === */}
+            {/* === TAB 3: THÀNH VIÊN === */}
             <TabPanel value={tabValue} index={2}>
                  <TabContentCard>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
@@ -560,10 +550,7 @@ export default function StudentClassDetailPage() {
       >
           <MenuItem onClick={() => handleOpenPostModal(selectedThread)}>Sửa</MenuItem>
           <MenuItem onClick={handleDeletePost} sx={{ color: 'error.main' }}>Xóa</MenuItem>
-      </Menu>
-
-      {/* === MODAL XEM THÔNG TIN THÀNH VIÊN (ĐÃ XÓA) === */}
-      
+      </Menu>   
     </Container>
   );
 }
