@@ -1,4 +1,5 @@
 import React, { useState, memo } from "react";
+import React, { useState, memo } from "react";
 import {
   Box,
   Typography,
@@ -22,8 +23,11 @@ import {
   DialogContentText,
   DialogActions,
   Chip,
+  Chip,
 } from "@mui/material";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 
@@ -32,8 +36,14 @@ import {
   acceptEnrollRequest,
   rejectEnrollRequest,
 } from "../../services/ClassService";
+import {
+  cancelClass,
+  acceptEnrollRequest,
+  rejectEnrollRequest,
+} from "../../services/ClassService";
 
 const StudentsTab = ({ classId, studentsData, onRefresh }) => {
+  console.log("Dữ liệu học sinh nhận được:", studentsData);
   console.log("Dữ liệu học sinh nhận được:", studentsData);
   const token = localStorage.getItem("token");
   const [toast, setToast] = useState({
@@ -47,6 +57,7 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
     studentName: "",
   });
   const [loadingAction, setLoadingAction] = useState(false);
+  const [loadingAction, setLoadingAction] = useState(false);
 
   const handleCloseToast = () => setToast((prev) => ({ ...prev, open: false }));
 
@@ -54,11 +65,14 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
     setToast({ open: true, message, severity });
   };
 
+  // --- LOGIC LỌC DANH SÁCH ---
+  // Đảm bảo studentsData là mảng trước khi filter
   const safeData = Array.isArray(studentsData) ? studentsData : [];
   
   const pendingStudents = safeData.filter((item) => item.status === "pending");
   const enrolledStudents = safeData.filter((item) => item.status === "accepted");
 
+  // --- HANDLERS ---
   const handleAccept = async (studentId) => {
     setLoadingAction(true);
     try {
@@ -78,12 +92,17 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
     try {
       await rejectEnrollRequest(classId, studentId, token);
       showToast("Đã từ chối yêu cầu.");
+      await rejectEnrollRequest(classId, studentId, token);
+      showToast("Đã từ chối yêu cầu.");
       onRefresh();
     } catch (err) {
       showToast(err.message || "Thao tác thất bại.", "error");
+      showToast(err.message || "Thao tác thất bại.", "error");
     } finally {
       setLoadingAction(false);
+      setLoadingAction(false);
     }
+  };
   };
 
   const openDeleteConfirm = (student) => {
@@ -99,6 +118,7 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
     if (!studentId) return;
 
     setLoadingAction(true);
+    setLoadingAction(true);
     try {
       await cancelClass(studentId, classId, token);
       showToast("Đã xóa học sinh khỏi lớp.", "success");
@@ -106,6 +126,7 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
     } catch (err) {
       showToast(err.message || "Xóa thất bại.", "error");
     } finally {
+      setLoadingAction(false);
       setLoadingAction(false);
       setDeleteDialog({ open: false, studentId: null, studentName: "" });
     }
@@ -140,7 +161,7 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
               <TableBody>
                 {pendingStudents.map((item) => {
                   const student = item.student;
-                  const user = student?.user || {}; 
+                  const user = student?.user || {}; // Đảm bảo không lỗi nếu thiếu user
 
                   return (
                     <TableRow key={student?.uid} hover>
@@ -194,7 +215,13 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography variant="h6" fontWeight={600}>
           Danh sách lớp chính thức
+          Danh sách lớp chính thức
         </Typography>
+        <Chip
+          label={`${enrolledStudents.length} học sinh`}
+          color="primary"
+          variant="outlined"
+        />
         <Chip
           label={`${enrolledStudents.length} học sinh`}
           color="primary"
@@ -206,6 +233,9 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
         <Table size="small">
           <TableHead sx={{ bgcolor: "action.hover" }}>
             <TableRow>
+              <TableCell><strong>Học sinh</strong></TableCell>
+              <TableCell><strong>Email</strong></TableCell>
+              <TableCell align="center"><strong>Hành động</strong></TableCell>
               <TableCell><strong>Học sinh</strong></TableCell>
               <TableCell><strong>Email</strong></TableCell>
               <TableCell align="center"><strong>Hành động</strong></TableCell>
@@ -249,8 +279,47 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
                   </TableRow>
                 );
               })
+            {enrolledStudents.length > 0 ? (
+              enrolledStudents.map((item) => {
+                const student = item.student;
+                const user = student?.user || {};
+
+                return (
+                  <TableRow key={student?.uid} hover>
+                    <TableCell>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Avatar
+                          src={user.avata_url}
+                          alt={user.fname}
+                          sx={{ width: 32, height: 32, bgcolor: "primary.main", fontSize: 14 }}
+                        >
+                          {user.fname?.charAt(0)}
+                        </Avatar>
+                        <Typography variant="body2" fontWeight={500}>
+                          {user.lname} {user.mname} {user.fname}
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell align="center">
+                      <Tooltip title="Xóa khỏi lớp">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => openDeleteConfirm(student)}
+                          disabled={loadingAction}
+                        >
+                          <PersonRemoveIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
+                <TableCell colSpan={3} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                  Lớp chưa có học sinh chính thức nào.
                 <TableCell colSpan={3} align="center" sx={{ py: 4, color: "text.secondary" }}>
                   Lớp chưa có học sinh chính thức nào.
                 </TableCell>
@@ -262,13 +331,19 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
 
       {/* Dialog Confirm Delete */}
       <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog((prev) => ({ ...prev, open: false }))}>
+      {/* Dialog Confirm Delete */}
+      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog((prev) => ({ ...prev, open: false }))}>
         <DialogTitle>Xác nhận xóa học sinh</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Bạn có chắc chắn muốn mời học sinh <strong>{deleteDialog.studentName}</strong> ra khỏi lớp không?
+            Bạn có chắc chắn muốn mời học sinh <strong>{deleteDialog.studentName}</strong> ra khỏi lớp không?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
+          <Button onClick={() => setDeleteDialog((prev) => ({ ...prev, open: false }))} color="inherit">Hủy</Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus disabled={loadingAction}>
+            {loadingAction ? "Đang xóa..." : "Xóa"}
           <Button onClick={() => setDeleteDialog((prev) => ({ ...prev, open: false }))} color="inherit">Hủy</Button>
           <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus disabled={loadingAction}>
             {loadingAction ? "Đang xóa..." : "Xóa"}
@@ -277,6 +352,8 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
       </Dialog>
 
       {/* Feedback Snackbar */}
+      <Snackbar open={toast.open} autoHideDuration={4000} onClose={handleCloseToast} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+        <Alert onClose={handleCloseToast} severity={toast.severity} variant="filled" sx={{ width: "100%" }}>{toast.message}</Alert>
       <Snackbar open={toast.open} autoHideDuration={4000} onClose={handleCloseToast} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
         <Alert onClose={handleCloseToast} severity={toast.severity} variant="filled" sx={{ width: "100%" }}>{toast.message}</Alert>
       </Snackbar>

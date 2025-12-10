@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback, memo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -24,6 +26,7 @@ import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 
+// Icons
 import SendIcon from "@mui/icons-material/Send";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
@@ -34,6 +37,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { getMyExams, createExamSession } from "../../services/ExamService";
 import { getClassesByTutor } from "../../services/ClassService";
 
+// --- STYLED COMPONENTS ---
 
 const RootContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
@@ -115,9 +119,7 @@ const CardFooter = styled(Box)(({ theme }) => ({
   marginTop: "auto",
 }));
 
-const StepBadge = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "active",
-})(({ theme, active }) => ({
+const StepBadge = styled(Box)(({ theme, active }) => ({
   width: 36,
   height: 36,
   borderRadius: "10px",
@@ -161,15 +163,33 @@ const OuterWrapper = styled(Paper)(({ theme }) => ({
   minHeight: 0,
   flex: 1,
 }));
+const OuterWrapper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  backgroundColor:
+    theme.palette.mode === "light"
+      ? theme.palette.grey[50]
+      : theme.palette.background.paper,
+  borderRadius: theme.shape.borderRadius * 2,
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: "none",
+  width: "100%",
+  minHeight: "80vh",
+  display: "flex",
+  flexDirection: "column",
+  minHeight: 0,
+  flex: 1,
+}));
 
 function AssignmentPage() {
   const navigate = useNavigate();
   const [token] = useState(() => localStorage.getItem("token"));
 
+  // Data
   const [masterExams, setMasterExams] = useState([]);
   const [tutorClasses, setTutorClasses] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Form
   const [selectedExam, setSelectedExam] = useState(null);
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [startAt, setStartAt] = useState(dayjs());
@@ -178,10 +198,29 @@ function AssignmentPage() {
   const [examType, setExamType] = useState("practice");
   const [ratio, setRatio] = useState(100);
 
+  // UI State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  const fetchData = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const [examsRes, classesRes] = await Promise.all([
+        getMyExams(token),
+        getClassesByTutor(token),
+      ]);
+      setMasterExams(Array.isArray(examsRes) ? examsRes : examsRes?.data || []);
+      setTutorClasses(
+        Array.isArray(classesRes) ? classesRes : classesRes?.data || []
+      );
+    } catch (err) {
+      setError("Không thể tải dữ liệu.");
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
   const fetchData = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -212,10 +251,30 @@ function AssignmentPage() {
       return setError("Vui lòng chọn lớp học ở Cột 2.");
     if (examType === "test" && (ratio < 0 || ratio > 100))
       return setError("Trọng số không hợp lệ.");
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleSubmit = async () => {
+    setSuccess(null);
+    if (!selectedExam) return setError("Vui lòng chọn đề thi ở Cột 1.");
+    if (selectedClasses.length === 0)
+      return setError("Vui lòng chọn lớp học ở Cột 2.");
+    if (examType === "test" && (ratio < 0 || ratio > 100))
+      return setError("Trọng số không hợp lệ.");
 
     setIsSubmitting(true);
     setError(null);
+    setIsSubmitting(true);
+    setError(null);
 
+    const payload = {
+      startAt: startAt.toISOString(),
+      expireAt: expireAt.toISOString(),
+      limit_taken: parseInt(limitTaken),
+      exam_type: examType,
+      ...(examType === "test" && { ratio: parseInt(ratio) }),
+    };
     const payload = {
       startAt: startAt.toISOString(),
       expireAt: expireAt.toISOString(),
@@ -240,7 +299,35 @@ function AssignmentPage() {
       setIsSubmitting(false);
     }
   };
+    try {
+      await createExamSession(
+        selectedExam.exam_id,
+        selectedClasses.map((c) => c.class_id),
+        payload,
+        token
+      );
+      setSuccess(`Đã giao thành công cho ${selectedClasses.length} lớp!`);
+      setSelectedExam(null);
+      setSelectedClasses([]);
+    } catch (err) {
+      setError(err.response?.data?.message || "Giao bài thất bại.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
+  if (loading) {
+    return (
+      <Box
+        height="100vh"
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
   if (loading) {
     return (
       <Box
@@ -306,8 +393,7 @@ function AssignmentPage() {
               }}
             >
               {/* CỘT 1: CHỌN ĐỀ THI */}
-              {/* [FIX] Thay đổi prop: item -> bỏ, xs/md -> size={{ xs: ..., md: ... }} */}
-              <Grid size={{ xs: 12, md: 4 }}>
+              <Grid item xs={12} md={4}>
                 <ColumnCard>
                   <CardHeader>
                     <StepBadge active={!!selectedExam}>1</StepBadge>
@@ -442,8 +528,7 @@ function AssignmentPage() {
               </Grid>
 
               {/* CỘT 2: CHỌN LỚP HỌC */}
-              {/* [FIX] Thay đổi prop: item -> bỏ, xs/md -> size={{ xs: ..., md: ... }} */}
-              <Grid size={{ xs: 12, md: 4 }}>
+              <Grid item xs={12} md={4}>
                 <ColumnCard>
                   <CardHeader>
                     <StepBadge active={selectedClasses.length > 0}>2</StepBadge>
@@ -570,8 +655,7 @@ function AssignmentPage() {
               </Grid>
 
               {/* CỘT 3: CẤU HÌNH */}
-              {/* [FIX] Thay đổi prop: item -> bỏ, xs/md -> size={{ xs: ..., md: ... }} */}
-              <Grid size={{ xs: 12, md: 4 }}>
+              <Grid item xs={12} md={4}>
                 <ColumnCard
                   sx={{
                     borderColor: "primary.main",
@@ -695,7 +779,93 @@ function AssignmentPage() {
                       />
                     </Stack>
                   </CardBody>
+                      </SectionDivider>
 
+                      <DateTimePicker
+                        label="Thời gian mở đề"
+                        value={startAt}
+                        onChange={(n) => setStartAt(n)}
+                        slotProps={{
+                          textField: { size: "small", fullWidth: true },
+                        }}
+                      />
+
+                      <DateTimePicker
+                        label="Thời gian đóng đề"
+                        value={expireAt}
+                        onChange={(n) => setExpireAt(n)}
+                        slotProps={{
+                          textField: { size: "small", fullWidth: true },
+                        }}
+                      />
+
+                      <SectionDivider sx={{ mb: 0 }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          fontWeight={600}
+                          sx={{ px: 1 }}
+                        >
+                          NÂNG CAO
+                        </Typography>
+                      </SectionDivider>
+
+                      <TextField
+                        label="Số lần làm bài tối đa"
+                        type="number"
+                        size="small"
+                        value={limitTaken}
+                        onChange={(e) =>
+                          setLimitTaken(
+                            Math.max(1, parseInt(e.target.value) || 1)
+                          )
+                        }
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">lần</InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Stack>
+                  </CardBody>
+
+                  <CardFooter sx={{ bgcolor: "#fff" }}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      fullWidth
+                      onClick={handleSubmit}
+                      disabled={
+                        isSubmitting ||
+                        !selectedExam ||
+                        selectedClasses.length === 0
+                      }
+                      endIcon={!isSubmitting && <SendIcon />}
+                      sx={{
+                        py: 1,
+                        fontSize: "0.95rem",
+                        fontWeight: 700,
+                        boxShadow: "0 4px 12px rgba(25, 118, 210, 0.4)",
+                        "&:hover": {
+                          boxShadow: "0 6px 16px rgba(25, 118, 210, 0.5)",
+                        },
+                      }}
+                    >
+                      {isSubmitting ? (
+                        <CircularProgress size={24} color="inherit" />
+                      ) : (
+                        "GIAO BÀI NGAY"
+                      )}
+                    </Button>
+                  </CardFooter>
+                </ColumnCard>
+              </Grid>
+            </Grid>
+          </LocalizationProvider>
+        </MainContent>
+      </OuterWrapper>
+    </RootContainer>
+  );
                   <CardFooter sx={{ bgcolor: "#fff" }}>
                     <Button
                       variant="contained"
