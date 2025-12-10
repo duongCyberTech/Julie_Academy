@@ -13,11 +13,12 @@ const getAuthHeaders = (token) => ({
 const getUserIdFromToken = (token) => {
     try {
         const decoded = jwtDecode(token);
-        return decoded.sub;
+        return decoded.sub; 
     } catch (error) {
         throw new Error('Invalid token');
     }
 };
+
 
 export const createClass = async (classData, token) => {
     try {
@@ -25,6 +26,19 @@ export const createClass = async (classData, token) => {
         const response = await apiClient.post(
             `/classes/create/${tutorId}`, 
             classData, 
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+export const duplicateClass = async (tutorId, classId, data, dupLst, token) => {
+    try {
+        const response = await apiClient.post(
+            `/classes/duplicate/${tutorId}/${classId}`,
+            { data, dupLst },
             getAuthHeaders(token)
         );
         return response.data;
@@ -74,7 +88,86 @@ export const enrollClass = async (classId, studentEmail, token) => {
     try {
         const response = await apiClient.post(
             `/classes/enroll/${classId}`, 
-            { studentEmail : studentEmail }, 
+            { email: studentEmail }, // Backend expects @Body('email')
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+export const requestEnrollment = async (classId, studentIds, token) => {
+    try {
+        // Backend expects @Body() student_lst: string[]
+        const response = await apiClient.post(
+            `/classes/request/${classId}`,
+            studentIds, 
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+export const acceptAllEnrollment = async (classId, token) => {
+    try {
+        const response = await apiClient.post(
+            `/classes/accept/${classId}`,
+            {}, // Empty body
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+export const acceptEnrollRequest = async (classId, studentId, token) => {
+    try {
+        const response = await apiClient.post(
+            `/classes/accept/${classId}/${studentId}`,
+            {},
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+export const rejectEnrollRequest = async (classId, studentId, token) => {
+    try {
+        const response = await apiClient.post(
+            `/classes/reject/${classId}/${studentId}`,
+            {},
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+export const cancelEnrollment = async (classId, studentId, token) => {
+    try {
+        const response = await apiClient.post(
+            `/classes/cancel/${classId}/${studentId}`,
+            {},
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+export const markClassCompleted = async (classId, studentId, token) => {
+    try {
+        const response = await apiClient.post(
+            `/classes/complete/${classId}/${studentId}`,
+            {},
             getAuthHeaders(token)
         );
         return response.data;
@@ -107,6 +200,8 @@ export const cancelClass = async (studentId, classId, token) => {
         throw error.response?.data || error;
     }
 };
+
+// --- SCHEDULE APIs ---
 
 export const createSchedule = async (classId, scheduleData, token) => {
     try {

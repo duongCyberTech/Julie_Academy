@@ -254,7 +254,48 @@ export class UserService {
       },
     });
   }
+  async getChildrenByParent(parentId: string) {
+    const parentWithChildren = await this.prisma.parents.findUnique({
+      where: { uid: parentId },
+      include: {
+        family: { 
+          include: {
+            student: { 
+              include: {
+                user: { 
+                  select: {
+                    uid: true,
+                    fname: true,
+                    mname: true,
+                    lname: true,
+                    email: true,
+                    avata_url: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
 
+    if (!parentWithChildren) {
+      throw new NotFoundException('Parent not found or invalid ID');
+    }
+    const children = parentWithChildren.family.map((relation) => {
+      const student = relation.student;
+      return {
+        uid: student.uid,
+        studentInfo: {
+          school: student.school,
+          dob: student.dob,
+        },
+        user: student.user,
+      };
+    });
+
+    return children;
+  }
   private async _updateProfile(
     tx: PrismaTransaction,
     role: UserRole,

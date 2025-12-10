@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; 
+import React, { useState, useCallback } from 'react'; 
 import { 
     Box, Tooltip, Button, IconButton, Paper, useTheme, alpha, styled,
     Collapse 
@@ -24,34 +24,39 @@ const AnswerOptionWrapper = styled(Paper, {
     transition: theme.transitions.create(['border-color', 'background-color']),
 }));
 
-const AnswerOption = ({ 
-    answer, index, questionType, 
-    onFieldChange, 
-    onCorrectChange, onDelete, 
+const AnswerOption = React.memo(({ 
+    answer, index, 
+    onContentChange, 
+    onCorrectChange, 
+    onDelete, 
     color 
 }) => {
-    const [showExplanation, setShowExplanation] = useState(Boolean(answer.explanation)); 
+    const [showExplaination, setShowExplaination] = useState(() => Boolean(answer.explaination)); 
+    const handleChangeContent = useCallback((val) => {
+        onContentChange(answer.id, 'content', val);
+    }, [answer.id, onContentChange]);
+
+    const handleChangeExplaination = useCallback((val) => {
+        onContentChange(answer.id, 'explaination', val);
+    }, [answer.id, onContentChange]);
 
     return (
         <AnswerOptionWrapper color={color} isCorrect={answer.isCorrect}>
             <Box sx={{ 
-                position: 'absolute', 
-                top: 4,               
-                right: 4,             
-                zIndex: 3             
+                position: 'absolute', top: 4, right: 4, zIndex: 3             
             }}>
                 <Tooltip title="Đánh dấu là đáp án đúng">
-                    <IconButton onClick={onCorrectChange} size="small">
+                    <IconButton onClick={() => onCorrectChange(answer.id)} size="small">
                         <CheckCircleIcon sx={{ color: answer.isCorrect ? color : 'action.disabled' }}/>
                     </IconButton>
                 </Tooltip>
-                <Tooltip title={showExplanation ? "Ẩn giải thích" : "Thêm giải thích"}>
-                    <IconButton onClick={() => setShowExplanation(!showExplanation)} size="small">
-                        <NotesIcon sx={{ fontSize: 20, color: showExplanation ? 'primary.main' : 'action.disabled' }}/>
+                <Tooltip title={showExplaination ? "Ẩn giải thích" : "Thêm giải thích"}>
+                    <IconButton onClick={() => setShowExplaination(!showExplaination)} size="small">
+                        <NotesIcon sx={{ fontSize: 20, color: showExplaination ? 'primary.main' : 'action.disabled' }}/>
                     </IconButton>
                 </Tooltip>
                 <Tooltip title="Xóa lựa chọn này">
-                    <IconButton onClick={onDelete} size="small">
+                    <IconButton onClick={() => onDelete(answer.id)} size="small">
                         <HighlightOffIcon sx={{ fontSize: 20, color: 'action.disabled', '&:hover': { color: 'error.main' } }}/>
                     </IconButton>
                 </Tooltip>
@@ -61,35 +66,26 @@ const AnswerOption = ({
                 toolbarType="minimal" 
                 placeholder={`Lựa chọn ${index + 1}`}
                 value={answer.content}
-                onChange={(value) => onFieldChange(index, 'content', value)} 
+                onChange={handleChangeContent} 
                 style={{ 
-                    paddingTop: '32px', 
-                    flexGrow: 1, 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    minHeight: '80px' 
+                    paddingTop: '32px', flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '80px' 
                 }}
             />
             
-            <Collapse in={showExplanation} mountOnEnter unmountOnExit> 
+            <Collapse in={showExplaination} mountOnEnter unmountOnExit> 
                 <Box sx={{ pt: 1, borderTop: 1, borderColor: 'divider', mt: 1 }}>
                     <RichTextEditor
                         toolbarType="minimal" 
                         placeholder="Thêm giải thích cho đáp án này..."
-                        value={answer.explanation || ''} 
-                        onChange={(value) => onFieldChange(index, 'explanation', value)} 
-                        style={{ 
-                            display: 'flex', 
-                            flexDirection: 'column',
-                            minHeight: '60px' 
-                        }}
+                        value={answer.explaination || ''} 
+                        onChange={handleChangeExplaination} 
+                        style={{ display: 'flex', flexDirection: 'column', minHeight: '60px' }}
                     />
                 </Box>
             </Collapse>
-            
         </AnswerOptionWrapper>
     );
-};
+});
 
 export default function MultipleChoiceEditor({ questionType, answerData, setAnswerData }) {
     const theme = useTheme();
@@ -100,41 +96,43 @@ export default function MultipleChoiceEditor({ questionType, answerData, setAnsw
         theme.palette.secondary.main, theme.palette.grey[500] 
     ];
 
-    const handleAnswerFieldChange = (index, field, value) => {
-        const newAnswers = answerData.map((ans, i) => 
-            i === index ? { ...ans, [field]: value } : ans
-        );
-        setAnswerData(newAnswers);
-    };
-
-    const handleCorrectChange = (index) => {
-        let newAnswers;
-        if (questionType === 'single_choice') {
-            newAnswers = answerData.map((ans, i) => ({
-                 ...ans, 
-                 isCorrect: i === index 
-            }));
-        } else {
-            newAnswers = answerData.map((ans, i) => 
-                i === index ? { ...ans, isCorrect: !ans.isCorrect } : ans
-            );
-        }
-        setAnswerData(newAnswers);
-    };
-
-    const addAnswerOption = () => {
+    const addAnswerOption = useCallback(() => {
         const newId = uuidv4(); 
-        setAnswerData([
-            ...answerData, 
-            { id: newId, content: '', isCorrect: false, explanation: '' } 
+        setAnswerData(prev => [
+            ...prev, 
+            { id: newId, content: '', isCorrect: false, explaination: '' } 
         ]);
-    };
+    }, [setAnswerData]);
 
-    const removeAnswerOption = (indexToRemove) => {
-        if (answerData.length > 1) { 
-            setAnswerData(answerData.filter((_, index) => index !== indexToRemove));
-        }
-    };
+    const removeAnswerOption = useCallback((idToRemove) => {
+        setAnswerData(prev => {
+            if (prev.length <= 1) return prev; 
+            return prev.filter(ans => ans.id !== idToRemove);
+        });
+    }, [setAnswerData]);
+
+    const handleContentChange = useCallback((id, field, value) => {
+        setAnswerData(prev => prev.map(ans => {
+            if (ans.id === id) {
+                if (ans[field] === value) return ans;
+                
+                return { ...ans, [field]: value };
+            }
+            return ans;
+        }));
+    }, [setAnswerData]);
+
+    const handleCorrectChange = useCallback((id) => {
+        setAnswerData(prev => {
+            if (questionType === 'single_choice') {
+                return prev.map(ans => ({ ...ans, isCorrect: ans.id === id }));
+            } else {
+                return prev.map(ans => 
+                    ans.id === id ? { ...ans, isCorrect: !ans.isCorrect } : ans
+                );
+            }
+        });
+    }, [setAnswerData, questionType]);
     
     return (
         <Box>
@@ -148,10 +146,9 @@ export default function MultipleChoiceEditor({ questionType, answerData, setAnsw
                         key={answer.id} 
                         answer={answer}
                         index={index}
-                        questionType={questionType}
-                        onFieldChange={handleAnswerFieldChange} 
-                        onCorrectChange={() => handleCorrectChange(index)}
-                        onDelete={() => removeAnswerOption(index)}
+                        onContentChange={handleContentChange} 
+                        onCorrectChange={handleCorrectChange}
+                        onDelete={removeAnswerOption}
                         color={answerColors[index % answerColors.length]}
                     />
                 ))}
@@ -160,15 +157,9 @@ export default function MultipleChoiceEditor({ questionType, answerData, setAnsw
                     variant="dashed"
                     onClick={addAnswerOption}
                     sx={{ 
-                        minHeight: '80px', 
-                        borderStyle: 'dashed', 
-                        borderWidth: 2, 
-                        borderColor: 'divider', 
+                        minHeight: '80px', borderStyle: 'dashed', borderWidth: 2, borderColor: 'divider', 
                         color: 'text.secondary',
-                        '&:hover': {
-                            borderColor: 'primary.main',
-                            bgcolor: 'action.hover'
-                        }
+                        '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }
                     }}
                 >
                     <AddCircleOutlineIcon sx={{ mr: 1 }}/>

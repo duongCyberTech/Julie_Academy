@@ -34,7 +34,7 @@ const CreateLessonPlanDialog = ({ open, onClose, onSubmit, loading }) => {
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ fontWeight: 'bold' }}>Tạo Giáo Án Mới</DialogTitle>
+            <DialogTitle sx={{ fontWeight: 'bold' }}>Tạo giáo án mới</DialogTitle>
             <DialogContent dividers>
                 <Stack spacing={2} pt={1}>
                     {error && <Alert severity="error">{error}</Alert>}

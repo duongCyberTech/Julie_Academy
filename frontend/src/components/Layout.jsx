@@ -55,7 +55,7 @@ const Layout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 2,
           width: { xs: "100%", lg: `calc(100% - ${currentSidebarWidth}px)` },
           transition: (theme) =>
             theme.transitions.create("width", {

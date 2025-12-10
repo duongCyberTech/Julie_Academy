@@ -16,7 +16,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 import {
-    getAllBooks, createBook, updateBook, 
+    getAllPlans, createBook, updateBook, 
     getAllCategories, createCategory, updateCategory, 
 } from "../../services/CategoryService"; 
 import {
@@ -182,7 +182,7 @@ const ResourcesManagement = () => {
     const categoryTreeData = useMemo(() => transformCategoriesForTree(categories), [categories]);
 
     // --- Fetch Functions ---
-    const fetchBooks = useCallback(async () => { setLoadingBooks(true); setError(null); const token = getToken(); if (!token) { setError("Chưa đăng nhập."); setLoadingBooks(false); return; } try { const res = await getAllBooks(token); setBooks(Array.isArray(res) ? res : []); } catch (err) { setError(`Lỗi tải sách: ${err.message}`); setBooks([]); } finally { setLoadingBooks(false); } }, [getToken]);
+    const fetchBooks = useCallback(async () => { setLoadingBooks(true); setError(null); const token = getToken(); if (!token) { setError("Chưa đăng nhập."); setLoadingBooks(false); return; } try { const res = await getAllPlans(token); setBooks(Array.isArray(res) ? res : []); } catch (err) { setError(`Lỗi tải sách: ${err.message}`); setBooks([]); } finally { setLoadingBooks(false); } }, [getToken]);
     
     // SỬA: fetchCategories
     const fetchCategories = useCallback(async () => { 

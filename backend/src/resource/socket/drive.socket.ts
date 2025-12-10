@@ -15,7 +15,7 @@ import { InternalServerErrorException } from '@nestjs/common'
 import { Readable } from 'stream'
 import { PrismaService } from 'src/prisma/prisma.service'
 
-const CHUNK_SIZE = 1024 * 1024
+const CHUNK_SIZE = 1024 * 1024 * 5
 
 @WebSocketGateway({
   cors: {
@@ -117,9 +117,8 @@ export class DriveGateway {
             if (client.disconnected) {
                 return;
             }
-
-            client.emit('COMPLETE', {docsId, fileId, totalSize})
         }
+        client.emit('COMPLETE', {docsId, fileId, totalSize})
       } catch (error) {
         client.emit('ERROR', {
             docsId, fileId,

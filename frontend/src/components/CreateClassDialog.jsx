@@ -17,7 +17,7 @@ const CreateClassDialog = ({ open, onClose, onRefresh }) => {
         classname: '',
         description: '',
         duration_time: 12,
-        nb_of_student: 40,
+        nb_of_student: 0, 
         grade: '', 
         subject: '', 
         status: 'pending',
@@ -149,31 +149,19 @@ const CreateClassDialog = ({ open, onClose, onRefresh }) => {
                                 </FormControl>
                             </Stack>
 
-                            {/* Hàng 4: Thời lượng & Sĩ số */}
-                            <Stack direction="row" spacing={2}>
-                                <TextField
-                                    name="duration_time"
-                                    label="Thời lượng (Tuần)"
-                                    type="number"
-                                    value={formData.duration_time}
-                                    onChange={handleChange}
-                                    fullWidth
-                                    InputProps={{ inputProps: { min: 1 } }}
-                                />
-                                <TextField
-                                    name="nb_of_student"
-                                    label="Sĩ số (Tối đa)"
-                                    type="number"
-                                    value={formData.nb_of_student}
-                                    onChange={handleChange}
-                                    fullWidth
-                                    InputProps={{ inputProps: { min: 1 } }}
-                                />
-                            </Stack>
+                            {/* Hàng 4: Thời lượng (Đã bỏ Sĩ số, Thời lượng full width) */}
+                            <TextField
+                                name="duration_time"
+                                label="Thời lượng (Tuần)"
+                                type="number"
+                                value={formData.duration_time}
+                                onChange={handleChange}
+                                fullWidth
+                                InputProps={{ inputProps: { min: 1 } }}
+                            />
                             
                             {/* Hàng 5: Ngày bắt đầu & Trạng thái */}
                             <Stack direction="row" spacing={2}>
-                                {/* BỔ SUNG: DatePicker */}
                                 <DatePicker
                                     label="Ngày bắt đầu"
                                     value={formData.startat}
