@@ -1,9 +1,9 @@
 import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {ClassDto, ScheduleDto} from './dto/class.dto';
+import {ClassDto, ResourceCopyDto, ScheduleDto} from './dto/class.dto';
 import { google } from 'googleapis';
 import { addDays, isBefore, setDate, setHours, setMinutes } from 'date-fns';
-import { ClassStatus, EnrollStatus, Prisma } from '@prisma/client';
+import { ClassStatus, EnrollStatus, Prisma, ResourceStatus } from '@prisma/client';
 import { DuplicatingObject } from 'src/mode/control.mode';
 require('dotenv').config()
 
@@ -610,8 +610,68 @@ export class ClassService {
     }
   }
 
-  async copycatResources(tx: Prisma.TransactionClient, current_folder: string, prev_copy: string){
+  async copycatResources(tx: Prisma.TransactionClient, current_folder: ResourceCopyDto, prev_copy_id: string | null){
+    const copyFolder = await tx.folders.create({
+      data: {
+        folder_name: current_folder.folder_name,
+        createdAt: new Date(),
+        updateAt: new Date(),
+        tutor: {connect: {uid: current_folder.tutor_id}},
+        ...(prev_copy_id ? {Folders: {connect: {folder_id: prev_copy_id}}} : {})
+      }
+    })
 
+    const resources = await tx.resources_in_folder.findMany({
+      where: {folder: {folder_id: current_folder.folder_id}},
+      select: {resource_id: true}
+    })
+
+    await tx.folder_of_class.create({
+      data: {
+        class: {connect: {class_id: current_folder.class_id}},
+        category: {connect: {category_id: current_folder.category_id}},
+        folder: {connect: {folder_id: copyFolder.folder_id}}
+      }
+    })
+
+    await tx.resources_in_folder.createMany({
+      data: resources.map((item) => {
+        return {
+          resource_id: item.resource_id,
+          folder_id: copyFolder.folder_id,
+        }
+      }),
+      skipDuplicates: true
+    })
+
+    const rootFolderLayer = await tx.folder_of_class.findMany({
+      where: {class: {class_id: current_folder.class_id}},
+      select: {
+        class_id: true,
+        category_id: true,
+        folder: {
+          select: {
+            folder_id: true,
+            folder_name: true,
+            tutor_id: true
+          }
+        }
+      }
+    })
+
+    const rootLayer: ResourceCopyDto[] = rootFolderLayer.map((item) => {
+      return {
+        class_id: item.class_id,
+        category_id: item.category_id,
+        folder_id: item.folder.folder_id,
+        folder_name: item.folder.folder_name,
+        tutor_id: item.folder.tutor_id
+      }
+    })
+
+    for (const fold of rootLayer) {
+      await this.copycatResources(tx, fold, copyFolder.folder_id)
+    }
   }
 
   async duplicateResource(tx: Prisma.TransactionClient, class_id: string) {
@@ -630,29 +690,18 @@ export class ClassService {
       }
     })
 
-    for (const fold of rootFolderLayer) {
-      const copyFolder = await tx.folders.create({
-        data: {
-          folder_name: fold.folder.folder_name,
-          createdAt: new Date(),
-          updateAt: new Date(),
-          tutor: {connect: {uid: fold.folder.tutor_id}}
-        }
-      })
+    const rootLayer: ResourceCopyDto[] = rootFolderLayer.map((item) => {
+      return {
+        class_id: item.class_id,
+        category_id: item.category_id,
+        folder_id: item.folder.folder_id,
+        folder_name: item.folder.folder_name,
+        tutor_id: item.folder.tutor_id
+      }
+    })
 
-      const resources = await tx.resources_in_folder.findMany({
-        where: {folder: {folder_id: fold.folder.folder_id}},
-        select: {resource_id: true}
-      })
-
-      await tx.folder_of_class.create({
-        data: {
-          class: {connect: {class_id}},
-          category: {connect: {category_id: fold.category_id}},
-          folder: {connect: {folder_id: copyFolder.folder_id}}
-        }
-      })
-
+    for (const fold of rootLayer) {
+      await this.copycatResources(tx, fold, null)
     }
   }
 
@@ -687,7 +736,7 @@ export class ClassService {
 
         if (dupLst && dupLst.length > 0) {
           if (dupLst.includes(DuplicatingObject.RESOURCE)){
-            
+            await this.duplicateResource(tx, classCopy.class_id)
           }
 
           if (dupLst.includes(DuplicatingObject.PLAN) && !data.plan_id && classCopy.plan_id){
