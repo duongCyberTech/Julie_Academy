@@ -308,7 +308,11 @@ function HomePage({ mode, toggleMode }) {
         type: "content",
         imgSrc: homepage1,
         imgAlt: "Học sinh sử dụng công nghệ học tập hiện đại",
+<<<<<<< HEAD
         title: "Cùng chúng tôi tạo nên sự khác biệt",
+=======
+        title: "CÙNG CHÚNG TÔI TẠO NÊN SỰ KHÁC BIỆT",
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         content: "Nền tảng học tập trực tuyến giúp chuẩn hóa kiến thức từ nhiều bộ sách, hỗ trợ gia sư cập nhật phương pháp giảng dạy mới, đồng thời nâng cao hiệu quả tự học và tự kiểm tra cho học sinh.",
         showButton: true,
         direction: "row",
@@ -318,7 +322,11 @@ function HomePage({ mode, toggleMode }) {
         type: "content",
         imgSrc: homepage2,
         imgAlt: "Kiến Tạo Tri Thức",
+<<<<<<< HEAD
         title: "Kiến Tạo Tri Thức, Dẫn Lối Tương Lai",
+=======
+        title: "KIẾN TẠO TRI THỨC – DẪN LỐI TƯƠNG LAI",
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         content: "Julie Academy không chỉ là một trang web ôn tập thông thường mà là người bạn đồng hành thông minh cho hành trình học tập của bạn.",
         direction: "row-reverse",
       },
@@ -326,7 +334,11 @@ function HomePage({ mode, toggleMode }) {
         type: "content",
         imgSrc: homepage3,
         imgAlt: "Học sinh và gia sư cùng phát triển",
+<<<<<<< HEAD
         title: "Cùng phát triển, cùng thành công",
+=======
+        title: "CÙNG PHÁT TRIỂN, CÙNG THÀNH CÔNG",
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         content: "Julie Academy là môi trường để gia sư, giáo viên cập nhật kiến thức, đổi mới phương pháp và cùng nhau phát triển trong kỷ nguyên giáo dục số.",
         direction: "row",
       },

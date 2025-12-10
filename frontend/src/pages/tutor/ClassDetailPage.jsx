@@ -156,7 +156,11 @@ function ClassDetailPage() {
                 <Tabs value={currentTab} onChange={handleChangeTab} aria-label="Class Details Tabs">
                     <Tab label="Thành viên" value="students" icon={<GroupIcon />} iconPosition="start" />
                     <Tab label="Lịch học" value="schedule" icon={<CalendarMonthIcon />} iconPosition="start" />
+<<<<<<< HEAD
                     <Tab label="Tài liệu" value="documents" icon={<TopicIcon />} iconPosition="start" />
+=======
+                    <Tab label="Giáo án" value="documents" icon={<TopicIcon />} iconPosition="start" />
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
                     <Tab label="Bài tập" value="assignments" icon={<AssignmentIcon />} iconPosition="start" />
                 </Tabs>
             </Box>

@@ -36,7 +36,10 @@ const CreateClassDialog = ({ open, onClose, onRefresh }) => {
         setFormData(prev => ({ ...prev, [name]: val }));
     };
 
+<<<<<<< HEAD
     // BỔ SUNG: Hàm riêng để xử lý DatePicker
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     const handleDateChange = (newDate) => {
         setFormData(prev => ({ ...prev, startat: newDate }));
     };

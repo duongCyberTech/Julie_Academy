@@ -16,6 +16,12 @@ node_modules/
 bower_components/
 jspm_packages/
 web_modules/
+venv/
+/venv/
+.venv/
+__pycache__/
+**/__pycache__/
+**/**/__pycache__/
 
 # Build & Output
 # Các tệp và thư mục được tạo ra trong quá trình build.
@@ -84,5 +90,3 @@ pids
 *.pid.lock
 # Bỏ comment dòng dưới nếu dự án của bạn dùng Gatsby thay vì Next.js
 # public
-
-backend/julie-schedule-f99304b76d44.json

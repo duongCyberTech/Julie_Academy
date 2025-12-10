@@ -160,9 +160,12 @@ function ExamPage() {
     const [error, setError] = useState(null);
 
     const [openCreateDialog, setOpenCreateDialog] = useState(false);
+<<<<<<< HEAD
     // (Tạm thời vô hiệu hóa logic xóa)
     // const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     // const [examToDelete, setExamToDelete] = useState(null);
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 
     const fetchExams = useCallback(async () => {
         if (!token) {
@@ -173,7 +176,10 @@ function ExamPage() {
         try {
             setLoading(true);
             setError(null);
+<<<<<<< HEAD
             // Sửa: Gọi API getMyExams
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
             const response = await getMyExams(token); 
             setExams(Array.isArray(response) ? response : []);
         } catch (err) {
@@ -190,10 +196,15 @@ function ExamPage() {
     const handleOpenCreateDialog = () => setOpenCreateDialog(true);
     const handleCloseCreateDialog = () => setOpenCreateDialog(false);
     
+<<<<<<< HEAD
     // Sửa: Điều hướng đến trang chi tiết đề thi
     const handleNavigateToDetail = (examId) => navigate(`/tutor/exam/${examId}`);
     
     // (Tạm thời vô hiệu hóa logic xóa)
+=======
+    const handleNavigateToDetail = (examId) => navigate(`/tutor/exam/${examId}`);
+    
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     const handleOpenDeleteDialog = (examInfo) => {
         // setExamToDelete(examInfo);
         // setOpenDeleteDialog(true);
@@ -238,9 +249,14 @@ function ExamPage() {
         <PageWrapper>
             <Header>
                 <Typography variant="h4" component="h1" fontWeight="bold">
+<<<<<<< HEAD
                     Quản lý Đề thi
                 </Typography>
                 {/* Nút "Tạo mới" chỉ hiện khi không loading và đã có đề thi */}
+=======
+                    Quản lý đề thi
+                </Typography>
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
                 {!loading && !error && exams.length > 0 && (
                     <Button
                         variant="contained"

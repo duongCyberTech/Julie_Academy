@@ -1,14 +1,25 @@
+<<<<<<< HEAD
 /* eslint-disable */
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { createQuestion } from "../../services/QuestionService";
 import { getAllBooks, getAllCategories } from "../../services/CategoryService";
+=======
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { createQuestion } from "../../services/QuestionService";
+import { getPlansByTutor, getAllCategories } from "../../services/CategoryService"; 
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 import MultipleChoiceEditor from "../../components/QuestionType/MultipleChoice";
 
 import {
   Box, Typography, Button, FormControl, Select, MenuItem,
   Divider, useTheme, Tooltip, Paper, InputLabel, Alert,
+<<<<<<< HEAD
   Collapse, Stack, CircularProgress
+=======
+  Collapse, Stack, CircularProgress, TextField
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 } from "@mui/material";
 import RichTextEditor from "../../components/RichTextEditor";
 import { jwtDecode } from 'jwt-decode';
@@ -23,7 +34,10 @@ import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 const DifficultyRating = ({ value, onChange }) => {
   const theme = useTheme();
   const levels = [
@@ -95,8 +109,14 @@ const transformCategoriesForTree = (nodes) => {
 };
 
 const OptionsSidebar = ({
+<<<<<<< HEAD
   books, selectedBookId, onBookChange, loadingBooks,
   categories, category, onCategoryChange, loadingCategories,
+=======
+  plans, selectedPlanId, onPlanChange, loadingPlans,
+  categories, category, onCategoryChange, loadingCategories,
+  accessMode, onAccessModeChange,
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   status, onStatusChange,
   explanation, onExplanationChange
 }) => {
@@ -128,6 +148,7 @@ const OptionsSidebar = ({
       >
         <Typography variant="h6" fontWeight={600}>Tùy chọn</Typography>
 
+<<<<<<< HEAD
         {/* 1. Sách */}
         <FormControl fullWidth size="small" disabled={loadingBooks}>
           <InputLabel id="book-select-label">Sách</InputLabel>
@@ -141,12 +162,27 @@ const OptionsSidebar = ({
             {books.map((book) => (
               <MenuItem key={book.book_id} value={book.book_id}>
                 {`${book.title} (Lớp ${book.grade})`}
+=======
+        <FormControl fullWidth size="small" disabled={loadingPlans}>
+          <InputLabel id="plan-select-label">Giáo án</InputLabel>
+          <Select
+            labelId="plan-select-label"
+            value={selectedPlanId}
+            label="Giáo án"
+            onChange={onPlanChange}
+          >
+            <MenuItem value=""><em>{loadingPlans ? "Đang tải giáo án..." : "Chọn giáo án"}</em></MenuItem>
+            {plans.map((plan) => (
+              <MenuItem key={plan.plan_id} value={plan.plan_id}>
+                {`${plan.title} (Lớp ${plan.grade})`}
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
               </MenuItem>
             ))}
           </Select>
         </FormControl>
 
         <FormControl fullWidth size="small">
+<<<<<<< HEAD
           <InputLabel id="status-select-label">Ai có thể xem?</InputLabel>
           <Select
             labelId="status-select-label"
@@ -161,6 +197,36 @@ const OptionsSidebar = ({
         <Collapse in={!!selectedBookId} sx={{ width: '100%' }}>
           <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
             Danh mục
+=======
+          <InputLabel id="access-mode-select-label">Quyền xem</InputLabel>
+          <Select
+            labelId="access-mode-select-label"
+            value={accessMode}
+            label="Quyền xem"
+            onChange={onAccessModeChange}
+          >
+            <MenuItem value="private">Riêng tư (Private)</MenuItem>
+            <MenuItem value="public">Công khai (Public)</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth size="small">
+          <InputLabel id="status-select-label">Trạng thái</InputLabel>
+          <Select
+            labelId="status-select-label"
+            value={status}
+            label="Trạng thái"
+            onChange={onStatusChange}
+          >
+            <MenuItem value="draft">Bản nháp (Draft)</MenuItem>
+            <MenuItem value="ready">Sẵn sàng (Ready)</MenuItem>
+          </Select>
+        </FormControl>
+
+        <Collapse in={!!selectedPlanId} sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1, mt: 1 }}>
+            Chuyên đề / Danh mục
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
           </Typography>
           <Paper
             variant="outlined"
@@ -190,12 +256,17 @@ const OptionsSidebar = ({
               />
             ) : (
               <Typography variant="caption" sx={{ p: 2, display: 'block' }}>
+<<<<<<< HEAD
                 {selectedBookId ? "Sách này chưa có danh mục." : "Vui lòng chọn sách."}
+=======
+                {selectedPlanId ? "Giáo án này chưa có danh mục." : "Vui lòng chọn giáo án."}
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
               </Typography>
             )}
           </Paper>
         </Collapse>
       </Box>
+<<<<<<< HEAD
       <Box
         sx={{
           p: 2,
@@ -203,6 +274,10 @@ const OptionsSidebar = ({
           flexShrink: 0
         }}
       >
+=======
+      
+      <Box sx={{ p: 2, pt: 0, flexShrink: 0 }}>
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         <Divider sx={{ mb: 2 }} />
         <Button
           fullWidth
@@ -235,6 +310,7 @@ export default function CreateNewQuestionPage() {
 
   const userInfo = useMemo(() => {
     try { return token ? jwtDecode(token) : null; }
+<<<<<<< HEAD
     catch (e) { console.error("Invalid token:", e); return null; }
   }, [token]);
 
@@ -252,6 +328,27 @@ export default function CreateNewQuestionPage() {
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(false);
 
+=======
+    catch (e) { return null; }
+  }, [token]);
+
+  const [questionType, setQuestionType] = useState("single_choice");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [explanation, setExplanation] = useState("");
+  const [difficulty, setDifficulty] = useState("easy");
+  const [accessMode, setAccessMode] = useState("private");
+  const [status, setStatus] = useState("ready");
+
+  // Changed book -> plan
+  const [plans, setPlans] = useState([]);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+
+  const [loadingPlans, setLoadingPlans] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   const [apiError, setApiError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
@@ -259,6 +356,7 @@ export default function CreateNewQuestionPage() {
   const [answerData, setAnswerData] = useState([]);
 
   useEffect(() => {
+<<<<<<< HEAD
     const fetchBooks = async () => {
       if (!token) { setApiError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại."); setLoadingBooks(false); return; }
       try { setLoadingBooks(true); const allBooks = await getAllBooks(token); setBooks(Array.isArray(allBooks) ? allBooks : []); setApiError(null); }
@@ -271,27 +369,68 @@ export default function CreateNewQuestionPage() {
   const handleBookChange = (e) => {
     const newBookId = e.target.value;
     setSelectedBookId(newBookId);
+=======
+    const fetchPlans = async () => {
+      if (!token || !userInfo?.sub) { 
+        setApiError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại."); 
+        setLoadingPlans(false); 
+        return; 
+      }
+      try { 
+        setLoadingPlans(true); 
+        const tutorPlans = await getPlansByTutor(userInfo.sub, token); 
+        setPlans(Array.isArray(tutorPlans) ? tutorPlans : []); 
+        setApiError(null); 
+      }
+      catch (err) { 
+        setApiError("Lỗi tải danh sách giáo án."); 
+      }
+      finally { setLoadingPlans(false); }
+    };
+    fetchPlans();
+  }, [token, userInfo]);
+
+  const handlePlanChange = (e) => {
+    const newPlanId = e.target.value;
+    setSelectedPlanId(newPlanId);
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     setCategories([]);
     setSelectedCategoryId("");
   };
 
   useEffect(() => {
     const fetchCategories = async () => {
+<<<<<<< HEAD
       if (!selectedBookId || !token) return;
+=======
+      if (!selectedPlanId || !token) return;
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
       try {
         setLoadingCategories(true);
         setApiError(null);
         const catData = await getAllCategories(
+<<<<<<< HEAD
           { book_id: selectedBookId, mode: 'tree' },
+=======
+          { plan_id: selectedPlanId, mode: 'tree' }, // Dùng đúng plan_id
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
           token
         );
         setCategories(Array.isArray(catData?.data) ? catData.data : []);
       }
+<<<<<<< HEAD
       catch (err) { setApiError("Lỗi tải danh mục cho sách này."); console.error(err); }
       finally { setLoadingCategories(false); }
     };
     fetchCategories();
   }, [selectedBookId, token]);
+=======
+      catch (err) { setApiError("Lỗi tải danh mục cho giáo án này."); }
+      finally { setLoadingCategories(false); }
+    };
+    fetchCategories();
+  }, [selectedPlanId, token]);
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 
   useEffect(() => {
     const initialAnswers = Array.from({ length: 4 }, () => ({
@@ -313,25 +452,49 @@ export default function CreateNewQuestionPage() {
       setToast({ open: true, message: "Phiên đăng nhập hết hạn.", severity: 'error' });
       return;
     }
+<<<<<<< HEAD
+=======
+    if (!title.trim()) {
+      setToast({ open: true, message: "Vui lòng nhập tiêu đề câu hỏi.", severity: 'warning' });
+      return;
+    }
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     if (!content.trim() || content === '<p><br></p>') {
       setToast({ open: true, message: "Vui lòng nhập nội dung câu hỏi.", severity: 'warning' });
       return;
     }
+<<<<<<< HEAD
     if (!selectedBookId) {
       setToast({ open: true, message: "Vui lòng chọn sách.", severity: 'warning' });
       return;
     }
     if (!selectedCategoryId) {
       setToast({ open: true, message: "Vui lòng chọn danh mục cho câu hỏi.", severity: 'warning' });
+=======
+    if (!selectedPlanId) {
+      setToast({ open: true, message: "Vui lòng chọn giáo án.", severity: 'warning' });
+      return;
+    }
+    if (!selectedCategoryId) {
+      setToast({ open: true, message: "Vui lòng chọn chuyên đề/danh mục.", severity: 'warning' });
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
       return;
     }
 
     const payload = {
+<<<<<<< HEAD
+=======
+      title,
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
       content,
       explanation,
       type: questionType,
       level: difficulty,
       categoryId: selectedCategoryId,
+<<<<<<< HEAD
+=======
+      accessMode: accessMode,
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
       status: status,
       tutorId: userInfo.sub,
       answers: answerData
@@ -341,11 +504,18 @@ export default function CreateNewQuestionPage() {
 
     setIsSubmitting(true);
     try {
+<<<<<<< HEAD
       await createQuestion([payload], token);
       setToast({ open: true, message: "Tạo câu hỏi thành công!", severity: 'success' });
       navigate("/tutor/question");
     } catch (error) {
       console.error("Failed to create question:", error);
+=======
+      await createQuestion(userInfo.sub, [payload], token);
+      setToast({ open: true, message: "Tạo câu hỏi thành công!", severity: 'success' });
+      navigate("/tutor/question");
+    } catch (error) {
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
       const msg = "Lỗi tạo câu hỏi: " + (error.response?.data?.message || error.message);
       setApiError(msg);
       setToast({ open: true, message: "Tạo câu hỏi thất bại.", severity: 'error' });
@@ -359,7 +529,10 @@ export default function CreateNewQuestionPage() {
     setToast(prev => ({ ...prev, open: false }));
   };
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   return (
     <Box sx={{
       display: "flex",
@@ -380,10 +553,27 @@ export default function CreateNewQuestionPage() {
           {apiError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApiError(null)}>{apiError}</Alert>}
 
           <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+<<<<<<< HEAD
 
             <RichTextEditor
               label="Nội dung câu hỏi"
               placeholder="Nhập câu hỏi tại đây..."
+=======
+            <TextField
+              label="Tiêu đề câu hỏi"
+              variant="outlined"
+              fullWidth
+              size="small"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Nhập tiêu đề ngắn gọn..."
+              sx={{ mb: 2 }}
+            />
+
+            <RichTextEditor
+              label="Nội dung câu hỏi"
+              placeholder="Nhập nội dung câu hỏi tại đây..."
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
               value={content}
               onChange={setContent}
               toolbarType="full"
@@ -405,14 +595,26 @@ export default function CreateNewQuestionPage() {
           </Paper>
         </Box>
         <OptionsSidebar
+<<<<<<< HEAD
           books={books}
           selectedBookId={selectedBookId}
           onBookChange={handleBookChange}
           loadingBooks={loadingBooks}
+=======
+          plans={plans}
+          selectedPlanId={selectedPlanId}
+          onPlanChange={handlePlanChange}
+          loadingPlans={loadingPlans}
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
           categories={categories}
           category={selectedCategoryId}
           onCategoryChange={(e) => setSelectedCategoryId(e.target.value)}
           loadingCategories={loadingCategories}
+<<<<<<< HEAD
+=======
+          accessMode={accessMode}
+          onAccessModeChange={(e) => setAccessMode(e.target.value)}
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
           status={status}
           onStatusChange={(e) => setStatus(e.target.value)}
           explanation={explanation}

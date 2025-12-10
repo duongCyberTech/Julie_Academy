@@ -22,6 +22,10 @@ export class RolesGuard implements CanActivate {
     // 2. Lấy thông tin người dùng từ request (đã được JWT Guard gán vào)
     // Giả sử req.user có property 'role'
     const { user } = context.switchToHttp().getRequest();
+<<<<<<< HEAD
+=======
+    console.log(user)
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     
     // 3. Kiểm tra xem vai trò của người dùng có nằm trong requiredRoles không
     return requiredRoles.some((role) => user.role?.includes(role));

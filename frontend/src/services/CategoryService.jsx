@@ -23,7 +23,11 @@ export const getAllBooks = async (token) => {
   }
 };
 
+<<<<<<< HEAD
 export const getBooksByTutor = async (tutorId, token) => {
+=======
+export const getPlansByTutor = async (tutorId, token) => {
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   try {
     const response = await apiClient.get(`/books/${tutorId}`, getAuthHeaders(token));
     return response.data;

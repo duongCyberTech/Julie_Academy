@@ -60,16 +60,25 @@ const adminMenuItems = [
 // Cấu hình cho Student
 const studentMenuItems = [
   { label: "Góc học tập", to: "/student/dashboard", Icon: DashboardIcon },
+<<<<<<< HEAD
   { label: "Lớp học của tôi", to: "/student/classes", Icon: GroupOutlined },
   { label: "Luyện tập", to: "/student/practice", Icon: LibraryIcon },
   { label: "Bài tập", to: "/student/assignment", Icon: HomeworkOutlined },
+=======
+  { label: "Lớp học của tôi", to: "/student/myclass", Icon: GroupOutlined },
+  { label: "Luyện tập", to: "/student/practice", Icon: LibraryIcon },
+  { label: "Bài tập", to: "/student/homework", Icon: HomeworkOutlined },
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 ];
 
 // Cấu hình cho Parent
 const parentMenuItems = [
   { label: "Tiến độ của con", to: "/parent/dashboard", Icon: DashboardIcon },
   { label: "Hồ sơ của con", to: "/parent/profiles", Icon: AccountBoxIcon }, 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 ];
 
 const menuConfigByRole = {

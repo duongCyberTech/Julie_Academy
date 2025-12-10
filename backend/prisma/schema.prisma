@@ -60,6 +60,24 @@ model Student {
   review     Review[]
   user       User         @relation(fields: [uid], references: [uid])
   family     is_family[]
+<<<<<<< HEAD
+=======
+  model      Model[]
+}
+
+model Model {
+  model_id      String    @id @default(uuid())
+  init          Decimal   @db.Decimal(4, 2)
+  transit       Decimal   @db.Decimal(4,2)
+  guess         Decimal   @db.Decimal(4,2)
+  slip          Decimal   @db.Decimal(4,2)
+  student_id    String  
+  student       Student   @relation(fields: [student_id], references: [uid])
+  plan_id       String    
+  plan          Lesson_Plan @relation(fields: [plan_id], references: [plan_id])
+  category_id   String
+  category      Categories  @relation(fields: [category_id], references: [category_id])
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 }
 
 model is_family {
@@ -126,11 +144,18 @@ model Class {
   plan          Lesson_Plan?         @relation(fields: [plan_id], references: [plan_id])
   tutor         Tutor                @relation(fields: [tutor_uid], references: [uid])
   exam_open_in  Exam_open_in[]
+<<<<<<< HEAD
   folders       Folder_of_class[]
   learning      Learning[]
   resources     Resources_of_class[]
   reviews       Review[]
   schedule      Schedule[]
+=======
+  learning      Learning[]
+  reviews       Review[]
+  schedule      Schedule[]
+  folders       Folder_of_class[]
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 }
 
 model Schedule {
@@ -150,7 +175,11 @@ model Learning {
   student_uid String
   class       Class   @relation(fields: [class_id], references: [class_id])
   student     Student @relation(fields: [student_uid], references: [uid])
+<<<<<<< HEAD
 
+=======
+  status      EnrollStatus  @default(pending)
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   @@id([class_id, student_uid])
 }
 
@@ -201,12 +230,16 @@ model Resources {
   version              Int
   num_pages            Int
   tutor_id             String
+<<<<<<< HEAD
   cate_id              String?
   folders              Resource_in_folder[]
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   Resource_of_Answer   Resource_of_Answer[]
   Resource_of_Comment  Resource_of_Comment[]
   Resource_of_Question Resource_of_Question[]
   Resource_of_Thread   Resource_of_Thread[]
+<<<<<<< HEAD
   category             Categories?            @relation(fields: [cate_id], references: [category_id])
   tutor                Tutor                  @relation(fields: [tutor_id], references: [uid])
   classes              Resources_of_class[]
@@ -219,6 +252,10 @@ model Resources_of_class {
   resources Resources @relation(fields: [did], references: [did])
 
   @@id([class_id, did])
+=======
+  Resource_in_Folder   Resources_in_folder[]
+  tutor                Tutor                  @relation(fields: [tutor_id], references: [uid])
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 }
 
 model Folders {
@@ -227,6 +264,7 @@ model Folders {
   createdAt     DateTime             @default(now())
   updateAt      DateTime             @default(now())
   tutor_id      String
+<<<<<<< HEAD
   cate_id       String?
   parent_id     String?
   classes       Folder_of_class[]
@@ -253,6 +291,14 @@ model Folder_of_class {
   folder    Folders @relation(fields: [folder_id], references: [folder_id])
 
   @@id([class_id, folder_id])
+=======
+  parent_id     String?
+  Folders       Folders?             @relation("FoldersToFolders", fields: [parent_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction, map: "Child_folder_fkey")
+  other_Folders Folders[]            @relation("FoldersToFolders")
+  class         Folder_of_class[] 
+  resources     Resources_in_folder[]  
+  tutor         Tutor                @relation(fields: [tutor_id], references: [uid])
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 }
 
 model Categories {
@@ -264,10 +310,39 @@ model Categories {
   parent_id        String?
   Categories       Categories?  @relation("CategoriesToCategories", fields: [parent_id], references: [category_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recursive_cate")
   other_Categories Categories[] @relation("CategoriesToCategories")
+<<<<<<< HEAD
   folders          Folders[]
   questions        Questions[]
   resources        Resources[]
   structure        Structure[]
+=======
+  questions        Questions[]
+  structure        Structure[]
+  class            Folder_of_class[]
+  model            Model[]
+}
+
+model Resources_in_folder {
+  resource_id     String
+  resource        Resources     @relation(fields: [resource_id], references: [did])
+  folder_id       String
+  folder          Folders       @relation(fields: [folder_id], references: [folder_id])
+
+  status          ResourceStatus  @default(show)
+  @@id([resource_id, folder_id])
+}
+
+model Folder_of_class {
+  category_id     String
+  category        Categories    @relation(fields: [category_id], references: [category_id])
+  class_id        String
+  class           Class         @relation(fields: [class_id], references: [class_id])
+  folder_id       String
+  folder          Folders       @relation(fields: [folder_id], references: [folder_id])
+
+  status          ResourceStatus  @default(show)
+  @@id([category_id, class_id, folder_id])
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 }
 
 model Structure {
@@ -397,6 +472,10 @@ model Lesson_Plan {
   classes     Class[]
   tutor       Tutor?      @relation(fields: [tutor_id], references: [uid])
   structure   Structure[]
+<<<<<<< HEAD
+=======
+  model       Model[]
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 }
 
 model Resource_of_Answer {
@@ -490,3 +569,18 @@ enum PlanType {
   book
   custom
 }
+<<<<<<< HEAD
+=======
+
+enum ResourceStatus {
+  show 
+  hidden
+}
+
+enum EnrollStatus {
+  pending 
+  accepted
+  cancelled
+  completed
+}
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268

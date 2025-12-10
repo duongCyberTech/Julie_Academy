@@ -73,8 +73,13 @@ export const getClassDetails = async (classId, token) => {
 export const enrollClass = async (classId, studentEmail, token) => {
     try {
         const response = await apiClient.post(
+<<<<<<< HEAD
             `/classes/enroll/${classId}/${studentEmail}`, 
             {}, 
+=======
+            `/classes/enroll/${classId}`, 
+            { studentEmail : studentEmail }, 
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
             getAuthHeaders(token)
         );
         return response.data;

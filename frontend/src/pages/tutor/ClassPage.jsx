@@ -9,7 +9,10 @@ import {
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 
+<<<<<<< HEAD
 // Icons
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -18,11 +21,17 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
+<<<<<<< HEAD
 // Components
 import CreateClassDialog from '../../components/CreateClassDialog';
 import UpdateClassDialog from '../../components/UpdateClassDialog';
 
 // --- Styled Components ---
+=======
+import CreateClassDialog from '../../components/CreateClassDialog';
+import UpdateClassDialog from '../../components/UpdateClassDialog';
+
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 const PageWrapper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
     backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.background.paper,
@@ -53,7 +62,10 @@ const ClassCardStyled = styled(Card)(({ theme }) => ({
     }
 }));
 
+<<<<<<< HEAD
 // --- Sub Components ---
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 
 const EmptyIllustration = () => (
     <SvgIcon
@@ -112,7 +124,11 @@ const StatusChip = memo(({ status }) => {
 const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
     <Grid container spacing={3} sx={{ mt: 2 }}>
         {classes.map((classItem) => (
+<<<<<<< HEAD
             <Grid item xs={12} sm={6} md={4} key={classItem.class_id}>
+=======
+            <Grid size={{ xs: 12 ,sm: 6, md: 4}} key={classItem.class_id}>
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
                 <ClassCardStyled>
                     <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                         <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -168,17 +184,26 @@ const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
     </Grid>
 ));
 
+<<<<<<< HEAD
 // --- Main Page Component ---
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 
 function ClassPage() {
     const navigate = useNavigate();
     
+<<<<<<< HEAD
     // API States
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     const [classes, setClasses] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+<<<<<<< HEAD
     // Dialog States
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     const [openCreateDialog, setOpenCreateDialog] = useState(false);
     const [openEditDialog, setOpenEditDialog] = useState(false);
     const [selectedClass, setSelectedClass] = useState(null);
@@ -195,7 +220,10 @@ function ClassPage() {
             setLoading(true);
             setError(null);
             const response = await getClassesByTutor(token); 
+<<<<<<< HEAD
             console.log("Fetched classes:", response);
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
             setClasses(Array.isArray(response) ? response : []);
         } catch (err) {
             console.error(err);

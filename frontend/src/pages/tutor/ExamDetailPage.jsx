@@ -7,7 +7,10 @@ import {
     removeQuestionFromExam 
 } from '../../services/ExamService';
 
+<<<<<<< HEAD
 // Import component thật (có trong QuestionPage.jsx)
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 import QuestionContentRenderer from '../../components/QuestionContentRenderer';
 
 import {
@@ -25,10 +28,15 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import TimerIcon from '@mui/icons-material/Timer';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 
+<<<<<<< HEAD
 // Import Dialog thêm câu hỏi
 import AddQuestionDialog from '../../components/AddQuestionDialog'; 
 
 // --- START: Code copy từ QuestionPage.jsx ---
+=======
+import AddQuestionDialog from '../../components/AddQuestionDialog'; 
+
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 const PageWrapper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
     backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.background.paper,
@@ -74,10 +82,15 @@ const LevelChip = memo(({ level }) => {
     const { label, color } = levelMap[level] || { label: level, color: "default" };
     return <Chip icon={<StarBorderIcon />} label={label} color={color} size="small" variant="outlined" />;
 });
+<<<<<<< HEAD
 // --- END: Code copy từ QuestionPage.jsx ---
 
 
 // Bảng hiển thị câu hỏi
+=======
+
+
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 const headCells = [
   { id: 'content', label: 'Nội dung', minWidth: 250 },
   { id: 'level', label: 'Độ khó', minWidth: 100 },

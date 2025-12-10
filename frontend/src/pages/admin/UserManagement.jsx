@@ -50,8 +50,11 @@ import {
 import ActionMenu from "../../components/ActionMenu";
 import AppSnackbar from "../../components/SnackBar";
 
+<<<<<<< HEAD
 // --- Các hàm helpers (Giữ nguyên) ---
 
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 function descendingComparator(a, b, orderBy) {
   const valA = a[orderBy] ?? "";
   const valB = b[orderBy] ?? "";
@@ -122,7 +125,10 @@ const StatusChip = ({ status }) => {
   );
 };
 
+<<<<<<< HEAD
 // --- Component UserFormModal (Giữ nguyên) ---
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
   const [formData, setFormData] = useState({
     username: "",
@@ -367,7 +373,10 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
   );
 };
 
+<<<<<<< HEAD
 // --- Component chính (UserManagement) ---
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 const UserManagement = () => {
   const theme = useTheme();
   const [allUsers, setAllUsers] = useState([]);
@@ -615,7 +624,11 @@ const UserManagement = () => {
               placeholder="Tìm kiếm theo tên, username, email..."
               value={searchTerm}
               onChange={handleSearchChange}
+<<<<<<< HEAD
               inputProps={{ maxLength: 50 }} // Giới hạn độ dài nhập
+=======
+              inputProps={{ maxLength: 50 }} 
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -628,7 +641,11 @@ const UserManagement = () => {
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
+<<<<<<< HEAD
                     maxWidth: "calc(100% - 40px)", // Trừ đi width của icon
+=======
+                    maxWidth: "calc(100% - 40px)", 
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
                   },
                 },
               }}

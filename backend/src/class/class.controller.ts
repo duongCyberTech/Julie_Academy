@@ -1,7 +1,11 @@
 import { 
   Controller, 
   Get, Post, Patch, Delete,
+<<<<<<< HEAD
   Body, Query, Param, 
+=======
+  Body, Query, Param, Request,
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   UseGuards 
 } from '@nestjs/common';
 import { ClassService, ScheduleService } from './class.service';
@@ -13,6 +17,10 @@ import { Roles } from 'src/auth/decorator/roles.decorator';
 import { DuplicatingObject } from 'src/mode/control.mode';
 
 @Controller('classes')
+<<<<<<< HEAD
+=======
+@UseGuards(JwtAuthGuard, RolesGuard)
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 export class ClassController {
   constructor(private readonly classService: ClassService) {}
 
@@ -45,6 +53,10 @@ export class ClassController {
   }
 
   @Get('get/tutor/:id')
+<<<<<<< HEAD
+=======
+  @Roles('tutor')
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   async getClassesByTutor(@Param('id') id: string) {
     return this.classService.getClassesByTutor(id);
   }
@@ -60,6 +72,96 @@ export class ClassController {
     return this.classService.enrollClass(classId, email);
   }
 
+<<<<<<< HEAD
+=======
+  @Post('request/:class_id')
+  @Roles('parents', 'tutor', 'student')
+  requestEnrollment(
+    @Param('class_id') class_id: string,
+    @Body() student_lst: string[]
+  ){
+    try {
+      return this.classService.requestForClass(class_id, student_lst)
+    } catch (error) {
+      
+    }
+  }
+
+  @Post('accept/:class_id')
+  @Roles('tutor')
+  acceptAllEnrollment(
+    @Param('class_id') class_id: string,
+    @Param('student_id') student_id: string,
+    @Request() req
+  ){
+    try {
+      const tutor_id = req.user.userId
+      return this.classService.acceptAllEnrollReq(tutor_id, class_id)
+    } catch (error) {
+      return new ExceptionResponse().returnError(error)
+    }
+  }
+
+  @Post('accept/:class_id/:student_id')
+  @Roles('tutor')
+  acceptEnrollment(
+    @Param('class_id') class_id: string,
+    @Param('student_id') student_id: string,
+    @Request() req
+  ){
+    try {
+      const tutor_id = req.user.userId
+      return this.classService.acceptEnrollRequest(tutor_id, class_id, student_id)
+    } catch (error) {
+      return new ExceptionResponse().returnError(error)
+    }
+  }
+
+  @Post('reject/:class_id/:student_id')
+  @Roles('tutor')
+  rejectEnrollment(
+    @Param('class_id') class_id: string,
+    @Param('student_id') student_id: string,
+    @Request() req
+  ){
+    try {
+      const tutor_id = req.user.userId
+      return this.classService.rejectEnrollRequest(tutor_id, class_id, student_id)
+    } catch (error) {
+      return new ExceptionResponse().returnError(error)
+    }
+  }
+
+  @Post('cancel/:class_id/:student_id')
+  @Roles('parents', 'student')
+  cancelEnrollment(
+    @Param('class_id') class_id: string,
+    @Param('student_id') student_id: string,
+    @Request() req
+  ){
+    try {
+      const parent_id = req.user.userId
+      return this.classService.rejectEnrollRequest(parent_id, class_id, student_id)
+    } catch (error) {
+      return new ExceptionResponse().returnError(error)
+    }
+  }
+
+  @Post('complete/:class_id/:student_id')
+  markClassCompleted(
+    @Param('class_id') class_id: string,
+    @Param('student_id') student_id: string,
+    @Request() req
+  ){
+    try {
+      const tutor_id = req.user.userId
+      return this.classService.rejectEnrollRequest(tutor_id, class_id, student_id)
+    } catch (error) {
+      return new ExceptionResponse().returnError(error)
+    }
+  }
+
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   @Patch(':class_id')
   @Roles('tutor', 'admin')
   updateClass(

@@ -29,7 +29,10 @@ export class UserController {
    * Lấy danh sách user (đã hỗ trợ phân trang và filter)
    */
   @Get()
+<<<<<<< HEAD
   @Roles('admin')
+=======
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   getAllUsers(
     @Query('role') role: string,
     @Query('status') status: string,
@@ -64,7 +67,13 @@ export class UserController {
    */
   @Get(':id')
   async getUserById(@Param('id') id: string) {
+<<<<<<< HEAD
     const user = await this.userService.findById(id);
+=======
+    console.log(`Find data of user ${id}`)
+    const user = await this.userService.findById(id);
+    console.log(`Find user ${id}: `, user)
+>>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
