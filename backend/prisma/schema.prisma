@@ -144,7 +144,7 @@ model Class {
   learning      Learning[]
   reviews       Review[]
   schedule      Schedule[]
-  resource      Resource_of_class[]
+  folders       Folder_of_class[]
 }
 
 model Schedule {
@@ -164,7 +164,7 @@ model Learning {
   student_uid String
   class       Class   @relation(fields: [class_id], references: [class_id])
   student     Student @relation(fields: [student_uid], references: [uid])
-
+  status      EnrollStatus  @default(pending)
   @@id([class_id, student_uid])
 }
 
@@ -219,7 +219,7 @@ model Resources {
   Resource_of_Comment  Resource_of_Comment[]
   Resource_of_Question Resource_of_Question[]
   Resource_of_Thread   Resource_of_Thread[]
-  Resource_of_Class    Resource_of_class[]
+  Resource_in_Folder   Resources_in_folder[]
   tutor                Tutor                  @relation(fields: [tutor_id], references: [uid])
 }
 
@@ -232,7 +232,8 @@ model Folders {
   parent_id     String?
   Folders       Folders?             @relation("FoldersToFolders", fields: [parent_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction, map: "Child_folder_fkey")
   other_Folders Folders[]            @relation("FoldersToFolders")
-  class         Resource_of_class[]   
+  class         Folder_of_class[] 
+  resources     Resources_in_folder[]  
   tutor         Tutor                @relation(fields: [tutor_id], references: [uid])
 }
 
@@ -247,13 +248,21 @@ model Categories {
   other_Categories Categories[] @relation("CategoriesToCategories")
   questions        Questions[]
   structure        Structure[]
-  class            Resource_of_class[]
+  class            Folder_of_class[]
   model            Model[]
 }
 
-model Resource_of_class {
+model Resources_in_folder {
   resource_id     String
   resource        Resources     @relation(fields: [resource_id], references: [did])
+  folder_id       String
+  folder          Folders       @relation(fields: [folder_id], references: [folder_id])
+
+  status          ResourceStatus  @default(show)
+  @@id([resource_id, folder_id])
+}
+
+model Folder_of_class {
   category_id     String
   category        Categories    @relation(fields: [category_id], references: [category_id])
   class_id        String
@@ -262,7 +271,7 @@ model Resource_of_class {
   folder          Folders       @relation(fields: [folder_id], references: [folder_id])
 
   status          ResourceStatus  @default(show)
-  @@id([resource_id, category_id, class_id, folder_id])
+  @@id([category_id, class_id, folder_id])
 }
 
 model Structure {
@@ -490,4 +499,11 @@ enum PlanType {
 enum ResourceStatus {
   show 
   hidden
+}
+
+enum EnrollStatus {
+  pending 
+  accepted
+  cancelled
+  completed
 }
