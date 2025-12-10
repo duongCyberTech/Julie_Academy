@@ -16,7 +16,8 @@ export class ExceptionResponse extends Error {
             const returnValue = new BadRequestException(`Invalid field in update data for ${ext_message}.`);
             return returnValue.getResponse();
         } else if (
-            errorMessage.includes('Foreign key constraint')
+            errorMessage.includes('Foreign key constraint') ||
+            errorMessage.includes('fkey')
         ) {
             const returnValue = new BadRequestException(`Foreign key constraint failed for ${ext_message}.`);
             return returnValue.getResponse();
