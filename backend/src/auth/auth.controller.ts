@@ -1,4 +1,4 @@
-import { Controller, Body, UnauthorizedException,Post } from "@nestjs/common";
+import { Controller, Body, UnauthorizedException,Post, NotFoundException } from "@nestjs/common";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { AuthService } from "./auth.service";
@@ -16,7 +16,7 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto) {
     const user = await this.authService.validateUser(dto.email, dto.password);
-    if (!user) throw new UnauthorizedException();
+    if (!user) throw new NotFoundException("Account not exist!");
     return this.authService.login(user);       
   }
 

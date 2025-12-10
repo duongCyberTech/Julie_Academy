@@ -20,7 +20,11 @@ export class ClassController {
   @Post('create/:id')
   @Roles('tutor')
   async createClass(@Param('id') id: string, @Body() classDto: ClassDto) {
-    return this.classService.createClass(id, classDto);
+    try {
+      return this.classService.createClass(id, classDto);
+    } catch (error) {
+      return new ExceptionResponse().returnError(error)
+    }
   }
 
   @Post('duplicate/:tutor_id/:class_id')

@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 require('dotenv').config()
 
 async function bootstrap() {
@@ -19,6 +20,7 @@ async function bootstrap() {
     },
   });
   app.enableCors();
+  app.useWebSocketAdapter(new IoAdapter(app));
   await app.listen(process.env.PORT || 4000);
 }
 bootstrap();
