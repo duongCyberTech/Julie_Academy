@@ -1,9 +1,9 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {ClassDto, ScheduleDto} from './dto/class.dto';
 import { google } from 'googleapis';
 import { addDays, isBefore, setDate, setHours, setMinutes } from 'date-fns';
-import { ClassStatus } from '@prisma/client';
+import { ClassStatus, EnrollStatus, Prisma } from '@prisma/client';
 import { DuplicatingObject } from 'src/mode/control.mode';
 require('dotenv').config()
 
@@ -87,8 +87,14 @@ export class ScheduleService {
     console.log('✅ Created event:', response.data.htmlLink);
   }
 
+  parseTimeStrToNum(time: string){
+    const data = time.split(":")
+    return parseFloat(data[0]) + parseFloat(data[1])/60.0; 
+  }
+
   async createSchedule(class_id:string, schedules: ScheduleDto[]){
     return this.prisma.$transaction(async(tx) => {
+
       var cnt = 1 + await tx.schedule.count({
         where: {class_id}
       })
@@ -96,6 +102,52 @@ export class ScheduleService {
       var schedLst = []
 
       for (const item of schedules){
+
+        const newStartAtNum: Number = this.parseTimeStrToNum(item.startAt);
+        const newEndAtNum: Number = this.parseTimeStrToNum(item.endAt);
+        const checkExist: {meeting_date: string}[] = await tx.$queryRaw(Prisma.sql`
+          SELECT "meeting_date"
+          FROM public."Schedule"
+          WHERE
+            "meeting_date" = ${item.meeting_date} 
+            AND
+            (
+              -- Lấy tổng số giây từ nửa đêm (00:00:00) và chia cho 3600 để có giờ thập phân (REAL)
+              -- 1. Chuyển đổi endAt của DB thành giờ thập phân
+              ((
+                EXTRACT(EPOCH FROM "endAt"::TIME) / 3600.0
+              ) > ${newStartAtNum} AND 
+
+              -- 2. Chuyển đổi startAt của DB thành giờ thập phân
+              (
+                EXTRACT(EPOCH FROM "startAt"::TIME) / 3600.0
+              ) <= ${newStartAtNum})
+
+              OR 
+              ((
+                EXTRACT(EPOCH FROM "endAt"::TIME) / 3600.0
+              ) >= ${newEndAtNum} AND 
+
+              -- 2. Chuyển đổi startAt của DB thành giờ thập phân
+              (
+                EXTRACT(EPOCH FROM "startAt"::TIME) / 3600.0
+              ) < ${newEndAtNum})
+
+              OR (
+              (
+                EXTRACT(EPOCH FROM "endAt"::TIME) / 3600.0
+              ) = ${newEndAtNum} AND 
+
+              -- 2. Chuyển đổi startAt của DB thành giờ thập phân
+              (
+                EXTRACT(EPOCH FROM "startAt"::TIME) / 3600.0
+              ) = ${newStartAtNum}
+              )
+            )
+        `);
+
+        if (checkExist && checkExist.length) continue;
+
         const sched = await tx.schedule.create({
           data:{
             ...item,
@@ -370,6 +422,123 @@ export class ClassService {
     return classDetails;
   }
 
+  async requestForClass(class_id: string, student_lst: string[]){
+    return this.prisma.$transaction(async (tx) => {
+      const result = []
+      for (const student_uid of student_lst){
+        const checkExist = await tx.student.findUnique({where: {uid: student_uid}})
+
+        if (!checkExist) continue;
+
+        await tx.learning.create({
+          data: {
+            class: { connect: { class_id } },
+            student: { connect: { uid: student_uid } },
+          }
+        })
+
+        result.push(checkExist)
+      }
+
+      return result
+    })
+  }
+
+  async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string){
+    return this.prisma.$transaction(async(tx) => {
+      const checkPosess = tx.class.findFirst({
+        where: {tutor: {uid: tutor_id}, class_id}
+      })
+
+      if (!checkPosess) throw new ForbiddenException("Tutor doesn't have permission to access class!")
+
+      await tx.learning.update({
+        where: {class_id_student_uid: {class_id, student_uid: student_id}},
+        data: {
+          status: EnrollStatus.accepted
+        }
+      })
+
+      return { message: "Enrollment Accepted" }
+    })
+  }
+
+  async acceptAllEnrollReq(tutor_id: string, class_id: string){
+    return this.prisma.$transaction(async(tx) => {
+      const checkPosess = tx.class.findFirst({
+        where: {tutor: {uid: tutor_id}, class_id}
+      })
+
+      if (!checkPosess) throw new ForbiddenException("Tutor doesn't have permission to access class!")
+
+      await tx.learning.updateMany({
+        where: {class: {class_id}, status: EnrollStatus.pending},
+        data: {
+          status: EnrollStatus.accepted
+        }
+      })
+
+      return { message: "Enrollment Accepted" }
+    })
+  }
+
+  async rejectEnrollRequest(tutor_id: string, class_id: string, student_id: string){
+    return this.prisma.$transaction(async(tx) => {
+      const checkPosess = tx.class.findFirst({
+        where: {tutor: {uid: tutor_id}, class_id}
+      })
+
+      if (!checkPosess) throw new ForbiddenException("Tutor doesn't have permission to access class!")
+
+      await tx.learning.update({
+        where: {class_id_student_uid: {class_id, student_uid: student_id}},
+        data: {
+          status: EnrollStatus.cancelled
+        }
+      })
+
+      return { message: "Enrollment Cancelled" }
+    })
+  }
+
+  async cancelEnrollRequest(parent_id: string, class_id: string, student_id: string){
+    return this.prisma.$transaction(async(tx) => {
+      const checkPosess = tx.is_family.findFirst({
+        where: {parents: {uid: parent_id}, student: {uid: student_id}}
+      })
+
+      if (!checkPosess) throw new ForbiddenException("Parents don't have permission to reject!")
+
+      await tx.learning.update({
+        where: {class_id_student_uid: {class_id, student_uid: student_id}},
+        data: {
+          status: EnrollStatus.cancelled
+        }
+      })
+
+      return { message: "Enrollment Cancelled" }
+    })
+  }
+
+  async completeClass(tutor_id: string, class_id: string, student_id: string){
+    return this.prisma.$transaction(async(tx) => {
+      const checkPosess = tx.class.findFirst({
+        where: {tutor: {uid: tutor_id}, class_id}
+      })
+
+      if (!checkPosess) throw new ForbiddenException("Tutor doesn't have permission to access class!")
+
+      await tx.learning.update({
+        where: {class_id_student_uid: {class_id, student_uid: student_id}},
+        data: {
+          status: EnrollStatus.completed
+        }
+      })
+
+      return { message: "Class Completed" }
+    })
+  }
+
   async enrollClass(class_id: string, email: string) {
     return this.prisma.$transaction(async (tx) => {
 
@@ -441,12 +610,58 @@ export class ClassService {
     }
   }
 
+  async copycatResources(tx: Prisma.TransactionClient, current_folder: string, prev_copy: string){
+
+  }
+
+  async duplicateResource(tx: Prisma.TransactionClient, class_id: string) {
+    const rootFolderLayer = await tx.folder_of_class.findMany({
+      where: {class: {class_id}},
+      select: {
+        class_id: true,
+        category_id: true,
+        folder: {
+          select: {
+            folder_id: true,
+            folder_name: true,
+            tutor_id: true
+          }
+        }
+      }
+    })
+
+    for (const fold of rootFolderLayer) {
+      const copyFolder = await tx.folders.create({
+        data: {
+          folder_name: fold.folder.folder_name,
+          createdAt: new Date(),
+          updateAt: new Date(),
+          tutor: {connect: {uid: fold.folder.tutor_id}}
+        }
+      })
+
+      const resources = await tx.resources_in_folder.findMany({
+        where: {folder: {folder_id: fold.folder.folder_id}},
+        select: {resource_id: true}
+      })
+
+      await tx.folder_of_class.create({
+        data: {
+          class: {connect: {class_id}},
+          category: {connect: {category_id: fold.category_id}},
+          folder: {connect: {folder_id: copyFolder.folder_id}}
+        }
+      })
+
+    }
+  }
+
   async duplicateClass(tutor_id: string, data: Partial<ClassDto>, d_class_id: string, dupLst: DuplicatingObject[] = []){
     try {
       return this.prisma.$transaction(async(tx) => {
         const classCopy = await tx.class.findUnique({
           where: {class_id: d_class_id},
-          include: {schedule: true, resources: true, plan: true}
+          include: {schedule: true, folders: true, plan: true}
         })
 
         const newClassData: ClassDto = {
