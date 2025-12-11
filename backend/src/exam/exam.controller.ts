@@ -1,4 +1,9 @@
-import { Controller, Get, Post, Patch, Param, Query, Req, Body, Search } from "@nestjs/common";
+import { 
+    Controller, Get, Post, Patch, 
+    Param, Query, Req, Body, Search, 
+    Request,
+    InternalServerErrorException
+} from "@nestjs/common";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { ExamService } from "./exam.service";
 import { ExamDto, ExamSessionDto, ExamTakenDto, SubmitAnswerDto } from "./dto/exam.dto";
@@ -100,5 +105,29 @@ export class ExamSessionController {
         @Body() data: Partial<ExamSessionDto>
     ){  
         return this.examService.updateSession(exam_id, session_id, data)
+    }
+
+    @Get('tutor')
+    getAllSessionByTutor(
+        @Request() req
+    ){
+        try {
+            const tutor_id = req.user.userId
+            const sessions = this.examService.getAllExamSessionByTutor(tutor_id)
+            return sessions
+        } catch (error) {
+            throw new InternalServerErrorException(error.message)
+        }
+    }
+
+    @Get('class/:class_id')
+    getAllSessionByClass(
+        @Param('class_id') class_id: string
+    ){
+        try {
+            return this.examService.getAllExamSessionByClass(class_id)
+        } catch (error) {
+            throw new InternalServerErrorException(error.message)
+        }
     }
 }
