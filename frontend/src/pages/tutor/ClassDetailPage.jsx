@@ -49,7 +49,6 @@ import ScheduleTab from './ScheduleTab';
 import ResourceTab from './ResourceTab';
 import AssignmentTab from './AssignmentTab';
 
-// --- STYLED COMPONENTS ---
 
 const PageContainer = styled(Container)(({ theme }) => ({
     paddingTop: theme.spacing(3),
@@ -77,7 +76,7 @@ const StatBox = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'light' ? '#f8f9fa' : alpha(theme.palette.common.white, 0.05),
     border: `1px solid ${theme.palette.divider}`,
     minWidth: 160,
-    flex: '1 1 auto' // Giúp các box co giãn đều nhau
+    flex: '1 1 auto'
 }));
 
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -134,7 +133,6 @@ const StatusChip = memo(({ status }) => {
     );
 });
 
-// --- MAIN COMPONENT ---
 function ClassDetailPage() {
     const { classId } = useParams();
     const [token] = useState(() => localStorage.getItem('token'));
