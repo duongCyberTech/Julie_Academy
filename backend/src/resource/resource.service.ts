@@ -34,20 +34,41 @@ export class FolderService {
         })
     }
 
-    async traverseFolderTree(class_id:string, parent_id: string | null = null){
+    async traverseFolderTree(class_id: string, parent_id: string | null = null) {
         const fatherLayer = await this.prisma.folders.findMany({
             where: {
-                class: {some: {class_id}},
+                class: { some: { class_id } },
                 parent_id: parent_id
+            },
+            include: {
+                class: {
+                    where: { class_id },
+                    select: { category_id: true }
+                },
+                resources: {
+                    include: {
+                        resource: true
+                    }
+                }
             }
         })
+
         if (!fatherLayer || fatherLayer.length === 0) return []
 
         let result = []
-        
-        for (const item of fatherLayer) { 
+        for (const item of fatherLayer) {
             const children = await this.traverseFolderTree(class_id, item.folder_id)
-            result.push({...item, children})
+            const fileList = item.resources.map(r => ({
+                ...r.resource,
+                category_id: item.class[0]?.category_id 
+            }))
+
+            result.push({
+                ...item,
+                category_id: item.class[0]?.category_id, 
+                children,   
+                resources: fileList 
+            })
         }
 
         return result

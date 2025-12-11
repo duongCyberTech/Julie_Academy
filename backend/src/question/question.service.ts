@@ -15,7 +15,18 @@ import { DifficultyLevel, QuestionStatus, QuestionType, Prisma, QuestionAccess }
 @Injectable()
 export class LessonPlanService {
     constructor(private prisma: PrismaService) {}
-
+    async getPlanDetail(plan_id: string) {
+        return this.prisma.lesson_Plan.findUnique({
+            where: { plan_id },
+            select: {
+                plan_id: true,
+                title: true,
+                subject: true,
+                grade: true,
+                description: true,
+            }
+        });
+    }
     async createLessonPlan(data: LessonPlanDto[], tutor_id?: string) {
         const createdLessonPlan = [];
         for (const plan of data) {
