@@ -2,12 +2,15 @@ import {
     Controller, Get, Post, Patch, 
     Param, Query, Req, Body, Search, 
     Request,
-    InternalServerErrorException
+    InternalServerErrorException,
+    UseGuards
 } from "@nestjs/common";
 import { Request as Reqst } from "express";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { ExamService } from "./exam.service";
 import { ExamDto, ExamSessionDto, ExamTakenDto, SubmitAnswerDto } from "./dto/exam.dto";
+import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
+import { RolesGuard } from "src/auth/guard/roles.guard";
 
 @Controller('exam')
 export class ExamController {
@@ -86,7 +89,9 @@ export class ExamController {
     }
 }
 
+
 @Controller('exam/session')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ExamSessionController {
     constructor(private readonly examService: ExamService){}
 
@@ -108,11 +113,12 @@ export class ExamSessionController {
         return this.examService.updateSession(exam_id, session_id, data)
     }
 
-    @Get('tutor/:tutor_id')
+    @Get('tutor')
     getAllSessionByTutor(
-        @Param('tutor_id') tutor_id: string
+        @Request() req
     ){
         try {
+            const tutor_id = req.user.userId
             const sessions = this.examService.getAllExamSessionByTutor(tutor_id)
             return sessions
         } catch (error) {
