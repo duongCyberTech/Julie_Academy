@@ -13,6 +13,7 @@ import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guard/roles.guard";
 
 @Controller('exam')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ExamController {
     constructor(
         private readonly examService: ExamService
