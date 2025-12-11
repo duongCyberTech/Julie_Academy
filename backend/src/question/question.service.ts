@@ -90,7 +90,17 @@ export class LessonPlanService {
                     return await tx.lesson_Plan.delete({ where: { plan_id } });
                 });
             }
-            return await this.prisma.lesson_Plan.delete({ where: { plan_id } });
+
+            return this.prisma.$transaction(async(tx) => {
+                await tx.class.updateMany({
+                    where: {plan: {plan_id}},
+                    data: {
+                        plan_id: null
+                    }
+                })
+
+                return await this.prisma.lesson_Plan.delete({ where: { plan_id } });
+            })
         } catch (error) {
             return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
         }
