@@ -14,6 +14,7 @@ import { UpdateQuestionDto } from './dto/update-question.dto';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
+import { ExceptionResponse } from 'src/exception/Exception.exception';
 
 @Controller('books')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,11 +33,15 @@ export class BookController {
         @Body() book: LessonPlanDto[],
         @Param('tutor_id') tutor_id: string 
     ) {
-        return this.bookService.createLessonPlan(book, tutor_id);
+        try {
+            return this.bookService.createLessonPlan(book, tutor_id);
+        } catch (error) {
+            return new ExceptionResponse().returnError(error)
+        }
+        
     }
 
     @Get()
-    @Roles('admin')
     getAllLessonPlan(){
         return this.bookService.getAllPlans();
     }
