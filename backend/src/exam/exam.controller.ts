@@ -114,12 +114,11 @@ export class ExamSessionController {
         return this.examService.updateSession(exam_id, session_id, data)
     }
 
-    @Get('tutor')
+    @Get('tutor/:tutor_id')
     getAllSessionByTutor(
-        @Request() req
+        @Param('tutor_id') tutor_id: string
     ){
         try {
-            const tutor_id = req.user.userId
             const sessions = this.examService.getAllExamSessionByTutor(tutor_id)
             return sessions
         } catch (error) {
