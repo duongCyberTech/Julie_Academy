@@ -2,13 +2,18 @@ import {
     Controller, Get, Post, Patch, 
     Param, Query, Req, Body, Search, 
     Request,
-    InternalServerErrorException
+    InternalServerErrorException,
+    UseGuards
 } from "@nestjs/common";
+import { Request as Reqst } from "express";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { ExamService } from "./exam.service";
 import { ExamDto, ExamSessionDto, ExamTakenDto, SubmitAnswerDto } from "./dto/exam.dto";
+import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
+import { RolesGuard } from "src/auth/guard/roles.guard";
 
 @Controller('exam')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ExamController {
     constructor(
         private readonly examService: ExamService
@@ -85,7 +90,9 @@ export class ExamController {
     }
 }
 
+
 @Controller('exam/session')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ExamSessionController {
     constructor(private readonly examService: ExamService){}
 
