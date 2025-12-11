@@ -40,6 +40,7 @@ import StudentPracticeReviewPage from "../pages/student/StudentPracticeReviewPag
 import StudentAssignmentPage from "../pages/student/StudentAssignmentPage";
 import StudentAssignmentSessionPage from "../pages/student/StudentAssignmentSessionPage";
 import StudentAssignmentResultPage from "../pages/student/StudentAssignmentResultPage";
+import StudentEnrollPage from "../pages/student/StudentEnrollPage.jsx";
 
 //Profile
 import TutorProfilePage from "../pages/tutor/TutorProfilePage.jsx";
@@ -87,6 +88,7 @@ function AppRoutes(props) {
         <Route path="/student" element={<Layout />}>
           {/* Dashboard */}
           <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="enroll" element={<StudentEnrollPage />} />
 
           {/* Hồ sơ cá nhân */}
           <Route path="profile" element={<StudentProfilePage />} />
@@ -134,6 +136,7 @@ function AppRoutes(props) {
         <Route path="/parent" element={<Layout />}>
           <Route path="dashboard" element={<ParentDashboard />} />
           <Route path="enroll" element={<ParentEnrollPage />} />
+          <Route path="profile" element={<ParentProfilePage />} />
         </Route>
       </Route>
 

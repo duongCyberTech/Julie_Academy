@@ -63,6 +63,7 @@ const studentMenuItems = [
   { label: "Lớp học của tôi", to: "/student/classes", Icon: GroupOutlined },
   { label: "Luyện tập", to: "/student/practice", Icon: LibraryIcon },
   { label: "Bài tập", to: "/student/assignment", Icon: HomeworkOutlined },
+  { label: "Đăng ký lớp học", to: "/student/enroll", Icon: AccountBoxIcon },
 ];
 
 // Cấu hình cho Parent

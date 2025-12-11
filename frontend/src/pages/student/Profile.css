@@ -308,3 +308,27 @@
     height: 100px;
   }
 }
+
+/* Thêm vào cuối file src/pages/student/Profile.css */
+
+textarea:focus {
+  border-color: #059669 !important; /* Màu xanh lá của Tutor */
+  background-color: white !important;
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1) !important;
+}
+
+/* Custom scrollbar cho textarea nếu nội dung quá dài */
+textarea::-webkit-scrollbar {
+  width: 8px;
+}
+textarea::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+  border-radius: 4px;
+}
+textarea::-webkit-scrollbar-thumb {
+  background: #cbd5e1; 
+  border-radius: 4px;
+}
+textarea::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; 
+}

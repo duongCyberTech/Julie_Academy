@@ -300,7 +300,12 @@ export class ClassService {
     const _limit: number = Number(limit) && Number(limit) > 0 ? Number(limit) : 10;
     const skip:number = (_page - 1) * _limit;
     const where: any = {};
-    if (status) where.status = status as ClassStatus;
+    // 1. Logic lọc Status (Cập nhật: Mặc định lấy Pending + Ongoing)
+    if (status) {
+      where.status = status as ClassStatus;
+    } else {
+      where.status = { in: ['pending', 'ongoing'] };
+    }
     if (startAt && endAt) {
         where.startAt = { gte: startAt, lte: endAt };
     } else if (startAt) {
@@ -332,16 +337,35 @@ export class ClassService {
         duration_time: true,
         startat: true,
         createdAt: true,
+        schedule: true,
+      
         tutor:{
-          select:{ user:{
+          select:{ 
+            experiences: true,
+            phone_number: true,
+            user:{
             select:{
               uid: true,
               fname: true,
               mname: true,
               lname: true,
               username: true,
+              avata_url: true,          
             }
           }
+          }
+        },
+
+        learning: {
+          select: {
+            status: true,
+            student: {
+              select: {
+                user: {
+                  select: { uid: true } // Lấy UID để so sánh ở Frontend
+                }
+              }
+            }
           }
         }
       },
@@ -396,8 +420,11 @@ export class ClassService {
         createdAt: true,  
         startat: true,   
         plan_id: true,
+        schedule: true,
         tutor: { 
           select: {
+            experiences: true,
+            phone_number: true,
             user: {
               select: {
                 uid: true,
@@ -405,6 +432,7 @@ export class ClassService {
                 mname: true,
                 lname: true,
                 username: true,
+                avata_url: true
               }
             }
           }
@@ -600,6 +628,49 @@ async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string
         return {message: 'Enrollment successful'}
     });
   }
+
+  // --- THÊM HÀM NÀY VÀO ClassService ---
+  async getMyClasses(student_uid: string) {
+    // 1. Tìm trong bảng Learning các record của student này có status là accepted/completed
+    const enrollments = await this.prisma.learning.findMany({
+      where: {
+        student_uid: student_uid,
+        status: { in: ['accepted', 'completed'] } // Chỉ lấy lớp đã tham gia thành công
+      },
+      orderBy: { class: { createdAt: 'desc' } }, // Lớp mới nhất lên đầu
+      select: {
+        // Chỉ select các thông tin cần hiển thị lên Card
+        class: {
+          select: {
+            class_id: true,
+            classname: true,
+            description: true,
+            subject: true,
+            grade: true,
+            startat: true,
+            schedule: true, 
+            nb_of_student: true,// Lấy lịch học để hiện giờ
+            tutor: {
+              select: {
+                user: {
+                  select: {
+                    fname: true,
+                    lname: true,
+                    mname: true,
+                    nb_of_student: true,
+                    avata_url: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+
+    return enrollments.map(item => item.class);
+  } 
 
   async updateClass(class_id: string, data: Partial<ClassDto>) {
     return this.prisma.$transaction(async (tx) => {

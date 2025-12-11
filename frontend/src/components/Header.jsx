@@ -108,8 +108,10 @@ const Header = React.memo(function Header({
 
   // --- [THAY ĐỔI 3]: Tạo menu items động dựa trên role ---
   const userMenuItems = useMemo(() => {
-    const role = userInfo?.role ? userInfo.role.toLowerCase() : "";
-    
+    let role = userInfo?.role ? userInfo.role.toLowerCase() : "";
+    if (role === "parents") {
+        role = "parent";
+    }
     return [
       {
         text: "Hồ sơ",

@@ -49,6 +49,18 @@ export class ClassController {
     return this.classService.getAllClasses(page, limit, search, status, startAt, endAt);
   }
 
+  @Get('my-classes')
+  @Roles('student')
+  async getMyClasses(@Request() req) {
+    try {
+      // req.user.userId là ID lấy từ token đăng nhập
+      const student_uid = req.user.userId; 
+      return this.classService.getMyClasses(student_uid);
+    } catch (error) {
+      return new ExceptionResponse().returnError(error);
+    }
+  }
+
   @Get('get/tutor/:id')
   @Roles('tutor')
   async getClassesByTutor(@Param('id') id: string) {
@@ -213,4 +225,6 @@ export class ScheduleController {
   ){
     return this.schedule.getScheduleByClass(class_id)
   }
+
+  
 }

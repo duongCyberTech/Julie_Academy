@@ -29,7 +29,7 @@ import { ResourceModule } from './resource/resource.module';
         // TTL: Time To Live (Thời gian) - 60 giây (1 phút)
         ttl: 60000, 
         // Limit: Số lượng request tối đa trong khoảng thời gian TTL
-        limit: 10,  
+        limit: 100,  
       },
     ]),
     ScheduleModule.forRoot(),
