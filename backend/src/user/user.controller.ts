@@ -11,7 +11,8 @@ import {
   BadRequestException,
   UseInterceptors, // Thêm
   UploadedFile,    // Thêm
-  Req,             // Thêm
+  Request,       //Thêm
+  Req            // Thêm
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express'; // Thêm để xử lý file
@@ -45,7 +46,17 @@ export class UserController {
     const limitNum = Number(limit) || 10;
     return this.userService.findAll(role, status, pageNum, limitNum, filter);
   }
+  @Get('parents/children')
+  @Roles('parents')
+  async getMyChildren(@Request() req) {
+    const parentId = req.user.userId;
 
+    if (!parentId) {
+      throw new BadRequestException('Invalid user session');
+    }
+
+    return this.userService.getChildrenByParent(parentId);
+  }
   /**
    * GET /users/e
    * Lấy user theo email
@@ -68,9 +79,9 @@ export class UserController {
    */
   @Get(':id')
   async getUserById(@Param('id') id: string) {
-    console.log(`Find data of user ${id}`)
+    console.log(`Find data of user ${id}`);
     const user = await this.userService.findById(id);
-    console.log(`Find user ${id}: `, user)
+    console.log(`Find user ${id}: `, user);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }

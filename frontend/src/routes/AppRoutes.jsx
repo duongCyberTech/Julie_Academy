@@ -12,7 +12,7 @@ import TutorDashboard from "../pages/tutor/TutorDashboard";
 import QuestionPage from "../pages/tutor/QuestionPage";
 import ClassPage from "../pages/tutor/ClassPage";
 import { Typography } from "@mui/material";
-import NewQuestion from "../pages/tutor/NewQuestion";
+import QuestionEditorPage from "../pages/tutor/QuestionEditor.jsx";
 import UserManagement from "../pages/admin/UserManagement";
 import AboutPage from "../pages/public/AboutPage";
 import ContactPage from "../pages/public/ContactPage";
@@ -22,6 +22,10 @@ import ExamPage from "../pages/tutor/ExamPage";
 import ExamDetailPage from "../pages/tutor/ExamDetailPage";
 import AssignmentPage from "../pages/tutor/AssignmentPage";
 import SystemSetting from "../pages/admin/SystemSetting.jsx";
+import QuestionDetailPage from "../pages/tutor/QuestionDetailPage.jsx";
+import ParentDashboard from "../pages/parent/ParentDashboard.jsx";
+import ParentEnrollPage from "../pages/parent/ParentEnrollPage.jsx";
+import NewQuestion from "../pages/tutor/NewQuestion.jsx";
 
 //Student
 import StudentDashboard from "../pages/student/StudentDashboard";
@@ -122,6 +126,14 @@ function AppRoutes(props) {
             path="assignment/session/:sessionId/result"
             element={<StudentAssignmentResultPage />}
           />
+        </Route>
+      </Route>
+
+      {/* Nhóm các route cho Parent */}
+      <Route element={<ProtectedRoute allowedRoles={["parents"]} />}>
+        <Route path="/parent" element={<Layout />}>
+          <Route path="dashboard" element={<ParentDashboard />} />
+          <Route path="enroll" element={<ParentEnrollPage />} />
         </Route>
       </Route>
 

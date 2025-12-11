@@ -16,7 +16,6 @@ import { ExceptionResponse } from 'src/exception/Exception.exception'
 
 @Controller('resources')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class ResourceController {
     constructor(
         private readonly resource: ResourceService

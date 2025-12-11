@@ -114,27 +114,50 @@ export class QuestionController {
     @Get('get')
     getAllQuestions(@Query() query: any) {
         return this.questionService.getAllQuestion(
-            query?.page, query?.limit, query?.search,
-            query?.level, query?.type, query?.status, 
-            query?.category_id, query?.plan_id
+            query?.page, 
+            query?.limit, 
+            query?.search,
+            query?.level, 
+            query?.type, 
+            query?.status, 
+            query?.category_id, 
+            query?.plan_id,
+            query?.sortBy,      
+            query?.sortDirection  
         );
     }
 
     @Get('get/category/:category_id')
     getQuestionsByCategory(@Param('category_id') category_id: string, @Query() query: any) {
         return this.questionService.getQuestionsByCategory(
-            category_id, query?.page, query?.limit, query?.search,
-            query?.level, query?.type 
+            category_id, 
+            query?.page, 
+            query?.limit, 
+            query?.search,
+            query?.level, 
+            query?.type,
+            query?.sortBy,         
+            query?.sortDirection   
         );
     }
 
     @Get('get/my/:tutor_id')
     getMyQuestions(@Param('tutor_id') tutor_id: string, @Query() query: any) {
         return this.questionService.getMyQuestions(
-            tutor_id, query?.page, query?.limit, query?.search,
-            query?.level, query?.type, query?.status, query?.category_id
+            tutor_id, 
+            query?.page, 
+            query?.limit, 
+            query?.search,
+            query?.level, 
+            query?.type, 
+            query?.status, 
+            query?.category_id,
+            query?.plan_id,      
+            query?.sortBy,        
+            query?.sortDirection  
         );
     }
+
     @Get('get/detail/:ques_id')
     getQuestionDetail(@Param('ques_id') ques_id: string) {
         return this.questionService.getQuestionById(ques_id);
@@ -148,7 +171,7 @@ export class QuestionController {
     @Patch('update/answer/:ques_id/:aid')
     updateAnswer(
         @Param('ques_id') ques_id: string,
-        @Param('aid', ParseIntPipe) aid: number, // Dùng ParseIntPipe
+        @Param('aid', ParseIntPipe) aid: number, 
         @Body() dto: Partial<AnswerDto>
     ) {
         return this.questionService.updateAnswer(aid, ques_id, dto);

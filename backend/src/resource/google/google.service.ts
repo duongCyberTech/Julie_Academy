@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { google } from "googleapis";
 import * as path from 'path'
 import { Buffer } from 'buffer';
@@ -6,6 +6,7 @@ import { Readable } from 'stream';
 require('dotenv').config()
 
 import { FileResult } from "../dto/google.dto";
+import { PrismaService } from "src/prisma/prisma.service";
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -25,7 +26,9 @@ const FOLDER_ID = process.env.STORAGE;
 export class GoogleDriveService {
     private drive: any;
     private oAuth2Client: any;
-    constructor(){
+    constructor(
+        private readonly prisma: PrismaService
+    ){
         this.authorize()
     }
 
@@ -79,4 +82,49 @@ export class GoogleDriveService {
         throw new InternalServerErrorException('File upload failed.');
     }
   }
+
+// google-drive.service.ts
+async getFileMetadata(fileId: string) {
+    try {
+      const response = await this.drive.files.get({
+        fileId: fileId,
+        fields: 'size, id, name' // Chỉ lấy các trường cần thiết
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Get Metadata Error:", error.message);
+      throw new BadRequestException("Cannot get file metadata");
+    }
+  }
+
+async downloadFile(fileId: string, bytesRange: string) {
+    try {
+        // 1. Params cho Google Drive API
+        const driveParams = {
+            fileId: fileId,
+            alt: 'media',
+        };
+
+        // 2. Options cho Request (Axios)
+        // BẮT BUỘC: responseType: 'stream' phải nằm ở đây
+        const requestOptions: any = {
+            responseType: 'stream',
+            headers: {}
+        };
+
+        if (bytesRange) {
+            requestOptions.headers['Range'] = bytesRange;
+        }
+
+        console.log(`Downloading ${fileId} [${bytesRange}]`);
+
+        // GỌI HÀM VỚI 2 THAM SỐ RIÊNG BIỆT
+        const response = await this.drive.files.get(driveParams, requestOptions);
+
+        return response;
+    } catch (error) {
+        console.error("Google Drive Download Error:", error.message);
+        throw new BadRequestException("File Download Fail!");
+    }
+}
 }

@@ -28,3 +28,11 @@ export class ScheduleDto {
     endAt: string;
     link_meet: string;
 }
+
+export class ResourceCopyDto {
+    class_id: string;
+    category_id: string;
+    folder_id: string;
+    folder_name: string;
+    tutor_id: string;
+}

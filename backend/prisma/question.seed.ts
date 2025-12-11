@@ -7,48 +7,90 @@ import {
 } from '@prisma/client';
 
 const prisma = new PrismaClient();
-function parseContentToTitle(content, maxLength = 50) {
-    // 1. Kiểm tra đầu vào
-    if (!content || typeof content !== 'string') {
-        return '';
-    }
+function parseContentToTitle(content: string, maxLength = 100) {
+  if (!content || typeof content !== 'string') {
+    return '';
+  }
 
-    // 2. Làm sạch cơ bản (loại bỏ khoảng trắng thừa ở đầu/cuối)
-    let cleanedContent = content.trim();
+  let text = content.replace(/<[^>]*>?/gm, '');
 
-    // Kiểm tra lại sau khi làm sạch
-    if (cleanedContent.length === 0) {
-        return '';
-    }
+  text = text
+    .replace(/\\begin\{cases\}/g, 'Hệ: ') 
+    .replace(/\\end\{cases\}/g, '')
+    
+    .replace(/\\begin\{[^}]+\}/g, '') 
+    .replace(/\\end\{[^}]+\}/g, '')
 
-    // Nếu nội dung đã ngắn hơn hoặc bằng độ dài tối đa, trả về nó
-    if (cleanedContent.length <= maxLength) {
-        return cleanedContent;
-    }
+    .replace(/\\\\/g, '; ') 
 
-    // 3. Trích xuất một phần chuỗi
-    let shortenedTitle = cleanedContent.substring(0, maxLength);
+    .replace(/\\left/g, '')
+    .replace(/\\right/g, '');
 
-    // 4. Cắt ở từ cuối cùng để tránh cắt ngang từ
-    // Tìm vị trí của khoảng trắng cuối cùng trong chuỗi đã cắt
-    let lastSpace = shortenedTitle.lastIndexOf(' ');
+  text = text
+    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2')
+    .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
+    .replace(/\\sqrt\[([^\]]+)\]\{([^}]+)\}/g, '$1√$2')
+    .replace(/\\widehat\{([^}]+)\}/g, 'góc $1')
+    .replace(/\\overparen\{([^}]+)\}/g, 'cung $1')
+    .replace(/\\text\{([^}]+)\}/g, '$1');
 
-    if (lastSpace > 0) {
-        // Cắt bỏ phần từ bị cắt ngang
-        shortenedTitle = shortenedTitle.substring(0, lastSpace);
-    }
+  const latexMap: { [key: string]: string } = {
+    '\\le': '≤', '\\ge': '≥', '\\ne': '≠',
+    '\\approx': '≈', '\\pm': '±', '\\mp': '∓',
+    '\\times': '×', '\\cdot': '·', '\\div': '÷',
+    '\\in': '∈', '\\notin': '∉', '\\subset': '⊂',
+    '\\perp': '⊥', '\\parallel': '//', '\\infty': '∞',
+    '\\circ': '°', '^\\circ': '°', 
+    '\\Rightarrow': '=>', '\\Leftrightarrow': '<=>',
 
-    // 5. Thêm dấu ba chấm
-    return shortenedTitle.trim() + '...';
+    '\\alpha': 'α', '\\beta': 'β', '\\gamma': 'γ',
+    '\\delta': 'δ', '\\pi': 'π', '\\theta': 'θ',
+    '\\lambda': 'λ', '\\mu': 'μ', '\\rho': 'ρ',
+    '\\sigma': 'σ', '\\omega': 'ω',
+    '\\Delta': 'Δ', '\\Omega': 'Ω', '\\Sigma': 'Σ',
+    
+    '\\mathbb{R}': 'R', '\\mathbb{N}': 'N',
+    '\\mathbb{Z}': 'Z', '\\mathbb{Q}': 'Q',
+  };
+
+  for (const [key, value] of Object.entries(latexMap)) {
+    const escapedKey = key.replace(/\\/g, '\\\\').replace(/\^/g, '\\^');
+    const regex = new RegExp(escapedKey, 'g');
+    text = text.replace(regex, value);
+  }
+
+  text = text
+    .replace(/\$/g, '')          
+    .replace(/[\{\}]/g, '')      
+    .replace(/\^/g, '')       
+    .replace(/_/g, '')           
+    .replace(/\\/g, '')          
+    .replace(/\s+/g, ' ')       
+    .trim();
+
+  if (cleanedContent(text).length === 0) return 'Câu hỏi hình ảnh/công thức';
+  
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  let shortenedTitle = text.substring(0, maxLength);
+  let lastSpace = shortenedTitle.lastIndexOf(' ');
+  if (lastSpace > 0) {
+    shortenedTitle = shortenedTitle.substring(0, lastSpace);
+  }
+
+  return shortenedTitle + '...';
 }
 
+function cleanedContent(text: string) {
+    return text.replace(/\s/g, '');
+}
 function formatQuillContent(text) {
   if (!text) return null;
-  // Thay thế $...$ bằng <span class="ql-formula">...</span>
   let html = text.replace(/\$(.*?)\$/g, (match, latexCode) => {
     return `<span class="ql-formula" data-value="${latexCode.replace(/"/g, '&quot;')}">${latexCode}</span>`;
   });
-  // Bọc trong <p> nếu chưa có
   if (!html.startsWith('<p>') && !html.endsWith('</p>')) {
     html = `<p>${html}</p>`;
   }
@@ -60,7 +102,7 @@ const createAnswersData = (answers) => {
     aid: index + 1,
     content: formatQuillContent(ans.content), 
     is_correct: ans.is_correct,
-    explaination: ans.explaination ? formatQuillContent(ans.explanation) : null,
+    explaination: ans.explaination ? formatQuillContent(ans.explaination) : null,
   }));
 };
 
@@ -9704,7 +9746,7 @@ async function main() {
 
   for (const qData of questionsData) {
     const formattedContent = formatQuillContent(qData.content);
-    const formattedExplanation = formatQuillContent(qData.explaination);
+    const formattedExplaination = formatQuillContent(qData.explaination);
 
     const existingQuestion = await prisma.questions.findFirst({
       where: {
@@ -9718,7 +9760,7 @@ async function main() {
         data: {
           title: parseContentToTitle(formattedContent),
           content: formattedContent,
-          explaination: formattedExplanation,
+          explaination: formattedExplaination,
           level: qData.level,
           type: qData.type,
           category_id: qData.category_id,

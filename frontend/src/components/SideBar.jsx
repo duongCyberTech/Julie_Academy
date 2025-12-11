@@ -68,17 +68,16 @@ const studentMenuItems = [
 // Cấu hình cho Parent
 const parentMenuItems = [
   { label: "Tiến độ của con", to: "/parent/dashboard", Icon: DashboardIcon },
-  { label: "Hồ sơ của con", to: "/parent/profiles", Icon: AccountBoxIcon }, 
+  { label: "Đăng kí lớp học", to: "/parent/enroll", Icon: AccountBoxIcon }, 
 ];
 
 const menuConfigByRole = {
   tutor: tutorMenuItems,
   admin: adminMenuItems,
   student: studentMenuItems,
-  parent: parentMenuItems,
+  parents: parentMenuItems,
 };
 
-// --- STYLED COMPONENTS ---
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   flexShrink: 0,
   whiteSpace: "nowrap",
@@ -152,7 +151,6 @@ const CollapseButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
-// --- MAIN COMPONENT ---
 const Sidebar = ({ width, onToggleCollapse, isMobileOpen, onMobileClose }) => {
   const location = useLocation();
   const theme = useTheme();

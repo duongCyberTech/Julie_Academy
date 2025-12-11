@@ -1,54 +1,47 @@
-import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import katex from 'katex';
-import 'katex/dist/katex.min.css';
-
 import {
-  Box, Typography, Button, Paper, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, IconButton, Tooltip,
-  CircularProgress, Alert, TablePagination, Chip, ToggleButtonGroup,
-  ToggleButton, Grid, TextField, FormControl, InputLabel, Select,
-  MenuItem, Collapse, Stack
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Tooltip,
+  CircularProgress,
+  Alert,
+  TablePagination,
+  Chip,
+  ToggleButtonGroup,
+  ToggleButton,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Collapse,
+  Stack,
+  InputAdornment,
+  TableSortLabel,
 } from "@mui/material";
-import { styled, useTheme } from "@mui/material/styles";
-
-// Icons
+import { styled } from "@mui/material/styles";
+import { visuallyHidden } from "@mui/utils"; 
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import SearchIcon from '@mui/icons-material/Search';
+import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-
-// Services
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 import { getAllQuestions, getMyQuestions } from "../../services/QuestionService";
 import { getAllCategories, getPlansByTutor } from "../../services/CategoryService";
 
-// --- SUB-COMPONENT: LATEX PREVIEW ---
-const LatexPreview = ({ content, noWrap = false }) => {
-    const containerRef = useRef(null);
-
-    useEffect(() => {
-        if (containerRef.current && content) {
-            // Render nội dung HTML đơn giản để preview
-            containerRef.current.innerHTML = content;
-        }
-    }, [content]);
-
-    return (
-        <div 
-            ref={containerRef} 
-            style={{ 
-                whiteSpace: noWrap ? 'nowrap' : 'normal', 
-                overflow: 'hidden', 
-                textOverflow: 'ellipsis',
-                maxWidth: '100%',
-                maxHeight: '3em'
-            }} 
-        />
-    );
-};
-
-// --- STYLED COMPONENTS ---
 const PageWrapper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   backgroundColor: theme.palette.mode === "light" ? theme.palette.grey[50] : theme.palette.background.paper,
@@ -64,13 +57,13 @@ const Header = styled(Box)({
   marginBottom: "24px",
 });
 
-// --- CONSTANTS ---
 const HEAD_CELLS = [
-  { id: "title", label: "Tiêu đề", minWidth: 200 }, 
-  { id: "level", label: "Độ khó", minWidth: 100 },
-  { id: "category", label: "Chuyên đề", minWidth: 150 },
-  { id: "book", label: "Giáo án", minWidth: 150 },
-  { id: "actions", label: "Chi tiết", minWidth: 80, align: "center" },
+  { id: "title", label: "Tiêu đề câu hỏi", minWidth: 300, sortable: true }, 
+  { id: "type", label: "Loại", minWidth: 120, sortable: true },
+  { id: "level", label: "Độ khó", minWidth: 100, sortable: true },
+  { id: "category_id", label: "Chuyên đề", minWidth: 150, sortable: true }, 
+  { id: "book", label: "Giáo án", minWidth: 150, sortable: false }, 
+  { id: "actions", label: "Chi tiết", minWidth: 80, align: "center", sortable: false },
 ];
 
 const DIFFICULTY_MAP = {
@@ -79,8 +72,15 @@ const DIFFICULTY_MAP = {
   HARD: { text: "Khó", color: "error" },
 };
 
+const TYPE_MAP = {
+  single_choice: "Trắc nghiệm (1)",
+  multiple_choice: "Trắc nghiệm (N)",
+  essay: "Tự luận",
+  true_false: "Đúng/Sai",
+};
+
 const DifficultyChip = ({ difficulty }) => {
-  const mapping = DIFFICULTY_MAP[String(difficulty).toUpperCase()] || { text: difficulty || "N/A", color: "default" };
+  const mapping = DIFFICULTY_MAP[String(difficulty || "").toUpperCase()] || { text: difficulty || "N/A", color: "default" };
   return <Chip label={mapping.text} color={mapping.color} size="small" variant="outlined" />;
 };
 
@@ -93,113 +93,247 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-// --- SUB-COMPONENT: FILTERS ---
 const QuestionFilters = memo(({ filters, onFilterChange, onReset, books, categories, loadingBooks, loadingCategories }) => {
-  return (
-    <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.default' }}>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+  const categoryTreeData = useMemo(() => {
+    let flattenedCategories = [];
+    if (Array.isArray(categories)) {
+      categories.forEach(item => {
+        if (Array.isArray(item)) {
+          flattenedCategories = flattenedCategories.concat(item);
+        } else if (item && (item.id || item.category_id)) {
+          flattenedCategories.push(item);
+        }
+      });
+    }
+    
+    if (flattenedCategories.length === 0) return [];
+    
+    const parentMap = new Map();
+    flattenedCategories.forEach(item => {
+      const parentId = item.parent_id ?? item.parentId ?? item.parent_category_id;
+      const description = item.description;
+      if (parentId && !parentMap.has(parentId)) {
+        parentMap.set(parentId, description || 'Chưa có mô tả');
+      }
+    });
+    
+    const parentNodes = Array.from(parentMap.entries()).map(([parentId, description]) => ({
+      id: parentId,
+      category_id: parentId,
+      category_name: description,
+      parent_id: null,
+      isParent: true,
+    }));
+    
+    const allNodes = [...parentNodes, ...flattenedCategories];
+    
+    const buildTree = (items, parentId = null) => {
+      const filtered = items.filter(item => {
+        const itemParentId = item.parent_id ?? item.parentId ?? item.parent_category_id;
+        if (parentId === null) {
+          return itemParentId === null || itemParentId === undefined;
+        }
+        return String(itemParentId) === String(parentId);
+      });
+      
+      return filtered.map(item => {
+        const id = item.id ?? item.category_id;
+        const name = item.name ?? item.category_name ?? "Không có tên";
         
-        {/* 1. Tìm kiếm */}
-        <TextField
-          label="Tìm kiếm nội dung" variant="outlined" name="search"
-          value={filters.search} onChange={onFilterChange} size="small"
-          sx={{ minWidth: 200, flexGrow: 1 }}
-          InputProps={{ startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} /> }}
-        />
+        return {
+          id: String(id),
+          label: name,
+          children: buildTree(items, id),
+        };
+      });
+    };
+    
+    return buildTree(allNodes);
+  }, [categories]);
 
-        {/* 2. Giáo án (Plan) */}
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel>Giáo án</InputLabel>
-          <Select name="bookId" value={filters.bookId} label="Giáo án" onChange={onFilterChange}>
-            <MenuItem value=""><em>Tất cả</em></MenuItem>
-            {books.map((b) => (
-              <MenuItem key={b.plan_id} value={b.plan_id}>{`${b.title} (K${b.grade})`}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+  const handleTreeSelection = (event, selectedItems) => {
+    let selectedId = "";
+    if (Array.isArray(selectedItems)) {
+        selectedId = selectedItems.length > 0 ? selectedItems[0] : "";
+    } else {
+        selectedId = selectedItems ?? "";
+    }
+    onFilterChange({ target: { name: "categoryId", value: selectedId } });
+  };
 
-        {/* 3. Chuyên đề (Category) */}
-        <FormControl size="small" sx={{ minWidth: 200 }} disabled={!filters.bookId || loadingCategories}>
-             <InputLabel>Chuyên đề</InputLabel>
-             <Select name="categoryId" value={filters.categoryId} label="Chuyên đề" onChange={onFilterChange}>
-                <MenuItem value=""><em>Tất cả</em></MenuItem>
-                {categories.map((c) => (
-                    <MenuItem key={c.category_id} value={c.category_id}>{c.category_name}</MenuItem>
+  return (
+    <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+      <Stack direction="column" spacing={2}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center">
+          <TextField
+            label="Tìm kiếm tiêu đề..."
+            variant="outlined"
+            name="search"
+            value={filters.search}
+            onChange={onFilterChange}
+            size="small"
+            sx={{ flexGrow: 1, minWidth: 200 }}
+            InputProps={{ 
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ) 
+            }}
+          />
+          <Tooltip title="Đặt lại bộ lọc">
+            <Button variant="outlined" color="inherit" onClick={onReset} startIcon={<RestartAltIcon />}>
+              Xóa lọc
+            </Button>
+          </Tooltip>
+        </Stack>
+
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center">
+          <FormControl size="small" sx={{ minWidth: 200 }} disabled={loadingBooks}>
+            <InputLabel>Giáo án</InputLabel>
+            <Select name="bookId" value={filters.bookId} label="Giáo án" onChange={onFilterChange}>
+              <MenuItem value="">
+                <em>Tất cả giáo án</em>
+              </MenuItem>
+              {Array.isArray(books) &&
+                books.map((b) => (
+                  <MenuItem key={b.plan_id ?? b.id ?? b.planId} value={b.plan_id ?? b.id ?? b.planId}>
+                    {`${b.title} ${b.grade ? `(K${b.grade})` : ""}`}
+                  </MenuItem>
                 ))}
-             </Select>
-        </FormControl>
+            </Select>
+          </FormControl>
 
-        {/* 4. Độ khó */}
-        <FormControl size="small" sx={{ minWidth: 100 }}>
-          <InputLabel>Độ khó</InputLabel>
-          <Select name="level" value={filters.level} label="Độ khó" onChange={onFilterChange}>
-            <MenuItem value=""><em>Tất cả</em></MenuItem>
-            <MenuItem value="EASY">Dễ</MenuItem>
-            <MenuItem value="MEDIUM">TB</MenuItem>
-            <MenuItem value="HARD">Khó</MenuItem>
-          </Select>
-        </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Độ khó</InputLabel>
+            <Select name="level" value={filters.level} label="Độ khó" onChange={onFilterChange}>
+              <MenuItem value="">
+                <em>Tất cả</em>
+              </MenuItem>
+              <MenuItem value="EASY">Dễ</MenuItem>
+              <MenuItem value="MEDIUM">Trung bình</MenuItem>
+              <MenuItem value="HARD">Khó</MenuItem>
+            </Select>
+          </FormControl>
 
-        {/* 5. Loại câu hỏi */}
-        <FormControl size="small" sx={{ minWidth: 130 }}>
-          <InputLabel>Loại</InputLabel>
-          <Select name="type" value={filters.type} label="Loại" onChange={onFilterChange}>
-            <MenuItem value=""><em>Tất cả</em></MenuItem>
-            <MenuItem value="single_choice">TN (1)</MenuItem>
-            <MenuItem value="multiple_choice">TN (N)</MenuItem>
-          </Select>
-        </FormControl>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Loại câu hỏi</InputLabel>
+            <Select name="type" value={filters.type} label="Loại câu hỏi" onChange={onFilterChange}>
+              <MenuItem value="">
+                <em>Tất cả</em>
+              </MenuItem>
+              <MenuItem value="single_choice">Trắc nghiệm (1)</MenuItem>
+              <MenuItem value="multiple_choice">Trắc nghiệm (N)</MenuItem>
+              <MenuItem value="essay">Tự luận</MenuItem>
+              <MenuItem value="true_false">Đúng/Sai</MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
 
-        <Tooltip title="Đặt lại bộ lọc">
-            <IconButton onClick={onReset} size="small"><RestartAltIcon /></IconButton>
-        </Tooltip>
+        <Collapse in={!!filters.bookId}>
+          <Box mt={1} p={2} border="1px solid" borderColor="divider" borderRadius={1} bgcolor="background.paper">
+            <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{ display: "flex", alignItems: "center" }}>
+              <FilterListIcon fontSize="small" sx={{ mr: 1 }} /> Chọn Chuyên đề:
+            </Typography>
+
+            {loadingCategories ? (
+              <Box display="flex" justifyContent="center" p={2}>
+                <CircularProgress size={20} />
+              </Box>
+            ) : categoryTreeData.length > 0 ? (
+              <Box sx={{ maxHeight: 300, overflowY: "auto", mt: 1 }}>
+                <RichTreeView
+                  items={categoryTreeData}
+                  slots={{ 
+                    collapseIcon: ExpandMoreIcon, 
+                    expandIcon: ChevronRightIcon 
+                  }}
+                  onSelectedItemsChange={handleTreeSelection}
+                  selectedItems={filters.categoryId ? [String(filters.categoryId)] : []}
+                  sx={{
+                    '& .MuiTreeItem-content': {
+                      py: 0.5,
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      },
+                      '&.Mui-selected': {
+                        backgroundColor: 'primary.light',
+                        '&:hover': {
+                          backgroundColor: 'primary.light',
+                        },
+                      },
+                    },
+                  }}
+                />
+              </Box>
+            ) : (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                Giáo án này chưa có mục lục chuyên đề.
+              </Typography>
+            )}
+          </Box>
+        </Collapse>
       </Stack>
     </Paper>
   );
 });
 
-// --- MAIN COMPONENT ---
 export default function QuestionPage() {
   const navigate = useNavigate();
   const [token] = useState(() => localStorage.getItem("token"));
-  
-  // Data
+
   const [questions, setQuestions] = useState([]);
   const [totalQuestions, setTotalQuestions] = useState(0);
+
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
-  
-  // UI
+
   const [loading, setLoading] = useState(true);
+  const [loadingBooks, setLoadingBooks] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [error, setError] = useState(null);
-  
-  // Control
+
   const [viewMode, setViewMode] = useState("my_questions");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [filters, setFilters] = useState({ search: "", level: "", type: "", bookId: "", categoryId: "" });
-  
+
+  const [order, setOrder] = useState('desc'); 
+  const [orderBy, setOrderBy] = useState('created_at'); 
+
+  const [filters, setFilters] = useState({
+    search: "",
+    level: "",
+    type: "",
+    bookId: "",
+    categoryId: "",
+  });
   const debouncedSearch = useDebounce(filters.search, 500);
 
   const userInfo = useMemo(() => {
-    try { return token ? jwtDecode(token) : null; } 
-    catch (e) { return null; }
+    try {
+      return token ? jwtDecode(token) : null;
+    } catch {
+      return null;
+    }
   }, [token]);
 
-  // 1. Load Books (Giáo án)
   useEffect(() => {
     const fetchBooks = async () => {
       if (!token || !userInfo?.sub) return;
+      setLoadingBooks(true);
       try {
-        const res = await getPlansByTutor(userInfo.sub, token); 
-        setBooks(Array.isArray(res) ? res : []);
-      } catch (err) { console.error(err); } 
+        const res = await getPlansByTutor(userInfo.sub, token);
+        const booksData = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+        setBooks(booksData);
+      } catch (err) {
+        setBooks([]);
+      } finally {
+        setLoadingBooks(false);
+      }
     };
     fetchBooks();
   }, [token, userInfo]);
 
-  // 2. Load Categories khi chọn Book
   useEffect(() => {
     const fetchCategories = async () => {
       if (!filters.bookId || !token) {
@@ -208,19 +342,28 @@ export default function QuestionPage() {
       }
       setLoadingCategories(true);
       try {
-        // Mode 'flat' để lấy danh sách phẳng đưa vào Select
-        const catData = await getAllCategories({ plan_id: filters.bookId, mode: "flat" }, token);
-        setCategories(Array.isArray(catData?.data) ? catData.data : []);
-      } catch (err) { console.error(err); } 
-      finally { setLoadingCategories(false); }
+        const catData = await getAllCategories({ plan_id: filters.bookId, mode: "tree" }, token);
+        let nodes = [];
+        if (Array.isArray(catData)) {
+          nodes = catData;
+        } else if (catData?.data) {
+          nodes = Array.isArray(catData.data) ? catData.data : [catData.data];
+        } else if (catData?.categories) {
+          nodes = Array.isArray(catData.categories) ? catData.categories : [catData.categories];
+        }
+        setCategories(nodes);
+      } catch (err) {
+        setCategories([]);
+      } finally {
+        setLoadingCategories(false);
+      }
     };
     fetchCategories();
   }, [filters.bookId, token]);
 
-  // 3. Fetch Questions
   const fetchQuestions = useCallback(async () => {
     if (!token) return;
-    if (viewMode === 'my_questions' && !userInfo?.sub) return;
+    if (viewMode === "my_questions" && !userInfo?.sub) return;
 
     setLoading(true);
     setError(null);
@@ -231,89 +374,112 @@ export default function QuestionPage() {
         level: filters.level || undefined,
         type: filters.type || undefined,
         category_id: filters.categoryId || undefined,
-        plan_id: filters.plan_id || undefined, 
+        plan_id: filters.bookId || undefined,
         search: debouncedSearch || undefined,
+        sortBy: orderBy, 
+        sortDirection: order, 
       };
-      
+
       let response;
       if (viewMode === "public") {
         response = await getAllQuestions(params, token);
       } else {
         response = await getMyQuestions(userInfo.sub, params, token);
       }
-
-      setQuestions(response?.data ?? []);
+      setQuestions(response?.data ?? response ?? []);
       setTotalQuestions(response?.total ?? 0);
     } catch (err) {
       setError("Không thể tải danh sách câu hỏi.");
       setQuestions([]);
+      setTotalQuestions(0);
     } finally {
       setLoading(false);
     }
-  }, [token, viewMode, debouncedSearch, filters, page, rowsPerPage, userInfo]);
-
+  }, [token, viewMode, debouncedSearch, filters, page, rowsPerPage, userInfo, order, orderBy]);  
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
 
-  // Handlers
   const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => {
+    const { name, value } = e.target ?? {};
+    setFilters((prev) => {
       const newFilters = { ...prev, [name]: value };
-      if (name === "bookId") newFilters.categoryId = ""; // Reset Category khi đổi Book
+      if (name === "bookId") {
+        newFilters.categoryId = "";
+      }
       return newFilters;
     });
     setPage(0);
   };
 
   const handleReset = () => {
-      setFilters({ search: "", level: "", type: "", bookId: "", categoryId: "" });
-      setPage(0);
+    setFilters({ 
+      search: "", 
+      level: "", 
+      type: "", 
+      bookId: "", 
+      categoryId: "", 
+    });
+    setPage(0);
+    setOrderBy('created_at');
+    setOrder('desc');
   };
-
-  const handleNavigateDetail = (id) => navigate(`/tutor/question/${id}`);
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+    setPage(0); 
+  };
 
   return (
     <PageWrapper>
       <Header>
-        <Typography variant="h4" component="h1" fontWeight="bold">Thư viện câu hỏi</Typography>
+        <Typography variant="h4" component="h1" fontWeight="bold">
+          Thư viện câu hỏi
+        </Typography>
+
         <Stack direction="row" spacing={2} alignItems="center">
-            <ToggleButtonGroup
-                color="primary"
-                value={viewMode}
-                exclusive
-                onChange={(e, newMode) => { if (newMode) { setViewMode(newMode); setPage(0); } }}
-                size="small"
-            >
+          <ToggleButtonGroup
+            color="primary"
+            value={viewMode}
+            exclusive
+            onChange={(e, newMode) => {
+              if (newMode) {
+                setViewMode(newMode);
+                setPage(0);
+              }
+            }}
+            size="small"
+          >
             <ToggleButton value="my_questions">Của tôi</ToggleButton>
             <ToggleButton value="public">Công khai</ToggleButton>
-            </ToggleButtonGroup>
+          </ToggleButtonGroup>
 
-            <Button 
-                variant="contained" 
-                onClick={() => navigate('/tutor/new')} 
-                startIcon={<AddCircleOutlineIcon />} 
-                sx={{ fontWeight: "bold" }}
-            >
-                Tạo mới
-            </Button>
+          <Button
+            variant="contained"
+            onClick={() => navigate("/tutor/new")}
+            startIcon={<AddCircleOutlineIcon />}
+            sx={{ fontWeight: "bold" }}
+          >
+            Tạo mới
+          </Button>
         </Stack>
       </Header>
 
-      <QuestionFilters 
-        filters={filters} 
-        onFilterChange={handleFilterChange} 
+      <QuestionFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
         onReset={handleReset}
-        books={books} 
-        categories={categories} 
-        loadingCategories={loadingCategories} 
-        loadingBooks={loading}
+        books={books}
+        categories={categories}
+        loadingBooks={loadingBooks}
+        loadingCategories={loadingCategories}
       />
 
-      {/* Main Table */}
       {loading ? (
-        <Box display="flex" justifyContent="center" my={8}><CircularProgress /></Box>
+        <Box display="flex" justifyContent="center" my={8}>
+          <CircularProgress />
+        </Box>
       ) : error ? (
         <Alert severity="error">{error}</Alert>
       ) : (
@@ -323,67 +489,126 @@ export default function QuestionPage() {
               <TableHead>
                 <TableRow>
                   {HEAD_CELLS.map((cell) => (
-                    <TableCell key={cell.id} align={cell.align || "left"} sx={{ fontWeight: "bold", bgcolor: "grey.50", minWidth: cell.minWidth }}>
-                      {cell.label}
+                    <TableCell 
+                      key={cell.id} 
+                      align={cell.align || "left"} 
+                      sx={{ 
+                        fontWeight: "bold", 
+                        bgcolor: "grey.50", 
+                        minWidth: cell.minWidth 
+                      }}
+                      sortDirection={orderBy === cell.id ? order : false}
+                    >
+                      {/* Logic hiển thị Sort Label */}
+                      {cell.sortable ? (
+                        <TableSortLabel
+                          active={orderBy === cell.id}
+                          direction={orderBy === cell.id ? order : 'asc'}
+                          onClick={() => handleRequestSort(cell.id)}
+                        >
+                          {cell.label}
+                          {orderBy === cell.id ? (
+                            <Box component="span" sx={visuallyHidden}>
+                              {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
+                            </Box>
+                          ) : null}
+                        </TableSortLabel>
+                      ) : (
+                        cell.label
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               </TableHead>
+
               <TableBody>
-                {questions.length > 0 ? questions.map((q) => (
-                  <TableRow key={q.ques_id} hover>
-                    {/* 1. Tiêu đề */}
-                    <TableCell sx={{ py: 1.5 }}>
-                      <Typography variant="subtitle2" fontWeight={600} noWrap sx={{ maxWidth: 300 }} title={q.title}>
-                        {q.title || "Câu hỏi không tiêu đề"}
-                      </Typography>
-                    </TableCell>
-                    
-                    {/* 2. Độ khó */}
-                    <TableCell sx={{ py: 1.5 }}>
+                {Array.isArray(questions) && questions.length > 0 ? (
+                  questions.map((q) => (
+                    <TableRow key={q.ques_id ?? q.id ?? Math.random()} hover>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight={600}
+                          sx={{
+                            maxWidth: 400,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {q.title || "(Không có tiêu đề)"}
+                        </Typography>
+                      </TableCell>
+
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography variant="body2">{TYPE_MAP[q.type] || q.type}</Typography>
+                      </TableCell>
+
+                      <TableCell sx={{ py: 1.5 }}>
                         <DifficultyChip difficulty={q.level} />
-                    </TableCell>
-                    
-                    {/* 3. Chuyên đề */}
-                    <TableCell sx={{ py: 1.5 }}>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 150 }} title={q.category?.category_name}>
-                        {q.category?.category_name || "---"}
-                      </Typography>
-                    </TableCell>
-                    
-                    {/* 4. Giáo án (Plan) */}
-                    <TableCell sx={{ py: 1.5 }}>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 150 }} title={q.category?.structure?.[0]?.Plan?.title}>
-                        {/* Lấy tên Plan từ structure đầu tiên, dùng ?. để tránh crash */}
-                        {q.category?.structure?.[0]?.Plan?.title || "---"}
-                      </Typography>
-                    </TableCell>
-                    
-                    {/* 5. Hành động */}
-                    <TableCell align="center" sx={{ py: 1 }}>
-                      <Tooltip title="Xem chi tiết">
-                        <IconButton color="primary" size="small" onClick={() => handleNavigateDetail(q.ques_id)}>
-                          <SearchIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                )) : (
+                      </TableCell>
+
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography 
+                          variant="body2" 
+                          noWrap 
+                          sx={{ maxWidth: 150 }} 
+                          title={q.category?.category_name ?? q.category?.name}
+                        >
+                          {q.category?.category_name ?? q.category?.name ?? "---"}
+                        </Typography>
+                      </TableCell>
+
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography 
+                          variant="body2" 
+                          noWrap 
+                          sx={{ maxWidth: 150 }} 
+                          title={q.category?.structure?.[0]?.Plan?.title ?? q.category?.Categories?.structure?.[0]?.Plan?.title}
+                        >
+                          {q.category?.structure?.[0]?.Plan?.title || q.category?.Categories?.structure?.[0]?.Plan?.title || "---"}
+                        </Typography>
+                      </TableCell>
+
+                      <TableCell align="center" sx={{ py: 1 }}>
+                        <Tooltip title="Xem chi tiết">
+                          <IconButton 
+                            color="primary" 
+                            size="small" 
+                            onClick={() => navigate(`/tutor/question/${q.ques_id}`)}
+                          >
+                            <SearchIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>Không tìm thấy câu hỏi nào.</TableCell>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                      Không tìm thấy câu hỏi nào.
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </TableContainer>
+
           <TablePagination
             rowsPerPageOptions={[10, 25, 50]}
             component="div"
-            count={totalQuestions}
+            count={Number(totalQuestions ?? 0)}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={(e, newPage) => setPage(newPage)}
-            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(parseInt(e.target.value, 10));
+              setPage(0);
+            }}
+            labelRowsPerPage="Số dòng mỗi trang:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} trong ${count}`}
           />
         </Paper>
       )}

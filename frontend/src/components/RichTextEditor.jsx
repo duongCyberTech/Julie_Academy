@@ -1,16 +1,17 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, forwardRef } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 import katex from "katex";
 import "katex/dist/katex.min.css";
-window.katex = katex;
+if (typeof window !== "undefined") {
+  window.katex = katex;
+}
 
 import {
   styled,
   Box,
   FormControl,
-  InputLabel,
   FormHelperText,
   alpha,
   IconButton,
@@ -95,10 +96,7 @@ const helpData = [
   { want: "Căn bậc hai", code: "\\sqrt{x}" },
   { want: "Căn bậc 3", code: "\\sqrt[3]{x}" },
   { want: "Phân số", code: "\\frac{1}{2}" },
-  {
-    want: "Hệ phương trình",
-    code: "\\begin{cases} x+y=1 \\ x-y=2 \\end{cases}",
-  },
+  { want: "Hệ phương trình", code: "\\begin{cases} x+y=1 \\\\ x-y=2 \\end{cases}" },
   { want: "Biệt thức Delta", code: "\\Delta" },
   { want: "Góc", code: "\\angle A" },
   { want: "Độ", code: "90^\\circ" },
@@ -108,6 +106,7 @@ const helpData = [
   { want: "Không bằng (≠)", code: "\\neq" },
   { want: "Nhỏ hơn hoặc bằng (≤)", code: "\\le" },
   { want: "Lớn hơn hoặc bằng (≥)", code: "\\ge" },
+  { want: "Thuộc (∈)", code: "\\in" },
 ];
 
 const LatexHelpDialog = ({ open, onClose }) => (
@@ -121,21 +120,15 @@ const LatexHelpDialog = ({ open, onClose }) => (
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>
-                <strong>Bạn muốn viết</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Bạn gõ (code LaTeX)</strong>
-              </TableCell>
+              <TableCell><strong>Bạn muốn viết</strong></TableCell>
+              <TableCell><strong>Bạn gõ (code LaTeX)</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {helpData.map((row) => (
               <TableRow key={row.want}>
                 <TableCell>{row.want}</TableCell>
-                <TableCell>
-                  <code>{row.code}</code>
-                </TableCell>
+                <TableCell><code>{row.code}</code></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -145,7 +138,7 @@ const LatexHelpDialog = ({ open, onClose }) => (
   </Dialog>
 );
 
-const RichTextEditor = ({
+const RichTextEditor = forwardRef(({
   toolbarType = "full",
   value,
   onChange,
@@ -153,12 +146,11 @@ const RichTextEditor = ({
   label,
   error,
   helperText,
+  style, 
   ...props
-}) => {
+}, ref) => {
   const modules = useMemo(() => {
-    if (toolbarType === "minimal") {
-      return minimalModules;
-    }
+    if (toolbarType === "minimal") return minimalModules;
     return fullModules;
   }, [toolbarType]);
 
@@ -166,64 +158,62 @@ const RichTextEditor = ({
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   return (
-    <FormControl error={error} fullWidth>
-      {label && (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            mb: 0.5,
-          }}
-        >
-          <Typography
-            variant="subtitle1"
-            sx={{
-              color: error ? "error.main" : "text.secondary",
-              fontWeight: 600,
-            }}
-          >
-            {label}
-          </Typography>
+    <div ref={ref} style={{ width: '100%', ...style }}>
+      <FormControl error={error} fullWidth>
+        {label && (
+          <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: error ? "error.main" : "text.secondary",
+                fontWeight: 600,
+              }}
+            >
+              {label}
+            </Typography>
 
-          {toolbarType === "full" && (
-            <Tooltip title="Hướng dẫn gõ Công thức LaTeX">
-              <IconButton
-                size="small"
-                onClick={() => setIsHelpOpen(true)}
-                sx={{ ml: 0.5 }}
-              >
-                <HelpOutlineIcon fontSize="small" color="action" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-      )}
+            {toolbarType === "full" && (
+              <Tooltip title="Hướng dẫn gõ Công thức LaTeX">
+                <IconButton
+                  size="small"
+                  onClick={() => setIsHelpOpen(true)}
+                  sx={{ ml: 0.5 }}
+                >
+                  <HelpOutlineIcon fontSize="small" color="action" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        )}
 
-      <EditorWrapper error={error} className={isFocused ? "Mui-focused" : ""}>
-        <ReactQuill
-          theme="snow"
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          modules={modules}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          {...props}
-        />
-      </EditorWrapper>
+        <EditorWrapper error={error} className={isFocused ? "Mui-focused" : ""}>
+          <ReactQuill
+            theme="snow"
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            modules={modules}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            {...props}
+          />
+        </EditorWrapper>
 
-      {helperText && (
-        <FormHelperText sx={{ ml: 1.5 }}>{helperText}</FormHelperText>
-      )}
+        {helperText && (
+          <FormHelperText sx={{ ml: 1.5 }}>{helperText}</FormHelperText>
+        )}
 
-      {isHelpOpen && (
-        <LatexHelpDialog
-          open={isHelpOpen}
-          onClose={() => setIsHelpOpen(false)}
-        />
-      )}
-    </FormControl>
+        {isHelpOpen && (
+          <LatexHelpDialog
+            open={isHelpOpen}
+            onClose={() => setIsHelpOpen(false)}
+          />
+        )}
+      </FormControl>
+    </div>
   );
-};
+});
+
+RichTextEditor.displayName = "RichTextEditor";
 
 export default RichTextEditor;

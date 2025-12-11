@@ -143,26 +143,16 @@ const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
                                 </FormControl>
                             </Stack>
 
-                            <Stack direction="row" spacing={2}>
-                                <TextField
-                                    name="duration_time"
-                                    label="Thời lượng (Tuần)"
-                                    type="number"
-                                    value={formData.duration_time}
-                                    onChange={handleChange}
-                                    fullWidth
-                                    InputProps={{ inputProps: { min: 1 } }}
-                                />
-                                <TextField
-                                    name="nb_of_student"
-                                    label="Sĩ số tối đa"
-                                    type="number"
-                                    value={formData.nb_of_student}
-                                    onChange={handleChange}
-                                    fullWidth
-                                    InputProps={{ inputProps: { min: 1 } }}
-                                />
-                            </Stack>
+                            {/* Đã bỏ Sĩ số, Thời lượng full width */}
+                            <TextField
+                                name="duration_time"
+                                label="Thời lượng (Tuần)"
+                                type="number"
+                                value={formData.duration_time}
+                                onChange={handleChange}
+                                fullWidth
+                                InputProps={{ inputProps: { min: 1 } }}
+                            />
                             
                             <Stack direction="row" spacing={2}>
                                 <DatePicker

@@ -145,3 +145,24 @@ export const updateUserStatus = async (userId, status, token) => {
     throw error;
   }
 };
+
+/**
+ * Lấy danh sách con cái của phụ huynh đang đăng nhập
+ * Tương ứng với: GET /users/parents/children
+ */
+export const getMyChildren = async (token) => {
+  try {
+    const response = await apiClient.get(
+      "/users/parents/children",
+      getAuthHeaders(token)
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error fetching children list:",
+      error.response?.status,
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};

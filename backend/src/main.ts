@@ -9,7 +9,7 @@ async function bootstrap() {
   // Thêm <NestExpressApplication> để báo cho TS biết đây là ứng dụng Express
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // CẤU HÌNH PHỤC VỤ FILE TĨNH (QUAN TRỌNG)
+  // CẤU HÌNH PHỤC VỤ FILE TĨNH 
   // process.cwd() lấy thư mục gốc dự án (nơi có file package.json)
   // join(...) nối vào thư mục 'uploads'
   // prefix: '/uploads/' nghĩa là đường dẫn sẽ có dạng http://domain/uploads/ten-file.jpg
@@ -24,7 +24,6 @@ async function bootstrap() {
     .addTag('Julie Academy')
     .addBearerAuth()
     .build();
-
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {

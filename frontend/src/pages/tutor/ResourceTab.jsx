@@ -341,9 +341,8 @@ const ResourceTab = ({ classId, token }) => {
                     onSelectCustom={() => setDialogs({ ...dialogs, createPlan: true })} 
                 />
                 
-                {/* Dialog Chọn Sách */}
                 <Dialog open={dialogs.selectBook} onClose={() => setDialogs({ ...dialogs, selectBook: false })}>
-                    <DialogTitle>Chọn Giáo Án Có Sẵn</DialogTitle>
+                    <DialogTitle>Chọn giáo án có sẵn</DialogTitle>
                     <DialogContent dividers>
                         <List>
                             {books.length > 0 ? books.map(b => (
