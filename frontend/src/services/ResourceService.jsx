@@ -10,23 +10,28 @@ const getAuthHeaders = (token) => {
     return { headers: { Authorization: `Bearer ${token}` } };
 };
 
-export const uploadResource = async (tutorId, file, data, token) => {
+// ==========================================
+// RESOURCE APIs (Tài liệu/File)
+// ==========================================
+
+/**
+ * Upload tài liệu mới vào một thư mục
+ * Endpoint: POST /resources/:folder_id
+ */
+export const uploadResource = async (folderId, file, data, token) => {
     try {
         const formData = new FormData();
         formData.append('file', file);
-
+        
+        // Các trường data (ResourceDto: title, description, version, num_pages...)
         Object.keys(data).forEach(key => {
             if (data[key] !== null && data[key] !== undefined) {
-                if (key === 'folder' && Array.isArray(data[key])) {
-                    data[key].forEach(folderId => formData.append('folder[]', folderId));
-                } else {
-                    formData.append(key, data[key]);
-                }
+                formData.append(key, data[key]);
             }
         });
 
         const response = await apiClient.post(
-            `/resources/${tutorId}`,
+            `/resources/${folderId}`,
             formData,
             {
                 headers: {
@@ -37,14 +42,67 @@ export const uploadResource = async (tutorId, file, data, token) => {
         );
         return response.data;
     } catch (error) {
+        console.error("Upload error:", error);
         throw error.response?.data || error;
     }
 };
 
-export const createFolder = async (tutorId, classId, folderData, token) => {
+/**
+ * Lấy tất cả tài liệu của giáo viên đang đăng nhập
+ * Endpoint: GET /resources
+ */
+export const getAllResources = async (token) => {
+    try {
+        const response = await apiClient.get('/resources', getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+/**
+ * Lấy tài liệu trong một thư mục cụ thể
+ * Endpoint: GET /resources/:folder_id
+ */
+export const getResourcesByFolder = async (folderId, token) => {
+    try {
+        const response = await apiClient.get(`/resources/${folderId}`, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+/**
+ * Cập nhật thông tin tài liệu
+ * Endpoint: PATCH /resources/:did
+ */
+export const updateResource = async (docId, data, token) => {
+    try {
+        const response = await apiClient.patch(
+            `/resources/${docId}`,
+            data,
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+// ==========================================
+// FOLDER APIs (Thư mục)
+// ==========================================
+
+/**
+ * Tạo thư mục mới
+ * Endpoint: POST /folders/:class_id/:category_id
+ * Body: { folder_name, parent_id? }
+ */
+export const createFolder = async (classId, categoryId, folderData, token) => {
     try {
         const response = await apiClient.post(
-            `/folders/${tutorId}/${classId}`,
+            `/folders/${classId}/${categoryId}`,
             folderData,
             getAuthHeaders(token)
         );
@@ -54,6 +112,10 @@ export const createFolder = async (tutorId, classId, folderData, token) => {
     }
 };
 
+/**
+ * Lấy cây thư mục của lớp (Trả về dạng Nested Tree)
+ * Endpoint: GET /folders/:class_id
+ */
 export const getFoldersByClass = async (classId, token) => {
     try {
         const response = await apiClient.get(
@@ -65,3 +127,59 @@ export const getFoldersByClass = async (classId, token) => {
         throw error.response?.data || error;
     }
 };
+
+/**
+ * Lấy danh sách thư mục theo tầng (Layer)
+ * Endpoint: GET /folders/:class_id/:category_id?parent_id=...
+ */
+export const getFoldersByLayer = async (classId, categoryId, parentId, token) => {
+    try {
+        const params = {};
+        if (parentId) params.parent_id = parentId;
+
+        const response = await apiClient.get(
+            `/folders/${classId}/${categoryId}`,
+            {
+                params,
+                ...getAuthHeaders(token)
+            }
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+/**
+ * Cập nhật tên thư mục
+ * Endpoint: PATCH /folders/:folder_id
+ */
+export const updateFolder = async (folderId, data, token) => {
+    try {
+        const response = await apiClient.patch(
+            `/folders/${folderId}`,
+            data,
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+/**
+ * Xóa thư mục (Xóa đệ quy cả con)
+ * Endpoint: DELETE /folders/:folder_id
+ */
+export const deleteFolder = async (folderId, token) => {
+    try {
+        const response = await apiClient.delete(
+            `/folders/${folderId}`,
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+

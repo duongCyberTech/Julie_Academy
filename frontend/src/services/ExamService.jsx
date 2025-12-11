@@ -138,3 +138,12 @@ export const updateSession = async (examId, sessionId, sessionData, token) => {
         throw error;
     }
 };
+export const getSessionsByClass = async (classId, token) => {
+    try {
+        const response = await apiClient.get(`/exam/session/class/${classId}`, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching sessions for class ${classId}:`, error.response?.data || error.message);
+        throw error;
+    }
+};

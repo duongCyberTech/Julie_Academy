@@ -15,7 +15,18 @@ import { DifficultyLevel, QuestionStatus, QuestionType, Prisma, QuestionAccess }
 @Injectable()
 export class LessonPlanService {
     constructor(private prisma: PrismaService) {}
-
+    async getPlanDetail(plan_id: string) {
+        return this.prisma.lesson_Plan.findUnique({
+            where: { plan_id },
+            select: {
+                plan_id: true,
+                title: true,
+                subject: true,
+                grade: true,
+                description: true,
+            }
+        });
+    }
     async createLessonPlan(data: LessonPlanDto[], tutor_id?: string) {
         const createdLessonPlan = [];
         for (const plan of data) {
@@ -85,7 +96,17 @@ export class LessonPlanService {
                     return await tx.lesson_Plan.delete({ where: { plan_id } });
                 });
             }
-            return await this.prisma.lesson_Plan.delete({ where: { plan_id } });
+
+            return this.prisma.$transaction(async(tx) => {
+                await tx.class.updateMany({
+                    where: {plan: {plan_id}},
+                    data: {
+                        plan_id: null
+                    }
+                })
+
+                return await this.prisma.lesson_Plan.delete({ where: { plan_id } });
+            })
         } catch (error) {
             return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
         }

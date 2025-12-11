@@ -24,7 +24,6 @@ import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 
-// Icons
 import SendIcon from "@mui/icons-material/Send";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
@@ -35,7 +34,6 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { getMyExams, createExamSession } from "../../services/ExamService";
 import { getClassesByTutor } from "../../services/ClassService";
 
-// --- STYLED COMPONENTS ---
 
 const RootContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
@@ -117,7 +115,9 @@ const CardFooter = styled(Box)(({ theme }) => ({
   marginTop: "auto",
 }));
 
-const StepBadge = styled(Box)(({ theme, active }) => ({
+const StepBadge = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "active",
+})(({ theme, active }) => ({
   width: 36,
   height: 36,
   borderRadius: "10px",
@@ -166,12 +166,10 @@ function AssignmentPage() {
   const navigate = useNavigate();
   const [token] = useState(() => localStorage.getItem("token"));
 
-  // Data
   const [masterExams, setMasterExams] = useState([]);
   const [tutorClasses, setTutorClasses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Form
   const [selectedExam, setSelectedExam] = useState(null);
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [startAt, setStartAt] = useState(dayjs());
@@ -180,7 +178,6 @@ function AssignmentPage() {
   const [examType, setExamType] = useState("practice");
   const [ratio, setRatio] = useState(100);
 
-  // UI State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -309,7 +306,8 @@ function AssignmentPage() {
               }}
             >
               {/* CỘT 1: CHỌN ĐỀ THI */}
-              <Grid item xs={12} md={4}>
+              {/* [FIX] Thay đổi prop: item -> bỏ, xs/md -> size={{ xs: ..., md: ... }} */}
+              <Grid size={{ xs: 12, md: 4 }}>
                 <ColumnCard>
                   <CardHeader>
                     <StepBadge active={!!selectedExam}>1</StepBadge>
@@ -444,7 +442,8 @@ function AssignmentPage() {
               </Grid>
 
               {/* CỘT 2: CHỌN LỚP HỌC */}
-              <Grid item xs={12} md={4}>
+              {/* [FIX] Thay đổi prop: item -> bỏ, xs/md -> size={{ xs: ..., md: ... }} */}
+              <Grid size={{ xs: 12, md: 4 }}>
                 <ColumnCard>
                   <CardHeader>
                     <StepBadge active={selectedClasses.length > 0}>2</StepBadge>
@@ -571,7 +570,8 @@ function AssignmentPage() {
               </Grid>
 
               {/* CỘT 3: CẤU HÌNH */}
-              <Grid item xs={12} md={4}>
+              {/* [FIX] Thay đổi prop: item -> bỏ, xs/md -> size={{ xs: ..., md: ... }} */}
+              <Grid size={{ xs: 12, md: 4 }}>
                 <ColumnCard
                   sx={{
                     borderColor: "primary.main",

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuestionService } from '../question/question.service';
 import { ExamDto, ExamSessionDto, ExamTakenDto, SubmitAnswerDto } from './dto/exam.dto';
@@ -136,6 +136,81 @@ export class ExamService {
             if (cnt_ != classes.length) throw new BadRequestException("Create session failed!");
             return {status: 201, message: 'Exam session created successfully', session: newSession.session_id};
         })
+    }
+
+    async getAllExamSessionByTutor(tutor_id: string) {
+        try {
+            const examSessions = await this.prisma.exam_session.findMany({
+                where: {
+                    exam: {tutor: {uid: tutor_id}},
+                    expireAt: {lt: new Date()}
+                },
+                select: {
+                    session_id: true,
+                    limit_taken: true,
+                    startAt: true,
+                    expireAt: true,
+                    exam_type: true,
+                    ratio: true,
+                    total_student_done: true,
+                    exam: {
+                        select: {
+                            exam_id: true,
+                            title: true,
+                            duration: true,
+                            total_ques: true,
+                            total_score: true,
+                            level: true,
+                            description: true
+                        }
+                    }
+                },
+                orderBy: [
+                    { startAt: "asc" },
+                    { expireAt: "asc" }
+                ]
+            })
+
+            return examSessions
+        } catch (error) {
+            throw new InternalServerErrorException(error.message)
+        }
+    }
+
+    async getAllExamSessionByClass(class_id: string) {
+        try {
+            const examSessions = await this.prisma.exam_session.findMany({
+                where: {exam_open_in: {some: {class: {class_id}}}},
+                select: {
+                    session_id: true,
+                    limit_taken: true,
+                    startAt: true,
+                    expireAt: true,
+                    exam_type: true,
+                    ratio: true,
+                    total_student_done: true,
+                    exam: {
+                        select: {
+                            exam_id: true,
+                            title: true,
+                            duration: true,
+                            total_ques: true,
+                            total_score: true,
+                            level: true,
+                            description: true
+                        }
+                    }
+                },
+                orderBy: [
+                    { startAt: "asc" },
+                    { expireAt: "asc" }
+                ]
+            })
+
+            return examSessions
+        } catch (error) {
+            throw new InternalServerErrorException(error.message)
+        }
     }
 
     async updateSession(exam_id: string, session_id: number, data: Partial<ExamSessionDto>){
