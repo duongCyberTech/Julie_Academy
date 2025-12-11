@@ -54,14 +54,11 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
     setToast({ open: true, message, severity });
   };
 
-  // --- LOGIC LỌC DANH SÁCH ---
-  // Đảm bảo studentsData là mảng trước khi filter
   const safeData = Array.isArray(studentsData) ? studentsData : [];
   
   const pendingStudents = safeData.filter((item) => item.status === "pending");
   const enrolledStudents = safeData.filter((item) => item.status === "accepted");
 
-  // --- HANDLERS ---
   const handleAccept = async (studentId) => {
     setLoadingAction(true);
     try {
@@ -143,7 +140,7 @@ const StudentsTab = ({ classId, studentsData, onRefresh }) => {
               <TableBody>
                 {pendingStudents.map((item) => {
                   const student = item.student;
-                  const user = student?.user || {}; // Đảm bảo không lỗi nếu thiếu user
+                  const user = student?.user || {}; 
 
                   return (
                     <TableRow key={student?.uid} hover>
