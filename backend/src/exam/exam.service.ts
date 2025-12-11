@@ -165,10 +165,10 @@ export class ExamService {
                         }
                     }
                 },
-                orderBy: {
-                    startAt: 'asc',
-                    expireAt: 'asc'
-                }
+                orderBy: [
+                    { startAt: "asc" },
+                    { expireAt: "asc" }
+                ]
             })
 
             return examSessions
@@ -201,10 +201,10 @@ export class ExamService {
                         }
                     }
                 },
-                orderBy: {
-                    startAt: 'asc',
-                    expireAt: 'asc'
-                }
+                orderBy: [
+                    { startAt: "asc" },
+                    { expireAt: "asc" }
+                ]
             })
 
             return examSessions
