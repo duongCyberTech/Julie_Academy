@@ -14,6 +14,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { CronModule } from './scron-job/cron.module';
 import { MailModule } from './mail/mail.module';
 import { ResourceModule } from './resource/resource.module';
+import { BadgeModule } from './badge/badge.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { ResourceModule } from './resource/resource.module';
     ScheduleModule.forRoot(),
     UserModule, AuthModule, ClassModule, 
     QuestionModule, ExamModule, DashboardModule, 
-    CronModule, MailModule, ResourceModule
+    CronModule, MailModule, ResourceModule,
+    BadgeModule
   ],
   controllers: [AppController],
   providers: [
