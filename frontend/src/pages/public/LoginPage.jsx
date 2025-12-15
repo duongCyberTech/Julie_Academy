@@ -100,7 +100,7 @@ const LoginPage = () => {
                         admin: "/admin/dashboard",
                         student: "/student/dashboard",
                         tutor: "/tutor/dashboard",
-                        parent: "/parent/dashboard",
+                        parents: "/parent/dashboard",
                     }[userRole] || "/";
                 
                 setToast({ 

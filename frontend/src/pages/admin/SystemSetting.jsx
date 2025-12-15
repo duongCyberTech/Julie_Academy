@@ -16,7 +16,6 @@ import {
 import { styled } from "@mui/material/styles";
 import SaveIcon from '@mui/icons-material/Save';
 
-// --- Styled Component (Giống các trang khác của bạn) ---
 const PageWrapper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   backgroundColor:

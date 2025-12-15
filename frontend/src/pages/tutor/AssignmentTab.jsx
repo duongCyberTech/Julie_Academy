@@ -24,24 +24,24 @@ const MOCK_SESSIONS = [
     {
         session_id: 1,
         exam: { exam_id: 'exam-1', title: 'Kiểm tra 15 phút - Chương 1' },
-        startAt: dayjs().subtract(1, 'day').toISOString(), // Hôm qua
-        expireAt: dayjs().add(1, 'day').toISOString(), // Ngày mai
+        startAt: dayjs().subtract(1, 'day').toISOString(),
+        expireAt: dayjs().add(1, 'day').toISOString(), 
         limit_taken: 1,
         exam_type: 'practice',
     },
     {
         session_id: 2,
         exam: { exam_id: 'exam-2', title: 'Kiểm tra Giữa kỳ' },
-        startAt: dayjs().add(2, 'day').toISOString(), // Tương lai
-        expireAt: dayjs().add(3, 'day').toISOString(), // Tương lai
+        startAt: dayjs().add(2, 'day').toISOString(), 
+        expireAt: dayjs().add(3, 'day').toISOString(),
         limit_taken: 1,
         exam_type: 'test',
     },
     {
         session_id: 3,
         exam: { exam_id: 'exam-1', title: 'Kiểm tra 15 phút - Chương 1 (Lần 2)' },
-        startAt: dayjs().subtract(3, 'day').toISOString(), // Quá khứ
-        expireAt: dayjs().subtract(2, 'day').toISOString(), // Quá khứ
+        startAt: dayjs().subtract(3, 'day').toISOString(),
+        expireAt: dayjs().subtract(2, 'day').toISOString(), 
         limit_taken: 2,
         exam_type: 'practice',
     }

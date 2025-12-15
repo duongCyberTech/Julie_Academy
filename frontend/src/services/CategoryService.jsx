@@ -14,7 +14,7 @@ const getAuthHeaders = (token) => {
   };
 };
 
-export const getAllBooks = async (token) => {
+export const getAllPlans = async (token) => {
   try {
     const response = await apiClient.get("/books", getAuthHeaders(token));
     return response.data;

@@ -146,7 +146,11 @@ export class ScheduleService {
             )
         `);
 
-        if (checkExist && checkExist.length) continue;
+        if (checkExist && checkExist.length) {
+            throw new BadRequestException(
+                `Lịch học bị trùng vào Thứ ${item.meeting_date}, khung giờ ${item.startAt} - ${item.endAt}. Vui lòng kiểm tra lại!`
+            );
+        }
 
         const sched = await tx.schedule.create({
           data:{
@@ -323,6 +327,11 @@ export class ClassService {
         description: true,
         subject: true,
         grade: true,
+        status: true,
+        nb_of_student: true,
+        duration_time: true,
+        startat: true,
+        createdAt: true,
         tutor:{
           select:{ user:{
             select:{
@@ -383,6 +392,7 @@ export class ClassService {
         subject: true,    
         status: true,      
         nb_of_student: true,
+        duration_time: true,
         createdAt: true,  
         startat: true,   
         plan_id: true,
@@ -401,6 +411,7 @@ export class ClassService {
         },
         learning: {
           select: {
+            status: true,
             student: {
               select: {
                 uid: true,
@@ -410,7 +421,8 @@ export class ClassService {
                     mname: true,
                     lname: true,
                     email: true,
-                    avata_url: true 
+                    avata_url: true ,
+                    status: true
                   }
                 }
               }
@@ -422,46 +434,60 @@ export class ClassService {
     return classDetails;
   }
 
-  async requestForClass(class_id: string, student_lst: string[]){
+  async requestForClass(class_id: string, student_lst: string[]) {
     return this.prisma.$transaction(async (tx) => {
-      const result = []
-      for (const student_uid of student_lst){
-        const checkExist = await tx.student.findUnique({where: {uid: student_uid}})
+      const addedStudents = [];
+      let successCount = 0;
 
-        if (!checkExist) continue;
+      for (const student_uid of student_lst) {
+        const student = await tx.student.findUnique({ where: { uid: student_uid } });
+        if (!student) continue; 
+        const isEnrolled = await tx.learning.findFirst({
+          where: {
+            class_id: class_id,
+            student_uid: student_uid
+          }
+        });
 
+        if (isEnrolled) continue; 
         await tx.learning.create({
           data: {
             class: { connect: { class_id } },
             student: { connect: { uid: student_uid } },
           }
-        })
+        });
 
-        result.push(checkExist)
+        addedStudents.push(student);
+        successCount++;
       }
 
-      return result
-    })
+      return {
+        message: `Successfully request ${successCount} students.`,
+        data: addedStudents
+      };
+    });
   }
 
-  async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string){
-    return this.prisma.$transaction(async(tx) => {
-      const checkPosess = tx.class.findFirst({
-        where: {tutor: {uid: tutor_id}, class_id}
-      })
+async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string) {
+  return this.prisma.$transaction(async (tx) => {
+    const checkPosess = await tx.class.findFirst({
+      where: { tutor: { uid: tutor_id }, class_id }
+    });
+    if (!checkPosess) throw new ForbiddenException("Tutor doesn't have permission!");
+    const updated = await tx.learning.update({
+      where: { class_id_student_uid: { class_id, student_uid: student_id } },
+      data: { status: EnrollStatus.accepted }
+    });
+    if (updated.status === EnrollStatus.accepted) { 
+       await tx.class.update({
+         where: { class_id },
+         data: { nb_of_student: { increment: 1 } }
+       });
+    }
 
-      if (!checkPosess) throw new ForbiddenException("Tutor doesn't have permission to access class!")
-
-      await tx.learning.update({
-        where: {class_id_student_uid: {class_id, student_uid: student_id}},
-        data: {
-          status: EnrollStatus.accepted
-        }
-      })
-
-      return { message: "Enrollment Accepted" }
-    })
-  }
+    return { message: "Enrollment Accepted" };
+  });
+}
 
   async acceptAllEnrollReq(tutor_id: string, class_id: string){
     return this.prisma.$transaction(async(tx) => {

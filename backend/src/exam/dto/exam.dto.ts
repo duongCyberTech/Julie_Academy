@@ -30,6 +30,8 @@ export class ExamSessionDto {
     exam_type: 'practice' | 'test' | 'final';
     @ApiProperty()
     limit_taken: number | 1;
+    @ApiProperty()
+    ratio: number | 0;
 }
 
 export class ExamTakenDto {

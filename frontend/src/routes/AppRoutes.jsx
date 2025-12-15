@@ -12,7 +12,7 @@ import TutorDashboard from "../pages/tutor/TutorDashboard";
 import QuestionPage from "../pages/tutor/QuestionPage";
 import ClassPage from "../pages/tutor/ClassPage";
 import { Typography } from "@mui/material";
-import NewQuestion from "../pages/tutor/NewQuestion";
+import QuestionEditorPage from "../pages/tutor/QuestionEditor.jsx";
 import UserManagement from "../pages/admin/UserManagement";
 import AboutPage from "../pages/public/AboutPage";
 import ContactPage from "../pages/public/ContactPage";
@@ -24,6 +24,8 @@ import ExamDetailPage from "../pages/tutor/ExamDetailPage";
 import AssignmentPage from "../pages/tutor/AssignmentPage";
 import SystemSetting from "../pages/admin/SystemSetting.jsx";
 import QuestionDetailPage from "../pages/tutor/QuestionDetailPage.jsx";
+import ParentDashboard from "../pages/parent/ParentDashboard.jsx";
+import ParentEnrollPage from "../pages/parent/ParentEnrollPage.jsx";
 function AppRoutes(props) {
   return (
     <Routes>
@@ -49,20 +51,27 @@ function AppRoutes(props) {
         <Route path="/tutor" element={<Layout />}>
           <Route path="dashboard" element={<TutorDashboard />} />
           <Route path="question" element={<QuestionPage />} />
-          <Route path="new" element={<NewQuestion />} />
+          <Route path="new" element={<QuestionEditorPage />} />
+          <Route path="edit-question/:id" element={<QuestionEditorPage />} />
           <Route path="classes" element={<ClassPage />} />
           <Route path="classes/:classId" element={<ClassDetailPage />} />
           <Route path="exam" element={<ExamPage />} />
           <Route path="exam/:examId" element={<ExamDetailPage />} />
           <Route path="assignment" element={<AssignmentPage />} />
-          <Route path="question/:questionId" element={<QuestionDetailPage />} />
-
+          <Route path="question/:id" element={<QuestionDetailPage />} />
         </Route>
       </Route>
       {/* Nhóm các route cho Student */}
       <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
         <Route path="/student" element={<Layout />}>
           <Route path="dashboard" element={<StudentDashboard />} />
+        </Route>
+      </Route>
+      {/* Nhóm các route cho Parent */}
+      <Route element={<ProtectedRoute allowedRoles={["parents"]} />}>
+        <Route path="/parent" element={<Layout />}>
+          <Route path="dashboard" element={<ParentDashboard />} />
+          <Route path="enroll" element={<ParentEnrollPage />} />
         </Route>
       </Route>
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}

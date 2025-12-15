@@ -14,6 +14,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { CronModule } from './scron-job/cron.module';
 import { MailModule } from './mail/mail.module';
 import { ResourceModule } from './resource/resource.module';
+import { BadgeModule } from './badge/badge.module';
 
 @Module({
   imports: [
@@ -22,13 +23,14 @@ import { ResourceModule } from './resource/resource.module';
         // TTL: Time To Live (Thời gian) - 60 giây (1 phút)
         ttl: 60000, 
         // Limit: Số lượng request tối đa trong khoảng thời gian TTL
-        limit: 10,  
+        limit: 50,  
       },
     ]),
     ScheduleModule.forRoot(),
     UserModule, AuthModule, ClassModule, 
     QuestionModule, ExamModule, DashboardModule, 
-    CronModule, MailModule, ResourceModule
+    CronModule, MailModule, ResourceModule,
+    BadgeModule
   ],
   controllers: [AppController],
   providers: [
