@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate, Link as RouterLink } from "react-router-dom"; 
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import {
   AppBar,
@@ -32,8 +32,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
-import Logo from "../assets/images/logo.png"; 
-
+import Logo from "../assets/images/logo.png";
 
 const StyledAppBar = styled(AppBar, {
   shouldForwardProp: (prop) =>
@@ -71,23 +70,7 @@ const BrandBox = styled(Box)(({ theme }) => ({
   color: "inherit",
 }));
 
-const USER_MENU_CONFIG = [
-  {
-    text: "Hồ sơ",
-    path: "/profile",
-    icon: <PersonOutlineIcon fontSize="small" />,
-  },
-  {
-    text: "Cài đặt",
-    path: "/settings",
-    icon: <SettingsOutlinedIcon fontSize="small" />,
-  },
-  {
-    text: "Ngôn ngữ",
-    path: "/language",
-    icon: <LanguageIcon fontSize="small" />,
-  },
-];
+// --- [THAY ĐỔI 1]: Xóa biến USER_MENU_CONFIG tĩnh ---
 
 const Header = React.memo(function Header({
   mode,
@@ -109,7 +92,12 @@ const Header = React.memo(function Header({
     try {
       const decoded = jwtDecode(token);
       if (decoded.exp * 1000 > Date.now()) {
-        setUserInfo({ name: decoded.name, email: decoded.email });
+        // --- [THAY ĐỔI 2]: Lấy thêm role từ token ---
+        setUserInfo({ 
+            name: decoded.name, 
+            email: decoded.email, 
+            role: decoded.role 
+        });
       } else {
         localStorage.removeItem("token");
       }
@@ -118,11 +106,37 @@ const Header = React.memo(function Header({
     }
   }, []);
 
+  // --- [THAY ĐỔI 3]: Tạo menu items động dựa trên role ---
+  const userMenuItems = useMemo(() => {
+    let role = userInfo?.role ? userInfo.role.toLowerCase() : "";
+    if (role === "parents") {
+        role = "parent";
+    }
+    return [
+      {
+        text: "Hồ sơ",
+        // Tự động tạo link: /student/profile, /tutor/profile...
+        path: role ? `/${role}/profile` : "/login", 
+        icon: <PersonOutlineIcon fontSize="small" />,
+      },
+      {
+        text: "Cài đặt",
+        path: "/settings",
+        icon: <SettingsOutlinedIcon fontSize="small" />,
+      },
+      {
+        text: "Ngôn ngữ",
+        path: "/language",
+        icon: <LanguageIcon fontSize="small" />,
+      },
+    ];
+  }, [userInfo]);
+
   const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
     setUserInfo(null);
     setAnchorEl(null);
-    navigate("/");
+    navigate("/"); // Hoặc /login
   }, [navigate]);
 
   const handleNav = useCallback(
@@ -142,7 +156,6 @@ const Header = React.memo(function Header({
       isSidebarMounted={isSidebarMounted}
     >
       <Toolbar sx={{ minHeight: 64, px: { xs: 1, sm: 2 } }}>
-        {/* === Sidebar toggles (GIỮ NGUYÊN) === */}
         <HeaderIconButton
           edge="start"
           onClick={onMobileSidebarToggle}
@@ -172,9 +185,10 @@ const Header = React.memo(function Header({
               width: 40,
               height: 40,
               flexShrink: 0,
-              filter: mode === "dark" 
-                ? "drop-shadow(0 0 5px rgba(100, 181, 246, 0.6)) brightness(1.1)" 
-                : "none",
+              filter:
+                mode === "dark"
+                  ? "drop-shadow(0 0 5px rgba(100, 181, 246, 0.6)) brightness(1.1)"
+                  : "none",
               transition: "filter 0.3s ease",
             }}
           />
@@ -185,12 +199,16 @@ const Header = React.memo(function Header({
               ml: 1.5,
               fontWeight: 700,
               display: { xs: "none", sm: "block" },
-              background: mode === "dark"
-                ? `linear-gradient(45deg, #22d3ee 0%, #e879f9 100%)` 
-                : `linear-gradient(45deg, #6a11cb 0%, #2575fc 100%)`, 
+              background:
+                mode === "dark"
+                  ? `linear-gradient(45deg, #22d3ee 0%, #e879f9 100%)`
+                  : `linear-gradient(45deg, #6a11cb 0%, #2575fc 100%)`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              filter: mode === "dark" ? "drop-shadow(0 0 10px rgba(34, 211, 238, 0.3))" : "none",
+              filter:
+                mode === "dark"
+                  ? "drop-shadow(0 0 10px rgba(34, 211, 238, 0.3))"
+                  : "none",
               transition: "all 0.3s ease",
             }}
           >
@@ -238,7 +256,6 @@ const Header = React.memo(function Header({
         </Box>
       </Toolbar>
 
-      {/* === Menu Avatar (GIỮ NGUYÊN) === */}
       {isAuth && (
         <Menu
           anchorEl={anchorEl}
@@ -257,7 +274,6 @@ const Header = React.memo(function Header({
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
           transformOrigin={{ vertical: "top", horizontal: "right" }}
         >
-          {/* ... (Nội dung menu giữ nguyên) ... */}
           <Box sx={{ px: 2, py: 1.5 }}>
             <Typography fontWeight={600}>{userInfo.name}</Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
@@ -265,12 +281,15 @@ const Header = React.memo(function Header({
             </Typography>
           </Box>
           <Divider />
-          {USER_MENU_CONFIG.map((item) => (
+          
+          {/* --- [THAY ĐỔI 4]: Duyệt qua userMenuItems thay vì USER_MENU_CONFIG --- */}
+          {userMenuItems.map((item) => (
             <MenuItem key={item.text} onClick={() => handleNav(item.path)}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               {item.text}
             </MenuItem>
           ))}
+          
           <Divider />
           <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
             <ListItemIcon sx={{ color: "error.main" }}>

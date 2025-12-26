@@ -60,9 +60,10 @@ const adminMenuItems = [
 // Cấu hình cho Student
 const studentMenuItems = [
   { label: "Góc học tập", to: "/student/dashboard", Icon: DashboardIcon },
-  { label: "Lớp học của tôi", to: "/student/myclass", Icon: GroupOutlined },
+  { label: "Lớp học của tôi", to: "/student/classes", Icon: GroupOutlined },
   { label: "Luyện tập", to: "/student/practice", Icon: LibraryIcon },
-  { label: "Bài tập", to: "/student/homework", Icon: HomeworkOutlined },
+  { label: "Bài tập", to: "/student/assignment", Icon: HomeworkOutlined },
+  { label: "Đăng ký lớp học", to: "/student/enroll", Icon: AccountBoxIcon },
 ];
 
 // Cấu hình cho Parent

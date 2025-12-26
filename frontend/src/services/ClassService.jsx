@@ -19,7 +19,6 @@ const getUserIdFromToken = (token) => {
     }
 };
 
-
 export const createClass = async (classData, token) => {
     try {
         const tutorId = getUserIdFromToken(token);

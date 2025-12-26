@@ -34,7 +34,6 @@ import {
 } from "../../services/ClassService";
 
 const StudentsTab = ({ classId, studentsData, onRefresh }) => {
-  console.log("Dữ liệu học sinh nhận được:", studentsData);
   const token = localStorage.getItem("token");
   const [toast, setToast] = useState({
     open: false,

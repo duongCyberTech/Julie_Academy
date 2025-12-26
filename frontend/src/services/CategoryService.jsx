@@ -132,3 +132,16 @@ export const deleteCategory = async (categoryId, mode, token) => {
     throw error.response?.data || error;
   }
 };
+
+export const getPlanDetail = async (planId, token) => {
+    try {
+        const response = await apiClient.get(
+            `/books/plan/${planId}`, 
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi lấy chi tiết giáo án:", error);
+        throw error.response?.data || error;
+    }
+};
