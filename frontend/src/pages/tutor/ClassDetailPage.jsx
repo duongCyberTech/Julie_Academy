@@ -5,9 +5,7 @@ import { getClassDetails } from '../../services/ClassService';
 
 import {
     Box, Typography, Paper, Alert, Tabs, Tab, Container,
-    Stack, Chip, Skeleton, Avatar, IconButton, Tooltip, Breadcrumbs, Link
-    Box, Typography, Paper, Alert, Tabs, Tab, Container,
-    Stack, Chip, Skeleton, Avatar, IconButton, Tooltip, Breadcrumbs, Link
+    Stack, Chip, Skeleton, Avatar, IconButton, Tooltip, Breadcrumbs, Link, Button
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import { styled, alpha } from '@mui/material/styles';
