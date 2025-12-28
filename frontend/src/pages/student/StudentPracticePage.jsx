@@ -484,9 +484,6 @@ export default function StudentPracticePage() {
   };
 
   const handleStartTopicPractice = (lessonId, lessonName) => {
-    console.log(
-      `Bắt đầu buổi luyện tập (thích ứng) cho: ${lessonName} (ID: ${lessonId})`
-    );
     navigate(`session/${lessonId}`);
   };
 

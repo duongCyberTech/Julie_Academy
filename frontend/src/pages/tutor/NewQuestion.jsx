@@ -1,44 +1,75 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { createQuestion } from "../../services/QuestionService";
-import { getPlansByTutor, getAllCategories } from "../../services/CategoryService"; 
-import MultipleChoiceEditor from "../../components/QuestionType/MultipleChoice";
-
+import { jwtDecode } from "jwt-decode";
+import { v4 as uuidv4 } from "uuid";
 import {
-  Box, Typography, Button, FormControl, Select, MenuItem,
-  Divider, useTheme, Tooltip, Paper, InputLabel, Alert,
-  Collapse, Stack, CircularProgress, TextField
+  Box,
+  Typography,
+  Button,
+  FormControl,
+  Select,
+  MenuItem,
+  Divider,
+  useTheme,
+  Tooltip,
+  Paper,
+  InputLabel,
+  Alert,
+  Collapse,
+  CircularProgress,
+  TextField,
 } from "@mui/material";
-import RichTextEditor from "../../components/RichTextEditor";
-import { jwtDecode } from 'jwt-decode';
+import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 import SaveIcon from "@mui/icons-material/Save";
 import NotesIcon from "@mui/icons-material/Notes";
-import StarIcon from '@mui/icons-material/Star';
-import StarBorderIcon from '@mui/icons-material/StarBorder';
-import { v4 as uuidv4 } from 'uuid';
-import AppSnackbar from '../../components/SnackBar';
-
-import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
+import StarIcon from "@mui/icons-material/Star";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+
+import { createQuestion } from "../../services/QuestionService";
+import {
+  getPlansByTutor,
+  getAllCategories,
+} from "../../services/CategoryService";
+import MultipleChoiceEditor from "../../components/QuestionType/MultipleChoice";
+import RichTextEditor from "../../components/RichTextEditor";
+import AppSnackbar from "../../components/SnackBar";
 
 const DifficultyRating = ({ value, onChange }) => {
   const theme = useTheme();
   const levels = [
-    { value: 'easy', label: 'Dễ', stars: 1 },
-    { value: 'medium', label: 'Trung bình', stars: 2 },
-    { value: 'hard', label: 'Khó', stars: 3 },
+    { value: "easy", label: "Dễ", stars: 1 },
+    { value: "medium", label: "Trung bình", stars: 2 },
+    { value: "hard", label: "Khó", stars: 3 },
   ];
-  const currentLevel = levels.find(l => l.value === value) || levels[0];
+  const currentLevel = levels.find((l) => l.value === value) || levels[0];
 
   return (
     <Tooltip title={`Độ khó: ${currentLevel.label}`}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
+          cursor: "pointer",
+        }}
+      >
         {[1, 2, 3].map((star) => (
-          <Box key={star} component="span" onClick={() => onChange(levels[star - 1].value)}>
-            {star <= currentLevel.stars
-              ? <StarIcon sx={{ color: theme.palette.warning.main, display: 'block' }} />
-              : <StarBorderIcon sx={{ color: theme.palette.text.disabled, display: 'block' }} />}
+          <Box
+            key={star}
+            component="span"
+            onClick={() => onChange(levels[star - 1].value)}
+          >
+            {star <= currentLevel.stars ? (
+              <StarIcon
+                sx={{ color: theme.palette.warning.main, display: "block" }}
+              />
+            ) : (
+              <StarBorderIcon
+                sx={{ color: theme.palette.text.disabled, display: "block" }}
+              />
+            )}
           </Box>
         ))}
       </Box>
@@ -46,30 +77,44 @@ const DifficultyRating = ({ value, onChange }) => {
   );
 };
 
-const EditorHeader = ({ questionType, onTypeChange, difficulty, onDifficultyChange, onSubmit, isSubmitting }) => (
+const EditorHeader = ({
+  questionType,
+  onTypeChange,
+  difficulty,
+  onDifficultyChange,
+  onSubmit,
+  isSubmitting,
+}) => (
   <Box
     component={Paper}
     square
     sx={{
-      display: "flex", alignItems: "center", p: "8px 16px",
-      borderBottom: 1, borderColor: "divider", flexShrink: 0
+      display: "flex",
+      alignItems: "center",
+      p: "8px 16px",
+      borderBottom: 1,
+      borderColor: "divider",
+      flexShrink: 0,
     }}
   >
     <FormControl size="small" sx={{ m: 1, minWidth: 220 }}>
       <Select value={questionType} onChange={onTypeChange}>
         <MenuItem value="single_choice">Nhiều lựa chọn - 1 đáp án</MenuItem>
-        <MenuItem value="multiple_choice">Nhiều lựa chọn - nhiều đáp án</MenuItem>
+        <MenuItem value="multiple_choice">
+          Nhiều lựa chọn - nhiều đáp án
+        </MenuItem>
       </Select>
     </FormControl>
     <Box sx={{ flexGrow: 1 }} />
-
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mx: 2 }}>
-      <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mx: 2 }}>
+      <Typography
+        variant="body2"
+        sx={{ color: "text.secondary", fontWeight: 500 }}
+      >
         Độ khó:
       </Typography>
       <DifficultyRating value={difficulty} onChange={onDifficultyChange} />
     </Box>
-
     <Button
       variant="contained"
       color="primary"
@@ -82,25 +127,84 @@ const EditorHeader = ({ questionType, onTypeChange, difficulty, onDifficultyChan
   </Box>
 );
 
-const transformCategoriesForTree = (nodes) => {
-  return nodes.map(node => ({
-    id: node.category_id,
-    label: node.category_name,
-    children: Array.isArray(node.children)
-      ? transformCategoriesForTree(node.children)
-      : [],
-  }));
-};
-
 const OptionsSidebar = ({
-  plans, selectedPlanId, onPlanChange, loadingPlans,
-  categories, category, onCategoryChange, loadingCategories,
-  accessMode, onAccessModeChange,
-  status, onStatusChange,
-  explanation, onExplanationChange
+  plans,
+  selectedPlanId,
+  onPlanChange,
+  loadingPlans,
+  categories,
+  category,
+  onCategoryChange,
+  loadingCategories,
+  accessMode,
+  onAccessModeChange,
+  status,
+  onStatusChange,
+  explanation,
+  onExplanationChange,
 }) => {
   const [showExplanation, setShowExplanation] = useState(Boolean(explanation));
-  const categoryTreeData = useMemo(() => transformCategoriesForTree(categories), [categories]);
+
+  const categoryTreeData = useMemo(() => {
+    if (!categories || categories.length === 0) return [];
+
+    const getItemId = (itm) =>
+      String(itm.id ?? itm.category_id ?? itm._id ?? "");
+    const getParentId = (itm) => {
+      const pid = itm.parent_id ?? itm.parentId ?? itm.parent_category_id;
+      if (!pid || pid === 0 || String(pid) === "0" || String(pid) === "null")
+        return null;
+      return String(pid);
+    };
+
+    const parentMap = new Map();
+    const allItemIds = new Set(categories.map(getItemId));
+
+    categories.forEach((item) => {
+      const pid = getParentId(item);
+      if (pid && !allItemIds.has(pid)) {
+        if (!parentMap.has(pid)) {
+          parentMap.set(pid, {
+            id: pid,
+            category_id: pid,
+            category_name: item.description || "Danh mục gốc",
+            parent_id: null,
+            isFake: true,
+          });
+        }
+      }
+    });
+
+    const allNodes = [...Array.from(parentMap.values()), ...categories];
+
+    const buildTree = (items, targetParentId = null) => {
+      return items
+        .filter((item) => {
+          const itemPid = getParentId(item);
+          return itemPid === targetParentId;
+        })
+        .map((item) => {
+          const itemId = getItemId(item);
+          return {
+            id: itemId,
+            label: String(item.name ?? item.category_name ?? "No Name"),
+            children: buildTree(items, itemId),
+          };
+        });
+    };
+
+    return buildTree(allNodes, null);
+  }, [categories]);
+
+  const handleTreeSelection = (event, selectedItems) => {
+    let selectedId = "";
+    if (Array.isArray(selectedItems)) {
+      selectedId = selectedItems.length > 0 ? selectedItems[0] : "";
+    } else {
+      selectedId = selectedItems ?? "";
+    }
+    onCategoryChange({ target: { value: selectedId } });
+  };
 
   return (
     <Box
@@ -110,7 +214,7 @@ const OptionsSidebar = ({
         width: 320,
         borderLeft: 1,
         borderColor: "divider",
-        backgroundColor: 'background.default',
+        backgroundColor: "background.default",
         display: "flex",
         flexDirection: "column",
       }}
@@ -122,10 +226,12 @@ const OptionsSidebar = ({
           flexDirection: "column",
           gap: 2,
           flexGrow: 1,
-          overflowY: 'auto'
+          overflowY: "auto",
         }}
       >
-        <Typography variant="h6" fontWeight={600}>Tùy chọn</Typography>
+        <Typography variant="h6" fontWeight={600}>
+          Tùy chọn
+        </Typography>
 
         <FormControl fullWidth size="small" disabled={loadingPlans}>
           <InputLabel id="plan-select-label">Giáo án</InputLabel>
@@ -135,7 +241,9 @@ const OptionsSidebar = ({
             label="Giáo án"
             onChange={onPlanChange}
           >
-            <MenuItem value=""><em>{loadingPlans ? "Đang tải giáo án..." : "Chọn giáo án"}</em></MenuItem>
+            <MenuItem value="">
+              <em>{loadingPlans ? "Đang tải giáo án..." : "Chọn giáo án"}</em>
+            </MenuItem>
             {plans.map((plan) => (
               <MenuItem key={plan.plan_id} value={plan.plan_id}>
                 {`${plan.title} (Lớp ${plan.grade})`}
@@ -170,22 +278,26 @@ const OptionsSidebar = ({
           </Select>
         </FormControl>
 
-        <Collapse in={!!selectedPlanId} sx={{ width: '100%' }}>
-          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1, mt: 1 }}>
+        <Collapse in={!!selectedPlanId} sx={{ width: "100%" }}>
+          <Typography
+            variant="subtitle2"
+            fontWeight={600}
+            sx={{ mb: 1, mt: 1 }}
+          >
             Chuyên đề / Danh mục
           </Typography>
           <Paper
             variant="outlined"
             sx={{
               maxHeight: 300,
-              overflowY: 'auto',
+              overflowY: "auto",
               p: 1,
-              borderColor: 'divider',
-              bgcolor: 'action.hover'
+              borderColor: "divider",
+              bgcolor: "action.hover",
             }}
           >
             {loadingCategories ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+              <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
                 <CircularProgress size={24} />
               </Box>
             ) : categoryTreeData.length > 0 ? (
@@ -193,22 +305,32 @@ const OptionsSidebar = ({
                 items={categoryTreeData}
                 slots={{
                   collapseIcon: ExpandMoreIcon,
-                  expandIcon: ChevronRightIcon
+                  expandIcon: ChevronRightIcon,
                 }}
-                onSelectedItemsChange={(event, itemId) => {
-                  onCategoryChange({ target: { value: itemId } });
+                onSelectedItemsChange={handleTreeSelection}
+                selectedItems={category ? [String(category)] : []}
+                sx={{
+                  "& .MuiTreeItem-content": {
+                    py: 0.5,
+                    "&:hover": { backgroundColor: "action.hover" },
+                    "&.Mui-selected": {
+                      backgroundColor: "primary.light",
+                      "&:hover": { backgroundColor: "primary.light" },
+                    },
+                  },
                 }}
-                selectedItems={category}
               />
             ) : (
-              <Typography variant="caption" sx={{ p: 2, display: 'block' }}>
-                {selectedPlanId ? "Giáo án này chưa có danh mục." : "Vui lòng chọn giáo án."}
+              <Typography variant="caption" sx={{ p: 2, display: "block" }}>
+                {selectedPlanId
+                  ? "Giáo án này chưa có danh mục."
+                  : "Vui lòng chọn giáo án."}
               </Typography>
             )}
           </Paper>
         </Collapse>
       </Box>
-      
+
       <Box sx={{ p: 2, pt: 0, flexShrink: 0 }}>
         <Divider sx={{ mb: 2 }} />
         <Button
@@ -219,7 +341,7 @@ const OptionsSidebar = ({
         >
           {showExplanation ? "Ẩn giải thích" : "Thêm giải thích"}
         </Button>
-        
+
         <Collapse in={showExplanation}>
           <Box pt={2}>
             <RichTextEditor
@@ -227,22 +349,29 @@ const OptionsSidebar = ({
               value={explanation}
               onChange={onExplanationChange}
               toolbarType="full"
-              style={{ minHeight: '150px', display: 'flex', flexDirection: 'column' }}
+              style={{
+                minHeight: "150px",
+                display: "flex",
+                flexDirection: "column",
+              }}
             />
           </Box>
         </Collapse>
       </Box>
     </Box>
-  )
+  );
 };
 
 export default function CreateNewQuestionPage() {
   const navigate = useNavigate();
-  const [token] = useState(localStorage.getItem('token'));
+  const [token] = useState(localStorage.getItem("token"));
 
   const userInfo = useMemo(() => {
-    try { return token ? jwtDecode(token) : null; }
-    catch (e) { return null; }
+    try {
+      return token ? jwtDecode(token) : null;
+    } catch (e) {
+      return null;
+    }
   }, [token]);
 
   const [questionType, setQuestionType] = useState("single_choice");
@@ -253,7 +382,6 @@ export default function CreateNewQuestionPage() {
   const [accessMode, setAccessMode] = useState("private");
   const [status, setStatus] = useState("ready");
 
-  // Changed book -> plan
   const [plans, setPlans] = useState([]);
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [categories, setCategories] = useState([]);
@@ -263,30 +391,68 @@ export default function CreateNewQuestionPage() {
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [apiError, setApiError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const [answerData, setAnswerData] = useState([]);
 
   useEffect(() => {
     const fetchPlans = async () => {
-      if (!token || !userInfo?.sub) { 
-        setApiError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại."); 
-        setLoadingPlans(false); 
-        return; 
+      if (!token || !userInfo?.sub) {
+        setApiError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
+        setLoadingPlans(false);
+        return;
       }
-      try { 
-        setLoadingPlans(true); 
-        const tutorPlans = await getPlansByTutor(userInfo.sub, token); 
-        setPlans(Array.isArray(tutorPlans) ? tutorPlans : []); 
-        setApiError(null); 
+      try {
+        setLoadingPlans(true);
+        const tutorPlans = await getPlansByTutor(userInfo.sub, token);
+        setPlans(Array.isArray(tutorPlans) ? tutorPlans : []);
+        setApiError(null);
+      } catch (err) {
+        setApiError("Lỗi tải danh sách giáo án.");
+      } finally {
+        setLoadingPlans(false);
       }
-      catch (err) { 
-        setApiError("Lỗi tải danh sách giáo án."); 
-      }
-      finally { setLoadingPlans(false); }
     };
     fetchPlans();
   }, [token, userInfo]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (!selectedPlanId || !token) {
+        setCategories([]);
+        return;
+      }
+      try {
+        setLoadingCategories(true);
+        setApiError(null);
+        const catData = await getAllCategories(
+          { plan_id: selectedPlanId, mode: "tree" },
+          token
+        );
+        let nodes = [];
+        if (Array.isArray(catData)) {
+          nodes = catData;
+        } else if (catData?.data) {
+          nodes = Array.isArray(catData.data) ? catData.data : [catData.data];
+        } else if (catData?.categories) {
+          nodes = Array.isArray(catData.categories)
+            ? catData.categories
+            : [catData.categories];
+        }
+        setCategories(nodes);
+      } catch (err) {
+        setApiError("Lỗi tải danh mục cho giáo án này.");
+        setCategories([]);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, [selectedPlanId, token]);
 
   const handlePlanChange = (e) => {
     const newPlanId = e.target.value;
@@ -296,29 +462,11 @@ export default function CreateNewQuestionPage() {
   };
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      if (!selectedPlanId || !token) return;
-      try {
-        setLoadingCategories(true);
-        setApiError(null);
-        const catData = await getAllCategories(
-          { plan_id: selectedPlanId, mode: 'tree' }, // Dùng đúng plan_id
-          token
-        );
-        setCategories(Array.isArray(catData?.data) ? catData.data : []);
-      }
-      catch (err) { setApiError("Lỗi tải danh mục cho giáo án này."); }
-      finally { setLoadingCategories(false); }
-    };
-    fetchCategories();
-  }, [selectedPlanId, token]);
-
-  useEffect(() => {
     const initialAnswers = Array.from({ length: 4 }, () => ({
       id: uuidv4(),
       content: "",
       isCorrect: false,
-      explanation: ""
+      explanation: "",
     }));
     if (["multiple_choice", "single_choice"].includes(questionType)) {
       setAnswerData(initialAnswers);
@@ -330,23 +478,43 @@ export default function CreateNewQuestionPage() {
   const handleSubmit = async () => {
     setApiError(null);
     if (!token || !userInfo?.sub) {
-      setToast({ open: true, message: "Phiên đăng nhập hết hạn.", severity: 'error' });
+      setToast({
+        open: true,
+        message: "Phiên đăng nhập hết hạn.",
+        severity: "error",
+      });
       return;
     }
     if (!title.trim()) {
-      setToast({ open: true, message: "Vui lòng nhập tiêu đề câu hỏi.", severity: 'warning' });
+      setToast({
+        open: true,
+        message: "Vui lòng nhập tiêu đề câu hỏi.",
+        severity: "warning",
+      });
       return;
     }
-    if (!content.trim() || content === '<p><br></p>') {
-      setToast({ open: true, message: "Vui lòng nhập nội dung câu hỏi.", severity: 'warning' });
+    if (!content.trim() || content === "<p><br></p>") {
+      setToast({
+        open: true,
+        message: "Vui lòng nhập nội dung câu hỏi.",
+        severity: "warning",
+      });
       return;
     }
     if (!selectedPlanId) {
-      setToast({ open: true, message: "Vui lòng chọn giáo án.", severity: 'warning' });
+      setToast({
+        open: true,
+        message: "Vui lòng chọn giáo án.",
+        severity: "warning",
+      });
       return;
     }
     if (!selectedCategoryId) {
-      setToast({ open: true, message: "Vui lòng chọn chuyên đề/danh mục.", severity: 'warning' });
+      setToast({
+        open: true,
+        message: "Vui lòng chọn chuyên đề/danh mục.",
+        severity: "warning",
+      });
       return;
     }
 
@@ -361,36 +529,47 @@ export default function CreateNewQuestionPage() {
       status: status,
       tutorId: userInfo.sub,
       answers: answerData
-        .filter((a) => a.content.trim() !== "" && a.content !== '<p><br></p>')
+        .filter((a) => a.content.trim() !== "" && a.content !== "<p><br></p>")
         .map(({ id, ...rest }) => rest),
     };
 
     setIsSubmitting(true);
     try {
       await createQuestion(userInfo.sub, [payload], token);
-      setToast({ open: true, message: "Tạo câu hỏi thành công!", severity: 'success' });
+      setToast({
+        open: true,
+        message: "Tạo câu hỏi thành công!",
+        severity: "success",
+      });
       navigate("/tutor/question");
     } catch (error) {
-      const msg = "Lỗi tạo câu hỏi: " + (error.response?.data?.message || error.message);
+      const msg =
+        "Lỗi tạo câu hỏi: " + (error.response?.data?.message || error.message);
       setApiError(msg);
-      setToast({ open: true, message: "Tạo câu hỏi thất bại.", severity: 'error' });
+      setToast({
+        open: true,
+        message: "Tạo câu hỏi thất bại.",
+        severity: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCloseToast = (event, reason) => {
-    if (reason === 'clickaway') return;
-    setToast(prev => ({ ...prev, open: false }));
+    if (reason === "clickaway") return;
+    setToast((prev) => ({ ...prev, open: false }));
   };
 
   return (
-    <Box sx={{
-      display: "flex",
-      flexDirection: "column",
-      height: '100vh',
-      bgcolor: 'background.default'
-    }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        bgcolor: "background.default",
+      }}
+    >
       <EditorHeader
         questionType={questionType}
         onTypeChange={(e) => setQuestionType(e.target.value)}
@@ -400,10 +579,29 @@ export default function CreateNewQuestionPage() {
         isSubmitting={isSubmitting}
       />
       <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden" }}>
-        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: { xs: 1, md: 2 }, overflowY: 'auto' }}>
-          {apiError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApiError(null)}>{apiError}</Alert>}
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            p: { xs: 1, md: 2 },
+            overflowY: "auto",
+          }}
+        >
+          {apiError && (
+            <Alert
+              severity="error"
+              sx={{ mb: 2 }}
+              onClose={() => setApiError(null)}
+            >
+              {apiError}
+            </Alert>
+          )}
 
-          <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+          <Paper
+            variant="outlined"
+            sx={{ p: 2, flexGrow: 1, display: "flex", flexDirection: "column" }}
+          >
             <TextField
               label="Tiêu đề câu hỏi"
               variant="outlined"
@@ -423,9 +621,9 @@ export default function CreateNewQuestionPage() {
               toolbarType="full"
               style={{
                 flexGrow: 1,
-                minHeight: '200px',
-                display: 'flex',
-                flexDirection: 'column'
+                minHeight: "200px",
+                display: "flex",
+                flexDirection: "column",
               }}
             />
 

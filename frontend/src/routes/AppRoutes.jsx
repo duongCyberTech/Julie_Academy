@@ -79,7 +79,9 @@ function AppRoutes(props) {
           <Route path="exam" element={<ExamPage />} />
           <Route path="exam/:examId" element={<ExamDetailPage />} />
           <Route path="assignment" element={<AssignmentPage />} />
+          <Route path="question/:id" element={<QuestionDetailPage />} />
           <Route path="profile" element={<TutorProfilePage />} />
+          
         </Route>
       </Route>
 

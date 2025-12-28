@@ -208,7 +208,7 @@ function ClassDetailPage() {
                                 <Box>
                                     <Typography variant="caption" color="text.secondary" fontWeight={600}>SĨ SỐ</Typography>
                                     <Typography variant="subtitle2" fontWeight={700}>
-                                        {classData.learning?.length || 0} / {classData.nb_of_student} học viên
+                                        {classData.nb_of_student} học viên
                                     </Typography>
                                 </Box>
                             </StatBox>

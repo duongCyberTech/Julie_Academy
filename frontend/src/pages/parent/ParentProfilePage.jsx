@@ -17,17 +17,16 @@ import {
   InfoOutlined,
   FamilyRestroom
 } from "@mui/icons-material";
-import "../student/Profile.css"; // Dùng chung file CSS
+import "../student/Profile.css"; 
 
 const ParentProfilePage = () => {
   const navigate = useNavigate();
 
-  // --- STATE ---
   const [savedUser, setSavedUser] = useState({
     fname: "", mname: "", lname: "",
     email: "", role: "",
     avata_url: "", createAt: "",
-    phone_number: "" // Trường quan trọng nhất của Phụ huynh
+    phone_number: "" 
   });
 
   const [formData, setFormData] = useState({

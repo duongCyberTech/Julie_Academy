@@ -239,7 +239,7 @@ model Folders {
 
 model Categories {
   category_id      String       @id @default(uuid())
-  category_name    String       @unique
+  category_name    String       
   description      String?
   createAt         DateTime     @default(now())
   updateAt         DateTime     @default(now())
