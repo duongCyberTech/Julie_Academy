@@ -25,7 +25,10 @@ export const getAllPlans = async (token) => {
 
 export const getPlansByTutor = async (tutorId, token) => {
   try {
-    const response = await apiClient.get(`/books/${tutorId}`, getAuthHeaders(token));
+    const response = await apiClient.get(
+      `/books/${tutorId}`,
+      getAuthHeaders(token)
+    );
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
@@ -89,12 +92,26 @@ export const getAllCategories = async (params = {}, token) => {
       params,
       ...getAuthHeaders(token),
     });
-    return response.data;
+    if (response.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    if (
+      Array.isArray(response.data) &&
+      response.data.length === 2 &&
+      Array.isArray(response.data[0])
+    ) {
+      return response.data[0];
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+
+    return [];
   } catch (error) {
+    console.error("Lỗi API Categories:", error);
     throw error.response?.data || error;
   }
 };
-
 export const createCategory = async (categoryData, token) => {
   try {
     const response = await apiClient.post(
@@ -134,14 +151,14 @@ export const deleteCategory = async (categoryId, mode, token) => {
 };
 
 export const getPlanDetail = async (planId, token) => {
-    try {
-        const response = await apiClient.get(
-            `/books/plan/${planId}`, 
-            getAuthHeaders(token)
-        );
-        return response.data;
-    } catch (error) {
-        console.error("Lỗi lấy chi tiết giáo án:", error);
-        throw error.response?.data || error;
-    }
+  try {
+    const response = await apiClient.get(
+      `/books/plan/${planId}`,
+      getAuthHeaders(token)
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi lấy chi tiết giáo án:", error);
+    throw error.response?.data || error;
+  }
 };

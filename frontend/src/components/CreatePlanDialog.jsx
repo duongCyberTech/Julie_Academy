@@ -3,8 +3,8 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, Stack, MenuItem, CircularProgress, Alert
 } from '@mui/material';
-
-const GRADES = [6, 7, 8, 9, 10, 11, 12];
+const SUBJECTS = ['Toán', 'Lý', 'Hóa', 'Văn', 'Anh'];
+const GRADES = [6, 7, 8, 9];
 
 const CreateLessonPlanDialog = ({ open, onClose, onSubmit, loading }) => {
     const [formData, setFormData] = useState({
@@ -55,10 +55,14 @@ const CreateLessonPlanDialog = ({ open, onClose, onSubmit, loading }) => {
                             name="subject"
                             required
                             fullWidth
-                            placeholder="Toán, Lý, Hóa..."
                             value={formData.subject}
                             onChange={handleChange}
-                        />
+                            select
+                        >
+                            {SUBJECTS.map((subject) => (
+                                <MenuItem key={subject} value={subject}>{subject}</MenuItem>
+                            ))}
+                        </TextField>
                         <TextField
                             select
                             label="Khối lớp"

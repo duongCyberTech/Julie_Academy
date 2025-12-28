@@ -604,12 +604,15 @@ async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string
   async updateClass(class_id: string, data: Partial<ClassDto>) {
     return this.prisma.$transaction(async (tx) => {
       const { plan_id, ...rest } = data;
+      const updateData: any = { ...rest };
+      if (plan_id) {
+        updateData.plan = { connect: { plan_id } };
+      } else if (plan_id === null) {
+        updateData.plan = { disconnect: true };
+      }
       return tx.class.update({
         where: { class_id },
-        data: {
-          ...rest,
-          ...(plan_id ? { plan: { connect: { plan_id } } } : {})
-        }
+        data: updateData
       });
     });
   }
