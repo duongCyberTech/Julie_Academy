@@ -172,7 +172,7 @@ export default function StudentMyClassPage() {
     <Container maxWidth={false} sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
-          Lớp học của tôi (UC_HS06)
+          Lớp học của tôi 
         </Typography>
         <Typography variant="body1" color="text.secondary">
           Tất cả các lớp học bạn đã đăng ký tham gia.

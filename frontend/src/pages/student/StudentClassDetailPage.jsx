@@ -327,7 +327,7 @@ export default function StudentClassDetailPage() {
                         sx={{ width: 32, height: 32, mr: 1 }}
                     />
                     <Typography variant="body1" color="text.secondary">
-                        Gia sư: {mockClassInfo.tutor_name} (ID Lớp: {classId})
+                        Gia sư: {mockClassInfo.tutor_name} 
                     </Typography>
                 </Box>
             </CardContent>

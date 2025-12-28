@@ -493,7 +493,7 @@ export default function StudentPracticePage() {
   return (
     <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-        Thư viện Luyện tập
+        Thư viện luyện tập
       </Typography>
 
       <Paper

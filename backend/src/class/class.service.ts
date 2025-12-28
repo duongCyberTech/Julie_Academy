@@ -657,7 +657,6 @@ async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string
                     fname: true,
                     lname: true,
                     mname: true,
-                    nb_of_student: true,
                     avata_url: true
                   }
                 }
