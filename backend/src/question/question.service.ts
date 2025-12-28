@@ -167,7 +167,7 @@ export class CategoryService {
     try {
       return this.prisma.$transaction(async (tx) => {
         for (const category of data) {
-          await this.upsertCategoryWithChildren(tx, category);
+          await this.upsertCategoryWithChildren(tx, category, category.parent_id);
         }
         return data;
       });

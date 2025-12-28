@@ -39,20 +39,44 @@ export class FolderService {
             where: {
                 class: {some: {class_id}},
                 parent_id: parent_id
+            },
+            include: {
+                class: { 
+                    where: { class_id: class_id },
+                    select: { category_id: true } 
+                },
+                resources: {
+                    include: {
+                        resource: true
+                    }
+                }
             }
         })
+
         if (!fatherLayer || fatherLayer.length === 0) return []
 
         let result = []
         
         for (const item of fatherLayer) { 
             const children = await this.traverseFolderTree(class_id, item.folder_id)
-            result.push({...item, children})
+            
+            const formattedItem = {
+                ...item,
+                category_id: item.class?.[0]?.category_id || null, 
+                
+                resources: item.resources?.map((r: any) => r.resource) || [],
+                
+                children
+            }
+            
+            delete (formattedItem as any).class;
+            delete (formattedItem as any).resources; 
+
+            result.push(formattedItem)
         }
 
         return result
     }
-
     async getFolderByClass(class_id: string){
         const root = await this.traverseFolderTree(class_id)
         return root

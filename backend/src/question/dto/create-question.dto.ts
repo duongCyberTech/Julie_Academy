@@ -41,6 +41,7 @@ export class CreateQuestionDto {
   @IsString()
   title: string;
 
+
   @IsNotEmpty()
   @IsString()
   content: string;
@@ -52,6 +53,7 @@ export class CreateQuestionDto {
   @IsString()
   @IsOptional()
   explaination?: string;
+
 
   @IsNotEmpty()
   @IsEnum(QuestionType)
