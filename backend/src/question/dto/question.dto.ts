@@ -26,7 +26,10 @@ export class CategoryDto {
     updateAt: Date;
     @ApiProperty()
     children?: CategoryDto[];
+    @ApiProperty()
     plan_id: string
+    @ApiProperty()
+    parent_id?: string | null;
 }
 
 export class QuestionDto {
