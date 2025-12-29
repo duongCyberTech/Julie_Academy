@@ -5,7 +5,7 @@ import {
     Checkbox, List, ListItem, ListItemButton, ListItemAvatar, 
     ListItemText, CircularProgress, Alert, Snackbar, IconButton,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
-    FormControl, InputLabel, Select, MenuItem, TableSortLabel, Tooltip
+    FormControl, InputLabel, Select, MenuItem, TableSortLabel
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -13,7 +13,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 
-// Icons
 import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import CloseIcon from '@mui/icons-material/Close';
@@ -22,19 +21,16 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'; // Icon xem chi tiết
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 
-// Import Component Mới
 import ClassDetailDrawer from './ClassDetailDrawer';
 
-// Services
 import { getAllClasses, requestEnrollment } from '../../services/ClassService';
 import { getMyChildren } from '../../services/UserService'; 
 
-// --- STYLED COMPONENTS (Giữ nguyên) ---
 const PageContainer = styled(Box)(({ theme }) => ({
     padding: theme.spacing(3),
-    backgroundColor: '#F4F6F8',
+    backgroundColor: '#F8F9FA',
     minHeight: '100vh',
 }));
 
@@ -47,7 +43,7 @@ const FilterBar = styled(Paper)(({ theme }) => ({
     gap: theme.spacing(2),
     borderRadius: theme.shape.borderRadius * 2,
     border: `1px solid ${theme.palette.divider}`,
-    boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
+    boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
 }));
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
@@ -56,79 +52,57 @@ const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
     backgroundColor: '#fff',
     boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
     '& .MuiTableCell-head': {
-        backgroundColor: theme.palette.grey[50],
+        backgroundColor: '#eff6ff',
         fontWeight: 700,
-        color: theme.palette.text.secondary,
+        color: '#1e40af',
         borderBottom: `2px solid ${theme.palette.divider}`
     },
     '& .MuiTableRow-root:hover': {
         backgroundColor: alpha(theme.palette.primary.main, 0.04),
-        cursor: 'pointer' // Thêm con trỏ để biết click được
+        cursor: 'pointer'
     }
 }));
 
-// --- HELPER FUNCTIONS ---
-function descendingComparator(a, b, orderBy) {
-    if (orderBy === 'startat') {
-        return new Date(b.startat) - new Date(a.startat);
-    }
-    if (b[orderBy] < a[orderBy]) return -1;
-    if (b[orderBy] > a[orderBy]) return 1;
-    return 0;
-}
-
-function getComparator(order, orderBy) {
-    return order === 'desc'
-        ? (a, b) => descendingComparator(a, b, orderBy)
-        : (a, b) => -descendingComparator(a, b, orderBy);
-}
-
-// Hàm format lịch học cho gọn để hiển thị ở bảng (VD: T2, T4 | 19:00)
-const formatShortSchedule = (schedule) => {
-    if (!schedule || schedule.length === 0) return "Chưa có lịch";
-    // Nhóm theo giờ
-    const days = schedule.map(s => {
-        const dayMap = {2:'T2', 3:'T3', 4:'T4', 5:'T5', 6:'T6', 7:'T7', 8:'CN'};
-        return dayMap[s.meeting_date];
-    }).join(', ');
+const formatShortSchedule = (scheduleData) => {
+    if (!scheduleData || !Array.isArray(scheduleData) || scheduleData.length === 0) return "Chưa xếp lịch";
     
-    // Lấy giờ của buổi đầu tiên làm mẫu (thường lịch học giờ giống nhau)
-    const time = `${schedule[0].startAt}`;
-    return `${days} (${time})`;
+    const daysStr = scheduleData.map(s => {
+        const dayVal = s.meeting_date ?? s.day ?? s.day_of_week;
+        const dayMap = { '2': 'T2', '3': 'T3', '4': 'T4', '5': 'T5', '6': 'T6', '7': 'T7', '8': 'CN', '1': 'CN', '0': 'CN' };
+        return dayMap[String(dayVal)] || '?'; 
+    }).join(', ');
+
+    const first = scheduleData[0];
+    const timeVal = first.startAt ?? first.startTime ?? '';
+    const timeStr = timeVal.length > 5 ? timeVal.substring(0, 5) : timeVal;
+
+    return `${daysStr} ${timeStr ? `(${timeStr})` : ''}`;
 };
 
-// --- MAIN COMPONENT ---
-
 function ParentEnrollPage() {
-    const [token] = useState(() => localStorage.getItem('token'));
-    
-    // Data
     const [classes, setClasses] = useState([]);
     const [children, setChildren] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    // Filter State
     const [search, setSearch] = useState('');
     const [filterSubject, setFilterSubject] = useState('all');
     const [filterGrade, setFilterGrade] = useState('all');
     const [filterDate, setFilterDate] = useState(null); 
 
-    // Sort & Pagination State
     const [order, setOrder] = useState('desc');
     const [orderBy, setOrderBy] = useState('createdAt'); 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
-    // Dialog & Drawer State
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [drawerOpen, setDrawerOpen] = useState(false); // State cho Drawer
+    const [drawerOpen, setDrawerOpen] = useState(false); 
     const [selectedClass, setSelectedClass] = useState(null);
     const [selectedChildIds, setSelectedChildIds] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState({ open: false, msg: '', severity: 'info' });
 
-    // 1. Fetch Data
     const fetchData = useCallback(async () => {
+        const token = localStorage.getItem('token');
         if (!token) return;
         setLoading(true);
         try {
@@ -138,23 +112,18 @@ function ParentEnrollPage() {
             ]);
 
             const allList = Array.isArray(classRes) ? classRes : (classRes?.data || []);
-            // Lọc lớp Pending và Ongoing (như logic backend)
             const validClasses = allList.filter(c => c.status === 'pending' || c.status === 'ongoing');
 
             setClasses(validClasses);
             setChildren(Array.isArray(childRes) ? childRes : (childRes?.data || []));
         } catch (err) {
-            setToast({ open: true, msg: "Lỗi tải dữ liệu.", severity: "error" });
+            console.error(err);
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
-
-    // --- LOGIC FILTER & SORT ---
-    const uniqueSubjects = useMemo(() => [...new Set(classes.map(c => c.subject))].filter(Boolean), [classes]);
-    const uniqueGrades = useMemo(() => [...new Set(classes.map(c => c.grade))].filter(Boolean).sort((a,b)=>a-b), [classes]);
 
     const handleRequestSort = (property) => {
         const isAsc = orderBy === property && order === 'asc';
@@ -164,37 +133,43 @@ function ParentEnrollPage() {
 
     const filteredClasses = useMemo(() => {
         return classes.filter((cls) => {
-            const matchSearch = cls.classname.toLowerCase().includes(search.toLowerCase()) || 
-                                cls.tutor?.user?.lname?.toLowerCase().includes(search.toLowerCase());
+            const s = search.toLowerCase();
+            const matchSearch = cls.classname.toLowerCase().includes(s) || 
+                                cls.tutor?.user?.lname?.toLowerCase().includes(s);
             const matchSubject = filterSubject === 'all' || cls.subject === filterSubject;
             const matchGrade = filterGrade === 'all' || cls.grade === filterGrade;
+            
             let matchDate = true;
             if (filterDate && cls.startat) {
-                const classDate = dayjs(cls.startat);
-                const selectedDate = dayjs(filterDate);
-                matchDate = classDate.isSame(selectedDate, 'day') || classDate.isAfter(selectedDate, 'day');
+                matchDate = dayjs(cls.startat).isSame(dayjs(filterDate), 'day') || 
+                            dayjs(cls.startat).isAfter(dayjs(filterDate), 'day');
             }
             return matchSearch && matchSubject && matchGrade && matchDate;
         });
     }, [classes, search, filterSubject, filterGrade, filterDate]);
 
-    const visibleRows = useMemo(() => {
-        return filteredClasses.slice().sort(getComparator(order, orderBy))
-            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-    }, [filteredClasses, order, orderBy, page, rowsPerPage]);
+    const sortedRows = useMemo(() => {
+        const comparator = (a, b) => {
+            if (orderBy === 'startat') return new Date(b.startat) - new Date(a.startat);
+            if (b[orderBy] < a[orderBy]) return -1;
+            if (b[orderBy] > a[orderBy]) return 1;
+            return 0;
+        };
+        const sorted = filteredClasses.slice().sort(comparator);
+        return order === 'desc' ? sorted : sorted.reverse();
+    }, [filteredClasses, order, orderBy]);
 
-    // --- HANDLERS ---
+    const visibleRows = sortedRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    const uniqueSubjects = useMemo(() => [...new Set(classes.map(c => c.subject))].filter(Boolean), [classes]);
+    const uniqueGrades = useMemo(() => [...new Set(classes.map(c => c.grade))].filter(Boolean).sort((a,b)=>a-b), [classes]);
 
-    // Mở Dialog Đăng ký (Từ nút hoặc từ Drawer)
     const handleOpenEnrollDialog = (cls) => {
-        // Đóng drawer nếu đang mở để tập trung vào việc đăng ký
         setDrawerOpen(false); 
         setSelectedClass(cls);
         setSelectedChildIds([]);
         setDialogOpen(true);
     };
 
-    // Mở Drawer xem chi tiết (Khi click vào tên lớp hoặc nút Info)
     const handleOpenDrawer = (cls) => {
         setSelectedClass(cls);
         setDrawerOpen(true);
@@ -208,13 +183,15 @@ function ParentEnrollPage() {
     };
 
     const handleSubmit = async () => {
-        if (selectedChildIds.length === 0) return;
+        const token = localStorage.getItem('token');
+        if (!token || selectedChildIds.length === 0) return;
+        
         setIsSubmitting(true);
         try {
-            // API nhận body là mảng string[] theo đúng test Postman của bạn
             await requestEnrollment(selectedClass.class_id, selectedChildIds, token);
-            setToast({ open: true, msg: "Đăng ký thành công! Chờ duyệt.", severity: "success" });
+            setToast({ open: true, msg: "Đăng ký thành công!", severity: "success" });
             setDialogOpen(false);
+            fetchData();
         } catch (err) {
             setToast({ open: true, msg: err.response?.data?.message || "Lỗi đăng ký.", severity: "error" });
         } finally {
@@ -222,12 +199,12 @@ function ParentEnrollPage() {
         }
     };
 
-    const handleResetFilter = () => {
-        setSearch('');
-        setFilterSubject('all');
-        setFilterGrade('all');
-        setFilterDate(null);
-        setPage(0);
+    const getChildEnrollStatus = (childId, classData) => {
+        if (!classData?.learning) return null;
+        const record = classData.learning.find(l => 
+            l.student?.uid === childId || l.student_uid === childId
+        );
+        return record ? record.status : null;
     };
 
     if (loading) return <Box height="100vh" display="flex" justifyContent="center" alignItems="center"><CircularProgress /></Box>;
@@ -235,15 +212,14 @@ function ParentEnrollPage() {
     return (
         <PageContainer>
             <Box mb={4}>
-                <Typography variant="h4" fontWeight="600" color="text.primary">Đăng ký lớp học</Typography>
-                <Typography variant="body2" color="text.secondary">Tìm kiếm lớp học, xem lịch giảng dạy và đăng ký cho con</Typography>
+                <Typography variant="h4" fontWeight="700" color="#1e3a8a">Đăng ký lớp học</Typography>
+                <Typography variant="body2" color="text.secondary">Tìm kiếm lớp học và đăng ký cho con</Typography>
             </Box>
 
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <FilterBar elevation={0}>
-                    {/* ... (Phần Filter giữ nguyên như code cũ) ... */}
                     <TextField 
-                        placeholder="Tìm tên lớp, giáo viên..." 
+                        placeholder="Tìm lớp, giáo viên..." 
                         size="small" 
                         value={search} onChange={(e) => setSearch(e.target.value)}
                         InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon color="action"/></InputAdornment> }}
@@ -263,21 +239,34 @@ function ParentEnrollPage() {
                             {uniqueGrades.map(g => <MenuItem key={g} value={g}>Khối {g}</MenuItem>)}
                         </Select>
                     </FormControl>
-                    <DatePicker label="Khai giảng từ" value={filterDate} onChange={(newValue) => setFilterDate(newValue)} slotProps={{ textField: { size: 'small', sx: { width: 170 } } }} />
-                    <Button variant="text" startIcon={<RestartAltIcon/>} onClick={handleResetFilter} color="inherit" sx={{ ml: 'auto' }}>Đặt lại</Button>
+                    <DatePicker 
+                        label="Khai giảng từ" 
+                        value={filterDate} 
+                        onChange={(newValue) => setFilterDate(newValue)} 
+                        slotProps={{ textField: { size: 'small', sx: { width: 170 } } }} 
+                    />
+                    <Button 
+                        variant="text" 
+                        color="inherit"
+                        startIcon={<RestartAltIcon/>} 
+                        onClick={() => {setSearch(''); setFilterSubject('all'); setFilterGrade('all'); setFilterDate(null); setPage(0);}} 
+                        sx={{ ml: 'auto' }}
+                    >
+                        Đặt lại
+                    </Button>
                 </FilterBar>
             </LocalizationProvider>
 
-            <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+            <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
                 <StyledTableContainer>
                     <Table sx={{ minWidth: 750 }}>
                         <TableHead>
                             <TableRow>
-                                <TableCell width="25%"><TableSortLabel active={orderBy === 'classname'} direction={orderBy === 'classname' ? order : 'asc'} onClick={() => handleRequestSort('classname')}>Tên lớp học</TableSortLabel></TableCell>
+                                <TableCell width="25%"><TableSortLabel active={orderBy === 'classname'} direction={order} onClick={() => handleRequestSort('classname')}>Tên lớp học</TableSortLabel></TableCell>
                                 <TableCell width="20%">Giáo viên</TableCell>
-                                <TableCell width="15%">Lịch học (Tóm tắt)</TableCell> {/* Cột Mới */}
+                                <TableCell width="15%">Lịch học</TableCell>
                                 <TableCell width="10%">Môn/Khối</TableCell>
-                                <TableCell width="15%"><TableSortLabel active={orderBy === 'startat'} direction={orderBy === 'startat' ? order : 'asc'} onClick={() => handleRequestSort('startat')}>Khai giảng</TableSortLabel></TableCell>
+                                <TableCell width="15%"><TableSortLabel active={orderBy === 'startat'} direction={order} onClick={() => handleRequestSort('startat')}>Khai giảng</TableSortLabel></TableCell>
                                 <TableCell width="15%" align="center">Hành động</TableCell>
                             </TableRow>
                         </TableHead>
@@ -288,37 +277,39 @@ function ParentEnrollPage() {
                                 visibleRows.map((row) => (
                                     <TableRow key={row.class_id} hover onClick={() => handleOpenDrawer(row)}>
                                         <TableCell>
-                                            <Typography variant="subtitle2" fontWeight="bold" color="primary.main">{row.classname}</Typography>
-                                            <Stack direction="row" spacing={1} mt={0.5}>
-                                                <Chip label={row.status === 'pending' ? 'Sắp mở' : 'Đang học'} size="small" color={row.status === 'pending' ? 'success' : 'default'} sx={{height: 20, fontSize: '0.65rem'}}/>
+                                            <Typography variant="subtitle2" fontWeight="bold" color="#1d4ed8">{row.classname}</Typography>
+                                            <Stack direction="row" spacing={1} mt={0.5} alignItems="center">
+                                                <Chip label={row.status === 'pending' ? 'Tuyển sinh' : 'Đang học'} size="small" color={row.status === 'pending' ? 'success' : 'default'} sx={{height: 20, fontSize: '0.65rem', fontWeight: 600}}/>
+                                                <Typography variant="caption" color="text.secondary">{row.nb_of_student} học viên</Typography>
                                             </Stack>
                                         </TableCell>
                                         <TableCell>
-                                            <Stack direction="row" alignItems="center" spacing={1}>
-                                                <Avatar src={row.tutor?.user?.avata_url} sx={{ width: 32, height: 32 }}>{row.tutor?.user?.lname?.charAt(0)}</Avatar>
+                                            <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                <Avatar src={row.tutor?.user?.avata_url} sx={{ width: 36, height: 36, border: '1px solid #e0e7ff' }}>{row.tutor?.user?.lname?.charAt(0)}</Avatar>
                                                 <Box>
-                                                    <Typography variant="body2" fontWeight={500}>{row.tutor?.user?.lname} {row.tutor?.user?.fname}</Typography>
+                                                    <Typography variant="body2" fontWeight={600} color="#1e293b">{row.tutor?.user?.lname} {row.tutor?.user?.fname}</Typography>
+                                                    <Typography variant="caption" color="text.secondary">Gia sư</Typography>
                                                 </Box>
                                             </Stack>
                                         </TableCell>
-                                        {/* Cột Lịch học mới */}
                                         <TableCell>
-                                            <Typography variant="body2" fontWeight="600" color="#eab308">
+                                            <Typography variant="body2" fontWeight="600" color="#b45309">
                                                 {formatShortSchedule(row.schedule)}
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
-                                            <Typography variant="body2">{row.subject}</Typography>
-                                            <Typography variant="caption" color="text.secondary">Khối {row.grade}</Typography>
+                                            <Chip label={row.subject} size="small" sx={{bgcolor: '#eff6ff', color: '#1d4ed8', fontWeight: 600, border: 'none'}} />
+                                            <Typography variant="caption" color="text.secondary" ml={1}>K{row.grade}</Typography>
                                         </TableCell>
                                         <TableCell>{row.startat ? dayjs(row.startat).format('DD/MM/YYYY') : '---'}</TableCell>
                                         <TableCell align="center">
                                             <Button 
                                                 variant="contained" 
                                                 size="small" 
+                                                disableElevation
                                                 startIcon={<PersonAddIcon />}
-                                                onClick={(e) => { e.stopPropagation(); handleOpenEnrollDialog(row); }} // Chặn sự kiện click row
-                                                sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#f97316', '&:hover': {bgcolor: '#ea580c'} }}
+                                                onClick={(e) => { e.stopPropagation(); handleOpenEnrollDialog(row); }}
+                                                sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#ea580c', '&:hover': {bgcolor: '#c2410c'} }}
                                             >
                                                 Đăng ký
                                             </Button>
@@ -337,7 +328,6 @@ function ParentEnrollPage() {
                 />
             </Paper>
 
-            {/* --- DRAWER CHI TIẾT LỚP HỌC (MỚI) --- */}
             <ClassDetailDrawer 
                 open={drawerOpen} 
                 onClose={() => setDrawerOpen(false)} 
@@ -345,53 +335,80 @@ function ParentEnrollPage() {
                 onEnrollClick={handleOpenEnrollDialog} 
             />
 
-            {/* --- DIALOG CHỌN CON (GIỮ NGUYÊN LOGIC CŨ, CHỈNH LẠI UI) --- */}
             <Dialog open={dialogOpen} onClose={() => !isSubmitting && setDialogOpen(false)} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
                     <Typography variant="h6" fontWeight="bold">Chọn con để đăng ký</Typography>
                     {!isSubmitting && <IconButton onClick={() => setDialogOpen(false)} size="small"><CloseIcon/></IconButton>}
                 </DialogTitle>
                 <DialogContent dividers>
-                    <Box mb={2} p={2} bgcolor="#fff7ed" borderRadius={1} border="1px dashed #fdba74">
+                    <Box mb={2} p={2} bgcolor="#fff7ed" borderRadius={2} border="1px dashed #fdba74">
                         <Typography variant="body2" color="#c2410c">
-                            Đăng ký vào lớp: <strong>{selectedClass?.classname}</strong>
+                            Lớp học: <strong>{selectedClass?.classname}</strong>
                         </Typography>
                     </Box>
                     {children.length === 0 ? (
-                        <Box textAlign="center" py={3}>
-                            <ChildCareIcon sx={{ fontSize: 40, color: 'text.disabled', opacity: 0.5 }} />
+                        <Box textAlign="center" py={4}>
+                            <ChildCareIcon sx={{ fontSize: 48, color: '#9ca3af', opacity: 0.5, mb: 1 }} />
                             <Typography color="text.secondary">Chưa có tài khoản học sinh nào được liên kết.</Typography>
                         </Box>
                     ) : (
-                        <List>
+                        <List disablePadding>
                             {children.map((child) => {
                                 const userInfo = child.user || {};
                                 const studentInfo = child.studentInfo || {};
+                                const currentStatus = getChildEnrollStatus(child.uid, selectedClass);
+                                const isEnrolled = !!currentStatus;
                                 const isChecked = selectedChildIds.indexOf(child.uid) !== -1;
+                                
                                 return (
-                                    <ListItem key={child.uid} disablePadding divider sx={{ bgcolor: isChecked ? alpha('#f97316', 0.08) : 'inherit' }}>
-                                        <ListItemButton onClick={() => handleToggleChild(child.uid)} sx={{ py: 1.5 }}>
+                                    <ListItem 
+                                        key={child.uid} 
+                                        disablePadding 
+                                        divider 
+                                        sx={{ 
+                                            bgcolor: isChecked ? '#fff7ed' : 'inherit',
+                                            opacity: isEnrolled ? 0.7 : 1
+                                        }}
+                                        secondaryAction={
+                                            isEnrolled ? (
+                                                <Chip 
+                                                    size="small" 
+                                                    label={currentStatus === 'accepted' ? "Đã tham gia" : "Đang chờ"} 
+                                                    color={currentStatus === 'accepted' ? "success" : "warning"}
+                                                    variant="outlined"
+                                                    icon={currentStatus === 'accepted' ? <CheckCircleIcon/> : <HourglassEmptyIcon/>}
+                                                />
+                                            ) : (
+                                                <Checkbox 
+                                                    checked={isChecked} 
+                                                    onChange={() => handleToggleChild(child.uid)}
+                                                    icon={<CheckCircleIcon color="disabled" fontSize="medium" />} 
+                                                    checkedIcon={<CheckCircleIcon sx={{color: '#ea580c'}} fontSize="medium" />} 
+                                                />
+                                            )
+                                        }
+                                    >
+                                        <ListItemButton onClick={() => !isEnrolled && handleToggleChild(child.uid)} disabled={isEnrolled} sx={{ py: 1.5 }}>
                                             <ListItemAvatar>
-                                                <Avatar src={userInfo.avata_url} sx={{ bgcolor: isChecked ? '#f97316' : 'grey.300', fontWeight:'bold' }}>
+                                                <Avatar src={userInfo.avata_url} sx={{ bgcolor: isChecked ? '#ea580c' : '#e5e7eb', color: isChecked ? '#fff' : '#4b5563', fontWeight:'bold' }}>
                                                     {userInfo.lname?.charAt(0)}
                                                 </Avatar>
                                             </ListItemAvatar>
                                             <ListItemText 
-                                                primary={<Typography variant="subtitle1" fontWeight="bold">{userInfo.lname} {userInfo.mname} {userInfo.fname}</Typography>}
+                                                primary={<Typography variant="subtitle2" fontWeight="bold">{userInfo.lname} {userInfo.fname}</Typography>}
                                                 secondary={
                                                     <Stack spacing={0.5} mt={0.5}>
                                                         <Stack direction="row" alignItems="center" spacing={1}>
-                                                            <SchoolOutlinedIcon fontSize="small" color="action" />
-                                                            <Typography variant="body2" color="text.secondary">{studentInfo.school || "Chưa cập nhật trường"}</Typography>
+                                                            <SchoolOutlinedIcon sx={{fontSize: 16}} color="action" />
+                                                            <Typography variant="caption" color="text.secondary">{studentInfo.school || "Chưa cập nhật trường"}</Typography>
                                                         </Stack>
                                                         <Stack direction="row" alignItems="center" spacing={1}>
-                                                            <EmailOutlinedIcon fontSize="small" color="action" />
-                                                            <Typography variant="body2" color="text.secondary">{userInfo.email}</Typography>
+                                                            <EmailOutlinedIcon sx={{fontSize: 16}} color="action" />
+                                                            <Typography variant="caption" color="text.secondary">{userInfo.email}</Typography>
                                                         </Stack>
                                                     </Stack>
                                                 }
                                             />
-                                            <Checkbox edge="end" checked={isChecked} icon={<CheckCircleIcon color="disabled" fontSize="large" />} checkedIcon={<CheckCircleIcon sx={{color: '#f97316'}} fontSize="large" />} />
                                         </ListItemButton>
                                     </ListItem>
                                 );
@@ -399,14 +416,14 @@ function ParentEnrollPage() {
                         </List>
                     )}
                 </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setDialogOpen(false)} disabled={isSubmitting} color="inherit">Hủy</Button>
+                <DialogActions sx={{ p: 3, pt: 2 }}>
+                    <Button onClick={() => setDialogOpen(false)} disabled={isSubmitting} color="inherit" sx={{borderRadius: 2}}>Hủy</Button>
                     <Button 
                         onClick={handleSubmit} 
                         variant="contained" 
                         disabled={isSubmitting || selectedChildIds.length === 0} 
                         startIcon={isSubmitting && <CircularProgress size={20} color="inherit"/>}
-                        sx={{ px: 4, borderRadius: 2, bgcolor: '#f97316', '&:hover': {bgcolor: '#ea580c'} }}
+                        sx={{ px: 3, borderRadius: 2, bgcolor: '#ea580c', '&:hover': {bgcolor: '#c2410c'} }}
                     >
                         {isSubmitting ? "Đang xử lý..." : `Xác nhận (${selectedChildIds.length})`}
                     </Button>

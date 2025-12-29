@@ -112,9 +112,9 @@ export class CategoryService {
       where: {
         category_name: categoryData.category_name,
         structure: { some: { plan_id: categoryData.plan_id } },
+        parent_id: parentId, 
       },
     });
-    // -----------------------
 
     const categoryDataForCreate = {
       category_name: categoryData.category_name,
@@ -123,13 +123,11 @@ export class CategoryService {
         ? { Categories: { connect: { category_id: parentId } } }
         : {}),
     };
-
     const category = existingCategory
       ? existingCategory
       : await tx.categories.create({
           data: categoryDataForCreate,
         });
-
     if (!existingCategory) {
       await tx.structure.create({
         data: {
@@ -157,7 +155,7 @@ export class CategoryService {
 
     if (categoryData.children?.length) {
       for (const child of categoryData.children) {
-        child.plan_id = categoryData.plan_id;
+        child.plan_id = categoryData.plan_id; 
         await this.upsertCategoryWithChildren(tx, child, category.category_id);
       }
     }

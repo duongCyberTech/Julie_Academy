@@ -332,6 +332,13 @@ export class ClassService {
         duration_time: true,
         startat: true,
         createdAt: true,
+        schedule: {
+          select: {
+            meeting_date: true,
+            startAt: true,
+            endAt: true
+          }
+        },
         tutor:{
           select:{ user:{
             select:{
@@ -340,9 +347,19 @@ export class ClassService {
               mname: true,
               lname: true,
               username: true,
+              avata_url: true 
             }
           }
           }
+        },
+        learning: {
+            select: {
+                student_uid: true,
+                status: true,
+                student: {
+                    select: { user: { select: { uid: true } } }
+                }
+            }
         }
       },
     });

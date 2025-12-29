@@ -3,7 +3,6 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-  useRef,
 } from "react";
 import {
   Box,
@@ -20,9 +19,7 @@ import {
   DialogContent,
   TextField,
   DialogActions,
-  CircularProgress,
   Tooltip,
-  LinearProgress,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -32,7 +29,6 @@ import {
   Divider,
 } from "@mui/material";
 import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
-import { io } from "socket.io-client";
 
 // --- ICONS ---
 import FolderIcon from "@mui/icons-material/Folder";
@@ -47,9 +43,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import HomeIcon from "@mui/icons-material/Home";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import CloudDownloadIcon from "@mui/icons-material/CloudDownload";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
@@ -60,9 +54,7 @@ import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import {
   getAllCategories,
   createCategory,
-  updateCategory,
   deleteCategory,
-  updateBook,
   deleteBook,
   getPlanDetail,
 } from "../../services/CategoryService";
@@ -72,13 +64,45 @@ import {
   createFolder,
   uploadResource,
   deleteFolder,
-  // Không import deleteResource vì chưa có
 } from "../../services/ResourceService";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import FilePreviewDialog from "../../components/FilePreviewDialog";
 
 // ============================================================================
-// SUB-COMPONENTS (Dialogs, Icons)
+// HELPER FUNCTIONS 
+// ============================================================================
+
+const addFileToFolderState = (nodes, targetFolderId, newFile) => {
+  return nodes.map((node) => {
+    if (String(node.folder_id) === String(targetFolderId)) {
+      return {
+        ...node,
+        resources: [...(node.resources || []), newFile],
+      };
+    }
+    if (node.children && node.children.length > 0) {
+      return {
+        ...node,
+        children: addFileToFolderState(node.children, targetFolderId, newFile),
+      };
+    }
+    return node;
+  });
+};
+
+const findFolderNode = (nodes, id) => {
+  for (const node of nodes) {
+    if (String(node.folder_id) === String(id)) return node;
+    if (node.children) {
+      const found = findFolderNode(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
+// ============================================================================
+// SUB-COMPONENTS (Nhỏ lẻ để lại đây cũng được)
 // ============================================================================
 
 const FileIcon = ({ mimeType }) => {
@@ -87,133 +111,6 @@ const FileIcon = ({ mimeType }) => {
   return <DescriptionIcon color="primary" fontSize="large" />;
 };
 
-// --- PREVIEW & DOWNLOAD DIALOG (Socket.io) ---
-const FilePreviewDialog = ({ open, onClose, fileData }) => {
-  const [progress, setProgress] = useState(0);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [blobUrl, setBlobUrl] = useState(null);
-  const [error, setError] = useState(null);
-  const chunksRef = useRef([]);
-  const socketRef = useRef(null);
-
-  useEffect(() => {
-    if (open && fileData) {
-      startStreaming();
-    }
-    // Cleanup khi đóng dialog
-    return () => {
-      if (socketRef.current) socketRef.current.disconnect();
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
-      chunksRef.current = [];
-      setProgress(0);
-      setIsDownloading(false);
-      setError(null);
-    };
-  }, [open, fileData]);
-
-  const startStreaming = () => {
-    setIsDownloading(true);
-    setProgress(0);
-    setError(null);
-    chunksRef.current = [];
-    
-    // Kết nối Socket
-    socketRef.current = io(SOCKET_URL);
-    const socket = socketRef.current;
-
-    socket.on("connect", () => {
-      // Gửi sự kiện yêu cầu tải file
-      socket.emit("START_DOWNLOAD", { docsId: fileData.did, startByte: 0 });
-    });
-
-    socket.on("CHUNK", (payload) => {
-      // Decode base64 chunk
-      const binaryString = window.atob(payload.data);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
-      chunksRef.current.push(bytes);
-      setProgress(payload.progress);
-    });
-
-    socket.on("COMPLETE", () => {
-      setIsDownloading(false);
-      setProgress(100);
-      const blob = new Blob(chunksRef.current, { type: fileData.file_type });
-      const url = URL.createObjectURL(blob);
-      setBlobUrl(url);
-    });
-
-    socket.on("ERROR", (err) => {
-      console.error("Socket error:", err);
-      setError(err.message || "Lỗi tải file");
-      setIsDownloading(false);
-    });
-  };
-
-  const handleDownloadToDisk = () => {
-    if (!blobUrl) return;
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = fileData.title || "downloaded-file";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Box display="flex" alignItems="center" gap={1}>
-          <DescriptionIcon color="primary" />
-          <Typography variant="h6" noWrap sx={{ maxWidth: 400 }}>
-            {fileData?.title || "Xem tài liệu"}
-          </Typography>
-        </Box>
-        <IconButton onClick={onClose}><CloseIcon /></IconButton>
-      </DialogTitle>
-      
-      <DialogContent dividers sx={{ height: "70vh", p: 0, display: "flex", flexDirection: "column", bgcolor: "#f5f5f5" }}>
-        {isDownloading ? (
-          <Box sx={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-            <CircularProgress variant="determinate" value={progress} size={60} />
-            <Typography mt={2}>Đang tải dữ liệu... {Math.round(progress)}%</Typography>
-            <Box sx={{ width: "50%", mx: "auto", mt: 2 }}>
-              <LinearProgress variant="determinate" value={progress} />
-            </Box>
-          </Box>
-        ) : error ? (
-           <Box sx={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center", color: "error.main" }}>
-             <Typography>{error}</Typography>
-           </Box>
-        ) : blobUrl ? (
-          <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center", overflow: "hidden", bgcolor: "#eee" }}>
-            {fileData.file_type?.includes("image") ? (
-              <img src={blobUrl} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} alt="preview" />
-            ) : fileData.file_type?.includes("pdf") ? (
-              <iframe src={blobUrl} width="100%" height="100%" style={{ border: "none" }} title="pdf-preview" />
-            ) : (
-              <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
-                <Typography>Không hỗ trợ xem trước định dạng này.</Typography>
-              </Box>
-            )}
-          </Box>
-        ) : null}
-      </DialogContent>
-      
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        {!isDownloading && blobUrl && (
-          <Button variant="contained" startIcon={<CloudDownloadIcon />} onClick={handleDownloadToDisk}>
-            Tải về máy
-          </Button>
-        )}
-        <Button onClick={onClose}>Đóng</Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
-
-// --- SIMPLE INPUT DIALOGS ---
 const NameInputDialog = ({ open, onClose, onSubmit, title, label, initialValue = "", loading }) => {
   const [name, setName] = useState(initialValue);
   useEffect(() => { if (open) setName(initialValue); }, [open, initialValue]);
@@ -263,23 +160,22 @@ const UploadFileDialog = ({ open, onClose, onSubmit, loading }) => {
 };
 
 // ============================================================================
-// MAIN COMPONENT: RESOURCE MANAGER
+// MAIN COMPONENT
 // ============================================================================
 
-const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
+const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
   // --- STATE ---
   const [planInfo, setPlanInfo] = useState(null);
-  const [rawCategories, setRawCategories] = useState([]); // Dữ liệu phẳng từ API
-  const [folderTree, setFolderTree] = useState([]);       // Folder/Files từ API
+  const [rawCategories, setRawCategories] = useState([]);
+  const [folderTree, setFolderTree] = useState([]);
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null); // ID của Chương/Bài đang chọn
-  const [currentFolder, setCurrentFolder] = useState(null);           // Folder đang xem (null = root của category)
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [currentFolder, setCurrentFolder] = useState(null);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
 
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
-  // Dialog states
   const [dialogs, setDialogs] = useState({
     upload: false,
     createCategory: false,
@@ -288,14 +184,14 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
     editPlanName: false,
   });
 
-  // Context Menu & Selection
   const [planMenuAnchor, setPlanMenuAnchor] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
   const [contextTargetId, setContextTargetId] = useState(null);
 
-  // Temporary Data for Actions
   const [tempData, setTempData] = useState({ parentId: null, categoryId: null, initialName: "" });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, type: null });
+  
+  // State điều khiển preview file
   const [previewFile, setPreviewFile] = useState(null);
 
   const showToast = (message, severity = "success") => setToast({ open: true, message, severity });
@@ -311,8 +207,6 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
       ]);
 
       setPlanInfo(planRes);
-
-      // Xử lý chuẩn hóa dữ liệu category
       let nodes = [];
       if (Array.isArray(catsRes)) {
         if (catsRes.length === 2 && Array.isArray(catsRes[0])) nodes = catsRes[0];
@@ -332,20 +226,17 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
     loadData();
   }, [loadData]);
 
-  // --- TREE VIEW BUILDING LOGIC (Đã sửa lỗi thêm không vào cây) ---
+  // --- TREE BUILDING ---
   const categoryTreeData = useMemo(() => {
     if (!rawCategories || rawCategories.length === 0) return [];
-
-    // 1. Helper chuẩn hóa ID về String để so sánh chính xác
+    
     const getItemId = (itm) => String(itm.id ?? itm.category_id ?? itm._id ?? "");
     const getParentId = (itm) => {
       const pid = itm.parent_id ?? itm.parentId ?? itm.parent_category_id;
-      // Quy ước: null, undefined, 0, "0", "null" đều là ROOT
       if (!pid || pid === 0 || String(pid) === "0" || String(pid) === "null") return null;
       return String(pid);
     };
 
-    // 2. Tạo Map để handle cha giả (nếu dữ liệu bị thiếu cha)
     const parentMap = new Map();
     const allItemIds = new Set(rawCategories.map(getItemId));
 
@@ -354,20 +245,13 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
       if (pid && !allItemIds.has(pid)) {
         if (!parentMap.has(pid)) {
           parentMap.set(pid, {
-             id: pid, 
-             category_id: pid, 
-             category_name: item.description || "Danh mục gốc", 
-             parent_id: null,
-             isFake: true 
+             id: pid, category_id: pid, category_name: item.description || "Danh mục gốc", parent_id: null, isFake: true 
           });
         }
       }
     });
 
-    // Gộp data thật và data cha giả
     const allNodes = [...Array.from(parentMap.values()), ...rawCategories];
-
-    // 3. Hàm đệ quy dựng cây
     const buildTree = (items, targetParentId = null) => {
       return items
         .filter(item => {
@@ -379,21 +263,19 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
           return {
             id: itemId,
             label: String(item.name ?? item.category_name ?? "No Name"),
-            children: buildTree(items, itemId), // Đệ quy tìm con
+            children: buildTree(items, itemId),
           };
         });
     };
-
     return buildTree(allNodes, null);
   }, [rawCategories]);
 
-  // --- EVENT HANDLERS ---
-
+  // --- HANDLERS ---
   const handleTreeSelection = (event, selectedItems) => {
     const selectedId = Array.isArray(selectedItems) ? selectedItems[0] : selectedItems;
     if (selectedId) {
       setSelectedCategoryId(selectedId);
-      setCurrentFolder(null); // Reset view bên phải về root
+      setCurrentFolder(null);
       setBreadcrumbs([]);
     } else {
       setSelectedCategoryId(null);
@@ -405,7 +287,6 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
     setDialogs(p => ({ ...p, createCategory: true }));
   };
 
-  // Logic tạo Category (Bắt buộc loadData sau khi tạo để cập nhật cây)
   const handleCreateCategory = async (name) => {
     setActionLoading(true);
     try {
@@ -417,37 +298,22 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
       }], token);
 
       setDialogs(p => ({ ...p, createCategory: false }));
-      
-      // Load lại để API trả về danh sách mới nhất
       await loadData();
-      
       showToast(tempData.parentId ? "Đã thêm bài học" : "Đã thêm chương mới");
     } catch (e) {
-      console.error(e);
       showToast("Lỗi tạo mục lục", "error");
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Logic hiển thị File/Folder
   const currentViewData = useMemo(() => {
     if (!selectedCategoryId) return { folders: [], files: [] };
-
-    const findFolderNode = (nodes, id) => {
-      for (const node of nodes) {
-        if (String(node.folder_id) === String(id)) return node;
-        if (node.children) {
-          const found = findFolderNode(node.children, id);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
     if (currentFolder) {
       const activeNode = findFolderNode(folderTree, currentFolder.folder_id);
-      return activeNode ? { folders: activeNode.children || [], files: activeNode.resources || [] } : { folders: [], files: [] };
+      return activeNode 
+        ? { folders: activeNode.children || [], files: activeNode.resources || [] } 
+        : { folders: [], files: [] };
     } else {
       const rootFolders = folderTree.filter(f => String(f.category_id) === String(selectedCategoryId) && !f.parent_id);
       return { folders: rootFolders, files: [] };
@@ -461,7 +327,6 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
         folder_name: name,
         parent_id: currentFolder?.folder_id 
       }, token);
-      
       setDialogs(p => ({ ...p, createFolder: false }));
       await loadData(); 
       showToast("Tạo thư mục thành công");
@@ -479,9 +344,15 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
     }
     setActionLoading(true);
     try {
-      await uploadResource(currentFolder.folder_id, file, metaData, token);
+      // 1. Upload
+      const response = await uploadResource(currentFolder.folder_id, file, metaData, token);
+      const newUploadedFile = response?.data || response; 
+
       setDialogs(p => ({ ...p, upload: false }));
-      await loadData(); // Reload để file mới hiện ra
+
+      // 2. Optimistic UI Update (Không gọi loadData để tránh race condition)
+      setFolderTree(prevTree => addFileToFolderState(prevTree, currentFolder.folder_id, newUploadedFile));
+
       showToast("Upload thành công");
     } catch (e) {
       console.error(e);
@@ -503,18 +374,14 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
     try {
       if (type === "folder") {
         await deleteFolder(item.folder_id, token);
-        showToast("Đã xóa thư mục và toàn bộ file con");
       } else if (type === "category") {
         await deleteCategory(item.id, "FORCE", token);
-        showToast("Đã xóa mục lục");
         setSelectedCategoryId(null);
       } else if (type === "plan") {
         await deleteBook(item.id, "FORCE", token);
-        showToast("Đã xóa giáo án vĩnh viễn");
         if(onRemovePlan) onRemovePlan();
       } 
-      // Không có block xóa "file" vì chưa có API
-      
+      showToast("Đã xóa thành công");
       await loadData();
       setDeleteConfirm({ open: false, item: null, type: null });
     } catch (e) {
@@ -524,21 +391,6 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
     }
   };
 
-  const handleUnlinkPlan = async () => {
-    if (!window.confirm("Bạn chắc chắn muốn gỡ giáo án này khỏi lớp? (Dữ liệu không mất)")) return;
-    setActionLoading(true);
-    try {
-      await updateClass(classId, { plan_id: null }, token);
-      showToast("Đã gỡ giáo án khỏi lớp");
-      if (onRemovePlan) onRemovePlan();
-    } catch (e) {
-      showToast("Lỗi gỡ giáo án", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Helpers Navigation
   const handleEnterFolder = (folder) => {
     setBreadcrumbs(prev => [...prev, currentFolder].filter(Boolean));
     setCurrentFolder(folder);
@@ -561,7 +413,7 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
       setCurrentFolder(null);
     }
   };
-  
+
   const currentCategoryName = useMemo(() => {
     if (!selectedCategoryId) return "";
     const findLabel = (nodes, id) => {
@@ -577,16 +429,11 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
     return findLabel(categoryTreeData, selectedCategoryId) || "Danh mục";
   }, [selectedCategoryId, categoryTreeData]);
 
-  // ==========================================================================
-  // RENDER UI
-  // ==========================================================================
   return (
     <Box sx={{ height: "75vh", display: "flex", flexDirection: "column" }}>
       <Grid container spacing={2} sx={{ flexGrow: 1, height: "100%" }}>
-        
-        {/* --- LEFT: TREE VIEW --- */}
+        {/* LEFT PANEL: TREE VIEW */}
         <Grid size={{ xs: 12, md: 3 }} sx={{ borderRight: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", bgcolor: "background.paper", height: "100%", overflow: "hidden" }}>
-          {/* Header */}
           <Box p={2} borderBottom="1px solid" borderColor="divider" bgcolor="background.default" sx={{ flexShrink: 0 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
               <Box sx={{ overflow: "hidden", mr: 1 }}>
@@ -601,16 +448,8 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
                 </IconButton>
               </Tooltip>
             </Stack>
-
-            {/* Smart Add Button */}
             <Box mt={1} display="flex" gap={1}>
-              <Button
-                variant="contained" size="small" fullWidth
-                startIcon={selectedCategoryId ? <AddCircleIcon /> : <AddBoxIcon />}
-                color={selectedCategoryId ? "secondary" : "primary"}
-                onClick={handleAddCategoryClick}
-                sx={{ textTransform: "none", fontSize: "0.85rem", boxShadow: "none" }}
-              >
+              <Button variant="contained" size="small" fullWidth startIcon={selectedCategoryId ? <AddCircleIcon /> : <AddBoxIcon />} color={selectedCategoryId ? "secondary" : "primary"} onClick={handleAddCategoryClick} sx={{ textTransform: "none", fontSize: "0.85rem", boxShadow: "none" }}>
                 {selectedCategoryId ? "Thêm bài học" : "Thêm chương mới"}
               </Button>
               {selectedCategoryId && (
@@ -621,8 +460,6 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
                 </Tooltip>
               )}
             </Box>
-            
-            {/* Selection Info */}
             {selectedCategoryId && (
               <Typography variant="caption" display="block" textAlign="center" color="text.secondary" mt={0.5}>
                 Đang chọn: <b>{currentCategoryName}</b>
@@ -630,8 +467,6 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
               </Typography>
             )}
           </Box>
-
-          {/* Tree Content */}
           <Box sx={{ flexGrow: 1, overflowY: "auto", p: 1, minHeight: 0 }}>
             {categoryTreeData.length > 0 ? (
               <RichTreeView
@@ -639,29 +474,18 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
                 slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
                 onSelectedItemsChange={handleTreeSelection}
                 selectedItems={selectedCategoryId ? [selectedCategoryId] : []}
-                slotProps={{
-                   item: (ownerState) => ({
-                      onContextMenu: (e) => {
-                        e.preventDefault(); e.stopPropagation();
-                        setContextTargetId(ownerState.itemId);
-                        setContextMenu(e.currentTarget);
-                      }
-                   })
-                }}
+                slotProps={{ item: (ownerState) => ({ onContextMenu: (e) => { e.preventDefault(); e.stopPropagation(); setContextTargetId(ownerState.itemId); setContextMenu(e.currentTarget); } }) }}
               />
             ) : (
-              <Box p={3} textAlign="center">
-                <Typography variant="caption" color="text.secondary">Chưa có mục lục. Bấm "Thêm chương mới".</Typography>
-              </Box>
+              <Box p={3} textAlign="center"><Typography variant="caption" color="text.secondary">Chưa có mục lục.</Typography></Box>
             )}
           </Box>
         </Grid>
 
-        {/* --- RIGHT: CONTENT VIEW --- */}
+        {/* RIGHT PANEL: CONTENT */}
         <Grid size={{ xs: 12, md: 9 }} sx={{ display: "flex", flexDirection: "column", bgcolor: "#f4f6f8", height: "100%", overflow: "hidden" }}>
           {selectedCategoryId ? (
             <>
-              {/* Breadcrumbs & Toolbar */}
               <Paper square elevation={0} sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
                 <Box display="flex" alignItems="center">
                   {currentFolder && <IconButton size="small" onClick={handleBack} sx={{ mr: 1 }}><ArrowBackIcon /></IconButton>}
@@ -677,13 +501,10 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
                 </Box>
                 <Stack direction="row" spacing={1}>
                   <Button variant="outlined" startIcon={<CreateNewFolderIcon />} onClick={() => setDialogs(p => ({ ...p, createFolder: true }))} size="small">Tạo thư mục</Button>
-                  {currentFolder && (
-                    <Button variant="contained" startIcon={<UploadFileIcon />} onClick={() => setDialogs(p => ({ ...p, upload: true }))} size="small">Tải lên</Button>
-                  )}
+                  {currentFolder && <Button variant="contained" startIcon={<UploadFileIcon />} onClick={() => setDialogs(p => ({ ...p, upload: true }))} size="small">Tải lên</Button>}
                 </Stack>
               </Paper>
 
-              {/* Folders & Files Grid */}
               <Box sx={{ p: 3, flexGrow: 1, overflowY: "auto", minHeight: 0 }}>
                 {/* Folders */}
                 {currentViewData.folders.length > 0 && (
@@ -712,7 +533,6 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
                           <Paper elevation={0} variant="outlined" sx={{ p: 2, display: "flex", alignItems: "center", cursor: "pointer", borderRadius: 2, position: "relative", "&:hover": { bgcolor: "#fff", borderColor: "primary.main", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", "& .actions": { opacity: 1 } } }} onClick={() => setPreviewFile(file)}>
                             <Stack className="actions" direction="row" sx={{ position: "absolute", top: "50%", right: 8, transform: "translateY(-50%)", opacity: 0, bgcolor: "rgba(255,255,255,0.9)", borderRadius: 1 }}>
                               <Tooltip title="Xem / Tải"><IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); setPreviewFile(file); }}><VisibilityIcon fontSize="small" /></IconButton></Tooltip>
-                              {/* Đã ẩn nút Xóa File theo yêu cầu */}
                             </Stack>
                             <Box mr={2}><FileIcon mimeType={file.file_type} /></Box>
                             <Box overflow="hidden" sx={{ mr: 4 }}>
@@ -725,66 +545,47 @@ const ResourceManager = ({ classId, planId, tutorId, token, onRemovePlan }) => {
                     </Grid>
                   </Box>
                 )}
-
-                {/* Empty State */}
                 {currentViewData.folders.length === 0 && currentViewData.files.length === 0 && (
-                  <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="60%" opacity={0.6}>
-                    <FolderOpenIcon sx={{ fontSize: 80, color: "text.disabled", mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary">Thư mục trống</Typography>
-                    <Typography variant="body2" color="text.disabled">{currentFolder ? "Hãy tải lên tài liệu" : "Hãy tạo thư mục mới"}</Typography>
-                  </Box>
+                  <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="60%" opacity={0.6}><FolderOpenIcon sx={{ fontSize: 80, color: "text.disabled", mb: 2 }} /><Typography variant="h6" color="text.secondary">Thư mục trống</Typography></Box>
                 )}
               </Box>
             </>
           ) : (
-             <Box display="flex" alignItems="center" justifyContent="center" height="100%" color="text.secondary" flexDirection="column">
-                <Typography variant="h6" gutterBottom>👋 Chào mừng bạn!</Typography>
-                <Typography>Chọn một <strong>Chương/Bài học</strong> từ danh sách bên trái để quản lý.</Typography>
-             </Box>
+             <Box display="flex" alignItems="center" justifyContent="center" height="100%" color="text.secondary" flexDirection="column"><Typography variant="h6">👋 Chào mừng!</Typography><Typography>Chọn Chương/Bài học bên trái.</Typography></Box>
           )}
         </Grid>
       </Grid>
 
-      {/* --- MENUS & DIALOGS --- */}
+      {/* --- DIALOGS & MENUS --- */}
       <Menu open={Boolean(planMenuAnchor)} anchorEl={planMenuAnchor} onClose={() => setPlanMenuAnchor(null)}>
-        <MenuItem onClick={() => { setPlanMenuAnchor(null); setTempData({ initialName: planInfo?.title }); setDialogs(p => ({ ...p, editPlanName: true })); }}>
-          <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon><ListItemText>Đổi tên giáo án</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleUnlinkPlan}>
-          <ListItemIcon><LinkOffIcon fontSize="small" /></ListItemIcon><ListItemText>Gỡ khỏi lớp</ListItemText>
-        </MenuItem>
+        <MenuItem onClick={() => { setPlanMenuAnchor(null); setTempData({ initialName: planInfo?.title }); setDialogs(p => ({ ...p, editPlanName: true })); }}><ListItemIcon><EditIcon fontSize="small" /></ListItemIcon><ListItemText>Đổi tên giáo án</ListItemText></MenuItem>
+        <MenuItem onClick={() => { setPlanMenuAnchor(null); if(window.confirm("Gỡ giáo án khỏi lớp?")) updateClass(classId, { plan_id: null }, token).then(() => { showToast("Đã gỡ"); if(onRemovePlan) onRemovePlan(); }); }}><ListItemIcon><LinkOffIcon fontSize="small" /></ListItemIcon><ListItemText>Gỡ khỏi lớp</ListItemText></MenuItem>
         <Divider />
-        <MenuItem onClick={() => { setPlanMenuAnchor(null); setDeleteConfirm({ open: true, item: { id: planId }, type: "plan" }); }}>
-          <ListItemIcon><DeleteForeverIcon fontSize="small" color="error" /></ListItemIcon><ListItemText sx={{ color: "error.main" }}>Xóa vĩnh viễn</ListItemText>
-        </MenuItem>
+        <MenuItem onClick={() => { setPlanMenuAnchor(null); setDeleteConfirm({ open: true, item: { id: planId }, type: "plan" }); }}><ListItemIcon><DeleteForeverIcon fontSize="small" color="error" /></ListItemIcon><ListItemText sx={{ color: "error.main" }}>Xóa vĩnh viễn</ListItemText></MenuItem>
       </Menu>
 
       <Menu open={Boolean(contextMenu)} anchorEl={contextMenu} onClose={() => setContextMenu(null)}>
-        <MenuItem onClick={() => { setTempData({ categoryId: contextTargetId, initialName: "..." }); setDialogs(p => ({ ...p, editCategory: true })); setContextMenu(null); }}>
-          <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon><ListItemText>Đổi tên</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => { setDeleteConfirm({ open: true, item: { id: contextTargetId, name: "mục này" }, type: "category" }); setContextMenu(null); }}>
-          <ListItemIcon><DeleteOutlineIcon fontSize="small" color="error" /></ListItemIcon><ListItemText sx={{ color: "error.main" }}>Xóa</ListItemText>
-        </MenuItem>
+        <MenuItem onClick={() => { setTempData({ categoryId: contextTargetId, initialName: "..." }); setDialogs(p => ({ ...p, editCategory: true })); setContextMenu(null); }}><ListItemIcon><EditIcon fontSize="small" /></ListItemIcon><ListItemText>Đổi tên</ListItemText></MenuItem>
+        <MenuItem onClick={() => { setDeleteConfirm({ open: true, item: { id: contextTargetId, name: "mục này" }, type: "category" }); setContextMenu(null); }}><ListItemIcon><DeleteOutlineIcon fontSize="small" color="error" /></ListItemIcon><ListItemText sx={{ color: "error.main" }}>Xóa</ListItemText></MenuItem>
       </Menu>
 
-      {/* Dialogs */}
       <NameInputDialog open={dialogs.createCategory} onClose={() => setDialogs(p => ({ ...p, createCategory: false }))} onSubmit={handleCreateCategory} title={tempData.parentId ? "Thêm bài học" : "Thêm chương mới"} label="Tên mục" loading={actionLoading} />
       <NameInputDialog open={dialogs.createFolder} onClose={() => setDialogs(p => ({ ...p, createFolder: false }))} onSubmit={handleCreateFolder} title="Tạo thư mục" label="Tên thư mục" loading={actionLoading} />
-      
       <UploadFileDialog open={dialogs.upload} onClose={() => setDialogs(p => ({ ...p, upload: false }))} onSubmit={handleUpload} loading={actionLoading} />
       
-      <FilePreviewDialog open={!!previewFile} onClose={() => setPreviewFile(null)} fileData={previewFile} />
+      {/* --- PREVIEW DIALOG ---
+         - Chỉ truyền props, không chứa logic phức tạp.
+         - Logic an toàn đã nằm bên trong FilePreviewDialog.
+      */}
+      <FilePreviewDialog 
+        open={!!previewFile} 
+        onClose={() => setPreviewFile(null)} 
+        fileData={previewFile} 
+      />
 
-      {/* Confirm Delete */}
       <Dialog open={deleteConfirm.open} onClose={() => setDeleteConfirm(p => ({ ...p, open: false }))}>
         <DialogTitle>Xác nhận xóa</DialogTitle>
-        <DialogContent>
-          <Typography>Bạn có chắc muốn xóa <strong>{deleteConfirm.item?.name || "mục này"}</strong>?</Typography>
-          {deleteConfirm.type === "folder" && <Alert severity="warning" sx={{ mt: 1 }}>Cảnh báo: Xóa thư mục sẽ xóa toàn bộ file bên trong!</Alert>}
-          {deleteConfirm.type === "plan" && <Alert severity="error" sx={{ mt: 1 }}>Hành động này sẽ xóa vĩnh viễn giáo án!</Alert>}
-          {deleteConfirm.type === "category" && <Alert severity="warning" sx={{ mt: 1 }}>Xóa mục này sẽ mất hết bài học con và tài nguyên!</Alert>}
-        </DialogContent>
+        <DialogContent><Typography>Bạn có chắc muốn xóa <strong>{deleteConfirm.item?.name || "mục này"}</strong>?</Typography></DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirm(p => ({ ...p, open: false }))} color="inherit">Hủy</Button>
           <Button onClick={handleConfirmDelete} color="error" variant="contained">Xóa</Button>

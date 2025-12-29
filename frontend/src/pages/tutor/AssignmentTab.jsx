@@ -1,17 +1,14 @@
-/* eslint-disable */
 import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 import {
     Box, Typography, Button, Paper, CircularProgress, Alert,
     Stack, Chip, Grid, Card, CardContent, CardActions,
-    IconButton, Tooltip, Dialog, DialogTitle, DialogContent,
-    DialogActions, FormControl, InputLabel, Select, MenuItem, TextField, Divider
+    IconButton, Tooltip, Divider
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
-import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 
-import { getMyExams, createExamSession, getSessionsByClass } from '../../services/ExamService';
+import { getSessionsByClass } from '../../services/ExamService';
 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,7 +17,6 @@ import PendingIcon from '@mui/icons-material/Pending';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-// --- COMPONENT CON: SESSION CARD ---
 const SessionCard = memo(({ session }) => {
     const now = dayjs();
     const start = dayjs(session.startAt);
@@ -101,125 +97,11 @@ const SessionCard = memo(({ session }) => {
     );
 });
 
-// --- COMPONENT CON: POPUP GIAO BÀI ---
-const AssignExamDialog = memo(({ open, onClose, onRefresh, classId, token }) => {
-    const [availableExams, setAvailableExams] = useState([]);
-    const [loadingExams, setLoadingExams] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState(null);
-
-    // Form state
-    const [selectedExamId, setSelectedExamId] = useState('');
-    const [startAt, setStartAt] = useState(dayjs());
-    const [expireAt, setExpireAt] = useState(dayjs().add(1, 'hour'));
-    const [limitTaken, setLimitTaken] = useState(1);
-    const [examType, setExamType] = useState('practice');
-
-    useEffect(() => {
-        if (!open) return;
-        const fetchMasterExams = async () => {
-            setLoadingExams(true);
-            try {
-                const exams = await getMyExams(token);
-                setAvailableExams(Array.isArray(exams) ? exams : []);
-            } catch (err) {
-                setError("Không thể tải danh sách đề thi.");
-            } finally {
-                setLoadingExams(false);
-            }
-        };
-        fetchMasterExams();
-    }, [open, token]);
-
-    const handleSubmit = async () => {
-        if (!selectedExamId) return setError("Vui lòng chọn một đề thi.");
-        setIsSubmitting(true);
-        setError(null);
-
-        const sessionData = {
-            startAt: startAt.toISOString(),
-            expireAt: expireAt.toISOString(),
-            limit_taken: Number(limitTaken),
-            exam_type: examType,
-        };
-        
-        try {
-            await createExamSession(selectedExamId, [classId], sessionData, token);
-            onRefresh();
-            onClose();
-        } catch (err) {
-            setError(err.response?.data?.message || "Giao bài thất bại.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    
-    const handleClose = () => {
-        setError(null); setSelectedExamId(''); setStartAt(dayjs()); 
-        setExpireAt(dayjs().add(1, 'hour')); setLimitTaken(1); setExamType('practice');
-        onClose();
-    };
-
-    return (
-        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <DialogTitle fontWeight={600}>Giao bài mới cho lớp này</DialogTitle>
-            <DialogContent>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Stack spacing={3} sx={{ mt: 1 }}>
-                        {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
-                        
-                        <FormControl fullWidth disabled={loadingExams}>
-                            <InputLabel id="exam-select-label">Chọn đề thi gốc</InputLabel>
-                            <Select
-                                labelId="exam-select-label"
-                                value={selectedExamId}
-                                label="Chọn đề thi gốc"
-                                onChange={(e) => setSelectedExamId(e.target.value)}
-                            >
-                                {loadingExams ? (
-                                    <MenuItem disabled><em>Đang tải đề thi...</em></MenuItem>
-                                ) : (
-                                    availableExams.map(exam => (
-                                        <MenuItem key={exam.exam_id} value={exam.exam_id}>
-                                            {exam.title} ({exam.total_ques} câu)
-                                        </MenuItem>
-                                    ))
-                                )}
-                            </Select>
-                        </FormControl>
-                        
-                        <DateTimePicker label="Thời gian bắt đầu" value={startAt} onChange={(n) => setStartAt(n)} />
-                        <DateTimePicker label="Thời gian kết thúc" value={expireAt} onChange={(n) => setExpireAt(n)} />
-                        <TextField
-                            label="Số lần làm bài tối đa" type="number" value={limitTaken}
-                            onChange={(e) => setLimitTaken(Math.max(1, parseInt(e.target.value, 10)))}
-                        />
-                        <FormControl fullWidth>
-                            <InputLabel>Loại bài</InputLabel>
-                            <Select value={examType} label="Loại bài" onChange={(e) => setExamType(e.target.value)}>
-                                <MenuItem value="practice">Luyện tập</MenuItem>
-                                <MenuItem value="test">Kiểm tra (tính điểm)</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </Stack>
-                </LocalizationProvider>
-            </DialogContent>
-            <DialogActions sx={{ p: 2 }}>
-                <Button onClick={handleClose} disabled={isSubmitting}>Hủy</Button>
-                <Button variant="contained" onClick={handleSubmit} disabled={isSubmitting || loadingExams}>
-                    {isSubmitting ? "Đang giao..." : "Xác nhận giao"}
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
-});
-
-// --- COMPONENT CHÍNH ---
 function AssignmentTab({ classId, token }) {
+    const navigate = useNavigate(); 
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [openDialog, setOpenDialog] = useState(false);
 
     const fetchAssignedSessions = useCallback(async () => {
         if (!classId || !token) return;
@@ -238,6 +120,9 @@ function AssignmentTab({ classId, token }) {
     }, [classId, token]);
 
     useEffect(() => { fetchAssignedSessions(); }, [fetchAssignedSessions]);
+    const handleNavigateAssign = () => {
+        navigate('/tutor/assignment');
+    };
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box>;
 
@@ -246,7 +131,11 @@ function AssignmentTab({ classId, token }) {
             {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-                <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => setOpenDialog(true)}>
+                <Button 
+                    variant="contained" 
+                    startIcon={<AddCircleOutlineIcon />} 
+                    onClick={handleNavigateAssign} 
+                >
                     Giao bài mới
                 </Button>
             </Box>
@@ -264,14 +153,6 @@ function AssignmentTab({ classId, token }) {
                     <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>Nhấn "Giao bài mới" để bắt đầu.</Typography>
                 </Paper>
             )}
-
-            <AssignExamDialog 
-                open={openDialog} 
-                onClose={() => setOpenDialog(false)} 
-                onRefresh={fetchAssignedSessions} 
-                classId={classId} 
-                token={token} 
-            />
         </Box>
     );
 }

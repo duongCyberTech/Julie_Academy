@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { getMyExams } from '../../services/ExamService';
 import {
     Box, Typography, Button, Paper, CircularProgress,
-    Grid, Card, CardContent, CardActions,
-    IconButton, Stack, Chip, Divider, 
+    Card, CardContent, CardActions,
+    IconButton, Stack, Chip, Divider, Grid,
     TextField, InputAdornment, Snackbar, Alert,
     FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
@@ -124,8 +124,9 @@ function ExamPage() {
             </Stack>
 
             <Paper elevation={0} sx={{ p: 2, mb: 4, bgcolor: 'background.paper', border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                {/* UPDATE: Grid v6 syntax */}
                 <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} md={5}>
+                    <Grid size={{ xs: 12, md: 5 }}>
                         <TextField
                             fullWidth
                             size="small"
@@ -137,7 +138,7 @@ function ExamPage() {
                             }}
                         />
                     </Grid>
-                    <Grid item xs={6} md={3}>
+                    <Grid size={{ xs: 6, md: 3 }}>
                         <FormControl fullWidth size="small">
                             <InputLabel>Cấp độ</InputLabel>
                             <Select
@@ -153,7 +154,7 @@ function ExamPage() {
                             </Select>
                         </FormControl>
                     </Grid>
-                    <Grid item xs={6} md={4}>
+                    <Grid size={{ xs: 6, md: 4 }}>
                          <FormControl fullWidth size="small">
                             <InputLabel>Sắp xếp</InputLabel>
                             <Select
@@ -182,7 +183,8 @@ function ExamPage() {
             ) : (
                 <Grid container spacing={3}>
                     {processedExams.map((exam) => (
-                        <Grid item xs={12} sm={6} md={4} lg={3} key={exam.exam_id}>
+                        /* UPDATE: Grid v6 syntax - removed 'item', used 'size' */
+                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={exam.exam_id}>
                             <ExamCard>
                                 <CardContent sx={{ flexGrow: 1, pb: 1 }}>
                                     <Stack direction="row" justifyContent="space-between" mb={1}>

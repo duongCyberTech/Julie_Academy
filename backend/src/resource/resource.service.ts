@@ -68,10 +68,6 @@ export class FolderService {
                 
                 children
             }
-            
-            delete (formattedItem as any).class;
-            delete (formattedItem as any).resources; 
-
             result.push(formattedItem)
         }
 
