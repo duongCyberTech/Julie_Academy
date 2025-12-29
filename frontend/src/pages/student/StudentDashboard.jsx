@@ -272,7 +272,7 @@ export default function StudentDashboard() {
         <Grid container alignItems="center" spacing={2}>
           <Grid item>
             <Avatar
-              src={MOCK_USER_PROFILE.avata_url}
+              src={MOCK_USER_PROFILE.avatar_url}
               sx={{
                 width: 80,
                 height: 80,

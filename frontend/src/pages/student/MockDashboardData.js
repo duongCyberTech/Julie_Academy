@@ -9,11 +9,11 @@
 export const MOCK_USER_PROFILE = {
   uid: 'user-123',
   username: 'hoang_nguyen',
-  fname: 'Nguyễn',
-  lname: 'Hoàng',
+  fname: 'Hoàng',
+  lname: 'Nguyễn Hàm',
   email: 'hoang@example.com',
   createAt: '2023-09-05T08:00:00Z', // Ngày tham gia
-  avata_url: 'https://i.pravatar.cc/150?u=hoang',
+  avatar_url: 'https://i.pinimg.com/736x/0d/ec/10/0dec10bb67879bfb5ecbc2af82e79298.jpg',
   role: 'student',
   student: {
     school: 'THCS Chu Văn An',
@@ -24,7 +24,7 @@ export const MOCK_USER_PROFILE = {
 // 2. Danh sách Huy hiệu (Giữ nguyên của bạn)
 export const MOCK_BADGES = [
   { badge_id: 'b1', title: 'Ong Chăm Chỉ', description: 'Học 7 ngày liên tiếp', icon: '🐝', color: '#FFC107' },
-  { badge_id: 'b2', title: 'Thần Đồng', description: 'Điểm 10 Đại số', icon: '🧮', color: '#2196F3' },
+  { badge_id: 'b2', title: 'Chiến công đầu', description: 'Đạt điểm 10 đầu tiên cho 1 bài kiểm tra', icon: '🧮', color: '#2196F3' },
   { badge_id: 'b3', title: 'Kẻ Hủy Diệt', description: 'Hoàn thành 50 bài', icon: '🚀', color: '#F44336' },
   { badge_id: 'b4', title: 'Nhà Thông Thái', description: 'Trả lời đúng 100 câu', icon: '🦉', color: '#9C27B0' },
   { badge_id: 'b5', title: 'Tốc Độ Ánh Sáng', description: 'Hoàn thành bài thi < 5 phút', icon: '⚡', color: '#FF9800' },
@@ -57,15 +57,23 @@ export const MOCK_SUGGESTIONS = [
     type: 'topic',
     reason: 'Điểm phần Hình học của bạn đang thấp hơn trung bình (5.0)',
     priority: 'high', 
-    subject: 'Toán'
+    subject: 'Chân trời sáng tạo'
   },
   {
     id: 'sug-2',
-    title: 'Khóa học: Vật lý điện từ căn bản',
+    title: 'Chuyên đề: Phương trình bậc hai',
     type: 'course',
     reason: 'Chuẩn bị cho kỳ thi giữa kỳ sắp tới',
     priority: 'medium', 
-    subject: 'Lý'
+    subject: 'Chân trời sáng tạo'
+  },
+  {
+    id: 'sug-3',
+    title: 'Chuyên đề: Căn bậc ba',
+    type: 'course',
+    reason: 'Chuẩn bị cho kỳ thi giữa kỳ sắp tới',
+    priority: 'medium', 
+    subject: 'Chân trời sáng tạo'
   }
 ];
 
