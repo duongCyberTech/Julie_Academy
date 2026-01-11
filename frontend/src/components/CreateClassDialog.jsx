@@ -179,8 +179,6 @@ const CreateClassDialog = ({ open, onClose, onRefresh }) => {
                                     >
                                         <MenuItem value="pending">Chờ mở lớp (Pending)</MenuItem>
                                         <MenuItem value="ongoing">Đang diễn ra (Ongoing)</MenuItem>
-                                        <MenuItem value="completed">Đã hoàn thành (Completed)</MenuItem>
-                                        <MenuItem value="cancelled">Đã hủy (Cancelled)</MenuItem>
                                     </Select>
                                 </FormControl>
                             </Stack>

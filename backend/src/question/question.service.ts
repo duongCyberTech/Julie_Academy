@@ -1,728 +1,889 @@
-import { 
-    BadRequestException, 
-    Injectable, 
-    NotFoundException 
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { ExceptionResponse } from 'src/exception/Exception.exception';
 import { ControlMode } from 'src/mode/control.mode';
 import { PrismaService } from '../prisma/prisma.service';
-import { LessonPlanDto, CategoryDto } from './dto/question.dto'; 
+import { LessonPlanDto, CategoryDto } from './dto/question.dto';
 import { CreateQuestionDto, CreateAnswerDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { CategoriesOutputDto } from './dto/questionOutput.dto';
-import { DifficultyLevel, QuestionStatus, QuestionType, Prisma, QuestionAccess } from '@prisma/client';
+import {
+  DifficultyLevel,
+  QuestionStatus,
+  QuestionType,
+  Prisma,
+  QuestionAccess,
+} from '@prisma/client';
 
+// =================================================================================================
+// 1. SERVICE: LESSON PLAN (Quản lý Giáo án/Sách)
+// =================================================================================================
 @Injectable()
 export class LessonPlanService {
-    constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {}
 
-    async createLessonPlan(data: LessonPlanDto[], tutor_id?: string) {
-        const createdLessonPlan = [];
-        for (const plan of data) {
-            const existingLessonPlan = await this.prisma.lesson_Plan.findUnique({ where: { title: plan.title, tutor_id: tutor_id } });
-            if (existingLessonPlan) continue;
-            const newPlan = await this.prisma.lesson_Plan.create({
-                data: {
-                    title: plan.title,
-                    subject: plan.subject,
-                    grade: plan.grade,
-                    description: plan.description,
-                    type: plan.type || 'custom',
-                    ...(tutor_id ? { tutor: { connect: { uid: tutor_id } } } : {})
-                }
-            });
-            createdLessonPlan.push(newPlan);
-        }
-        return createdLessonPlan;
+  async createLessonPlan(data: LessonPlanDto[], tutor_id?: string) {
+    const createdLessonPlan = [];
+    for (const plan of data) {
+      const existingLessonPlan = await this.prisma.lesson_Plan.findUnique({
+        where: { title: plan.title, tutor_id: tutor_id },
+      });
+      if (existingLessonPlan) continue;
+      const newPlan = await this.prisma.lesson_Plan.create({
+        data: {
+          title: plan.title,
+          subject: plan.subject,
+          grade: plan.grade,
+          description: plan.description,
+          type: plan.type || 'custom',
+          ...(tutor_id ? { tutor: { connect: { uid: tutor_id } } } : {}),
+        },
+      });
+      createdLessonPlan.push(newPlan);
     }
+    return createdLessonPlan;
+  }
 
-    async getAllPlans(tutor_id?: string) {
-        if (tutor_id)
-            return this.prisma.lesson_Plan.findMany({
-                where: {
-                    OR: [
-                        {tutor_id: tutor_id},
-                        {type: 'book'}
-                    ]
-                },
-                orderBy: { title: 'asc' }
-            })
-        return this.prisma.lesson_Plan.findMany({
-            orderBy: { title: 'asc' }
+  async getAllPlans(tutor_id?: string) {
+    if (tutor_id)
+      return this.prisma.lesson_Plan.findMany({
+        where: {
+          OR: [{ tutor_id: tutor_id }, { type: 'book' }],
+        },
+        orderBy: { title: 'asc' },
+      });
+    return this.prisma.lesson_Plan.findMany({
+      orderBy: { title: 'asc' },
+    });
+  }
+
+  async getPlanById(plan_id: string) {
+    const plan = await this.prisma.lesson_Plan.findUnique({
+      where: { plan_id },
+    });
+    if (!plan) throw new NotFoundException(`Plan with ID ${plan_id} not found`);
+    return plan;
+  }
+
+  async updatePlan(plan_id: string, data: Partial<LessonPlanDto>) {
+    try {
+      return await this.prisma.lesson_Plan.update({ where: { plan_id }, data });
+    } catch (error) {
+      return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
+    }
+  }
+
+  async deletePlan(plan_id: string, mode: ControlMode = ControlMode.SOFT) {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        await tx.class.updateMany({
+          where: { plan: { plan_id } },
+          data: { plan_id: null },
         });
-    }
-
-    async getPlanById(plan_id: string) {
-        const plan = await this.prisma.lesson_Plan.findUnique({ where: { plan_id } });
-        if (!plan) throw new NotFoundException(`Plan with ID ${plan_id} not found`);
-        return plan;
-    }
-
-    async updatePlan(plan_id: string, data: Partial<LessonPlanDto>) {
-        try {
-            return await this.prisma.lesson_Plan.update({ where: { plan_id }, data });
-        } catch (error) {
-            return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
+        await tx.structure.deleteMany({
+          where: { Plan: { plan_id: plan_id } },
+        });
+        if (mode === ControlMode.FORCE) {
         }
+        return await tx.lesson_Plan.delete({ where: { plan_id } });
+      });
+    } catch (error) {
+      return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
     }
-
-    async deletePlan(plan_id: string, mode: ControlMode = ControlMode.SOFT) {
-        try {
-            if (mode == ControlMode.FORCE) {
-                return this.prisma.$transaction(async (tx) => {
-                    const Cate_to_delete = await tx.categories.findMany({
-                        where: {
-                            AND: [
-                                {structure: {some: {plan_id}}},
-                                {structure: {none: {plan_id: { not: plan_id }}}}
-                            ]
-                        },
-                        select:{category_id: true}
-                    })
-                    const deleteCate = Cate_to_delete.map(i => i.category_id)
-                    if (deleteCate.length)
-                        await tx.categories.deleteMany({ where: { category_id: {in: deleteCate} } })
-                    return await tx.lesson_Plan.delete({ where: { plan_id } });
-                });
-            }
-
-            return this.prisma.$transaction(async(tx) => {
-                await tx.class.updateMany({
-                    where: {plan: {plan_id}},
-                    data: {
-                        plan_id: null
-                    }
-                })
-
-                return await this.prisma.lesson_Plan.delete({ where: { plan_id } });
-            })
-        } catch (error) {
-            return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
-        }
-    }
+  }
 }
 
+// =================================================================================================
+// 2. SERVICE: CATEGORY (Quản lý Chương/Bài học)
+// =================================================================================================
 @Injectable()
 export class CategoryService {
-    constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {}
 
-    async upsertCategoryWithChildren(tx: Prisma.TransactionClient, categoryData: CategoryDto, parentId: string | null = null) {
-        const existingCategory = await tx.categories.findUnique({
-            where: {
-                category_name: categoryData.category_name,
-                structure: { some: { plan_id: categoryData.plan_id } }
-            },
+  async upsertCategoryWithChildren(
+    tx: Prisma.TransactionClient,
+    categoryData: CategoryDto,
+    parentId: string | null = null,
+  ) {
+    const existingCategory = await tx.categories.findFirst({
+      where: {
+        category_name: categoryData.category_name,
+        structure: { some: { plan_id: categoryData.plan_id } },
+        parent_id: parentId, 
+      },
+    });
+
+    const categoryDataForCreate = {
+      category_name: categoryData.category_name,
+      description: categoryData.description,
+      ...(parentId
+        ? { Categories: { connect: { category_id: parentId } } }
+        : {}),
+    };
+    const category = existingCategory
+      ? existingCategory
+      : await tx.categories.create({
+          data: categoryDataForCreate,
         });
+    if (!existingCategory) {
+      await tx.structure.create({
+        data: {
+          Plan: { connect: { plan_id: categoryData.plan_id } },
+          Category: { connect: { category_id: category.category_id } },
+        },
+      });
+    } else {
+      const existingStructure = await tx.structure.findFirst({
+        where: {
+          Plan: { plan_id: categoryData.plan_id },
+          Category: { category_id: category.category_id },
+        },
+      });
 
-        const categoryDataForCreate = {
-            category_name: categoryData.category_name,
-            description: categoryData.description,
-            ...(parentId ? { Categories: { connect: { category_id: parentId } } } : {}),
-        };
-
-        const category = existingCategory ? existingCategory : await tx.categories.create({
-            data: categoryDataForCreate,
-        });
-
+      if (!existingStructure) {
         await tx.structure.create({
-            data: {
-                Plan: {connect: {plan_id: categoryData.plan_id}},
-                Category: {connect: {category_id: category.category_id}}
-            }
-        })
-
-        if (categoryData.children?.length) {
-            for (const child of categoryData.children) {
-                await this.upsertCategoryWithChildren(tx, child, category.category_id);
-            }
-        }
-    }
-
-    async createCategory(data: CategoryDto[]) {
-        try {
-            return this.prisma.$transaction(async (tx) => {
-                for (const category of data) {
-                    await this.upsertCategoryWithChildren(tx, category);
-                }
-                return data;
-            });
-        } catch (error) {
-            return new ExceptionResponse().returnError(error, `categories`);
-        }
-    }
-
-    async getRecursiveCategory(current: CategoriesOutputDto) {
-        const result: CategoriesOutputDto = current
-        const children = await this.prisma.categories.findMany({
-            where: {parent_id: result.category_id},
-            select: {
-                category_id: true,
-                category_name: true,
-                description: true,
-                parent_id: true,
-            }
-        })
-        if (!children || children.length <= 0) return []
-        const childLst = children.map((item) => ({...item, children: []}))
-
-        for (const item of childLst) {
-            item.children = await this.getRecursiveCategory(item)
-        }
-        return childLst
-    }
-
-    flattenCategories(categories: CategoriesOutputDto[]): CategoriesOutputDto[] {
-        const result: CategoriesOutputDto[] = [];
-        for (const category of categories) {
-            const {children, ...rest} = category;
-            result.push({...rest, children: []});
-            if (children && children.length > 0) {
-                result.push(...this.flattenCategories(children));
-            }
-        }
-        return result;
-    }
-
-    async getAllCategories(mode: string = 'tree', plan_id?: string, page?: number | string, limit?: number | string, search?: string, grade?: number | string, subject?: string) {
-        const pageNum = page ? parseInt(String(page), 10) : 1;
-        const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 200;  
-        const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
-        const takeNum = limitNum > 0 ? limitNum : undefined;
-
-        const conditions: Prisma.CategoriesWhereInput[] = [];
-
-        if (plan_id) {
-            conditions.push({
-                OR: [
-                    { structure: { some: { plan_id: plan_id } } },
-                    { Categories: { structure: { some: { plan_id: plan_id } } } }
-                ]
-            });
-        }
-
-        if (search) {
-            conditions.push({
-                OR: [
-                    { category_name: { contains: search, mode: 'insensitive' } },
-                    { description: { contains: search, mode: 'insensitive' } },
-                ]
-            });
-        }
-
-        if (!plan_id && (grade || subject)) {
-            const planFilter: any = {};
-            if (grade) planFilter.grade = parseInt(String(grade), 10);
-            if (subject) planFilter.subject = { contains: subject, mode: 'insensitive' };
-            conditions.push({ structure: { some: { Plan: planFilter } } });
-        }
-
-        const where: Prisma.CategoriesWhereInput = conditions.length > 0 ? { AND: conditions } : {};
-
-        const categories = await this.prisma.categories.findMany({
-            where: { ...where, parent_id: null },
-            skip: skipNum,
-            take: takeNum,
-            select: {
-                category_id: true,
-                category_name: true,
-                description: true,
-                parent_id: true,
-                structure: {
-                    select: { Plan: { select: { title: true, subject: true, grade: true } } }
-                },
-            },
-            orderBy: { category_name: 'asc' },
+          data: {
+            Plan: { connect: { plan_id: categoryData.plan_id } },
+            Category: { connect: { category_id: category.category_id } },
+          },
         });
-
-        const categoriesOutput: CategoriesOutputDto[] = categories.map(cat => ({
-            category_id: cat.category_id,
-            category_name: cat.category_name,
-            description: cat.description,
-            parent_id: cat.parent_id || null,
-            plan_title: cat.structure?.[0]?.Plan?.title || null,
-            grade: cat.structure?.[0]?.Plan?.grade || null,
-            subject: cat.structure?.[0]?.Plan?.subject || null,
-            children: [],
-        }));
-
-        const result = [];
-        for (const current of categoriesOutput) {
-            result.push(await this.getRecursiveCategory(current));
-        }
-        
-        const finalResult = mode == 'flat' ? this.flattenCategories(result) : result;
-        const total = await this.prisma.categories.count({ where });
-        return { data: finalResult, total };
+      }
     }
 
-    async updateCategory(category_id: string, data: Partial<CategoryDto>) {
-        try {
-            return await this.prisma.categories.update({ where: { category_id }, data });
-        } catch (error) {
-            return new ExceptionResponse().returnError(error, `categories`);
+    if (categoryData.children?.length) {
+      for (const child of categoryData.children) {
+        child.plan_id = categoryData.plan_id; 
+        await this.upsertCategoryWithChildren(tx, child, category.category_id);
+      }
+    }
+  }
+
+  async createCategory(data: CategoryDto[]) {
+    try {
+      return this.prisma.$transaction(async (tx) => {
+        for (const category of data) {
+          await this.upsertCategoryWithChildren(tx, category, category.parent_id);
         }
+        return data;
+      });
+    } catch (error) {
+      return new ExceptionResponse().returnError(error, `categories`);
+    }
+  }
+
+  async getAllCategories(
+    mode: string = 'tree',
+    plan_id?: string,
+    page?: number | string,
+    limit?: number | string,
+    search?: string,
+    grade?: number | string,
+    subject?: string,
+  ) {
+    const pageNum = page ? parseInt(String(page), 10) : 1;
+    const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 200;
+    const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
+    const takeNum = limitNum > 0 ? limitNum : undefined;
+
+    const conditions: Prisma.CategoriesWhereInput[] = [];
+    if (plan_id) {
+      conditions.push({
+        OR: [
+          { structure: { some: { plan_id: plan_id } } },
+          { Categories: { structure: { some: { plan_id: plan_id } } } },
+        ],
+      });
     }
 
-    async deleteWholeCategoryTree(tx: Prisma.TransactionClient, current_category_id: string) {
-        const childCategories = await tx.categories.findMany({ where: { parent_id: current_category_id }, select: { category_id: true } });
-        if (childCategories.length !== 0) {
-            for (const child of childCategories) {
-                await this.deleteWholeCategoryTree(tx, child.category_id);
-            }
-        }
-        return await tx.categories.delete({ where: { category_id: current_category_id } });
+    if (search) {
+      conditions.push({
+        OR: [
+          { category_name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ],
+      });
     }
 
-    async deleteCategory(category_id: string, mode: ControlMode = ControlMode.SOFT) {
-        try {
-            if (mode == ControlMode.FORCE) {
-                return this.prisma.$transaction(async (tx) => {
-                    return await this.deleteWholeCategoryTree(tx, category_id);
-                });
-            }
-            return await this.prisma.categories.delete({ where: { category_id } });
-        } catch (error) {
-            return new ExceptionResponse().returnError(error, `categories`);
-        }
+    if (!plan_id && (grade || subject)) {
+      const planFilter: any = {};
+      if (grade) planFilter.grade = parseInt(String(grade), 10);
+      if (subject)
+        planFilter.subject = { contains: subject, mode: 'insensitive' };
+      conditions.push({ structure: { some: { Plan: planFilter } } });
     }
+
+    const where: Prisma.CategoriesWhereInput =
+      conditions.length > 0 ? { AND: conditions } : {};
+
+    const categories = await this.prisma.categories.findMany({
+      where: where,
+      skip: skipNum,
+      take: takeNum,
+      orderBy: { category_name: 'asc' },
+      select: {
+        category_id: true,
+        category_name: true,
+        description: true,
+        parent_id: true,
+        structure: {
+          select: {
+            Plan: { select: { title: true, subject: true, grade: true } },
+          },
+        },
+      },
+    });
+
+    const total = await this.prisma.categories.count({ where });
+    return { data: categories, total };
+  }
+
+  async updateCategory(category_id: string, data: Partial<CategoryDto>) {
+    try {
+      return await this.prisma.categories.update({
+        where: { category_id },
+        data,
+      });
+    } catch (error) {
+      return new ExceptionResponse().returnError(error, `categories`);
+    }
+  }
+
+  async deleteWholeCategoryTree(
+    tx: Prisma.TransactionClient,
+    current_category_id: string,
+  ) {
+    const childCategories = await tx.categories.findMany({
+      where: { parent_id: current_category_id },
+      select: { category_id: true },
+    });
+
+    if (childCategories.length > 0) {
+      for (const child of childCategories) {
+        await this.deleteWholeCategoryTree(tx, child.category_id);
+      }
+    }
+
+    await tx.structure.deleteMany({
+      where: { Category: { category_id: current_category_id } },
+    });
+
+    const questionsToDelete = await tx.questions.findMany({
+      where: { category_id: current_category_id },
+      select: { ques_id: true },
+    });
+
+    if (questionsToDelete.length > 0) {
+      const quesIds = questionsToDelete.map((q) => q.ques_id);
+      await tx.answers.deleteMany({
+        where: { ques_id: { in: quesIds } },
+      });
+      await tx.questions.deleteMany({
+        where: { category_id: current_category_id },
+      });
+    }
+
+    return await tx.categories.delete({
+      where: { category_id: current_category_id },
+    });
+  }
+
+  async deleteCategory(
+    category_id: string,
+    mode: ControlMode = ControlMode.SOFT,
+  ) {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        if (mode === ControlMode.FORCE) {
+          return await this.deleteWholeCategoryTree(tx, category_id);
+        } else {
+          await tx.structure.deleteMany({
+            where: { Category: { category_id: category_id } },
+          });
+
+          return await tx.categories.delete({ where: { category_id } });
+        }
+      });
+    } catch (error) {
+      return new ExceptionResponse().returnError(error, `categories`);
+    }
+  }
 }
 
+// =================================================================================================
+// 3. SERVICE: QUESTION (Quản lý Câu hỏi/Câu trả lời)
+// =================================================================================================
 @Injectable()
 export class QuestionService {
-    constructor(private prisma: PrismaService) {}
-    private getOrderBy(sortBy?: string, sortDirection?: string): Prisma.QuestionsOrderByWithRelationInput {
-        const dir = sortDirection === 'asc' ? 'asc' : 'desc';
-        
-        switch (sortBy) {
-            case 'title':
-                return { title: dir };
-            case 'level':
-                return { level: dir };
-            case 'type':
-                return { type: dir };
-            case 'status':
-                return { status: dir };
-            case 'category_id': 
-            case 'category_name':
-                return { category: { category_name: dir } };
-            default:
-                return { createAt: 'desc' };
-        }
+  constructor(private prisma: PrismaService) {}
+
+  private getOrderBy(
+    sortBy?: string,
+    sortDirection?: string,
+  ): Prisma.QuestionsOrderByWithRelationInput {
+    const dir = sortDirection === 'asc' ? 'asc' : 'desc';
+
+    switch (sortBy) {
+      case 'title':
+        return { title: dir };
+      case 'level':
+        return { level: dir };
+      case 'type':
+        return { type: dir };
+      case 'status':
+        return { status: dir };
+      case 'category_id':
+      case 'category_name':
+        return { category: { category_name: dir } };
+      default:
+        return { createAt: 'desc' };
     }
+  }
 
-    async createQuestion(data: CreateQuestionDto[], tutor_uid: string) {
-        const tutorExists = await this.prisma.tutor.findUnique({ where: { uid: tutor_uid } });
-        if (!tutorExists) throw new NotFoundException(`Tutor with ID ${tutor_uid} not found`);
+  async createQuestion(data: CreateQuestionDto[], tutor_uid: string) {
+    const tutorExists = await this.prisma.tutor.findUnique({
+      where: { uid: tutor_uid },
+    });
+    if (!tutorExists)
+      throw new NotFoundException(`Tutor with ID ${tutor_uid} not found`);
 
-        return this.prisma.$transaction(async (tx) => {
-            const createdQuestions = [];
-            for (const question of data) {
-                const categoryExists = await tx.categories.findUnique({ where: { category_id: question.categoryId } });
-                if (!categoryExists) throw new NotFoundException(`Category with ID ${question.categoryId} not found`);
-
-                const statusEnumValue = question.status?.toUpperCase() === 'DRAFT' ? QuestionStatus.draft : QuestionStatus.ready;
-                const accessEnumValue = question.accessMode?.toUpperCase() === 'PUBLIC' ? QuestionAccess.public : QuestionAccess.private;
-                
-                const newQuestion = await tx.questions.create({
-                    data: {
-                        title: question.title,
-                        content: question.content,
-                        explaination: question.explaination,
-                        type: question.type as QuestionType,
-                        level: question.level as DifficultyLevel,
-                        status: statusEnumValue,
-                        accessMode: accessEnumValue,
-                        category: { connect: { category_id: question.categoryId } },
-                        tutor: { connect: { uid: tutor_uid } },
-                    },
-                    select: { ques_id: true }
-                });
-
-                if (question.answers?.length > 0) {
-                    const answersToCreate = question.answers.map((answer, index) => ({
-                        aid: index + 1,
-                        content: answer.content,
-                        is_correct: answer.isCorrect,
-                        explaination: answer.explaination || null,
-                        ques_id: newQuestion.ques_id,
-                    }));
-                    await tx.answers.createMany({ data: answersToCreate });
-                }
-                createdQuestions.push({ ques_id: newQuestion.ques_id });
-            }
-            return createdQuestions;
+    return this.prisma.$transaction(async (tx) => {
+      const createdQuestions = [];
+      for (const question of data) {
+        const categoryExists = await tx.categories.findUnique({
+          where: { category_id: question.categoryId },
         });
-    }
+        if (!categoryExists)
+          throw new NotFoundException(
+            `Category with ID ${question.categoryId} not found`,
+          );
 
-    async getCategoryIdsRecursively(rootId: string): Promise<string[]> {
-        const children = await this.prisma.categories.findMany({
-            where: { parent_id: rootId },
-            select: { category_id: true },
+        const statusEnumValue =
+          question.status?.toUpperCase() === 'DRAFT'
+            ? QuestionStatus.draft
+            : QuestionStatus.ready;
+        const accessEnumValue =
+          question.accessMode?.toUpperCase() === 'PUBLIC'
+            ? QuestionAccess.public
+            : QuestionAccess.private;
+
+        const newQuestion = await tx.questions.create({
+          data: {
+            title: question.title,
+            content: question.content,
+            explaination: question.explaination,
+            type: question.type as QuestionType,
+            level: question.level as DifficultyLevel,
+            status: statusEnumValue,
+            accessMode: accessEnumValue,
+            category: { connect: { category_id: question.categoryId } },
+            tutor: { connect: { uid: tutor_uid } },
+          },
+          select: { ques_id: true },
         });
-        let ids = [rootId];
-        for (const child of children) {
-            const childIds = await this.getCategoryIdsRecursively(child.category_id);
-            ids = [...ids, ...childIds];
-        }
-        return ids;
-    }
 
-    async getQuestionsByCategory(
-        category_id: string, 
-        page?: number | string, 
-        limit?: number | string, 
-        search?: string, 
-        level?: string, 
-        type?: string,
-        sortBy?: string, 
-        sortDirection?: string
-    ) {
-        const pageNum = page ? parseInt(String(page), 10) : 1;
-        const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 10;
-        const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
-        const takeNum = limitNum > 0 ? limitNum : undefined;
-        const where: Prisma.QuestionsWhereInput = { accessMode: QuestionAccess.public };
-
-        if (category_id) {
-            const allRelatedIds = await this.getCategoryIdsRecursively(category_id);
-            where.category_id = { in: allRelatedIds };
-        }
-
-        if (level) {
-            const levelKey = level.toLowerCase() as keyof typeof DifficultyLevel;
-            if (DifficultyLevel[levelKey]) where.level = DifficultyLevel[levelKey];
-        }
-        if (type) {
-            const typeKey = type.toUpperCase() as keyof typeof QuestionType;
-            if (QuestionType[typeKey]) where.type = QuestionType[typeKey];
-            else if (Object.values(QuestionType).includes(type as QuestionType)) where.type = type as QuestionType;
-        }
-
-        if (search) {
-            where.OR = [
-                { title: { contains: search, mode: 'insensitive' } },
-                { content: { contains: search, mode: 'insensitive' } },
-                { explaination: { contains: search, mode: 'insensitive' } }
-            ];
-        }
-
-        const orderBy = this.getOrderBy(sortBy, sortDirection);
-
-        try {
-            const questions = await this.prisma.questions.findMany({
-                where,
-                skip: skipNum,
-                take: takeNum,
-                orderBy: orderBy,
-                select: {
-                    ques_id: true, title: true, content: true, type: true, level: true, status: true, createAt: true,
-                    category: {
-                        select: {
-                            category_id: true, category_name: true,
-                            structure: { select: { Plan: { select: { title: true, subject: true, grade: true } } } }
-                        }
-                    }
-                },
-            });
-            const total = await this.prisma.questions.count({ where });
-            return { data: questions, total };
-        } catch (error) {
-            throw new Error('Could not fetch questions by category.');
-        }
-    }
-
-    async getMyQuestions(
-        tutor_uid: string,
-        page?: number | string,
-        limit?: number | string,
-        search?: string,
-        level?: string,
-        type?: string,
-        status?: string,
-        category_id?: string,
-        plan_id?: string,
-        sortBy?: string, 
-        sortDirection?: string
-    ) {
-        const pageNum = page ? parseInt(String(page), 10) : 1;
-        const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 10;
-        const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
-        const takeNum = limitNum > 0 ? limitNum : undefined;
-
-        const where: Prisma.QuestionsWhereInput = { tutor_id: tutor_uid };
-
-        if (level) {
-            const levelKey = level.toLowerCase() as keyof typeof DifficultyLevel;
-            if (DifficultyLevel[levelKey]) where.level = DifficultyLevel[levelKey];
-        }
-        if (type) {
-            const typeKey = type.toUpperCase() as keyof typeof QuestionType;
-            if (QuestionType[typeKey]) where.type = QuestionType[typeKey];
-            else if (Object.values(QuestionType).includes(type as QuestionType)) where.type = type as QuestionType;
-        }
-        if (status) {
-            const statusKey = status.toUpperCase() as keyof typeof QuestionStatus;
-            if (QuestionStatus[statusKey]) where.status = QuestionStatus[statusKey];
-            else if (Object.values(QuestionStatus).includes(status as QuestionStatus)) where.status = status as QuestionStatus;
-        }
-
-        if (category_id) {
-            const allRelatedIds = await this.getCategoryIdsRecursively(category_id);
-            where.category_id = { in: allRelatedIds };
-        } else if (plan_id) {
-            where.category = {
-                OR: [
-                    { structure: { some: { plan_id } } },
-                    { Categories: { structure: { some: { plan_id } } } }
-                ]
-            };
-        }
-
-        if (search) {
-            where.OR = [
-                { title: { contains: search, mode: 'insensitive' } },
-                { content: { contains: search, mode: 'insensitive' } },
-                { explaination: { contains: search, mode: 'insensitive' } },
-                { category: { category_name: { contains: search, mode: 'insensitive' } } },
-                { category: { structure: { some: { Plan: { title: { contains: search, mode: 'insensitive' } } } } } }
-            ];
-        }
-
-        const orderBy = this.getOrderBy(sortBy, sortDirection);
-
-        try {
-            const questions = await this.prisma.questions.findMany({
-                where,
-                skip: skipNum,
-                take: takeNum,
-                orderBy: orderBy,
-                select: {
-                    ques_id: true, title: true, content: true, type: true, level: true, status: true, createAt: true, updateAt: true,
-                    category: {
-                        select: {
-                            category_id: true, category_name: true,
-                            structure: { select: { Plan: { select: { title: true, subject: true, grade: true } } } },
-                            Categories: { select: { structure: { select: { Plan: { select: { title: true } } } } } }
-                        },
-                    },
-                },
-            });
-            const total = await this.prisma.questions.count({ where });
-            return { data: questions, total };
-        } catch (error) {
-            throw new Error('Could not fetch your questions.');
-        }
-    }
-
-    async getAllQuestion(
-        page?: number | string,
-        limit?: number | string,
-        search?: string,
-        level?: string,
-        type?: string,
-        status?: string,
-        category_id?: string,
-        plan_id?: string,
-        sortBy?: string, 
-        sortDirection?: string
-    ) {
-        const pageNum = page ? parseInt(String(page), 10) : 1;
-        const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 10;
-        const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
-        const takeNum = limitNum > 0 ? limitNum : undefined;
-
-        const where: Prisma.QuestionsWhereInput = {};
-
-        if (level) {
-            const levelKey = level.toLowerCase() as keyof typeof DifficultyLevel;
-            if (DifficultyLevel[levelKey]) where.level = DifficultyLevel[levelKey];
-        }
-        if (type) {
-            const typeKey = type.toUpperCase() as keyof typeof QuestionType;
-            if (QuestionType[typeKey]) where.type = QuestionType[typeKey];
-            else if (Object.values(QuestionType).includes(type as QuestionType)) where.type = type as QuestionType;
-        }
-        if (status) {
-            const statusKey = status.toUpperCase() as keyof typeof QuestionStatus;
-            if (QuestionStatus[statusKey]) where.status = QuestionStatus[statusKey];
-            else if (Object.values(QuestionStatus).includes(status as QuestionStatus)) where.status = status as QuestionStatus;
-        }
-
-        if (category_id) {
-            const allRelatedIds = await this.getCategoryIdsRecursively(category_id);
-            where.category_id = { in: allRelatedIds };
-        } else if (plan_id) {
-            where.category = {
-                OR: [
-                    { structure: { some: { plan_id } } },
-                    { Categories: { structure: { some: { plan_id } } } }
-                ]
-            };
-        }
-
-        if (search) {
-            where.OR = [
-                { title: { contains: search, mode: 'insensitive' } },
-                { content: { contains: search, mode: 'insensitive' } },
-                { explaination: { contains: search, mode: 'insensitive' } },
-                { tutor: { user: { OR: [{ fname: { contains: search, mode: 'insensitive' } }, { lname: { contains: search, mode: 'insensitive' } }] } } },
-                { category: { category_name: { contains: search, mode: 'insensitive' } } },
-                { category: { structure: { some: { Plan: { title: { contains: search, mode: 'insensitive' } } } } } }
-            ];
-        }
-
-        const orderBy = this.getOrderBy(sortBy, sortDirection);
-
-        try {
-            const questions = await this.prisma.questions.findMany({
-                where,
-                skip: skipNum,
-                take: takeNum,
-                orderBy: orderBy,
-                select: {
-                    ques_id: true, title: true, content: true, type: true, level: true, status: true, createAt: true, updateAt: true,
-                    category: {
-                        select: {
-                            category_id: true, category_name: true,
-                            structure: { select: { Plan: { select: { title: true, subject: true, grade: true } } } },
-                            Categories: { select: { structure: { select: { Plan: { select: { title: true } } } } } }
-                        },
-                    },
-                },
-            });
-            const total = await this.prisma.questions.count({ where });
-            return { data: questions, total };
-        } catch (error) {
-            throw new Error('Could not fetch questions.');
-        }
-    }
-
-    async findPlanOfRootCategory(current_parent: string) {
-        const father_category = await this.prisma.categories.findUnique(
-            {
-                where: {category_id: current_parent},
-                select: {
-                    parent_id: true,
-                    structure: {
-                        select: {
-                            Plan: { select: { plan_id: true, title: true, subject: true, grade: true } }
-                        }
-                    }
-                }
-            }
-        )
-
-        if (!father_category.parent_id) return father_category.structure
-        return await this.findPlanOfRootCategory(father_category.parent_id)
-    }
-
-    async getQuestionById(ques_id: string) {
-        const question = await this.prisma.questions.findUnique({
-            where: { ques_id },
-            select: {
-                ques_id: true, title: true, content: true, explaination: true, type: true, level: true, status: true,
-                category: {
-                    select: {
-                        category_id: true, category_name: true, parent_id: true,
-                        structure: { select: { Plan: { select: { title: true, subject: true, grade: true } } } },
-                        Categories: { select: { structure: { select: { Plan: { select: { title: true } } } } } }
-                    }
-                },
-                answers: { select: { aid: true, content: true, is_correct: true, explaination: true }, orderBy: { aid: 'asc' } },
-                tutor: { select: { user: { select: { uid: true, fname: true, lname: true } } } },
-            },
-        });
-        if (!question) throw new NotFoundException(`Question with ID ${ques_id} not found`);
-
-        if (question.category.parent_id != null) {
-            const plans = await this.findPlanOfRootCategory(question.category.parent_id);
-            return {...question, plan_lst: plans}
-        }
-        return question;
-    }
-
-    async updateQuestion(ques_id: string, data: UpdateQuestionDto) {
-        const { answers, categoryId, ...restData } = data;
-        const updateData: Prisma.QuestionsUpdateInput = { ...restData };
-
-        if (restData.level && DifficultyLevel[String(restData.level).toUpperCase()]) {
-            updateData.level = DifficultyLevel[String(restData.level).toUpperCase()];
-        } else delete updateData.level;
-
-        if (restData.type && QuestionType[String(restData.type).toUpperCase()]) {
-            updateData.type = QuestionType[String(restData.type).toUpperCase()];
-        } else delete updateData.type;
-
-        if (restData.status && QuestionStatus[String(restData.status).toUpperCase()]) {
-            updateData.status = QuestionStatus[String(restData.status).toUpperCase()];
-        } else delete updateData.status;
-
-        if (categoryId) {
-            const categoryExists = await this.prisma.categories.findUnique({ where: { category_id: categoryId } });
-            if (!categoryExists) throw new NotFoundException(`Category with ID ${categoryId} not found`);
-            updateData.category = { connect: { category_id: categoryId } };
-        }
-
-        return await this.prisma.questions.update({
-            where: { ques_id },
-            data: updateData,
-            select: { ques_id: true }
-        });
-    }
-
-    async deleteQuestion(ques_id: string) {
-        return this.prisma.$transaction(async (tx) => {
-            const questionExists = await tx.questions.findUnique({ where: { ques_id } });
-            if (!questionExists) throw new NotFoundException(`Question not found`);
-            await tx.answers.deleteMany({ where: { ques_id } });
-            return await tx.questions.delete({ where: { ques_id } });
-        });
-    }
-
-    async updateAnswer(aid: number, ques_id: string, answer: Partial<CreateAnswerDto>) {
-        const aidNum = Number(aid);
-        const existingAnswer = await this.prisma.answers.findUnique({ where: { ques_id_aid: { ques_id, aid: aidNum } } });
-        if (!existingAnswer) throw new NotFoundException(`Answer not found`);
-
-        const { content, isCorrect, explaination } = answer;
-        const updateData: Prisma.AnswersUpdateInput = {};
-        if (content !== undefined) updateData.content = content;
-        if (isCorrect !== undefined) updateData.is_correct = isCorrect;
-        if (explaination !== undefined) updateData.explaination = explaination;
-
-        return await this.prisma.answers.update({
-            where: { ques_id_aid: { ques_id, aid: aidNum } },
-            data: updateData
-        });
-    }
-
-    async addAnswer(answers: CreateAnswerDto[], ques_id: string) {
-        const questionExists = await this.prisma.questions.findUnique({ where: { ques_id } });
-        if (!questionExists) throw new NotFoundException(`Question not found`);
-
-        const lastAnswer = await this.prisma.answers.findFirst({ where: { ques_id }, orderBy: { aid: 'desc' }, select: { aid: true } });
-        let nextAid = (lastAnswer?.aid || 0) + 1;
-
-        const answersToCreate = answers.map(answer => ({
-            aid: nextAid++,
-            ques_id: ques_id,
+        if (question.answers?.length > 0) {
+          const answersToCreate = question.answers.map((answer, index) => ({
+            aid: index + 1,
             content: answer.content,
             is_correct: answer.isCorrect,
             explaination: answer.explaination || null,
-        }));
+            ques_id: newQuestion.ques_id,
+          }));
+          await tx.answers.createMany({ data: answersToCreate });
+        }
+        createdQuestions.push({ ques_id: newQuestion.ques_id });
+      }
+      return createdQuestions;
+    });
+  }
 
-        await this.prisma.answers.createMany({ data: answersToCreate });
-        return { message: `Added answers successfully!` };
+  async getCategoryIdsRecursively(rootId: string): Promise<string[]> {
+    const children = await this.prisma.categories.findMany({
+      where: { parent_id: rootId },
+      select: { category_id: true },
+    });
+    let ids = [rootId];
+    for (const child of children) {
+      const childIds = await this.getCategoryIdsRecursively(child.category_id);
+      ids = [...ids, ...childIds];
+    }
+    return ids;
+  }
+
+  async getQuestionsByCategory(
+    category_id: string,
+    page?: number | string,
+    limit?: number | string,
+    search?: string,
+    level?: string,
+    type?: string,
+    sortBy?: string,
+    sortDirection?: string,
+  ) {
+    const pageNum = page ? parseInt(String(page), 10) : 1;
+    const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 10;
+    const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
+    const takeNum = limitNum > 0 ? limitNum : undefined;
+    const where: Prisma.QuestionsWhereInput = {
+      accessMode: QuestionAccess.public,
+    };
+
+    if (category_id) {
+      const allRelatedIds = await this.getCategoryIdsRecursively(category_id);
+      where.category_id = { in: allRelatedIds };
     }
 
-    async deleteAnswer(aid: number, ques_id: string) {
-        const aidNum = Number(aid);
-        return await this.prisma.$transaction(async (tx) => {
-            const answerToDelete = await tx.answers.findUnique({ where: { ques_id_aid: { ques_id, aid: aidNum } } });
-            if (!answerToDelete) throw new NotFoundException(`Answer not found`);
-            await tx.answers.delete({ where: { ques_id_aid: { ques_id, aid: aidNum } } });
-            await tx.answers.updateMany({ where: { ques_id: ques_id, aid: { gt: aidNum } }, data: { aid: { decrement: 1 } } });
-            return { message: `Answer deleted successfully!` };
-        });
+    if (level) {
+      const levelKey = level.toLowerCase() as keyof typeof DifficultyLevel;
+      if (DifficultyLevel[levelKey]) where.level = DifficultyLevel[levelKey];
     }
+    if (type) {
+      const typeKey = type.toUpperCase() as keyof typeof QuestionType;
+      if (QuestionType[typeKey]) where.type = QuestionType[typeKey];
+      else if (Object.values(QuestionType).includes(type as QuestionType))
+        where.type = type as QuestionType;
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
+        { explaination: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const orderBy = this.getOrderBy(sortBy, sortDirection);
+
+    try {
+      const questions = await this.prisma.questions.findMany({
+        where,
+        skip: skipNum,
+        take: takeNum,
+        orderBy: orderBy,
+        select: {
+          ques_id: true,
+          title: true,
+          content: true,
+          type: true,
+          level: true,
+          status: true,
+          createAt: true,
+          category: {
+            select: {
+              category_id: true,
+              category_name: true,
+              structure: {
+                select: {
+                  Plan: { select: { title: true, subject: true, grade: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+      const total = await this.prisma.questions.count({ where });
+      return { data: questions, total };
+    } catch (error) {
+      throw new Error('Could not fetch questions by category.');
+    }
+  }
+
+  async getMyQuestions(
+    tutor_uid: string,
+    page?: number | string,
+    limit?: number | string,
+    search?: string,
+    level?: string,
+    type?: string,
+    status?: string,
+    category_id?: string,
+    plan_id?: string,
+    sortBy?: string,
+    sortDirection?: string,
+  ) {
+    const pageNum = page ? parseInt(String(page), 10) : 1;
+    const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 10;
+    const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
+    const takeNum = limitNum > 0 ? limitNum : undefined;
+
+    const where: Prisma.QuestionsWhereInput = { tutor_id: tutor_uid };
+
+    if (level) {
+      const levelKey = level.toLowerCase() as keyof typeof DifficultyLevel;
+      if (DifficultyLevel[levelKey]) where.level = DifficultyLevel[levelKey];
+    }
+    if (type) {
+      const typeKey = type.toUpperCase() as keyof typeof QuestionType;
+      if (QuestionType[typeKey]) where.type = QuestionType[typeKey];
+      else if (Object.values(QuestionType).includes(type as QuestionType))
+        where.type = type as QuestionType;
+    }
+    if (status) {
+      const statusKey = status.toUpperCase() as keyof typeof QuestionStatus;
+      if (QuestionStatus[statusKey]) where.status = QuestionStatus[statusKey];
+      else if (Object.values(QuestionStatus).includes(status as QuestionStatus))
+        where.status = status as QuestionStatus;
+    }
+
+    if (category_id) {
+      const allRelatedIds = await this.getCategoryIdsRecursively(category_id);
+      where.category_id = { in: allRelatedIds };
+    } else if (plan_id) {
+      where.category = {
+        OR: [
+          { structure: { some: { plan_id } } },
+          { Categories: { structure: { some: { plan_id } } } },
+        ],
+      };
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
+        { explaination: { contains: search, mode: 'insensitive' } },
+        {
+          category: {
+            category_name: { contains: search, mode: 'insensitive' },
+          },
+        },
+        {
+          category: {
+            structure: {
+              some: {
+                Plan: { title: { contains: search, mode: 'insensitive' } },
+              },
+            },
+          },
+        },
+      ];
+    }
+
+    const orderBy = this.getOrderBy(sortBy, sortDirection);
+
+    try {
+      const questions = await this.prisma.questions.findMany({
+        where,
+        skip: skipNum,
+        take: takeNum,
+        orderBy: orderBy,
+        select: {
+          ques_id: true,
+          title: true,
+          content: true,
+          type: true,
+          level: true,
+          status: true,
+          createAt: true,
+          updateAt: true,
+          category: {
+            select: {
+              category_id: true,
+              category_name: true,
+              structure: {
+                select: {
+                  Plan: { select: { title: true, subject: true, grade: true } },
+                },
+              },
+              Categories: {
+                select: {
+                  structure: { select: { Plan: { select: { title: true } } } },
+                },
+              },
+            },
+          },
+        },
+      });
+      const total = await this.prisma.questions.count({ where });
+      return { data: questions, total };
+    } catch (error) {
+      throw new Error('Could not fetch your questions.');
+    }
+  }
+
+  async getAllQuestion(
+    page?: number | string,
+    limit?: number | string,
+    search?: string,
+    level?: string,
+    type?: string,
+    status?: string,
+    category_id?: string,
+    plan_id?: string,
+    sortBy?: string,
+    sortDirection?: string,
+  ) {
+    const pageNum = page ? parseInt(String(page), 10) : 1;
+    const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 10;
+    const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
+    const takeNum = limitNum > 0 ? limitNum : undefined;
+
+    const where: Prisma.QuestionsWhereInput = {};
+
+    if (level) {
+      const levelKey = level.toLowerCase() as keyof typeof DifficultyLevel;
+      if (DifficultyLevel[levelKey]) where.level = DifficultyLevel[levelKey];
+    }
+    if (type) {
+      const typeKey = type.toUpperCase() as keyof typeof QuestionType;
+      if (QuestionType[typeKey]) where.type = QuestionType[typeKey];
+      else if (Object.values(QuestionType).includes(type as QuestionType))
+        where.type = type as QuestionType;
+    }
+    if (status) {
+      const statusKey = status.toUpperCase() as keyof typeof QuestionStatus;
+      if (QuestionStatus[statusKey]) where.status = QuestionStatus[statusKey];
+      else if (Object.values(QuestionStatus).includes(status as QuestionStatus))
+        where.status = status as QuestionStatus;
+    }
+
+    if (category_id) {
+      const allRelatedIds = await this.getCategoryIdsRecursively(category_id);
+      where.category_id = { in: allRelatedIds };
+    } else if (plan_id) {
+      where.category = {
+        OR: [
+          { structure: { some: { plan_id } } },
+          { Categories: { structure: { some: { plan_id } } } },
+        ],
+      };
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
+        { explaination: { contains: search, mode: 'insensitive' } },
+        {
+          tutor: {
+            user: {
+              OR: [
+                { fname: { contains: search, mode: 'insensitive' } },
+                { lname: { contains: search, mode: 'insensitive' } },
+              ],
+            },
+          },
+        },
+        {
+          category: {
+            category_name: { contains: search, mode: 'insensitive' },
+          },
+        },
+        {
+          category: {
+            structure: {
+              some: {
+                Plan: { title: { contains: search, mode: 'insensitive' } },
+              },
+            },
+          },
+        },
+      ];
+    }
+
+    const orderBy = this.getOrderBy(sortBy, sortDirection);
+
+    try {
+      const questions = await this.prisma.questions.findMany({
+        where,
+        skip: skipNum,
+        take: takeNum,
+        orderBy: orderBy,
+        select: {
+          ques_id: true,
+          title: true,
+          content: true,
+          type: true,
+          level: true,
+          status: true,
+          createAt: true,
+          updateAt: true,
+          category: {
+            select: {
+              category_id: true,
+              category_name: true,
+              structure: {
+                select: {
+                  Plan: { select: { title: true, subject: true, grade: true } },
+                },
+              },
+              Categories: {
+                select: {
+                  structure: { select: { Plan: { select: { title: true } } } },
+                },
+              },
+            },
+          },
+        },
+      });
+      const total = await this.prisma.questions.count({ where });
+      return { data: questions, total };
+    } catch (error) {
+      throw new Error('Could not fetch questions.');
+    }
+  }
+
+  async getQuestionById(ques_id: string) {
+    const question = await this.prisma.questions.findUnique({
+      where: { ques_id },
+      select: {
+        ques_id: true,
+        title: true,
+        content: true,
+        explaination: true,
+        type: true,
+        level: true,
+        status: true,
+        category: {
+          select: {
+            category_id: true,
+            category_name: true,
+            structure: {
+              select: {
+                Plan: { select: { title: true, subject: true, grade: true } },
+              },
+            },
+            Categories: {
+              select: {
+                structure: { select: { Plan: { select: { title: true } } } },
+              },
+            },
+          },
+        },
+        answers: {
+          select: {
+            aid: true,
+            content: true,
+            is_correct: true,
+            explaination: true,
+          },
+          orderBy: { aid: 'asc' },
+        },
+        tutor: {
+          select: { user: { select: { uid: true, fname: true, lname: true } } },
+        },
+      },
+    });
+    if (!question)
+      throw new NotFoundException(`Question with ID ${ques_id} not found`);
+    return question;
+  }
+
+  async updateQuestion(ques_id: string, data: UpdateQuestionDto) {
+    const { answers, categoryId, ...restData } = data;
+    const updateData: Prisma.QuestionsUpdateInput = { ...restData };
+
+    if (
+      restData.level &&
+      DifficultyLevel[String(restData.level).toUpperCase()]
+    ) {
+      updateData.level = DifficultyLevel[String(restData.level).toUpperCase()];
+    } else delete updateData.level;
+
+    if (restData.type && QuestionType[String(restData.type).toUpperCase()]) {
+      updateData.type = QuestionType[String(restData.type).toUpperCase()];
+    } else delete updateData.type;
+
+    if (
+      restData.status &&
+      QuestionStatus[String(restData.status).toUpperCase()]
+    ) {
+      updateData.status = QuestionStatus[String(restData.status).toUpperCase()];
+    } else delete updateData.status;
+
+    if (categoryId) {
+      const categoryExists = await this.prisma.categories.findUnique({
+        where: { category_id: categoryId },
+      });
+      if (!categoryExists)
+        throw new NotFoundException(`Category with ID ${categoryId} not found`);
+      updateData.category = { connect: { category_id: categoryId } };
+    }
+
+    return await this.prisma.questions.update({
+      where: { ques_id },
+      data: updateData,
+      select: { ques_id: true },
+    });
+  }
+
+  async deleteQuestion(ques_id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const questionExists = await tx.questions.findUnique({
+        where: { ques_id },
+      });
+      if (!questionExists) throw new NotFoundException(`Question not found`);
+      await tx.answers.deleteMany({ where: { ques_id } });
+      return await tx.questions.delete({ where: { ques_id } });
+    });
+  }
+
+  async updateAnswer(
+    aid: number,
+    ques_id: string,
+    answer: Partial<CreateAnswerDto>,
+  ) {
+    const aidNum = Number(aid);
+    const existingAnswer = await this.prisma.answers.findUnique({
+      where: { ques_id_aid: { ques_id, aid: aidNum } },
+    });
+    if (!existingAnswer) throw new NotFoundException(`Answer not found`);
+
+    const { content, isCorrect, explaination } = answer;
+    const updateData: Prisma.AnswersUpdateInput = {};
+    if (content !== undefined) updateData.content = content;
+    if (isCorrect !== undefined) updateData.is_correct = isCorrect;
+    if (explaination !== undefined) updateData.explaination = explaination;
+
+    return await this.prisma.answers.update({
+      where: { ques_id_aid: { ques_id, aid: aidNum } },
+      data: updateData,
+    });
+  }
+
+  async addAnswer(answers: CreateAnswerDto[], ques_id: string) {
+    const questionExists = await this.prisma.questions.findUnique({
+      where: { ques_id },
+    });
+    if (!questionExists) throw new NotFoundException(`Question not found`);
+
+    const lastAnswer = await this.prisma.answers.findFirst({
+      where: { ques_id },
+      orderBy: { aid: 'desc' },
+      select: { aid: true },
+    });
+    let nextAid = (lastAnswer?.aid || 0) + 1;
+
+    const answersToCreate = answers.map((answer) => ({
+      aid: nextAid++,
+      ques_id: ques_id,
+      content: answer.content,
+      is_correct: answer.isCorrect,
+      explaination: answer.explaination || null,
+    }));
+
+    await this.prisma.answers.createMany({ data: answersToCreate });
+    return { message: `Added answers successfully!` };
+  }
+
+  async deleteAnswer(aid: number, ques_id: string) {
+    const aidNum = Number(aid);
+    return await this.prisma.$transaction(async (tx) => {
+      const answerToDelete = await tx.answers.findUnique({
+        where: { ques_id_aid: { ques_id, aid: aidNum } },
+      });
+      if (!answerToDelete) throw new NotFoundException(`Answer not found`);
+      await tx.answers.delete({
+        where: { ques_id_aid: { ques_id, aid: aidNum } },
+      });
+      await tx.answers.updateMany({
+        where: { ques_id: ques_id, aid: { gt: aidNum } },
+        data: { aid: { decrement: 1 } },
+      });
+      return { message: `Answer deleted successfully!` };
+    });
+  }
 }

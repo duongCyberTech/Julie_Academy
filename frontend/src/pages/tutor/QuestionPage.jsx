@@ -31,7 +31,7 @@ import {
   TableSortLabel,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { visuallyHidden } from "@mui/utils"; 
+import { visuallyHidden } from "@mui/utils";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -39,12 +39,21 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
-import { getAllQuestions, getMyQuestions } from "../../services/QuestionService";
-import { getAllCategories, getPlansByTutor } from "../../services/CategoryService";
+import {
+  getAllQuestions,
+  getMyQuestions,
+} from "../../services/QuestionService";
+import {
+  getAllCategories,
+  getPlansByTutor,
+} from "../../services/CategoryService";
 
 const PageWrapper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
-  backgroundColor: theme.palette.mode === "light" ? theme.palette.grey[50] : theme.palette.background.paper,
+  backgroundColor:
+    theme.palette.mode === "light"
+      ? theme.palette.grey[50]
+      : theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius * 2,
   border: `1px solid ${theme.palette.divider}`,
   boxShadow: "none",
@@ -58,12 +67,18 @@ const Header = styled(Box)({
 });
 
 const HEAD_CELLS = [
-  { id: "title", label: "Tiêu đề câu hỏi", minWidth: 300, sortable: true }, 
+  { id: "title", label: "Tiêu đề câu hỏi", minWidth: 300, sortable: true },
   { id: "type", label: "Loại", minWidth: 120, sortable: true },
   { id: "level", label: "Độ khó", minWidth: 100, sortable: true },
-  { id: "category_id", label: "Chuyên đề", minWidth: 150, sortable: true }, 
-  { id: "book", label: "Giáo án", minWidth: 150, sortable: false }, 
-  { id: "actions", label: "Chi tiết", minWidth: 80, align: "center", sortable: false },
+  { id: "category_id", label: "Chuyên đề", minWidth: 150, sortable: true },
+  { id: "book", label: "Giáo án", minWidth: 150, sortable: false },
+  {
+    id: "actions",
+    label: "Chi tiết",
+    minWidth: 80,
+    align: "center",
+    sortable: false,
+  },
 ];
 
 const DIFFICULTY_MAP = {
@@ -80,8 +95,18 @@ const TYPE_MAP = {
 };
 
 const DifficultyChip = ({ difficulty }) => {
-  const mapping = DIFFICULTY_MAP[String(difficulty || "").toUpperCase()] || { text: difficulty || "N/A", color: "default" };
-  return <Chip label={mapping.text} color={mapping.color} size="small" variant="outlined" />;
+  const mapping = DIFFICULTY_MAP[String(difficulty || "").toUpperCase()] || {
+    text: difficulty || "N/A",
+    color: "default",
+  };
+  return (
+    <Chip
+      label={mapping.text}
+      color={mapping.color}
+      size="small"
+      variant="outlined"
+    />
+  );
 };
 
 function useDebounce(value, delay) {
@@ -93,190 +118,247 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-const QuestionFilters = memo(({ filters, onFilterChange, onReset, books, categories, loadingBooks, loadingCategories }) => {
-  const categoryTreeData = useMemo(() => {
-    let flattenedCategories = [];
-    if (Array.isArray(categories)) {
-      categories.forEach(item => {
-        if (Array.isArray(item)) {
-          flattenedCategories = flattenedCategories.concat(item);
-        } else if (item && (item.id || item.category_id)) {
-          flattenedCategories.push(item);
-        }
-      });
-    }
-    
-    if (flattenedCategories.length === 0) return [];
-    
-    const parentMap = new Map();
-    flattenedCategories.forEach(item => {
-      const parentId = item.parent_id ?? item.parentId ?? item.parent_category_id;
-      const description = item.description;
-      if (parentId && !parentMap.has(parentId)) {
-        parentMap.set(parentId, description || 'Chưa có mô tả');
-      }
-    });
-    
-    const parentNodes = Array.from(parentMap.entries()).map(([parentId, description]) => ({
-      id: parentId,
-      category_id: parentId,
-      category_name: description,
-      parent_id: null,
-      isParent: true,
-    }));
-    
-    const allNodes = [...parentNodes, ...flattenedCategories];
-    
-    const buildTree = (items, parentId = null) => {
-      const filtered = items.filter(item => {
-        const itemParentId = item.parent_id ?? item.parentId ?? item.parent_category_id;
-        if (parentId === null) {
-          return itemParentId === null || itemParentId === undefined;
-        }
-        return String(itemParentId) === String(parentId);
-      });
-      
-      return filtered.map(item => {
-        const id = item.id ?? item.category_id;
-        const name = item.name ?? item.category_name ?? "Không có tên";
-        
-        return {
-          id: String(id),
-          label: name,
-          children: buildTree(items, id),
-        };
-      });
-    };
-    
-    return buildTree(allNodes);
-  }, [categories]);
+const QuestionFilters = memo(
+  ({
+    filters,
+    onFilterChange,
+    onReset,
+    books,
+    categories,
+    loadingBooks,
+    loadingCategories,
+  }) => {
+    const categoryTreeData = useMemo(() => {
+      if (!categories || categories.length === 0) return [];
 
-  const handleTreeSelection = (event, selectedItems) => {
-    let selectedId = "";
-    if (Array.isArray(selectedItems)) {
+      const getItemId = (itm) =>
+        String(itm.id ?? itm.category_id ?? itm._id ?? "");
+      const getParentId = (itm) => {
+        const pid = itm.parent_id ?? itm.parentId ?? itm.parent_category_id;
+        if (!pid || pid === 0 || String(pid) === "0" || String(pid) === "null")
+          return null;
+        return String(pid);
+      };
+
+      const parentMap = new Map();
+      const allItemIds = new Set(categories.map(getItemId));
+
+      categories.forEach((item) => {
+        const pid = getParentId(item);
+        if (pid && !allItemIds.has(pid)) {
+          if (!parentMap.has(pid)) {
+            parentMap.set(pid, {
+              id: pid,
+              category_id: pid,
+              category_name: item.description || "Danh mục gốc",
+              parent_id: null,
+              isFake: true,
+            });
+          }
+        }
+      });
+
+      const allNodes = [...Array.from(parentMap.values()), ...categories];
+
+      const buildTree = (items, targetParentId = null) => {
+        return items
+          .filter((item) => {
+            const itemPid = getParentId(item);
+            return itemPid === targetParentId;
+          })
+          .map((item) => {
+            const itemId = getItemId(item);
+            return {
+              id: itemId,
+              label: String(item.name ?? item.category_name ?? "No Name"),
+              children: buildTree(items, itemId),
+            };
+          });
+      };
+
+      return buildTree(allNodes, null);
+    }, [categories]);
+    const handleTreeSelection = (event, selectedItems) => {
+      let selectedId = "";
+      if (Array.isArray(selectedItems)) {
         selectedId = selectedItems.length > 0 ? selectedItems[0] : "";
-    } else {
+      } else {
         selectedId = selectedItems ?? "";
-    }
-    onFilterChange({ target: { name: "categoryId", value: selectedId } });
-  };
+      }
+      onFilterChange({ target: { name: "categoryId", value: selectedId } });
+    };
 
-  return (
-    <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-      <Stack direction="column" spacing={2}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center">
-          <TextField
-            label="Tìm kiếm tiêu đề..."
-            variant="outlined"
-            name="search"
-            value={filters.search}
-            onChange={onFilterChange}
-            size="small"
-            sx={{ flexGrow: 1, minWidth: 200 }}
-            InputProps={{ 
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ) 
-            }}
-          />
-          <Tooltip title="Đặt lại bộ lọc">
-            <Button variant="outlined" color="inherit" onClick={onReset} startIcon={<RestartAltIcon />}>
-              Xóa lọc
-            </Button>
-          </Tooltip>
-        </Stack>
+    return (
+      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+        <Stack direction="column" spacing={2}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            alignItems="center"
+          >
+            <TextField
+              label="Tìm kiếm tiêu đề..."
+              variant="outlined"
+              name="search"
+              value={filters.search}
+              onChange={onFilterChange}
+              size="small"
+              sx={{ flexGrow: 1, minWidth: 200 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Tooltip title="Đặt lại bộ lọc">
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={onReset}
+                startIcon={<RestartAltIcon />}
+              >
+                Xóa lọc
+              </Button>
+            </Tooltip>
+          </Stack>
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center">
-          <FormControl size="small" sx={{ minWidth: 200 }} disabled={loadingBooks}>
-            <InputLabel>Giáo án</InputLabel>
-            <Select name="bookId" value={filters.bookId} label="Giáo án" onChange={onFilterChange}>
-              <MenuItem value="">
-                <em>Tất cả giáo án</em>
-              </MenuItem>
-              {Array.isArray(books) &&
-                books.map((b) => (
-                  <MenuItem key={b.plan_id ?? b.id ?? b.planId} value={b.plan_id ?? b.id ?? b.planId}>
-                    {`${b.title} ${b.grade ? `(K${b.grade})` : ""}`}
-                  </MenuItem>
-                ))}
-            </Select>
-          </FormControl>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            alignItems="center"
+          >
+            <FormControl
+              size="small"
+              sx={{ minWidth: 200 }}
+              disabled={loadingBooks}
+            >
+              <InputLabel>Giáo án</InputLabel>
+              <Select
+                name="bookId"
+                value={filters.bookId}
+                label="Giáo án"
+                onChange={onFilterChange}
+              >
+                <MenuItem value="">
+                  <em>Tất cả giáo án</em>
+                </MenuItem>
+                {Array.isArray(books) &&
+                  books.map((b) => (
+                    <MenuItem
+                      key={b.plan_id ?? b.id ?? b.planId}
+                      value={b.plan_id ?? b.id ?? b.planId}
+                    >
+                      {`${b.title} ${b.grade ? `(K${b.grade})` : ""}`}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Độ khó</InputLabel>
-            <Select name="level" value={filters.level} label="Độ khó" onChange={onFilterChange}>
-              <MenuItem value="">
-                <em>Tất cả</em>
-              </MenuItem>
-              <MenuItem value="EASY">Dễ</MenuItem>
-              <MenuItem value="MEDIUM">Trung bình</MenuItem>
-              <MenuItem value="HARD">Khó</MenuItem>
-            </Select>
-          </FormControl>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Độ khó</InputLabel>
+              <Select
+                name="level"
+                value={filters.level}
+                label="Độ khó"
+                onChange={onFilterChange}
+              >
+                <MenuItem value="">
+                  <em>Tất cả</em>
+                </MenuItem>
+                <MenuItem value="EASY">Dễ</MenuItem>
+                <MenuItem value="MEDIUM">Trung bình</MenuItem>
+                <MenuItem value="HARD">Khó</MenuItem>
+              </Select>
+            </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Loại câu hỏi</InputLabel>
-            <Select name="type" value={filters.type} label="Loại câu hỏi" onChange={onFilterChange}>
-              <MenuItem value="">
-                <em>Tất cả</em>
-              </MenuItem>
-              <MenuItem value="single_choice">Trắc nghiệm (1)</MenuItem>
-              <MenuItem value="multiple_choice">Trắc nghiệm (N)</MenuItem>
-              <MenuItem value="essay">Tự luận</MenuItem>
-              <MenuItem value="true_false">Đúng/Sai</MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Loại câu hỏi</InputLabel>
+              <Select
+                name="type"
+                value={filters.type}
+                label="Loại câu hỏi"
+                onChange={onFilterChange}
+              >
+                <MenuItem value="">
+                  <em>Tất cả</em>
+                </MenuItem>
+                <MenuItem value="single_choice">Trắc nghiệm (1)</MenuItem>
+                <MenuItem value="multiple_choice">Trắc nghiệm (N)</MenuItem>
+                <MenuItem value="essay">Tự luận</MenuItem>
+                <MenuItem value="true_false">Đúng/Sai</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
 
-        <Collapse in={!!filters.bookId}>
-          <Box mt={1} p={2} border="1px solid" borderColor="divider" borderRadius={1} bgcolor="background.paper">
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{ display: "flex", alignItems: "center" }}>
-              <FilterListIcon fontSize="small" sx={{ mr: 1 }} /> Chọn Chuyên đề:
-            </Typography>
+          <Collapse in={!!filters.bookId}>
+            <Box
+              mt={1}
+              p={2}
+              border="1px solid"
+              borderColor="divider"
+              borderRadius={1}
+              bgcolor="background.paper"
+            >
+              <Typography
+                variant="subtitle2"
+                fontWeight={600}
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                <FilterListIcon fontSize="small" sx={{ mr: 1 }} /> Chọn Chuyên
+                đề:
+              </Typography>
 
-            {loadingCategories ? (
-              <Box display="flex" justifyContent="center" p={2}>
-                <CircularProgress size={20} />
-              </Box>
-            ) : categoryTreeData.length > 0 ? (
-              <Box sx={{ maxHeight: 300, overflowY: "auto", mt: 1 }}>
-                <RichTreeView
-                  items={categoryTreeData}
-                  slots={{ 
-                    collapseIcon: ExpandMoreIcon, 
-                    expandIcon: ChevronRightIcon 
-                  }}
-                  onSelectedItemsChange={handleTreeSelection}
-                  selectedItems={filters.categoryId ? [String(filters.categoryId)] : []}
-                  sx={{
-                    '& .MuiTreeItem-content': {
-                      py: 0.5,
-                      '&:hover': {
-                        backgroundColor: 'action.hover',
-                      },
-                      '&.Mui-selected': {
-                        backgroundColor: 'primary.light',
-                        '&:hover': {
-                          backgroundColor: 'primary.light',
+              {loadingCategories ? (
+                <Box display="flex" justifyContent="center" p={2}>
+                  <CircularProgress size={20} />
+                </Box>
+              ) : categoryTreeData.length > 0 ? (
+                <Box sx={{ maxHeight: 300, overflowY: "auto", mt: 1 }}>
+                  <RichTreeView
+                    items={categoryTreeData}
+                    slots={{
+                      collapseIcon: ExpandMoreIcon,
+                      expandIcon: ChevronRightIcon,
+                    }}
+                    onSelectedItemsChange={handleTreeSelection}
+                    selectedItems={
+                      filters.categoryId ? [String(filters.categoryId)] : []
+                    }
+                    sx={{
+                      "& .MuiTreeItem-content": {
+                        py: 0.5,
+                        "&:hover": {
+                          backgroundColor: "action.hover",
+                        },
+                        "&.Mui-selected": {
+                          backgroundColor: "primary.light",
+                          "&:hover": {
+                            backgroundColor: "primary.light",
+                          },
                         },
                       },
-                    },
-                  }}
-                />
-              </Box>
-            ) : (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                Giáo án này chưa có mục lục chuyên đề.
-              </Typography>
-            )}
-          </Box>
-        </Collapse>
-      </Stack>
-    </Paper>
-  );
-});
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "block", mt: 1 }}
+                >
+                  Giáo án này chưa có mục lục chuyên đề.
+                </Typography>
+              )}
+            </Box>
+          </Collapse>
+        </Stack>
+      </Paper>
+    );
+  }
+);
 
 export default function QuestionPage() {
   const navigate = useNavigate();
@@ -297,8 +379,8 @@ export default function QuestionPage() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const [order, setOrder] = useState('desc'); 
-  const [orderBy, setOrderBy] = useState('created_at'); 
+  const [order, setOrder] = useState("desc");
+  const [orderBy, setOrderBy] = useState("created_at");
 
   const [filters, setFilters] = useState({
     search: "",
@@ -323,7 +405,11 @@ export default function QuestionPage() {
       setLoadingBooks(true);
       try {
         const res = await getPlansByTutor(userInfo.sub, token);
-        const booksData = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+        const booksData = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data)
+          ? res.data
+          : [];
         setBooks(booksData);
       } catch (err) {
         setBooks([]);
@@ -342,14 +428,19 @@ export default function QuestionPage() {
       }
       setLoadingCategories(true);
       try {
-        const catData = await getAllCategories({ plan_id: filters.bookId, mode: "tree" }, token);
+        const catData = await getAllCategories(
+          { plan_id: filters.bookId, mode: "tree" },
+          token
+        );
         let nodes = [];
         if (Array.isArray(catData)) {
           nodes = catData;
         } else if (catData?.data) {
           nodes = Array.isArray(catData.data) ? catData.data : [catData.data];
         } else if (catData?.categories) {
-          nodes = Array.isArray(catData.categories) ? catData.categories : [catData.categories];
+          nodes = Array.isArray(catData.categories)
+            ? catData.categories
+            : [catData.categories];
         }
         setCategories(nodes);
       } catch (err) {
@@ -376,8 +467,8 @@ export default function QuestionPage() {
         category_id: filters.categoryId || undefined,
         plan_id: filters.bookId || undefined,
         search: debouncedSearch || undefined,
-        sortBy: orderBy, 
-        sortDirection: order, 
+        sortBy: orderBy,
+        sortDirection: order,
       };
 
       let response;
@@ -395,7 +486,17 @@ export default function QuestionPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, viewMode, debouncedSearch, filters, page, rowsPerPage, userInfo, order, orderBy]);  
+  }, [
+    token,
+    viewMode,
+    debouncedSearch,
+    filters,
+    page,
+    rowsPerPage,
+    userInfo,
+    order,
+    orderBy,
+  ]);
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
@@ -413,22 +514,22 @@ export default function QuestionPage() {
   };
 
   const handleReset = () => {
-    setFilters({ 
-      search: "", 
-      level: "", 
-      type: "", 
-      bookId: "", 
-      categoryId: "", 
+    setFilters({
+      search: "",
+      level: "",
+      type: "",
+      bookId: "",
+      categoryId: "",
     });
     setPage(0);
-    setOrderBy('created_at');
-    setOrder('desc');
+    setOrderBy("created_at");
+    setOrder("desc");
   };
   const handleRequestSort = (property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
-    setPage(0); 
+    setPage(0);
   };
 
   return (
@@ -489,13 +590,13 @@ export default function QuestionPage() {
               <TableHead>
                 <TableRow>
                   {HEAD_CELLS.map((cell) => (
-                    <TableCell 
-                      key={cell.id} 
-                      align={cell.align || "left"} 
-                      sx={{ 
-                        fontWeight: "bold", 
-                        bgcolor: "grey.50", 
-                        minWidth: cell.minWidth 
+                    <TableCell
+                      key={cell.id}
+                      align={cell.align || "left"}
+                      sx={{
+                        fontWeight: "bold",
+                        bgcolor: "grey.50",
+                        minWidth: cell.minWidth,
                       }}
                       sortDirection={orderBy === cell.id ? order : false}
                     >
@@ -503,13 +604,15 @@ export default function QuestionPage() {
                       {cell.sortable ? (
                         <TableSortLabel
                           active={orderBy === cell.id}
-                          direction={orderBy === cell.id ? order : 'asc'}
+                          direction={orderBy === cell.id ? order : "asc"}
                           onClick={() => handleRequestSort(cell.id)}
                         >
                           {cell.label}
                           {orderBy === cell.id ? (
                             <Box component="span" sx={visuallyHidden}>
-                              {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
+                              {order === "desc"
+                                ? "sorted descending"
+                                : "sorted ascending"}
                             </Box>
                           ) : null}
                         </TableSortLabel>
@@ -543,7 +646,9 @@ export default function QuestionPage() {
                       </TableCell>
 
                       <TableCell sx={{ py: 1.5 }}>
-                        <Typography variant="body2">{TYPE_MAP[q.type] || q.type}</Typography>
+                        <Typography variant="body2">
+                          {TYPE_MAP[q.type] || q.type}
+                        </Typography>
                       </TableCell>
 
                       <TableCell sx={{ py: 1.5 }}>
@@ -551,33 +656,43 @@ export default function QuestionPage() {
                       </TableCell>
 
                       <TableCell sx={{ py: 1.5 }}>
-                        <Typography 
-                          variant="body2" 
-                          noWrap 
-                          sx={{ maxWidth: 150 }} 
+                        <Typography
+                          variant="body2"
+                          noWrap
+                          sx={{ maxWidth: 150 }}
                           title={q.category?.category_name ?? q.category?.name}
                         >
-                          {q.category?.category_name ?? q.category?.name ?? "---"}
+                          {q.category?.category_name ??
+                            q.category?.name ??
+                            "---"}
                         </Typography>
                       </TableCell>
 
                       <TableCell sx={{ py: 1.5 }}>
-                        <Typography 
-                          variant="body2" 
-                          noWrap 
-                          sx={{ maxWidth: 150 }} 
-                          title={q.category?.structure?.[0]?.Plan?.title ?? q.category?.Categories?.structure?.[0]?.Plan?.title}
+                        <Typography
+                          variant="body2"
+                          noWrap
+                          sx={{ maxWidth: 150 }}
+                          title={
+                            q.category?.structure?.[0]?.Plan?.title ??
+                            q.category?.Categories?.structure?.[0]?.Plan?.title
+                          }
                         >
-                          {q.category?.structure?.[0]?.Plan?.title || q.category?.Categories?.structure?.[0]?.Plan?.title || "---"}
+                          {q.category?.structure?.[0]?.Plan?.title ||
+                            q.category?.Categories?.structure?.[0]?.Plan
+                              ?.title ||
+                            "---"}
                         </Typography>
                       </TableCell>
 
                       <TableCell align="center" sx={{ py: 1 }}>
                         <Tooltip title="Xem chi tiết">
-                          <IconButton 
-                            color="primary" 
-                            size="small" 
-                            onClick={() => navigate(`/tutor/question/${q.ques_id}`)}
+                          <IconButton
+                            color="primary"
+                            size="small"
+                            onClick={() =>
+                              navigate(`/tutor/question/${q.ques_id}`)
+                            }
                           >
                             <SearchIcon />
                           </IconButton>
@@ -587,7 +702,11 @@ export default function QuestionPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                    <TableCell
+                      colSpan={6}
+                      align="center"
+                      sx={{ py: 4, color: "text.secondary" }}
+                    >
                       Không tìm thấy câu hỏi nào.
                     </TableCell>
                   </TableRow>
@@ -608,7 +727,9 @@ export default function QuestionPage() {
               setPage(0);
             }}
             labelRowsPerPage="Số dòng mỗi trang:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} trong ${count}`}
+            labelDisplayedRows={({ from, to, count }) =>
+              `${from}-${to} trong ${count}`
+            }
           />
         </Paper>
       )}

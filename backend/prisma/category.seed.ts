@@ -13,25 +13,44 @@ async function createChapterAndLessons(
   chapterName: string,
   lessonNames: string[],
 ) {
-  const parentCategory = await prisma.categories.upsert({
+  // 1. Xử lý Category Cha (Chương)
+  // Thay thế upsert bằng findFirst + create/update
+  let parentCategory = await prisma.categories.findFirst({
     where: { category_name: chapterName },
-    update: {},
-    create: {
-      category_name: chapterName,
-      description: 'Chương trong sách',
-      parent_id: null, 
-    },
   });
 
-  let CateInPlan = await prisma.structure.findFirst({
+  if (!parentCategory) {
+    parentCategory = await prisma.categories.create({
+      data: {
+        category_name: chapterName,
+        description: 'Chương trong sách',
+        parent_id: null,
+      },
+    });
+  } else {
+    // Nếu đã tồn tại -> Update (nếu cần thiết, ở đây update mô tả cho đồng bộ)
+    parentCategory = await prisma.categories.update({
+      where: { category_id: parentCategory.category_id }, // Update theo ID là an toàn nhất
+      data: {
+        description: 'Chương trong sách',
+        parent_id: null,
+      },
+    });
+  }
+
+  // 2. Tạo liên kết Structure (Sách - Chương)
+  // Logic cũ của bạn dùng cate_id, hãy đảm bảo schema của bạn đúng tên trường này.
+  // Nếu schema là category_id, hãy sửa lại ở đây. Tôi giữ nguyên logic tìm kiếm an toàn.
+  const CateInPlan = await prisma.structure.findFirst({
     where: {
       plan_id: bookId,
-      cate_id: parentCategory.category_id,
+      // Sử dụng relation filter để an toàn hơn nếu tên cột thay đổi
+      Category: { category_id: parentCategory.category_id },
     },
   });
 
   if (!CateInPlan) {
-    CateInPlan = await prisma.structure.create({
+    await prisma.structure.create({
       data: {
         Category: { connect: { category_id: parentCategory.category_id } },
         Plan: { connect: { plan_id: bookId } },
@@ -40,20 +59,34 @@ async function createChapterAndLessons(
   }
 
   console.log(`  Tạo/cập nhật Chương: ${parentCategory.category_name}`);
-  const lessonPromises = lessonNames.map((lessonName) =>
-    prisma.categories.upsert({
+
+  // 3. Xử lý Categories Con (Bài học)
+  const lessonPromises = lessonNames.map(async (lessonName) => {
+    // Tìm xem bài học đã tồn tại chưa
+    let lesson = await prisma.categories.findFirst({
       where: { category_name: lessonName },
-      update: {
-        parent_id: parentCategory.category_id, 
-        description: chapterName,
-      },
-      create: {
-        category_name: lessonName,
-        description: chapterName,
-        parent_id: parentCategory.category_id, 
-      },
-    }),
-  );
+    });
+
+    if (!lesson) {
+      // Chưa có -> Tạo mới và gán cha
+      return prisma.categories.create({
+        data: {
+          category_name: lessonName,
+          description: chapterName,
+          parent_id: parentCategory.category_id,
+        },
+      });
+    } else {
+      // Đã có -> Cập nhật cha (để đảm bảo cấu trúc cây đúng)
+      return prisma.categories.update({
+        where: { category_id: lesson.category_id },
+        data: {
+          parent_id: parentCategory.category_id,
+          description: chapterName,
+        },
+      });
+    }
+  });
 
   await Promise.all(lessonPromises);
   console.log(`    -> Đã tạo/cập nhật ${lessonNames.length} bài học con.`);
@@ -64,6 +97,9 @@ async function main() {
 
   // ======================================================
   // 1. TẠO BOOKS
+  // (Phần này vẫn dùng upsert được nếu Title của Book là Unique trong Schema.
+  // Nếu Title Book cũng không Unique, bạn cần sửa tương tự như trên.
+  // Giả định Title Book vẫn Unique hoặc bạn muốn giữ logic này)
   // ======================================================
 
   //Book: Toán 9 - Cánh Diều

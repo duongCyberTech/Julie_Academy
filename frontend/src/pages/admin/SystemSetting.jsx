@@ -135,7 +135,6 @@ export default function SystemSettings() {
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsSubmitting(false);
     setToast({ open: true, message: "Cài đặt đã được lưu (Giả lập)." });
-    console.log("Saving settings:", settings);
   };
 
   const handleCloseToast = (event, reason) => {

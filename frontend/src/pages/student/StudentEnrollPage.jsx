@@ -2,32 +2,31 @@ import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { 
     Box, Typography, Paper, Button, Avatar, Chip, Stack, TextField, InputAdornment, 
     Dialog, DialogTitle, DialogContent, DialogActions, 
-    Checkbox, List, ListItem, ListItemButton, ListItemAvatar, 
-    ListItemText, CircularProgress, Alert, Snackbar, IconButton,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
-    FormControl, InputLabel, Select, MenuItem, TableSortLabel
+    CircularProgress, Alert, Snackbar, Table, TableBody, TableCell, 
+    TableContainer, TableHead, TableRow, TablePagination,
+    FormControl, InputLabel, Select, MenuItem, TableSortLabel, Tooltip
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
+import { jwtDecode } from "jwt-decode"; 
 
+// Icons
 import SearchIcon from '@mui/icons-material/Search';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import CloseIcon from '@mui/icons-material/Close';
-import ChildCareIcon from '@mui/icons-material/ChildCare';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import SchoolIcon from '@mui/icons-material/School';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import InfoIcon from '@mui/icons-material/Info';
 
-import ClassDetailDrawer from './ClassDetailDrawer';
-
+import ClassDetailDrawer from '../parent/ClassDetailDrawer';
 import { getAllClasses, requestEnrollment } from '../../services/ClassService';
-import { getMyChildren } from '../../services/UserService'; 
 
+// --- STYLED COMPONENTS ---
 const PageContainer = styled(Box)(({ theme }) => ({
     padding: theme.spacing(3),
     backgroundColor: '#F8F9FA',
@@ -63,6 +62,7 @@ const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
     }
 }));
 
+// --- HELPER FUNCTIONS ---
 const formatShortSchedule = (scheduleData) => {
     if (!scheduleData || !Array.isArray(scheduleData) || scheduleData.length === 0) return "Chưa xếp lịch";
     
@@ -79,43 +79,56 @@ const formatShortSchedule = (scheduleData) => {
     return `${daysStr} ${timeStr ? `(${timeStr})` : ''}`;
 };
 
-function ParentEnrollPage() {
+function StudentEnrollPage() {
+    // --- STATE ---
+    const [currentUserId, setCurrentUserId] = useState(null);
     const [classes, setClasses] = useState([]);
-    const [children, setChildren] = useState([]);
     const [loading, setLoading] = useState(true);
     
+    // Filter
     const [search, setSearch] = useState('');
     const [filterSubject, setFilterSubject] = useState('all');
     const [filterGrade, setFilterGrade] = useState('all');
     const [filterDate, setFilterDate] = useState(null); 
-
+    
+    // Pagination & Sort
     const [order, setOrder] = useState('desc');
     const [orderBy, setOrderBy] = useState('createdAt'); 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [drawerOpen, setDrawerOpen] = useState(false); 
+    // Dialogs
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
     const [selectedClass, setSelectedClass] = useState(null);
-    const [selectedChildIds, setSelectedChildIds] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState({ open: false, msg: '', severity: 'info' });
 
+    // --- EFFECT: GET USER ID ---
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                // Lấy UID từ token (thường là 'sub' hoặc 'uid' hoặc 'userId')
+                setCurrentUserId(decoded.sub || decoded.uid || decoded.userId);
+            } catch (e) {
+                console.error("Token invalid");
+            }
+        }
+    }, []);
+
+    // --- EFFECT: FETCH DATA ---
     const fetchData = useCallback(async () => {
         const token = localStorage.getItem('token');
         if (!token) return;
         setLoading(true);
         try {
-            const [classRes, childRes] = await Promise.all([
-                getAllClasses({ limit: 200 }, token), 
-                getMyChildren(token)
-            ]);
-
-            const allList = Array.isArray(classRes) ? classRes : (classRes?.data || []);
+            const response = await getAllClasses({ limit: 200 }, token);
+            const allList = Array.isArray(response) ? response : (response?.data || []);
+            // Chỉ lấy lớp Pending (Tuyển sinh) hoặc Ongoing (Đang dạy)
             const validClasses = allList.filter(c => c.status === 'pending' || c.status === 'ongoing');
-
             setClasses(validClasses);
-            setChildren(Array.isArray(childRes) ? childRes : (childRes?.data || []));
         } catch (err) {
             console.error(err);
         } finally {
@@ -125,6 +138,20 @@ function ParentEnrollPage() {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
+    // --- LOGIC: KIỂM TRA TRẠNG THÁI ĐĂNG KÝ ---
+    const getEnrollmentStatus = (row) => {
+        if (!currentUserId || !row.learning) return null;
+        // Tìm xem user hiện tại có trong danh sách learning của lớp không
+        // Cần check kỹ cấu trúc trả về từ backend (thường là learning[].student.user.uid)
+        const myRecord = row.learning.find(l => 
+            l.student?.user?.uid === currentUserId || 
+            l.student?.uid === currentUserId ||
+            l.student_uid === currentUserId
+        );
+        return myRecord ? myRecord.status : null; // 'pending' | 'accepted' | 'cancelled' | null
+    };
+
+    // --- LOGIC: FILTER & SORT ---
     const handleRequestSort = (property) => {
         const isAsc = orderBy === property && order === 'asc';
         setOrder(isAsc ? 'desc' : 'asc');
@@ -160,38 +187,31 @@ function ParentEnrollPage() {
     }, [filteredClasses, order, orderBy]);
 
     const visibleRows = sortedRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+    // --- UNIQUE LISTS FOR SELECT ---
     const uniqueSubjects = useMemo(() => [...new Set(classes.map(c => c.subject))].filter(Boolean), [classes]);
     const uniqueGrades = useMemo(() => [...new Set(classes.map(c => c.grade))].filter(Boolean).sort((a,b)=>a-b), [classes]);
 
-    const handleOpenEnrollDialog = (cls) => {
-        setDrawerOpen(false); 
+    // --- HANDLERS ---
+    const handleOpenConfirm = (cls) => {
+        setDrawerOpen(false);
         setSelectedClass(cls);
-        setSelectedChildIds([]);
-        setDialogOpen(true);
+        setConfirmDialogOpen(true);
     };
 
-    const handleOpenDrawer = (cls) => {
-        setSelectedClass(cls);
-        setDrawerOpen(true);
-    };
-
-    const handleToggleChild = (childId) => {
-        const currentIndex = selectedChildIds.indexOf(childId);
-        const newChecked = [...selectedChildIds];
-        currentIndex === -1 ? newChecked.push(childId) : newChecked.splice(currentIndex, 1);
-        setSelectedChildIds(newChecked);
-    };
-
-    const handleSubmit = async () => {
+    const handleSubmitEnroll = async () => {
         const token = localStorage.getItem('token');
-        if (!token || selectedChildIds.length === 0) return;
+        if (!token || !currentUserId) return;
         
         setIsSubmitting(true);
         try {
-            await requestEnrollment(selectedClass.class_id, selectedChildIds, token);
-            setToast({ open: true, msg: "Đăng ký thành công!", severity: "success" });
-            setDialogOpen(false);
-            fetchData();
+            // Gọi API request enroll
+            // Lưu ý: API requestEnrollment nhận mảng student_ids
+            await requestEnrollment(selectedClass.class_id, [currentUserId], token);
+            
+            setToast({ open: true, msg: "Gửi yêu cầu thành công!", severity: "success" });
+            setConfirmDialogOpen(false);
+            fetchData(); // Reload lại bảng
         } catch (err) {
             setToast({ open: true, msg: err.response?.data?.message || "Lỗi đăng ký.", severity: "error" });
         } finally {
@@ -199,12 +219,46 @@ function ParentEnrollPage() {
         }
     };
 
-    const getChildEnrollStatus = (childId, classData) => {
-        if (!classData?.learning) return null;
-        const record = classData.learning.find(l => 
-            l.student?.uid === childId || l.student_uid === childId
+    // --- RENDER ACTION BUTTON ---
+    const renderActionButton = (row) => {
+        const status = getEnrollmentStatus(row);
+
+        if (status === 'accepted') {
+            return (
+                <Chip 
+                    icon={<CheckCircleIcon />} 
+                    label="Đã tham gia" 
+                    color="success" 
+                    variant="outlined" 
+                    sx={{ fontWeight: 600, bgcolor: '#ecfdf5', border: 'none', color: '#059669' }} 
+                />
+            );
+        }
+        if (status === 'pending') {
+            return (
+                <Chip 
+                    icon={<HourglassEmptyIcon />} 
+                    label="Chờ duyệt" 
+                    color="warning" 
+                    variant="outlined" 
+                    sx={{ fontWeight: 600, bgcolor: '#fffbeb', border: 'none', color: '#d97706' }} 
+                />
+            );
+        }
+
+        // Nếu chưa đăng ký
+        return (
+            <Button 
+                variant="contained" 
+                size="small" 
+                disableElevation
+                startIcon={<AddCircleOutlineIcon />}
+                onClick={(e) => { e.stopPropagation(); handleOpenConfirm(row); }} 
+                sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#2563eb', '&:hover': {bgcolor: '#1d4ed8'} }}
+            >
+                Đăng ký
+            </Button>
         );
-        return record ? record.status : null;
     };
 
     if (loading) return <Box height="100vh" display="flex" justifyContent="center" alignItems="center"><CircularProgress /></Box>;
@@ -212,18 +266,20 @@ function ParentEnrollPage() {
     return (
         <PageContainer>
             <Box mb={4}>
-                <Typography variant="h4" fontWeight="700" color="#1e3a8a">Đăng ký lớp học</Typography>
-                <Typography variant="body2" color="text.secondary">Tìm kiếm lớp học và đăng ký cho con</Typography>
+                <Typography variant="h4" fontWeight="700" color="#1e3a8a">Tìm kiếm lớp học</Typography>
+                <Typography variant="body2" color="text.secondary">Khám phá các khóa học mới và đăng ký tham gia</Typography>
             </Box>
 
+            {/* --- FILTER BAR --- */}
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <FilterBar elevation={0}>
                     <TextField 
                         placeholder="Tìm lớp, giáo viên..." 
                         size="small" 
-                        value={search} onChange={(e) => setSearch(e.target.value)}
-                        InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon color="action"/></InputAdornment> }}
-                        sx={{ width: 280 }}
+                        value={search} 
+                        onChange={(e) => setSearch(e.target.value)} 
+                        InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon color="action"/></InputAdornment> }} 
+                        sx={{ width: 280 }} 
                     />
                     <FormControl size="small" sx={{ minWidth: 140 }}>
                         <InputLabel>Môn học</InputLabel>
@@ -242,7 +298,7 @@ function ParentEnrollPage() {
                     <DatePicker 
                         label="Khai giảng từ" 
                         value={filterDate} 
-                        onChange={(newValue) => setFilterDate(newValue)} 
+                        onChange={(v) => setFilterDate(v)} 
                         slotProps={{ textField: { size: 'small', sx: { width: 170 } } }} 
                     />
                     <Button 
@@ -257,6 +313,7 @@ function ParentEnrollPage() {
                 </FilterBar>
             </LocalizationProvider>
 
+            {/* --- TABLE --- */}
             <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
                 <StyledTableContainer>
                     <Table sx={{ minWidth: 750 }}>
@@ -267,7 +324,7 @@ function ParentEnrollPage() {
                                 <TableCell width="15%">Lịch học</TableCell>
                                 <TableCell width="10%">Môn/Khối</TableCell>
                                 <TableCell width="15%"><TableSortLabel active={orderBy === 'startat'} direction={order} onClick={() => handleRequestSort('startat')}>Khai giảng</TableSortLabel></TableCell>
-                                <TableCell width="15%" align="center">Hành động</TableCell>
+                                <TableCell width="15%" align="center">Trạng thái</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -302,17 +359,9 @@ function ParentEnrollPage() {
                                             <Typography variant="caption" color="text.secondary" ml={1}>K{row.grade}</Typography>
                                         </TableCell>
                                         <TableCell>{row.startat ? dayjs(row.startat).format('DD/MM/YYYY') : '---'}</TableCell>
+                                        
                                         <TableCell align="center">
-                                            <Button 
-                                                variant="contained" 
-                                                size="small" 
-                                                disableElevation
-                                                startIcon={<PersonAddIcon />}
-                                                onClick={(e) => { e.stopPropagation(); handleOpenEnrollDialog(row); }}
-                                                sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#ea580c', '&:hover': {bgcolor: '#c2410c'} }}
-                                            >
-                                                Đăng ký
-                                            </Button>
+                                            {renderActionButton(row)}
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -328,108 +377,42 @@ function ParentEnrollPage() {
                 />
             </Paper>
 
+            {/* --- DRAWER CHI TIẾT --- */}
             <ClassDetailDrawer 
                 open={drawerOpen} 
                 onClose={() => setDrawerOpen(false)} 
                 classData={selectedClass} 
-                onEnrollClick={handleOpenEnrollDialog} 
+                onEnrollClick={() => handleOpenConfirm(selectedClass)}
+                // Truyền trạng thái vào drawer để ẩn nút đăng ký nếu đã tham gia
+                isEnrolled={selectedClass && ['pending', 'accepted'].includes(getEnrollmentStatus(selectedClass))}
             />
 
-            <Dialog open={dialogOpen} onClose={() => !isSubmitting && setDialogOpen(false)} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-                    <Typography variant="h6" fontWeight="bold">Chọn con để đăng ký</Typography>
-                    {!isSubmitting && <IconButton onClick={() => setDialogOpen(false)} size="small"><CloseIcon/></IconButton>}
+            {/* --- CONFIRM DIALOG --- */}
+            <Dialog open={confirmDialogOpen} onClose={() => !isSubmitting && setConfirmDialogOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle sx={{ textAlign: 'center', pt: 3 }}>
+                    <HelpOutlineIcon sx={{ fontSize: 48, color: '#2563eb', mb: 1 }} />
+                    <Typography variant="h6" fontWeight="bold">Xác nhận đăng ký</Typography>
                 </DialogTitle>
-                <DialogContent dividers>
-                    <Box mb={2} p={2} bgcolor="#fff7ed" borderRadius={2} border="1px dashed #fdba74">
-                        <Typography variant="body2" color="#c2410c">
-                            Lớp học: <strong>{selectedClass?.classname}</strong>
+                <DialogContent>
+                    <Typography textAlign="center" color="text.secondary">
+                        Bạn có chắc chắn muốn tham gia lớp <strong>{selectedClass?.classname}</strong>?
+                    </Typography>
+                    <Box mt={2} p={1.5} bgcolor="#eff6ff" borderRadius={2} display="flex" gap={1} alignItems="start">
+                        <InfoIcon fontSize="small" color="info" sx={{mt:0.3}} />
+                        <Typography variant="caption" color="text.secondary" textAlign="left">
+                            Yêu cầu sẽ được gửi đến Gia sư. Bạn sẽ nhận được thông báo khi được duyệt.
                         </Typography>
                     </Box>
-                    {children.length === 0 ? (
-                        <Box textAlign="center" py={4}>
-                            <ChildCareIcon sx={{ fontSize: 48, color: '#9ca3af', opacity: 0.5, mb: 1 }} />
-                            <Typography color="text.secondary">Chưa có tài khoản học sinh nào được liên kết.</Typography>
-                        </Box>
-                    ) : (
-                        <List disablePadding>
-                            {children.map((child) => {
-                                const userInfo = child.user || {};
-                                const studentInfo = child.studentInfo || {};
-                                const currentStatus = getChildEnrollStatus(child.uid, selectedClass);
-                                const isEnrolled = !!currentStatus;
-                                const isChecked = selectedChildIds.indexOf(child.uid) !== -1;
-                                
-                                return (
-                                    <ListItem 
-                                        key={child.uid} 
-                                        disablePadding 
-                                        divider 
-                                        sx={{ 
-                                            bgcolor: isChecked ? '#fff7ed' : 'inherit',
-                                            opacity: isEnrolled ? 0.7 : 1
-                                        }}
-                                        secondaryAction={
-                                            isEnrolled ? (
-                                                <Chip 
-                                                    size="small" 
-                                                    label={currentStatus === 'accepted' ? "Đã tham gia" : "Đang chờ"} 
-                                                    color={currentStatus === 'accepted' ? "success" : "warning"}
-                                                    variant="outlined"
-                                                    icon={currentStatus === 'accepted' ? <CheckCircleIcon/> : <HourglassEmptyIcon/>}
-                                                />
-                                            ) : (
-                                                <Checkbox 
-                                                    checked={isChecked} 
-                                                    onChange={() => handleToggleChild(child.uid)}
-                                                    icon={<CheckCircleIcon color="disabled" fontSize="medium" />} 
-                                                    checkedIcon={<CheckCircleIcon sx={{color: '#ea580c'}} fontSize="medium" />} 
-                                                />
-                                            )
-                                        }
-                                    >
-                                        <ListItemButton onClick={() => !isEnrolled && handleToggleChild(child.uid)} disabled={isEnrolled} sx={{ py: 1.5 }}>
-                                            <ListItemAvatar>
-                                                <Avatar src={userInfo.avata_url} sx={{ bgcolor: isChecked ? '#ea580c' : '#e5e7eb', color: isChecked ? '#fff' : '#4b5563', fontWeight:'bold' }}>
-                                                    {userInfo.lname?.charAt(0)}
-                                                </Avatar>
-                                            </ListItemAvatar>
-                                            <ListItemText 
-                                                primary={<Typography variant="subtitle2" fontWeight="bold">{userInfo.lname} {userInfo.fname}</Typography>}
-                                                secondary={
-                                                    <Stack spacing={0.5} mt={0.5}>
-                                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                                            <SchoolOutlinedIcon sx={{fontSize: 16}} color="action" />
-                                                            <Typography variant="caption" color="text.secondary">{studentInfo.school || "Chưa cập nhật trường"}</Typography>
-                                                        </Stack>
-                                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                                            <EmailOutlinedIcon sx={{fontSize: 16}} color="action" />
-                                                            <Typography variant="caption" color="text.secondary">{userInfo.email}</Typography>
-                                                        </Stack>
-                                                    </Stack>
-                                                }
-                                            />
-                                        </ListItemButton>
-                                    </ListItem>
-                                );
-                            })}
-                        </List>
-                    )}
                 </DialogContent>
-                <DialogActions sx={{ p: 3, pt: 2 }}>
-                    <Button onClick={() => setDialogOpen(false)} disabled={isSubmitting} color="inherit" sx={{borderRadius: 2}}>Hủy</Button>
-                    <Button 
-                        onClick={handleSubmit} 
-                        variant="contained" 
-                        disabled={isSubmitting || selectedChildIds.length === 0} 
-                        startIcon={isSubmitting && <CircularProgress size={20} color="inherit"/>}
-                        sx={{ px: 3, borderRadius: 2, bgcolor: '#ea580c', '&:hover': {bgcolor: '#c2410c'} }}
-                    >
-                        {isSubmitting ? "Đang xử lý..." : `Xác nhận (${selectedChildIds.length})`}
+                <DialogActions sx={{ p: 3, justifyContent: 'center', gap: 2 }}>
+                    <Button onClick={() => setConfirmDialogOpen(false)} disabled={isSubmitting} variant="outlined" color="inherit" sx={{ borderRadius: 2 }}>Hủy</Button>
+                    <Button onClick={handleSubmitEnroll} variant="contained" disabled={isSubmitting} startIcon={isSubmitting && <CircularProgress size={20} color="inherit"/>} sx={{ borderRadius: 2, px: 3 }}>
+                        {isSubmitting ? "Đang xử lý..." : "Gửi yêu cầu"}
                     </Button>
                 </DialogActions>
             </Dialog>
 
+            {/* --- TOAST --- */}
             <Snackbar open={toast.open} autoHideDuration={4000} onClose={() => setToast(prev => ({ ...prev, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
                 <Alert severity={toast.severity} variant="filled" onClose={() => setToast(prev => ({ ...prev, open: false }))}>{toast.msg}</Alert>
             </Snackbar>
@@ -437,4 +420,4 @@ function ParentEnrollPage() {
     );
 }
 
-export default memo(ParentEnrollPage);
+export default memo(StudentEnrollPage);
