@@ -187,9 +187,11 @@ export class ScheduleController {
   @Roles('tutor')
   createSchedule(
     @Param('class_id') class_id: string,
-    @Body() data: ScheduleDto[] 
+    @Body() data: ScheduleDto[], 
+    @Request() req
   ){
-    return this.schedule.createSchedule(class_id, data)
+    const tutor_id = req.user.userId;
+    return this.schedule.createSchedule(tutor_id, class_id, data)
   }
 
   @Post('delete/:class_id')

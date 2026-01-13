@@ -92,7 +92,7 @@ export class ScheduleService {
     return parseFloat(data[0]) + parseFloat(data[1])/60.0; 
   }
 
-  async createSchedule(class_id:string, schedules: ScheduleDto[]){
+  async createSchedule(tutor_id: string, class_id:string, schedules: ScheduleDto[]){
     return this.prisma.$transaction(async(tx) => {
 
       var cnt = 1 + await tx.schedule.count({
@@ -101,54 +101,81 @@ export class ScheduleService {
       
       var schedLst = []
 
+      const curr_class = await tx.class.findUnique({
+        where: {class_id}, 
+        select: {
+          startat: true,
+          duration_time: true
+        }
+      })
+
       for (const item of schedules){
 
         const newStartAtNum: Number = this.parseTimeStrToNum(item.startAt);
         const newEndAtNum: Number = this.parseTimeStrToNum(item.endAt);
-        const checkExist: {meeting_date: string}[] = await tx.$queryRaw(Prisma.sql`
-          SELECT "meeting_date"
-          FROM public."Schedule"
+        const checkExist: {
+          classname: string,
+          meeting_date: string,
+          startAt: string,
+          endAt: string
+        }[] = await tx.$queryRaw(Prisma.sql`
+          SELECT c."classname", s."meeting_date", s."startAt", s."endAt"
+          FROM public."Schedule" as s
+          join public."Class" as c on s."class_id" = c."class_id"
           WHERE
-            "meeting_date" = ${item.meeting_date} 
+            c."tutor_uid" = ${tutor_id} 
             AND
             (
-              -- Lấy tổng số giây từ nửa đêm (00:00:00) và chia cho 3600 để có giờ thập phân (REAL)
-              -- 1. Chuyển đổi endAt của DB thành giờ thập phân
-              ((
-                EXTRACT(EPOCH FROM "endAt"::TIME) / 3600.0
-              ) > ${newStartAtNum} AND 
-
-              -- 2. Chuyển đổi startAt của DB thành giờ thập phân
+              (c."startat" <= ${curr_class.startat} 
+                AND c."duration_time" * 7 >= EXTRACT(DAY FROM (${curr_class.startat} - c."startat")))
+              OR 
+              (c."startat" >= ${curr_class.startat} 
+                AND ${curr_class.duration_time} * 7 >= EXTRACT(DAY FROM (c."startat" - ${curr_class.startat})))
+            )
+            AND
+            s."meeting_date" = ${item.meeting_date} 
+            AND
+            (
               (
-                EXTRACT(EPOCH FROM "startAt"::TIME) / 3600.0
-              ) <= ${newStartAtNum})
+                -- Lấy tổng số giây từ nửa đêm (00:00:00) và chia cho 3600 để có giờ thập phân (REAL)
+                -- 1. Chuyển đổi endAt của DB thành giờ thập phân
+                (
+                  EXTRACT(EPOCH FROM s."endAt"::TIME) / 3600.0
+                ) > ${newStartAtNum} AND 
+
+                -- 2. Chuyển đổi startAt của DB thành giờ thập phân
+                (
+                  EXTRACT(EPOCH FROM s."startAt"::TIME) / 3600.0
+                ) <= ${newStartAtNum}
+              )
 
               OR 
-              ((
-                EXTRACT(EPOCH FROM "endAt"::TIME) / 3600.0
-              ) >= ${newEndAtNum} AND 
-
-              -- 2. Chuyển đổi startAt của DB thành giờ thập phân
               (
-                EXTRACT(EPOCH FROM "startAt"::TIME) / 3600.0
-              ) < ${newEndAtNum})
+                (
+                  EXTRACT(EPOCH FROM s."endAt"::TIME) / 3600.0
+                ) >= ${newEndAtNum} AND 
 
-              OR (
-              (
-                EXTRACT(EPOCH FROM "endAt"::TIME) / 3600.0
-              ) = ${newEndAtNum} AND 
+                -- 2. Chuyển đổi startAt của DB thành giờ thập phân
+                (
+                  EXTRACT(EPOCH FROM s."startAt"::TIME) / 3600.0
+                ) < ${newEndAtNum})
 
-              -- 2. Chuyển đổi startAt của DB thành giờ thập phân
-              (
-                EXTRACT(EPOCH FROM "startAt"::TIME) / 3600.0
-              ) = ${newStartAtNum}
+                OR (
+                (
+                  EXTRACT(EPOCH FROM s."endAt"::TIME) / 3600.0
+                ) = ${newEndAtNum} AND 
+
+                -- 2. Chuyển đổi startAt của DB thành giờ thập phân
+                (
+                  EXTRACT(EPOCH FROM s."startAt"::TIME) / 3600.0
+                ) = ${newStartAtNum}
               )
             )
         `);
 
         if (checkExist && checkExist.length) {
             throw new BadRequestException(
-                `Lịch học bị trùng vào Thứ ${item.meeting_date}, khung giờ ${item.startAt} - ${item.endAt}. Vui lòng kiểm tra lại!`
+                `Lịch học bị trùng với lớp ${checkExist[0].classname} vào Thứ ${item.meeting_date}, khung giờ ${item.startAt} - ${item.endAt}. Vui lòng kiểm tra lại!`
             );
         }
 
@@ -801,7 +828,7 @@ async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string
               const { schedule_id, class_id, meeting_date, ...resitem } = item
               return {...resitem, meeting_date: Number(meeting_date)}
             })
-            await this.schedule.createSchedule(newClass.class, schedLstData)
+            await this.schedule.createSchedule(tutor_id, newClass.class, schedLstData)
           }
         }
 
