@@ -3,7 +3,6 @@ import { InternalServerErrorException, BadRequestException, NotFoundException } 
 export class ExceptionResponse extends Error {
     returnError(error: Error, ext_message?: string) {
         const errorMessage = error.message.split('\n').at(-1);
-        console.log('Error Message:', errorMessage);
 
         if (
             errorMessage.includes('No record was found') 
@@ -11,7 +10,8 @@ export class ExceptionResponse extends Error {
             const returnValue = new NotFoundException(`${ext_message} not found!`);
             return returnValue.getResponse();
         } else if (
-            errorMessage.includes('Unknown argument')   
+            errorMessage.includes('Unknown argument') ||
+            errorMessage.includes('is not')
         ) {
             const returnValue = new BadRequestException(`Invalid field in update data for ${ext_message}.`);
             return returnValue.getResponse();
