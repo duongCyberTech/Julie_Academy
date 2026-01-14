@@ -3,14 +3,17 @@ import {
     Param, Query, Req, Body, Search, 
     Request,
     InternalServerErrorException,
-    UseGuards
+    UseGuards,
+    ParseIntPipe
 } from "@nestjs/common";
 import { Request as Reqst } from "express";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { ExamService } from "./exam.service";
+import { ExamTakenService } from "./exam_taken.service";
 import { ExamDto, ExamSessionDto, ExamTakenDto, SubmitAnswerDto } from "./dto/exam.dto";
 import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guard/roles.guard";
+import { ExceptionResponse } from "src/exception/Exception.exception";
 
 @Controller('exam')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -135,6 +138,29 @@ export class ExamSessionController {
             return this.examService.getAllExamSessionByClass(class_id)
         } catch (error) {
             throw new InternalServerErrorException(error.message)
+        }
+    }
+}
+
+@Controller('exam/:exam_id/session/:session_id')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class ExamTakenController {
+    constructor(
+        private et_service: ExamTakenService
+    ){}
+
+    @Get("/class/:class_id")
+    takeExam(
+        @Param("exam_id") exam_id: string,
+        @Param("session_id", ParseIntPipe) session_id: number,
+        @Param("class_id") class_id: string,
+        @Request() req
+    ){
+        const userId = req.user.userId
+        try {
+            
+        } catch (error) {
+            return new ExceptionResponse().returnError(error);
         }
     }
 }
