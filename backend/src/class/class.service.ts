@@ -478,12 +478,71 @@ export class ClassService {
     return classDetails;
   }
 
+  async vadidateClassRequest(tx: Prisma.TransactionClient, class_id: string, student_id: string) {
+    const class_info = await tx.class.findUnique({
+      where: {class_id},
+      select: {
+        startat: true,
+        duration_time: true
+      }
+    })
+
+    const class_schedule = await tx.schedule.findMany({
+      where: {class: {class_id}},
+      select: {
+        meeting_date: true,
+        startAt: true,
+        endAt: true
+      }
+    })
+
+    const student_schedule = await tx.schedule.findMany({
+      where: {
+        class: {learning: {some: {student: {uid: student_id}}}},
+        meeting_date: {in: class_schedule.map(i => i.meeting_date)}
+      },
+      select: {
+        meeting_date: true,
+        startAt: true,
+        endAt: true,
+        class: {
+          select: {
+            startat: true,
+            duration_time: true
+          }
+        }
+      }
+    })
+
+    const student_map = student_schedule.map((item) => {
+      return {
+        meeting_date: item.meeting_date,
+        startAt: item.startAt,
+        endAt: item.endAt,
+        c_start: item.class.startat,
+        c_end: addDays(item.class.startat, item.class.duration_time * 7)
+      }
+    }).filter(
+      item => 
+        (item.c_start <= class_info.startat && item.c_end > class_info.startat) 
+      || (item.c_start >= class_info.startat && item.c_start < addDays(class_info.startat, class_info.duration_time*7)) 
+    )
+
+    return student_map.length;
+  }
+
   async requestForClass(class_id: string, student_lst: string[]) {
     return this.prisma.$transaction(async (tx) => {
       const addedStudents = [];
+      const errorRequests = [];
       let successCount = 0;
 
       for (const student_uid of student_lst) {
+        const checkDuplicateSchedule = await this.vadidateClassRequest(tx, class_id, student_uid);
+        if (checkDuplicateSchedule) {
+          errorRequests.push(student_uid);
+          continue;
+        }
         const student = await tx.student.findUnique({ where: { uid: student_uid } });
         if (!student) continue; 
         const isEnrolled = await tx.learning.findFirst({
@@ -507,7 +566,8 @@ export class ClassService {
 
       return {
         message: `Successfully request ${successCount} students.`,
-        data: addedStudents
+        data: addedStudents,
+        error: errorRequests
       };
     });
   }
