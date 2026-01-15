@@ -53,5 +53,5 @@ export class SubmitAnswerDto {
     @ApiProperty()
     ques_id: string;
     @ApiProperty()
-    answer: number | number[]; 
+    answers: number[]; 
 }
