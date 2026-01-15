@@ -4,7 +4,8 @@ import {
     Request,
     InternalServerErrorException,
     UseGuards,
-    ParseIntPipe
+    ParseIntPipe,
+    ParseDatePipe
 } from "@nestjs/common";
 import { Request as Reqst } from "express";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
@@ -158,7 +159,26 @@ export class ExamTakenController {
     ){
         const userId = req.user.userId
         try {
-            
+            return this.et_service.takeExam(class_id, exam_id, session_id, userId);
+        } catch (error) {
+            return new ExceptionResponse().returnError(error);
+        }
+    }
+
+    @Post("/class/:class_id")
+    submitExam(
+        @Param("exam_id") exam_id: string,
+        @Param("session_id", ParseIntPipe) session_id: number,
+        @Param("class_id") class_id: string,
+        @Body("submitAns") submitAns: SubmitAnswerDto[],
+        @Body("startAt", ParseDatePipe) startAt: Date,
+        @Body('doneAt', ParseDatePipe) doneAt: Date,
+        @Request() req
+    ){
+        const userId = req.user.userId
+        
+        try {
+            return this.et_service.submitExam(class_id, exam_id, session_id, userId, submitAns, startAt, doneAt);
         } catch (error) {
             return new ExceptionResponse().returnError(error);
         }
