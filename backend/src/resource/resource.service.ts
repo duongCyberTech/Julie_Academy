@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { FolderDto, ResourceDto } from "./dto/resource.dto";
-import { GoogleDriveService } from "./google/google.service";
+import { S3Service } from "./aws/aws-s3.service";
 import { Prisma, PrismaClient } from "@prisma/client";
 
 @Injectable()
@@ -166,7 +166,7 @@ export class FolderService {
 export class ResourceService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly drive: GoogleDriveService,
+        private readonly s3: S3Service,
         private readonly folder: FolderService
     ){}
 
@@ -182,11 +182,7 @@ export class ResourceService {
             throw new InternalServerErrorException("File buffer not found. Check Multer configuration.");
         }
         const num_pages = file.size
-        const fileUploaded = await this.drive.uploadFile(
-            file.originalname,
-            file.mimetype,
-            fileStream
-        )
+        const fileUploaded = await this.s3.uploadFile(file)
 
         return this.prisma.$transaction(async(tx) => {
 
@@ -228,6 +224,27 @@ export class ResourceService {
         return this.prisma.resources.findMany({
             where: {Resource_in_Folder: {some: {folder: {folder_id}}}}
         })
+    }
+
+    async getFileById(did: string) {
+        const fileInfo = await this.prisma.resources.findUnique({ where: { did } });
+        
+        if (!fileInfo) {
+            console.error(`File với DID ${did} không tồn tại trong DB`);
+            throw new NotFoundException("File không tồn tại trong DB");
+        }
+
+        try {
+            const url = new URL(fileInfo.file_path);
+            const key = url.pathname.substring(1);
+            console.log("S3 Key extracted:", key); // Kiểm tra log này
+
+            const s3Response = await this.s3.getFileStream(key);
+            return { s3Response, fileInfo }; 
+        } catch (error) {
+            console.error("Lỗi khi kết nối S3:", error.message);
+            throw new NotFoundException("Không tìm thấy file trên S3");
+        }
     }
 
     async updateDocs(did: string, data: Partial<ResourceDto>){
