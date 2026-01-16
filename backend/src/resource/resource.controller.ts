@@ -7,6 +7,7 @@ import {
     UploadedFile
 } from '@nestjs/common'
 import { Request as Req, Response as Resp } from 'express';
+import { Readable } from 'stream';
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ResourceService, FolderService } from './resource.service'
 import { GoogleDriveService } from './google/google.service'
@@ -17,8 +18,8 @@ import { Roles } from 'src/auth/decorator/roles.decorator'
 import { FolderDto, ResourceDto } from './dto/resource.dto'
 import { ExceptionResponse } from 'src/exception/Exception.exception'
 
-@Controller('resources')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('resources')
 export class ResourceController {
     constructor(
         private readonly resource: ResourceService,
@@ -112,6 +113,24 @@ export class ResourceController {
             } else {
                 res.status(500).send('Lỗi máy chủ nội bộ khi tải file.');
             }
+        }
+    }
+
+    @Get('view/:did')
+    async viewFile(@Param('did') did: string, @Response() res: Resp) {
+        try {
+            const { s3Response, fileInfo } = await this.resource.getFileById(did);
+
+            // Thiết lập Header
+            res.setHeader('Content-Type', s3Response.ContentType || 'application/octet-stream');
+            res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileInfo.title)}"`);
+
+            // CHÚ Ý: Chuyển đổi Web Stream sang Node.js Stream để pipe
+            const stream = s3Response.Body as Readable;
+            stream.pipe(res);
+
+        } catch (error) {
+            res.status(404).json({ message: error.message });
         }
     }
 }

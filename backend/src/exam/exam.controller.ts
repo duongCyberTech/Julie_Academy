@@ -171,8 +171,8 @@ export class ExamTakenController {
         @Param("session_id", ParseIntPipe) session_id: number,
         @Param("class_id") class_id: string,
         @Body("submitAns") submitAns: SubmitAnswerDto[],
-        @Body("startAt", ParseDatePipe) startAt: Date,
-        @Body('doneAt', ParseDatePipe) doneAt: Date,
+        @Body("startAt") startAt: Date,
+        @Body('doneAt') doneAt: Date,
         @Request() req
     ){
         const userId = req.user.userId
