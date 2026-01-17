@@ -18,7 +18,7 @@ export class ClassController {
   constructor(private readonly classService: ClassService) {}
 
   @Post('create/:id')
-  @Roles('tutor')
+  @Roles('tutor', 'admin')
   async createClass(@Param('id') id: string, @Body() classDto: ClassDto) {
     try {
       return this.classService.createClass(id, classDto);
@@ -28,6 +28,7 @@ export class ClassController {
   }
 
   @Post('duplicate/:tutor_id/:class_id')
+  @Roles('tutor')
   duplicateClass(
     @Param('tutor_id') tutor_id: string,
     @Param('class_id') class_id: string,
@@ -58,6 +59,15 @@ export class ClassController {
   @Get('get/detail/:id')
   async getDetailedClass(@Param('id') id: string) {
     return this.classService.getDetailedClass(id);
+  }
+
+  @Get('exam-session')
+  @Roles('tutor')
+  getClassesForExamSession(
+    @Request() req
+  ){
+    const tutor_id = req.user.userId
+    return this.classService.getClassesByTutorForExam(tutor_id)
   }
 
   @Post('enroll/:classId')
@@ -140,6 +150,7 @@ export class ClassController {
   }
 
   @Post('complete/:class_id/:student_id')
+  @Roles('tutor')
   markClassCompleted(
     @Param('class_id') class_id: string,
     @Param('student_id') student_id: string,

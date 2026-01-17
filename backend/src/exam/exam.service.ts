@@ -151,7 +151,6 @@ export class ExamService {
                     startAt: true,
                     expireAt: true,
                     exam_type: true,
-                    ratio: true,
                     total_student_done: true,
                     exam: {
                         select: {
@@ -187,7 +186,6 @@ export class ExamService {
                     startAt: true,
                     expireAt: true,
                     exam_type: true,
-                    ratio: true,
                     total_student_done: true,
                     exam: {
                         select: {

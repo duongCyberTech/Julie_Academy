@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "fe": "cd frontend && npm run dev",
+    "be": "cd backend && npm run start:dev",
+    "start:all": "npm-run-all --parallel fe be"
+  },
+  "dependencies": {
+    "npm-run-all": "^4.1.5"
+  }
+}

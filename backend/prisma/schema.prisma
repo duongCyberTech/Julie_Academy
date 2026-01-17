@@ -350,7 +350,6 @@ model Exam_session {
   exam_type          ExamType       @default(practice)
   limit_taken        Int            @default(1)
   total_student_done Int            @default(0)
-  ratio              Int?
   exam_open_in       Exam_open_in[]
   exam               Exams          @relation(fields: [exam_id], references: [exam_id])
 
@@ -361,6 +360,7 @@ model Exam_open_in {
   session_id   Int
   exam_id      String
   class_id     String
+  ratio        Int?
   class        Class        @relation(fields: [class_id], references: [class_id])
   exam_session Exam_session @relation(fields: [session_id, exam_id], references: [session_id, exam_id])
 
