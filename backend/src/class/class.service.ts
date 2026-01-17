@@ -424,6 +424,33 @@ export class ClassService {
     return class_
   }
 
+  async getClassesByTutorForExam(tutor_id: string) {
+    const _class = await this.prisma.class.findMany({
+      where: {tutor: {uid: tutor_id},},
+      select: {
+        class_id: true,
+        classname: true,
+        exam_open_in: {
+          select: {
+            ratio: true
+          }
+        }
+      }
+    }).then((result) => {
+      return result.map((item) => {
+        return {
+          class_id: item.class_id,
+          classname: item.classname,
+          sum_ratio: item.exam_open_in.map(i => i.ratio).reduce((acc, curr) => {
+            return acc + curr
+          }, 0)
+        }
+      }).filter(i => i.sum_ratio < 100)
+    })
+
+    return _class
+  }
+
   async getDetailedClass(class_id: string) {
     const classDetails = await this.prisma.class.findUnique({
       where: { class_id: class_id },
