@@ -1,0 +1,46 @@
+services:
+  kafka:
+    image: apache/kafka:latest
+    container_name: kafka-kraft
+    ports:
+      - '9092:9092' # Cổng cho Host (NestJS)
+    environment:
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      
+      # --- CẤU HÌNH QUAN TRỌNG NHẤT ---
+      # 1. Định nghĩa 3 loại Listener:
+      #    - CONTROLLER: Nội bộ Kafka quản lý cluster
+      #    - EXTERNAL: Dành cho NestJS (chạy ở máy host)
+      #    - INTERNAL: Dành cho Kafka UI & Django (chạy trong Docker)
+      - KAFKA_LISTENERS=EXTERNAL://:9092,INTERNAL://:29092,CONTROLLER://:9093
+      
+      # 2. Quảng cáo địa chỉ (Kafka sẽ trả về cái này cho Client):
+      #    - Nếu client gọi cổng 9092 -> Trả về 'localhost'
+      #    - Nếu client gọi cổng 29092 -> Trả về 'kafka' (tên service)
+      - KAFKA_ADVERTISED_LISTENERS=EXTERNAL://localhost:9092,INTERNAL://kafka:29092
+      
+      # 3. Map giao thức bảo mật
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+      
+      # Các thông số khác
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
+      - KAFKA_NUM_PARTITIONS=3
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local-kraft
+      # QUAN TRỌNG: Kafka UI kết nối qua đường nội bộ (INTERNAL) cổng 29092
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+    depends_on:
+      - kafka
