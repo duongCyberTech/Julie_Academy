@@ -1,7 +1,7 @@
 {
   "scripts": {
     "fe": "cd frontend && npm run dev",
-    "be": "cd backend && npm run start:dev",
+    "be": "cd tutor-service && npm run start:dev",
     "start:all": "npm-run-all --parallel fe be"
   },
   "dependencies": {
