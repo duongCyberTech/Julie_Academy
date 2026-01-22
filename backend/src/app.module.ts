@@ -16,24 +16,8 @@ import { MailModule } from './mail/mail.module';
 import { ResourceModule } from './resource/resource.module';
 import { BadgeModule } from './badge/badge.module';
 
-import { ClientsModule, Transport } from '@nestjs/microservices';
-
 @Module({
   imports: [
-    ClientsModule.register([
-      {
-        name: 'KAFKA_SERVICE', // 1. Tên Token để inject
-        transport: Transport.KAFKA,
-        options: {
-          client: {
-            brokers: ['localhost:9092'], // 2. Địa chỉ Kafka
-          },
-          consumer: {
-            groupId: 'nestjs-producer-group', // 3. Group ID
-          },
-        },
-      },
-    ]),
     ThrottlerModule.forRoot([
       {
         // TTL: Time To Live (Thời gian) - 60 giây (1 phút)

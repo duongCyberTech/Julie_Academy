@@ -7,17 +7,6 @@ require('dotenv').config()
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.KAFKA,
-    options: {
-      client: {
-        brokers: ['localhost:9092'],
-      },
-      consumer: {
-        groupId: 'nestjs-consumer-group', // Group ID riêng cho việc nhận
-      },
-    },
-  });
 
   const config = new DocumentBuilder()
     .setTitle('Julie Academy API')
@@ -35,7 +24,6 @@ async function bootstrap() {
   app.enableCors();
   
   app.useWebSocketAdapter(new IoAdapter(app));
-  await app.startAllMicroservices();
   await app.listen(process.env.PORT || 4000);
 }
 bootstrap();
