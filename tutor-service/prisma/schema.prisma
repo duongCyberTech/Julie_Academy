@@ -304,6 +304,7 @@ model Questions {
   accessMode           QuestionAccess         @default(private)
   title                String
   answers              Answers[]
+  exam_takens          Question_for_exam_taken[]
   exam_questions       Question_of_exam[]
   category             Categories?            @relation(fields: [category_id], references: [category_id])
   tutor                Tutor                  @relation(fields: [tutor_id], references: [uid])
@@ -380,11 +381,24 @@ model Exam_taken {
   total_ques_completed Int
   startAt              DateTime          @default(now())
   doneAt               DateTime          @default(now())
+  isDone               Boolean           @default(false)
   exam_id              String?
   session_id           Int?
   student_uid          String
   answers              Answer_for_exam[]
+  questions            Question_for_exam_taken[]
   student              Student           @relation(fields: [student_uid], references: [uid])
+}
+
+model Question_for_exam_taken {
+  ques_id    String 
+  et_id      String 
+  index      Int 
+  isDone     Boolean    @default(false)
+  exam_taken Exam_taken @relation(fields: [et_id], references: [et_id])
+  question   Questions  @relation(fields: [ques_id], references: [ques_id])
+
+  @@id([et_id, ques_id])     
 }
 
 model Answer_for_exam {
