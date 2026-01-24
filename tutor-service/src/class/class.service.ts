@@ -311,7 +311,7 @@ export class ClassService {
                 subject: data.subject,
                 createdAt: new Date(),
                 updateAt: new Date(),
-                startat: data.startAt || new Date(),
+                startat: data.startat ? new Date(data.startat) : new Date(),
                 tutor: { connect: { uid: tutor_uid } },
             },
         });
@@ -878,10 +878,10 @@ async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string
           description: data.description || classCopy.description || "",
           createdAt: new Date(),
           updateAt: new Date(),
-          startAt: data.startAt || new Date(),
+          startat: (data.startat ? new Date(data.startat).toISOString() : new Date().toISOString()),
           duration_time: data.duration_time || classCopy.duration_time,
           nb_of_student: 0,
-          status: data.startAt ? 'ongoing' : 'pending',
+          status: data.startat ? 'ongoing' : 'pending',
           grade: data.grade || classCopy.grade,
           subject: data.subject || classCopy.subject
         }
