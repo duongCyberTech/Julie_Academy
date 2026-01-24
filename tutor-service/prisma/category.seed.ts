@@ -1,6 +1,10 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+require('dotenv').config()
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!
+})
+const prisma = new PrismaClient({adapter});
 
 /**
  * Hàm trợ giúp để tạo category cha (Chương) và các category con (Bài)
