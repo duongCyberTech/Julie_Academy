@@ -53,8 +53,8 @@ export class UserService {
         });
       } else if (data.role === 'tutor') {
         const tutorData: Partial<TutorDto> = {
-          phone_number: data.phone_number || '',
-          experiences: data.experiences || '',
+          phone_number: data.phone_number,
+          experiences: data.experiences,
         };
         await tx.tutor.create({
           data: {

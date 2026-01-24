@@ -3,10 +3,16 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ValidationPipe } from '@nestjs/common';
 require('dotenv').config()
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true, // Loại bỏ các field không được định nghĩa trong DTO
+    forbidNonWhitelisted: false, // Quăng lỗi nếu có field lạ
+    transform: true, // Tự động convert type (VD: string sang number)
+  }));
 
   const config = new DocumentBuilder()
     .setTitle('Julie Academy API')

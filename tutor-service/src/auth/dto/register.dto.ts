@@ -1,15 +1,39 @@
-import { IsEmail, IsNotEmpty, MinLength, Matches, IsString } from "class-validator";
+import { UserRole } from "@prisma/client";
+import { IsEmail, IsNotEmpty, MinLength, Matches, IsString, IsEnum } from "class-validator";
 
 export class RegisterDto {
+    @IsNotEmpty()
+    @Matches(/^[\p{L}\s]+$/u, {
+        message: 'Tên không hợp lệ',
+    })
     fname: string;
+
+    @IsNotEmpty()
+    @Matches(/^[\p{L}\s]+$/u, {
+        message: 'Tên không hợp lệ',
+    })
     mname: string;
+
+    @IsNotEmpty()
+    @Matches(/^[\p{L}\s]+$/u, {
+        message: 'Tên không hợp lệ',
+    })
     lname: string;
+
+    @IsNotEmpty()
     username: string;
 
     @IsEmail({}, {message: "Invalid Email!"})
     email: string;
     
-    role: 'admin' | 'student' | 'tutor' | 'parents';
+    @IsNotEmpty()
+    @IsEnum(['tutor', 'student', 'parents'], {
+        message: 'Role phải là tutor, student hoặc parents',
+    })
+    role: 'tutor' | 'student' | 'parents';
+
+    @IsNotEmpty()
+    @IsEnum(['active', 'inactive'])
     status: 'active' | 'inactive';
     avata_url?: string;
 
