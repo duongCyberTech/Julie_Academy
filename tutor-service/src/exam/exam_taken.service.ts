@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { QuestionService } from "src/question/question.service";
 import { 
@@ -134,9 +134,8 @@ export class ExamTakenService {
                     doneAt: now,
                     final_score: 0,
                     total_ques_completed: 0,
-                    exam_id,
-                    session_id,
-                    student: {connect: {uid: student_id}}
+                    student: {connect: {uid: student_id}},
+                    ...(exam_id && session_id ? {exam_session: {connect: {exam_id_session_id: {exam_id, session_id}}}} : {})
                 }
             })
 
@@ -154,6 +153,94 @@ export class ExamTakenService {
                 message: "Taking exam",
                 info: {et_id: takenTime.et_id, ...testInfo},
                 questions: questionList
+            }
+        })
+    }
+
+    async continueTakeExam(et_id: string, student_id: string) {
+        return await this.prisma.$transaction(async(tx) => {
+            const checkExist = await tx.exam_taken.findFirst({where: {et_id, student: {uid: student_id}}})
+
+            if (!checkExist) throw new NotFoundException("Exam not found");
+
+            const questionsList = await tx.exam_taken.findUnique({
+                where: {et_id},
+                select: {
+                    et_id: true,
+                    exam_session: {
+                        select: {
+                            exam: {
+                                select: {
+                                    exam_id: true,
+                                    title: true,
+                                    total_ques: true,
+                                    total_score: true,
+                                    description: true
+                                }
+                            },
+                            exam_type: true,
+                            startAt: true,
+                            expireAt: true,
+                            limit_taken: true
+                        }
+                    },
+                    questions: {
+                        select: {
+                            question: {
+                                select: {
+                                    ques_id: true,
+                                    title: true,
+                                    content: true,
+                                    type: true,
+                                    level: true,
+                                    answers: {
+                                        select: {
+                                            aid: true,
+                                            content: true,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    answers: {
+                        select: {
+                            answer: {
+                                select: {
+                                    ques_id: true,
+                                    aid: true,
+                                    content: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }).then((res) => {
+                return {
+                    et_id: res.et_id,
+                    exam_id: res.exam_session,
+                    questions: res.questions.map((item) => {
+                        return {
+                            ques_id: item.question.ques_id,
+                            title: item.question.title,
+                            content: item.question.content,
+                            type: item.question.type,
+                            level: item.question.level,
+                            answers: item.question.answers.map((ans) => {
+                                return {
+                                    aid: ans.aid,
+                                    content: ans.content,
+                                    is_chosen: res.answers.some((i) => i.answer.ques_id === item.question.ques_id && i.answer.aid === ans.aid)
+                                }
+                            })
+                        }
+                    })
+                }
+            })
+
+            return {
+                message: "Continue with the exam",
+                data: questionsList
             }
         })
     }

@@ -257,6 +257,8 @@ model Categories {
   structure        Structure[]
   class            Folder_of_class[]
   model            Model[]
+
+  examTakens Exam_taken[]
 }
 
 model Resources_in_folder {
@@ -362,6 +364,7 @@ model Exam_session {
   exam               Exams          @relation(fields: [exam_id], references: [exam_id])
 
   @@id([exam_id, session_id])
+  examTakens Exam_taken[]
 }
 
 model Exam_open_in {
@@ -385,6 +388,9 @@ model Exam_taken {
   exam_id              String?
   session_id           Int?
   student_uid          String
+  category_id          String?
+  category             Categories?       @relation(fields: [category_id], references: [category_id])
+  exam_session         Exam_session?     @relation(fields: [exam_id, session_id], references: [exam_id, session_id])
   answers              Answer_for_exam[]
   questions            Question_for_exam_taken[]
   student              Student           @relation(fields: [student_uid], references: [uid])
