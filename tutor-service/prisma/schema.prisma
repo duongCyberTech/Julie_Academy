@@ -60,21 +60,8 @@ model Student {
   review     Review[]
   user       User         @relation(fields: [uid], references: [uid])
   family     is_family[]
-  model      Model[]
-}
 
-model Model {
-  model_id      String    @id @default(uuid())
-  init          Decimal   @db.Decimal(4, 2)
-  transit       Decimal   @db.Decimal(4,2)
-  guess         Decimal   @db.Decimal(4,2)
-  slip          Decimal   @db.Decimal(4,2)
-  student_id    String  
-  student       Student   @relation(fields: [student_id], references: [uid])
-  plan_id       String    
-  plan          Lesson_Plan @relation(fields: [plan_id], references: [plan_id])
-  category_id   String
-  category      Categories  @relation(fields: [category_id], references: [category_id])
+  studentAnalytics Student_analytics[]
 }
 
 model is_family {
@@ -106,6 +93,21 @@ model Review {
   student    Student  @relation(fields: [student_id], references: [uid])
 
   @@id([student_id, class_id])
+}
+
+model Student_analytics {
+  ana_id     String    @id @default(uuid())
+  sum_exam_adaptive Int @default(0)
+  max_score_practice Float @default(0.0)
+  max_thread_comment Int @default(0)
+  sum_exam   Int         @default(0)
+  percentage_question_correct Float @default(0.0)
+  incre_percentage_question_correct Float @default(0.0)
+  streak     Int         @default(0)
+  last_exam_taken_date  DateTime   @default(now())
+  sign_up_date          DateTime   @default(now())
+  student_id            String
+  student               Student    @relation(fields: [student_id], references: [uid])
 }
 
 model Badge {
@@ -256,8 +258,6 @@ model Categories {
   questions        Questions[]
   structure        Structure[]
   class            Folder_of_class[]
-  model            Model[]
-
   examTakens Exam_taken[]
 }
 
@@ -428,7 +428,6 @@ model Lesson_Plan {
   classes     Class[]
   tutor       Tutor?      @relation(fields: [tutor_id], references: [uid])
   structure   Structure[]
-  model       Model[]
 }
 
 model Resource_of_Answer {
@@ -538,6 +537,7 @@ enum EnrollStatus {
 enum BadgeType {
   exam
   exam_practice
+  exam_adaptive
   exam_test
   thread
   thread_comment 
@@ -551,7 +551,7 @@ enum BadgeType {
 enum AggregateType {
   sum
   avg
-  num 
+  max 
   incre
 }
 
