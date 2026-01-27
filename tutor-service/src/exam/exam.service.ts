@@ -221,64 +221,7 @@ export class ExamService {
             })
         })
     }
-
-    async takeExam(student_uid: string, exam_taken?: Partial<ExamTakenDto>) {
-        return this.prisma.$transaction(async (tx) => {
-            await tx.exam_taken.create({
-                data: {
-                    student: { connect: { uid: student_uid } },
-                    final_score: 0,
-                    total_ques_completed: 0,
-                    startAt: new Date(),
-                    doneAt: new Date(new Date().getTime() + 60*60*1000),
-                    session_id: exam_taken.session_id,
-                    exam_id: exam_taken.exam_id
-                },
-            });
-        })
-    }
     
-    async calculateScore(answer: SubmitAnswerDto[]){
-        return await this.prisma.$transaction(async(tx) => {
-            var total_score: number = 0.0
-            for (const item of answer){
-                const cnt: number = 1.0 * await tx.answers.count({
-                    where: { ques_id: item.ques_id }
-                });
-
-                const cnt_correct: number = 1.0 * await tx.answers.count({
-                    where: {
-                        AND: [
-                            { ques_id: item.ques_id },
-                            { is_correct: true }
-                        ]
-                    }
-                })
-
-                total_score = total_score * 1.0 + 1.0 * cnt_correct / cnt
-            }
-
-            return total_score
-        })
-    }
-
-    async submitAnswer(
-        et_id: string,  
-        answer: SubmitAnswerDto[]
-    ){
-        return this.prisma.$transaction(async(tx)=>{
-            const score = await this.calculateScore(answer)
-            const result = await tx.exam_taken.update({
-                data: {
-                    final_score: score,
-                    total_ques_completed: answer.length,
-                    doneAt: new Date(new Date().getTime() + 60*60*1000)
-                },
-                where: {et_id: et_id}
-            })
-        })
-    }
-
     async getAllExams(page?: number, limit?: number, search?: string, level?: string) {
         const skip:number = page && limit ? (page - 1) * limit : 0;
         const where: any = {};
