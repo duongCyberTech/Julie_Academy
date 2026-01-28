@@ -144,7 +144,11 @@ export class ExamTakenService {
                     return {
                         et_id: takenTime.et_id,
                         ques_id: item.ques_id,
-                        index: item.index
+                        index: item.index, 
+                        ms_first_response: 0n,
+                        ms_total_response: 0n,
+                        isDone: false,
+                        answer_set: []
                     }
                 })
             })
@@ -200,41 +204,10 @@ export class ExamTakenService {
                                         }
                                     }
                                 }
-                            }
-                        }
-                    },
-                    answers: {
-                        select: {
-                            answer: {
-                                select: {
-                                    ques_id: true,
-                                    aid: true,
-                                    content: true
-                                }
-                            }
+                            },
+                            answer_set: true
                         }
                     }
-                }
-            }).then((res) => {
-                return {
-                    et_id: res.et_id,
-                    exam_id: res.exam_session,
-                    questions: res.questions.map((item) => {
-                        return {
-                            ques_id: item.question.ques_id,
-                            title: item.question.title,
-                            content: item.question.content,
-                            type: item.question.type,
-                            level: item.question.level,
-                            answers: item.question.answers.map((ans) => {
-                                return {
-                                    aid: ans.aid,
-                                    content: ans.content,
-                                    is_chosen: res.answers.some((i) => i.answer.ques_id === item.question.ques_id && i.answer.aid === ans.aid)
-                                }
-                            })
-                        }
-                    })
                 }
             })
 
@@ -304,23 +277,18 @@ export class ExamTakenService {
                 throw new BadRequestException("Student is not in class")
             }
 
-            await tx.answer_for_exam.deleteMany({where: {exam_taken: {et_id}}})
+            await tx.question_for_exam_taken.deleteMany({where: {exam_taken: {et_id}}})
 
-            const updateAnswerData = answers.map((item) => {
-                return item.answers.map((i) => {
+            await tx.question_for_exam_taken.createMany({
+                data: answers.map((item) => {
                     return {
                         ques_id: item.ques_id,
-                        aid: i
-                    }
-                })
-            }).flat()
-
-            await tx.answer_for_exam.createMany({
-                data: updateAnswerData.map((item) => {
-                    return {
-                        ques_id: item.ques_id,
-                        aid: item.aid,
-                        et_id
+                        et_id,
+                        index: item.index,
+                        ms_first_response: item.ms_first_response,
+                        ms_total_response: item.ms_total_response,
+                        isDone: (item.answers.length > 0),
+                        answer_set: item.answers
                     }
                 })
             })

@@ -15,9 +15,16 @@ import { CronModule } from './scron-job/cron.module';
 import { MailModule } from './mail/mail.module';
 import { ResourceModule } from './resource/resource.module';
 import { BadgeModule } from './badge/badge.module';
+import { ConfigModule } from '@nestjs/config';
+import rabbitmqConfig from './config/rabbitmq.config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+      load: [rabbitmqConfig],
+    }),
     ThrottlerModule.forRoot([
       {
         // TTL: Time To Live (Thời gian) - 60 giây (1 phút)
@@ -27,9 +34,15 @@ import { BadgeModule } from './badge/badge.module';
       },
     ]),
     ScheduleModule.forRoot(),
-    UserModule, AuthModule, ClassModule, 
-    QuestionModule, ExamModule, DashboardModule, 
-    CronModule, MailModule, ResourceModule,
+    UserModule, 
+    AuthModule, 
+    ClassModule, 
+    QuestionModule, 
+    ExamModule, 
+    DashboardModule, 
+    CronModule, 
+    MailModule, 
+    ResourceModule,
     BadgeModule
   ],
   controllers: [AppController],
