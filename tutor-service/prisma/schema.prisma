@@ -319,7 +319,6 @@ model Answers {
   content            String
   is_correct         Boolean              @default(false)
   explaination       String?
-  answer_for_exam    Answer_for_exam[]
   question           Questions            @relation(fields: [ques_id], references: [ques_id])
   Resource_of_Answer Resource_of_Answer[]
 
@@ -391,30 +390,22 @@ model Exam_taken {
   category_id          String?
   category             Categories?       @relation(fields: [category_id], references: [category_id])
   exam_session         Exam_session?     @relation(fields: [exam_id, session_id], references: [exam_id, session_id])
-  answers              Answer_for_exam[]
   questions            Question_for_exam_taken[]
   student              Student           @relation(fields: [student_uid], references: [uid])
 }
 
 model Question_for_exam_taken {
-  ques_id    String 
-  et_id      String 
-  index      Int 
-  isDone     Boolean    @default(false)
+  ques_id               String 
+  et_id                 String 
+  index                 Int 
+  isDone                Boolean    @default(false)
+  ms_first_response     BigInt
+  ms_total_response     BigInt
+  answer_set            Json      @db.JsonB
   exam_taken Exam_taken @relation(fields: [et_id], references: [et_id])
   question   Questions  @relation(fields: [ques_id], references: [ques_id])
 
   @@id([et_id, ques_id])     
-}
-
-model Answer_for_exam {
-  et_id      String
-  ques_id    String
-  aid        Int
-  exam_taken Exam_taken @relation(fields: [et_id], references: [et_id])
-  answer     Answers    @relation(fields: [ques_id, aid], references: [ques_id, aid])
-
-  @@id([et_id, ques_id, aid])
 }
 
 model Lesson_Plan {
