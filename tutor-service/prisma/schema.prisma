@@ -60,21 +60,8 @@ model Student {
   review     Review[]
   user       User         @relation(fields: [uid], references: [uid])
   family     is_family[]
-  model      Model[]
-}
 
-model Model {
-  model_id      String    @id @default(uuid())
-  init          Decimal   @db.Decimal(4, 2)
-  transit       Decimal   @db.Decimal(4,2)
-  guess         Decimal   @db.Decimal(4,2)
-  slip          Decimal   @db.Decimal(4,2)
-  student_id    String  
-  student       Student   @relation(fields: [student_id], references: [uid])
-  plan_id       String    
-  plan          Lesson_Plan @relation(fields: [plan_id], references: [plan_id])
-  category_id   String
-  category      Categories  @relation(fields: [category_id], references: [category_id])
+  studentAnalytics Student_analytics[]
 }
 
 model is_family {
@@ -106,6 +93,21 @@ model Review {
   student    Student  @relation(fields: [student_id], references: [uid])
 
   @@id([student_id, class_id])
+}
+
+model Student_analytics {
+  ana_id     String    @id @default(uuid())
+  sum_exam_adaptive Int @default(0)
+  max_score_practice Float @default(0.0)
+  max_thread_comment Int @default(0)
+  sum_exam   Int         @default(0)
+  percentage_question_correct Float @default(0.0)
+  incre_percentage_question_correct Float @default(0.0)
+  streak     Int         @default(0)
+  last_exam_taken_date  DateTime   @default(now())
+  sign_up_date          DateTime   @default(now())
+  student_id            String
+  student               Student    @relation(fields: [student_id], references: [uid])
 }
 
 model Badge {
@@ -256,7 +258,7 @@ model Categories {
   questions        Questions[]
   structure        Structure[]
   class            Folder_of_class[]
-  model            Model[]
+  examTakens Exam_taken[]
 }
 
 model Resources_in_folder {
@@ -304,6 +306,7 @@ model Questions {
   accessMode           QuestionAccess         @default(private)
   title                String
   answers              Answers[]
+  exam_takens          Question_for_exam_taken[]
   exam_questions       Question_of_exam[]
   category             Categories?            @relation(fields: [category_id], references: [category_id])
   tutor                Tutor                  @relation(fields: [tutor_id], references: [uid])
@@ -316,7 +319,6 @@ model Answers {
   content            String
   is_correct         Boolean              @default(false)
   explaination       String?
-  answer_for_exam    Answer_for_exam[]
   question           Questions            @relation(fields: [ques_id], references: [ques_id])
   Resource_of_Answer Resource_of_Answer[]
 
@@ -361,6 +363,7 @@ model Exam_session {
   exam               Exams          @relation(fields: [exam_id], references: [exam_id])
 
   @@id([exam_id, session_id])
+  examTakens Exam_taken[]
 }
 
 model Exam_open_in {
@@ -380,21 +383,29 @@ model Exam_taken {
   total_ques_completed Int
   startAt              DateTime          @default(now())
   doneAt               DateTime          @default(now())
+  isDone               Boolean           @default(false)
   exam_id              String?
   session_id           Int?
   student_uid          String
-  answers              Answer_for_exam[]
+  category_id          String?
+  category             Categories?       @relation(fields: [category_id], references: [category_id])
+  exam_session         Exam_session?     @relation(fields: [exam_id, session_id], references: [exam_id, session_id])
+  questions            Question_for_exam_taken[]
   student              Student           @relation(fields: [student_uid], references: [uid])
 }
 
-model Answer_for_exam {
-  et_id      String
-  ques_id    String
-  aid        Int
+model Question_for_exam_taken {
+  ques_id               String 
+  et_id                 String 
+  index                 Int 
+  isDone                Boolean    @default(false)
+  ms_first_response     BigInt
+  ms_total_response     BigInt
+  answer_set            Json      @db.JsonB
   exam_taken Exam_taken @relation(fields: [et_id], references: [et_id])
-  answer     Answers    @relation(fields: [ques_id, aid], references: [ques_id, aid])
+  question   Questions  @relation(fields: [ques_id], references: [ques_id])
 
-  @@id([et_id, ques_id, aid])
+  @@id([et_id, ques_id])     
 }
 
 model Lesson_Plan {
@@ -408,7 +419,6 @@ model Lesson_Plan {
   classes     Class[]
   tutor       Tutor?      @relation(fields: [tutor_id], references: [uid])
   structure   Structure[]
-  model       Model[]
 }
 
 model Resource_of_Answer {
@@ -518,6 +528,7 @@ enum EnrollStatus {
 enum BadgeType {
   exam
   exam_practice
+  exam_adaptive
   exam_test
   thread
   thread_comment 
@@ -531,7 +542,7 @@ enum BadgeType {
 enum AggregateType {
   sum
   avg
-  num 
+  max 
   incre
 }
 

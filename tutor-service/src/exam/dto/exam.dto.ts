@@ -54,4 +54,8 @@ export class SubmitAnswerDto {
     ques_id: string;
     @ApiProperty()
     answers: number[]; 
+
+    ms_first_response: number;
+    ms_total_response: number;
+    index: number;
 }

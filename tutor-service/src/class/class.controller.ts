@@ -21,6 +21,7 @@ export class ClassController {
   @Roles('tutor', 'admin')
   async createClass(@Param('id') id: string, @Body() classDto: ClassDto) {
     try {
+      console.log(classDto)
       return this.classService.createClass(id, classDto);
     } catch (error) {
       return new ExceptionResponse().returnError(error)
