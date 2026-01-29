@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
+import { IsArray, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class ExamDto {
     @ApiProperty({ example: "Final Math Exam", description: "Exam Title" })
@@ -51,11 +52,21 @@ export class ExamTakenDto {
 
 export class SubmitAnswerDto {
     @ApiProperty()
+    @IsNotEmpty()
+    @IsString()
     ques_id: string;
+
     @ApiProperty()
+    @IsArray()
+    @IsNumber({}, { each: true })
     answers: number[]; 
 
+    @IsNumber()
     ms_first_response: number;
+
+    @IsNumber()
     ms_total_response: number;
+
+    @IsNumber()
     index: number;
 }
