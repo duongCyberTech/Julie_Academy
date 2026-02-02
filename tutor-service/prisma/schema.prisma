@@ -154,6 +154,8 @@ model Class {
   reviews       Review[]
   schedule      Schedule[]
   folders       Folder_of_class[]
+
+  threads Thread[]
 }
 
 model Schedule {
@@ -184,6 +186,8 @@ model Thread {
   createAt           DateTime             @default(now())
   updateAt           DateTime             @default(now())
   uid                String
+  class_id           String
+  class              Class                @relation(fields: [class_id], references: [class_id])
   comments           Comments[]
   followers          Follow[]
   Resource_of_Thread Resource_of_Thread[]
@@ -192,14 +196,17 @@ model Thread {
 
 model Comments {
   thread_id           String
-  comment_id          String
+  comment_id          Int
   content             String
   createAt            DateTime              @default(now())
   updateAt            DateTime              @default(now())
   uid                 String
+  parent_cmt_id       Int? 
+  parent_cmt          Comments?             @relation("CommentToParent", fields: [thread_id, parent_cmt_id], references: [thread_id, comment_id])
   thread              Thread                @relation(fields: [thread_id], references: [thread_id])
   sender              User                  @relation(fields: [uid], references: [uid])
   Resource_of_Comment Resource_of_Comment[]
+  comments            Comments[]            @relation("CommentToParent")
 
   @@id([thread_id, comment_id])
 }
@@ -211,6 +218,15 @@ model Follow {
   follower  User   @relation(fields: [uid], references: [uid])
 
   @@id([thread_id, uid])
+}
+
+model Tag {
+  uid       String  
+  thread_id String
+  comment_id Int
+  tagAt     DateTime  @default(now())
+
+  @@id([uid, thread_id, comment_id])
 }
 
 model Resources {
@@ -364,6 +380,7 @@ model Exam_session {
 
   @@id([exam_id, session_id])
   examTakens Exam_taken[]
+  @@unique([session_id, exam_id])
 }
 
 model Exam_open_in {
@@ -399,8 +416,7 @@ model Question_for_exam_taken {
   et_id                 String 
   index                 Int 
   isDone                Boolean    @default(false)
-  ms_first_response     BigInt
-  ms_total_response     BigInt
+  chosen_answer_at      DateTime?
   answer_set            Json      @db.JsonB
   exam_taken Exam_taken @relation(fields: [et_id], references: [et_id])
   question   Questions  @relation(fields: [ques_id], references: [ques_id])
@@ -433,7 +449,7 @@ model Resource_of_Answer {
 
 model Resource_of_Comment {
   thread_id  String    @db.VarChar(255)
-  comment_id String    @db.VarChar(255)
+  comment_id Int       
   did        String    @db.VarChar(255)
   Resources  Resources @relation(fields: [did], references: [did], onDelete: NoAction, onUpdate: NoAction)
   Comments   Comments  @relation(fields: [thread_id, comment_id], references: [thread_id, comment_id], onDelete: NoAction, onUpdate: NoAction)

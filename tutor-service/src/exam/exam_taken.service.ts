@@ -145,8 +145,7 @@ export class ExamTakenService {
                         et_id: takenTime.et_id,
                         ques_id: item.ques_id,
                         index: item.index, 
-                        ms_first_response: 0n,
-                        ms_total_response: 0n,
+                        chosen_answer_at: null,
                         isDone: false,
                         answer_set: []
                     }
@@ -285,8 +284,7 @@ export class ExamTakenService {
                         ques_id: item.ques_id,
                         et_id,
                         index: item.index,
-                        ms_first_response: item.ms_first_response,
-                        ms_total_response: item.ms_total_response,
+                        chosen_answer_at: item.answers.length > 0 ? DateTime.now().setZone('Asia/Ho_Chi_Minh').toJSDate() : null,
                         isDone: (item.answers.length > 0),
                         answer_set: item.answers
                     }
