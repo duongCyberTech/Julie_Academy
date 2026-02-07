@@ -26,6 +26,8 @@ model User {
   student   Student?
   thread    Thread[]
   tutor     Tutor?
+
+  likes Likes[]
 }
 
 model Tutor {
@@ -192,6 +194,7 @@ model Thread {
   followers          Follow[]
   Resource_of_Thread Resource_of_Thread[]
   sender             User                 @relation(fields: [uid], references: [uid])
+  likes              Likes[]
 }
 
 model Comments {
@@ -207,8 +210,18 @@ model Comments {
   sender              User                  @relation(fields: [uid], references: [uid])
   Resource_of_Comment Resource_of_Comment[]
   comments            Comments[]            @relation("CommentToParent")
-
   @@id([thread_id, comment_id])
+  likes Likes[]
+}
+
+model Likes {
+  react_id          String        @id @default(uuid())
+  uid               String
+  reactor           User          @relation(fields: [uid], references: [uid])
+  thread_id         String
+  comment_id        Int?
+  thread            Thread?        @relation(fields: [thread_id], references: [thread_id])
+  comment           Comments?      @relation(fields: [thread_id, comment_id], references: [thread_id, comment_id])
 }
 
 model Follow {
