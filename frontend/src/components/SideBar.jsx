@@ -42,7 +42,7 @@ const tutorMenuItems = [
   { label: "Thư viện câu hỏi", to: "/tutor/question", Icon: LibraryIcon },
   { label: "Quản lý đề thi", to: "/tutor/exam", Icon: ArticleOutlined },
   { label: "Giao bài", to: "/tutor/assignment", Icon: AssignmentTurnedInOutlined },
-  { label: "Diễn đàn", to: "/tutor/forum", Icon: ForumOutlined },
+  // { label: "Diễn đàn", to: "/tutor/forum", Icon: ForumOutlined },
 ];
 
 // Cấu hình cho Admin
