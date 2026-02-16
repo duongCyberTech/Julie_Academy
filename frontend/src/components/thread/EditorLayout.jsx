@@ -463,7 +463,7 @@ export const PostItem = ({ post, class_id }) => {
   useEffect(() => {
     const token = localStorage.getItem('token')
     const decoded = jwtDecode(token)
-    if (post.followers?.length > 0 && post.followers.includes(uid)) setInitState(true)
+    if (post.followers?.length > 0 && post.followers.includes(decoded.sub)) setInitState(true)
     setUid(decoded.sub)
   }, [post, class_id])
 

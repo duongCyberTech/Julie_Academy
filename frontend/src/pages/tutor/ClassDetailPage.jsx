@@ -25,11 +25,13 @@ import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import MessageRoundedIcon from '@mui/icons-material/MessageRounded';
 
 import StudentsTab from './StudentTab'; 
 import ScheduleTab from './ScheduleTab'; 
 import ResourceTab from './ResourceTab';
 import AssignmentTab from './AssignmentTab';
+import ThreadForum from '../../components/thread/ThreadForum';
 
 
 const PageContainer = styled(Container)(({ theme }) => ({
@@ -254,6 +256,7 @@ function ClassDetailPage() {
                         <StyledTab label="Lịch học" value="schedule" icon={<CalendarMonthOutlinedIcon fontSize="small"/>} iconPosition="start" />
                         <StyledTab label="Tài liệu & Giáo án" value="documents" icon={<TopicOutlinedIcon fontSize="small"/>} iconPosition="start" />
                         <StyledTab label="Bài tập & Kiểm tra" value="assignments" icon={<AssignmentOutlinedIcon fontSize="small"/>} iconPosition="start" />
+                        <StyledTab label="Diễn đàn" value="threads" icon={<MessageRoundedIcon fontSize="small"/>} iconPosition="start" />
                     </Tabs>
                 </Box>
 
@@ -277,6 +280,10 @@ function ClassDetailPage() {
                     
                     {currentTab === 'assignments' && (
                         <AssignmentTab classId={classId} token={token} />  
+                    )}
+
+                    {currentTab === 'threads' && (
+                        <ThreadForum class_id={classId} />  
                     )}
                 </Box>
             </Paper>
