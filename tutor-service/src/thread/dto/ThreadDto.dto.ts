@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsArray, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class CreateThreadDto {
     @IsNotEmpty()
@@ -15,11 +16,23 @@ export class CreateThreadDto {
 }
 
 export class UpdateThreadDto {
-    @IsOptional()
     @IsString()
-    title?: string
+    title: string
 
-    @IsOptional()
     @IsString()
-    content?: string
+    content: string
+
+    @IsArray({ message: 'deletedImages phải là một mảng' })
+    @Transform(({ value }) => {
+        if (typeof value === 'string') {
+            try {
+                return JSON.parse(value);
+            } catch {
+                return [value];
+            }
+        }
+        return value;
+    })
+    @IsString({ each: true })
+    deletedImages: string[];
 }

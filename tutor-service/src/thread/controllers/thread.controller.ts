@@ -13,7 +13,9 @@ import {
     ParseFilePipe,
     MaxFileSizeValidator,
     FileTypeValidator,
-    UseInterceptors
+    UseInterceptors,
+    Query,
+    ParseIntPipe
 } from "@nestjs/common";
 
 import { Request as Req, Response as Resp } from 'express';
@@ -42,13 +44,14 @@ export class ThreadController {
         @Body() data: CreateThreadDto,
         @UploadedFiles(
             new ParseFilePipe({
-            validators: [
-                new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
-                new CustomFileValidator(),
-            ],
+                validators: [
+                    new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+                    new CustomFileValidator(),
+                ],
+                fileIsRequired: false
             }),
         )
-        images: Array<Express.Multer.File>
+        images?: Array<Express.Multer.File>
     ){
         const uid: string = req.user.userId
         return this.threadService.createThread(uid, data, images)
@@ -57,10 +60,11 @@ export class ThreadController {
     @Get('/class/:class_id')
     getThreadsByClass(
         @Param('class_id', ParseUUIDPipe) class_id: string,
+        @Query('page', ParseIntPipe) page: number,
         @Request() req
     ) {
         const uid = req.user.userId
-        return this.threadService.getThreadsByClass(uid, class_id)
+        return this.threadService.getThreadsByClass(uid, class_id, page)
     }
 
     @Get(':thread_id')
@@ -73,13 +77,24 @@ export class ThreadController {
     }
 
     @Patch(':thread_id')
+    @UseInterceptors(FilesInterceptor('addImages'))
     updateThread(
         @Param('thread_id', ParseUUIDPipe) thread_id: string,
-        @Body() data: UpdateThreadDto,
-        @Request() req
+        @Body() data: Partial<UpdateThreadDto>,
+        @Request() req,
+        @UploadedFiles(
+            new ParseFilePipe({
+                validators: [
+                    new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+                    new CustomFileValidator(),
+                ],
+                fileIsRequired: false
+            }),
+        )
+        addImages?: Array<Express.Multer.File>
     ) {
         const uid = req.user.userId
-        return this.threadService.updateThread(uid, thread_id, data)
+        return this.threadService.updateThread(uid, thread_id, data, addImages)
     }
 
     @Delete(':thread_id')

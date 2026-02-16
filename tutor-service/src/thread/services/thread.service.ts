@@ -48,22 +48,24 @@ export class ThreadService {
                 }
             });
 
-            const thread_images = await this.uploadMultiMediaFiles(uid, thread.title, images);
+            if (images && images.length) {
+                const thread_images = await this.uploadMultiMediaFiles(uid, thread.title, images);
 
-            const res = await tx.resource_of_Thread.createMany({
-                data: thread_images.map((item) => {
-                    return  {
-                        thread_id: thread.thread_id,
-                        did: item
-                    }
+                await tx.resource_of_Thread.createMany({
+                    data: thread_images.map((item) => {
+                        return  {
+                            thread_id: thread.thread_id,
+                            did: item
+                        }
+                    })
                 })
-            })
+            }
 
-            return res && res.count ? { message: "Create Thread Successfully!", status: 201 } : { message: "Create Thread Fail!", status: 400 }
+            return { message: "Create Thread Successfully!", status: 201 }
         })
     }
 
-    async getThreadsByClass(uid: string, class_id: string) {
+    async getThreadsByClass(uid: string, class_id: string, page: number = 1) {
         const checkInClass = await this.prisma.class.findFirst({
             where: {
                 class_id,
@@ -76,6 +78,8 @@ export class ThreadService {
         if (!checkInClass) throw new ForbiddenException("User not have permission")
         return await this.prisma.thread.findMany({
             where: {class_id},
+            take: 10,
+            skip: (page - 1) * 10,
             orderBy: {createAt: 'desc'},
             select: {
                 thread_id: true,
@@ -108,7 +112,7 @@ export class ThreadService {
                         }
                     }
                 }
-            }
+            },
         }).then(res => res.map((thread) => {
             return {
                 thread_id: thread.thread_id,
@@ -155,16 +159,50 @@ export class ThreadService {
         return thread
     }
 
-    async updateThread(uid: string, thread_id: string, data: UpdateThreadDto) {
+    async updateThread(uid: string, thread_id: string, data: Partial<UpdateThreadDto>, addImages: Array<Express.Multer.File>) {
         const checkPosess = await this.prisma.thread.findFirst({where: {thread_id, sender: {uid}}})
         if (!checkPosess) throw new NotFoundException("User not have access to thread")
         const now = DateTime.now().setZone('Asia/Ho_Chi_Minh').toJSDate()
-        return await this.prisma.thread.update({
-            where: {thread_id},
-            data: {
-                ...data,
-                updateAt: now
+        return await this.prisma.$transaction(async(tx) => {
+            const restData = {
+                ...(data.title ? {title: data.title} : {}),
+                ...(data.content ? {title: data.content} : {}),
             }
+            const updatedThread = await tx.thread.update({
+                where: {thread_id},
+                data: {
+                    ...restData,
+                    updateAt: now
+                }
+            })
+
+            if (addImages && addImages.length) {
+                const thread_images = await this.uploadMultiMediaFiles(uid, updatedThread?.title || "Untitled", addImages)
+
+                await tx.resource_of_Thread.createMany({
+                    data: thread_images.map((item) => {
+                        return {
+                            thread_id: thread_id,
+                            did: item
+                        }
+                    })
+                })
+            }
+
+            const deleteArray = Array.isArray(data.deletedImages) 
+                    ? data.deletedImages 
+                    : [data.deletedImages];
+            
+            if (data.deletedImages && data.deletedImages.length) {
+                await tx.resource_of_Thread.deleteMany({
+                    where: {
+                        thread_id,
+                        Resources: {file_path: {in: deleteArray}}
+                    }
+                })
+            }
+
+            return { message: "Update Thread Successfully!", status: 200 }
         })
     }
 

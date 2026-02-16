@@ -28,7 +28,8 @@ export function ListModal({ open, setOpen, images = [] }) {
           <Box>
             <Button 
               sx={{
-                display: "flex", position: "absolute", top: "50%", left: 2,
+                display: "flex", position: "absolute", 
+                top: "50%", left: 2, aspectRatio: 1 / 1,
                 '&:hover': {
                   backgroundColor: "rgba(255, 255, 255, 0.3)",
                   transform: "translateY(-50%) scale(1.1)",
@@ -40,13 +41,14 @@ export function ListModal({ open, setOpen, images = [] }) {
                 }
               }}   
               onClick={() => setIdxSelected(idxSelected > 0 ? idxSelected - 1 : images.length - 1)}
-              startIcon={<ArrowBackIosRounded />}
             >
+              <ArrowBackIosRounded />
             </Button>
 
             <Button 
               sx={{
-                display: "flex", position: "absolute", top: "50%", right: 2,
+                display: "flex", position: "absolute", 
+                top: "50%", right: 2, aspectRatio: 1 / 1,
                 '&:hover': {
                   backgroundColor: "rgba(255, 255, 255, 0.3)",
                   transform: "translateY(-50%) scale(1.1)",
@@ -58,8 +60,8 @@ export function ListModal({ open, setOpen, images = [] }) {
                 }
               }}    
               onClick={() => setIdxSelected(idxSelected < images.length - 1 ? idxSelected + 1 : 0)}
-              endIcon={<ArrowForwardIosRounded />}
             >
+              <ArrowForwardIosRounded />
             </Button>
             <img 
               src={images[idxSelected]} 

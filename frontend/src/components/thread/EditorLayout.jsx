@@ -2,14 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { 
-  Box, Paper, Typography, Avatar, Button, IconButton,  TextField,
-  Card, CardHeader, CardContent, Divider, Chip,
-  ImageList, ImageListItem 
+  Box, 
+  Paper, 
+  Typography, 
+  Avatar, 
+  Button, 
+  IconButton,  
+  TextField,
+  Card, 
+  CardHeader, 
+  CardContent, 
+  Divider, 
+  Chip,
+  ImageList, 
+  ImageListItem, 
+  Modal,
+  Backdrop,
+  Fade
 } from '@mui/material';
+
 import { 
   PhotoCamera, 
-  Close, Public,
-  CloudUpload, ArrowForwardIosSharp 
+  Close, 
+  Public,
+  CloudUpload, 
+  ArrowForwardIosSharp,
+  ModeEditRounded,
+  MoreHoriz
 } from '@mui/icons-material';
 
 import { styled } from '@mui/material/styles';
@@ -17,10 +36,11 @@ import { toast } from 'sonner'
 
 import RichTextEditor from '../RichTextEditor';
 
-import { createThread, followThread, unfollowThread } from '../../services/ThreadService';
+import { createThread, followThread, unfollowThread, updateThread } from '../../services/ThreadService';
 import { getRelativeTime } from '../../utils/DateTimeFormatter';
 import BasicModal, { ListModal } from './ImageModal';
 import { FollowToggleButton } from './FollowToggleButton';
+import { ModalCard } from "../Tab/Tab"
 
 // --- 1. CONFIG & STYLES ---
 const MOCK_USER = {
@@ -152,15 +172,22 @@ export function QuiltedImageList({ images = [] }) {
 }
 
 // --- 4. CREATE POST COMPONENT ---
-export const PostCreator = ({ class_id = "", closeModal }) => {
-  const [isUpload, setIsUpload] = useState(false)
-  const [title, setTitle] = useState("")
-  const [htmlContent, setHtmlContent] = useState('');
-  const [selectedImages, setSelectedImages] = useState([]);
-  const [loading, setLoading] = useState(false)
+export const PostCreator = ({ class_id = "", closeModal, action = "create", post = null }) => {
+  const [isUpload, setIsUpload] = useState(action == "update")
+  const [title, setTitle] = useState(post?.title || "")
+  const [htmlContent, setHtmlContent] = useState(post?.content || "");
+  const [selectedImages, setSelectedImages] = useState(post?.medias || []);
+  const [addImages, setAddImages] = useState([])
+  const [deleteImages, setDeleteImages] = useState([])
+
+  const handleNewImages = (event) => {
+    const files = Array.from(event.target.files);
+    if (action == "create") setSelectedImages(prev => [...prev, ...files]);
+    else setAddImages(prev => [...prev, ...files])
+  }
 
   const handleSubmit = async () => {
-    if (!htmlContent && selectedImages.length === 0) return;
+    if (!htmlContent && !title) return;
     const newPostData ={
       title,
       content: htmlContent,
@@ -191,8 +218,50 @@ export const PostCreator = ({ class_id = "", closeModal }) => {
     setSelectedImages([]);
   };
 
+  const handleSave = async () => {
+    if (!htmlContent && !title) return;
+    const updatedPostData ={
+      title,
+      content: htmlContent,
+      deletedImages: deleteImages,
+      addImages,
+      class_id
+    }
+    toast.promise(updateThread(post.thread_id, updatedPostData), {
+      loading: `Đang cập nhật bài viết và thêm ${addImages.length} ảnh...`,
+      success: (data) => {
+        closeModal()
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+
+        return "Cập nhật bài viết thành công!"
+      },
+      error: (err) => {
+        closeModal()
+        if (err.status === 401) return "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
+        return err.message || "Có lỗi xảy ra!";
+      },
+      duration: 3000
+    })
+
+    setTitle('')
+    setHtmlContent('');
+    setSelectedImages([]);
+    setAddImages([])
+    setDeleteImages([])
+  }
+
   const handleRemoveImage = (indexToRemove) => {
+    if (action == "update") setDeleteImages(prev => [...prev, selectedImages[indexToRemove]])
     setSelectedImages((prevImages) => 
+      prevImages.filter((_, index) => index != indexToRemove)
+    )
+  }
+
+  const handleRemoveAddImage = (indexToRemove) => {
+    setAddImages((prevImages) => 
       prevImages.filter((_, index) => index != indexToRemove)
     )
   }
@@ -265,6 +334,56 @@ export const PostCreator = ({ class_id = "", closeModal }) => {
               </IconButton>
               
               <img 
+                src={action == "update" ? img : URL.createObjectURL(img)} 
+                alt={`preview ${idx}`}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+              
+              <Chip 
+                label={idx + 1} 
+                size="small" 
+                color="primary" 
+                sx={{ 
+                  position: 'absolute', 
+                  bottom: 2, 
+                  left: 2, 
+                  height: 16, 
+                  fontSize: 10,
+                  pointerEvents: 'none' 
+                }} 
+              />
+            </Box>
+          ))}
+
+          {addImages.map((img, idx) => (
+            <Box 
+              key={idx} 
+              sx={{ 
+                position: 'relative', 
+                width: 80, 
+                height: 80, 
+                flexShrink: 0,
+                boxShadow: 2,
+                borderRadius: 2,
+                overflow: 'hidden'
+              }}
+            >
+              <IconButton
+                size="small"
+                onClick={() => handleRemoveAddImage(idx)}
+                sx={{
+                  position: 'absolute',
+                  top: 2,
+                  right: 2,
+                  bgcolor: 'rgba(255, 255, 255, 0.7)',
+                  zIndex: 1,
+                  '&:hover': { bgcolor: 'error.main', color: 'white' }
+                }}
+              >
+                <Close sx={{ fontSize: 14 }} />
+              </IconButton>
+              
+              <img 
                 src={URL.createObjectURL(img)} 
                 alt={`preview ${idx}`}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
@@ -306,10 +425,9 @@ export const PostCreator = ({ class_id = "", closeModal }) => {
               type="file"
               multiple
               accept="image/*,video/*"
-              onChange={(event) => {
-                const files = Array.from(event.target.files);
-                setSelectedImages(prev => [...prev, ...files]);
-              }}
+              onChange={
+                (event) => handleNewImages(event)
+              }
             />
           </Button>
         </Box>
@@ -319,7 +437,17 @@ export const PostCreator = ({ class_id = "", closeModal }) => {
       
       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <Button startIcon={<PhotoCamera color="success" />} onClick={() => setIsUpload(true)}>Ảnh/Video</Button>
-        <Button variant="contained" onClick={() => handleSubmit()} disabled={!htmlContent && !selectedImages.length}>Đăng</Button>
+        <Button 
+          variant="contained" 
+          onClick={
+            action == "create" ? 
+            () => handleSubmit() :
+            () => handleSave()
+          } 
+          disabled={!htmlContent && !selectedImages.length}
+        >
+          {action == "create" ? "Đăng" : "Lưu"}
+        </Button>
       </Box>
     </Paper>
   );
@@ -329,6 +457,7 @@ export const PostCreator = ({ class_id = "", closeModal }) => {
 export const PostItem = ({ post, class_id }) => {
   const [uid, setUid] = useState('')
   const [initState, setInitState] = useState(false)
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -337,6 +466,8 @@ export const PostItem = ({ post, class_id }) => {
     if (post.followers?.length > 0 && post.followers.includes(uid)) setInitState(true)
     setUid(decoded.sub)
   }, [post, class_id])
+
+  const handleClosePostModal = () => setIsPostModalOpen(false);
 
   const handleFollowChange = async(newState) => {
     console.log(`User status changed to: ${newState ? 'Following' : 'Unfollowed'}`);
@@ -373,7 +504,7 @@ export const PostItem = ({ post, class_id }) => {
                 <Public sx={{ fontSize: 14, color: 'text.secondary' }} />
             </Box>
         }
-        action={
+        action={ post.sender.uid !== uid ? (
           <Box sx={{ pr: 1, pt: 0.5 }}>
             <FollowToggleButton 
               initialIsFollowing={initState} 
@@ -381,7 +512,11 @@ export const PostItem = ({ post, class_id }) => {
               thread_id={post.thread_id}
             />
           </Box>
-        }
+        ) : (
+          <IconButton>
+            <MoreHoriz />
+          </IconButton>
+        )}
       />
       
       <CardContent sx={{ pt: 0, pb: 1 }}>
@@ -409,14 +544,44 @@ export const PostItem = ({ post, class_id }) => {
 
       {/* Footer Actions */}
       <Divider />
-      <Box sx={{ p: 1, display: 'flex', justifyContent: "end" }}>
+      <Box sx={{ p: 1, display: 'flex', justifyContent: "end", gap: 3 }}>
+        {post.sender.uid == uid ? 
+          <Button
+            variant='outlined' color='primary'
+            startIcon={<ModeEditRounded />}
+            onClick={() => setIsPostModalOpen(true)}
+          >
+            Chỉnh sửa
+          </Button>
+         : null
+        }
+
         <Button size="medium" variant="contained" color="success" 
           onClick={() => handleViewThread(post.thread_id)}
           endIcon={<ArrowForwardIosSharp />}
         >
-          Chi tiết bài viết
+          Chi tiết
         </Button>
       </Box>
+      <Modal
+        open={isPostModalOpen}
+        onClose={handleClosePostModal}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{ backdrop: { timeout: 500 } }}
+        sx={{
+          width: "800px",
+          alignSelf: "center",
+          justifySelf: "center",
+          height: "80vh"
+        }}
+      >
+        <Fade in={isPostModalOpen}>
+          <ModalCard sx={{margin: 0, padding: 0}}>
+            <PostCreator class_id={class_id} closeModal={handleClosePostModal} action="update" post={post} />
+          </ModalCard>
+        </Fade>
+      </Modal>
     </Card>
   );
 };

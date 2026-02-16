@@ -36,10 +36,10 @@ export const createThread = async (threadData) => {
     }
 };
 
-export const getThreadsByClass = async (classId, token) => {
+export const getThreadsByClass = async (classId, token, page = 1) => {
     try {
         const response = await apiClient.get(
-            `/threads/class/${classId}`,
+            `/threads/class/${classId}?page=${page}`,
             getAuthHeaders(token)
         );
         return response.data;
@@ -59,6 +59,38 @@ export const getThreadById = async (threadId, token) => {
         return error.response?.data || error;
     }   
 };
+
+export const updateThread = async(threadId, threadData) => {
+    try {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('title', threadData.title);
+        formData.append('content', threadData.content);
+        formData.append('class_id', threadData.class_id);
+
+        threadData.deletedImages.forEach(img => {
+            formData.append('deletedImages', img)
+        });
+
+        threadData.addImages.forEach(img => {
+            formData.append('addImages', img)
+        })
+
+        const response = await apiClient.patch(
+            `/threads/${threadId}`,
+            formData,
+            {
+                headers: {
+                    ...getAuthHeaders(token).headers,
+                    'Content-Type': 'multipart/form-data', 
+                },
+            }
+        );
+        return response
+    } catch (error) {
+        throw error;
+    }
+}
 
 export const followThread = async(threadId) => {
     try {

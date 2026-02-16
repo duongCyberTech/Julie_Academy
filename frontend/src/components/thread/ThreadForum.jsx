@@ -1,40 +1,33 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Typography,
   Box,
   Button,
-  Avatar,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Divider,
-  IconButton,
   Container,
   Modal,
   Backdrop,
   Fade,
   TextField,
   Menu,
-  MenuItem
+  MenuItem,
+  CircularProgress
 } from "@mui/material";
 
 // Icons
 import AddIcon from '@mui/icons-material/Add';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import CloseIcon from '@mui/icons-material/Close';
 
 import { jwtDecode } from "jwt-decode";
 
 import { TabContentCard, ModalCard } from "../Tab/Tab";
-import FacebookEditor from "./TextEditor";
-import EditorLayout from "./EditorLayout";
-import FacebookCloneV2, { PostCreator, PostItem } from "./EditorLayout";
+import { PostCreator, PostItem } from "./EditorLayout";
 import * as ThreadService from "../../services/ThreadService";
 
 export default function ThreadForum({class_id}) {
-    const navigate = useNavigate();
+    const [page, setPage] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const observer = useRef();
     const [currentUserId, setCurrentUserId] = useState("");
     const [threads, setThreads] = useState([]);
     const [isPostModalOpen, setIsPostModalOpen] = useState(false);
@@ -43,25 +36,45 @@ export default function ThreadForum({class_id}) {
     const [anchorEl, setAnchorEl] = useState(null); 
     const [selectedThread, setSelectedThread] = useState(null); 
     const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+
+    const lastThreadElementRef = useCallback(node => {
+        if (loading) return;
+        if (observer.current) observer.current.disconnect();
+
+        observer.current = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+            setPage(prevPage => prevPage + 1);
+        }
+        });
+
+        if (node) observer.current.observe(node);
+    }, [loading]);
+
     useEffect(() => {
         const fetchThreads = async () => {
+            if (!hasMore) return;
             try {
                 const token = localStorage.getItem('token');
                 if (token) {
                     const decoded = jwtDecode(token);
                     setCurrentUserId(decoded.uid);
                 }
-                // Assuming getThreadsByClass is imported from ThreadService
-                const data = await ThreadService.getThreadsByClass(class_id, token)
-                setThreads(data);
-                console.log("All threads: ", data)
+                setLoading(true);
+                const data = await ThreadService.getThreadsByClass(class_id, token, page)
+                if (!data || data.length === 0) {
+                    setHasMore(false); 
+                } else {
+                    setThreads(prev => [...prev, ...data]);
+                    if (data.length < 10) setHasMore(false);
+                }
+                setLoading(false);
             } catch (error) {
                 console.error("Error fetching threads:", error);
             }
         };
 
         fetchThreads();
-    }, []);
+    }, [page]);
 
     const handleCloseMenu = () => {
         setAnchorEl(null);
@@ -122,14 +135,23 @@ export default function ThreadForum({class_id}) {
         >
             <Fade in={isPostModalOpen}>
                 <ModalCard sx={{margin: 0, padding: 0}}>
-                    <PostCreator class_id={class_id} closeModal={handleClosePostModal} />
+                    <PostCreator class_id={class_id} closeModal={handleClosePostModal} action="create" />
                 </ModalCard>
             </Fade>
         </Modal>
         {/* === HIỆN CÁC BÀI VIẾT TRONG LỚP === */}
-        {threads && threads.length && threads.map((thread) => {
-            return <PostItem key={thread.thread_id} post={thread} class_id={class_id} />
+        {threads && threads.length && threads.map((thread, index) => {
+            if (threads.length === index + 1) {
+                return (
+                        <div ref={lastThreadElementRef} key={thread.thread_id}>
+                            <PostItem post={thread} class_id={class_id} uid={currentUserId} />
+                        </div>
+                    );
+            } else {
+                return <PostItem key={thread.thread_id} post={thread} class_id={class_id} />;
+            }
         })}
+        {loading && <CircularProgress />}
         {/* === MENU SỬA/XÓA BÀI VIẾT === */}
         <Menu
             anchorEl={anchorEl}
