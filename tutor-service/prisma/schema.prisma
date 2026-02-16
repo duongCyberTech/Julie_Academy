@@ -28,6 +28,8 @@ model User {
   tutor     Tutor?
 
   likes Likes[]
+
+  resources Resources[]
 }
 
 model Tutor {
@@ -40,7 +42,6 @@ model Tutor {
   folder       Folders[]
   lesson_plan  Lesson_Plan[]
   questions    Questions[]
-  resources    Resources[]
   user         User          @relation(fields: [uid], references: [uid])
 }
 
@@ -252,13 +253,13 @@ model Resources {
   file_path            String
   version              Int
   num_pages            Int
-  tutor_id             String
+  user_id             String
   Resource_of_Answer   Resource_of_Answer[]
   Resource_of_Comment  Resource_of_Comment[]
   Resource_of_Question Resource_of_Question[]
   Resource_of_Thread   Resource_of_Thread[]
   Resource_in_Folder   Resources_in_folder[]
-  tutor                Tutor                  @relation(fields: [tutor_id], references: [uid])
+  user                 User                  @relation(fields: [user_id], references: [uid])
 }
 
 model Folders {

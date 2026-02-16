@@ -15,6 +15,7 @@ import { CronModule } from './scron-job/cron.module';
 import { MailModule } from './mail/mail.module';
 import { ResourceModule } from './resource/resource.module';
 import { BadgeModule } from './badge/badge.module';
+import { ThreadModule } from './thread/thread.module';
 import { ConfigModule } from '@nestjs/config';
 import rabbitmqConfig from './config/rabbitmq.config';
 
@@ -43,7 +44,8 @@ import rabbitmqConfig from './config/rabbitmq.config';
     CronModule, 
     MailModule, 
     ResourceModule,
-    BadgeModule
+    BadgeModule,
+    ThreadModule
   ],
   controllers: [AppController],
   providers: [

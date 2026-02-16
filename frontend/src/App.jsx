@@ -4,6 +4,7 @@ import { ThemeProvider, CssBaseline } from "@mui/material";
 import { createAppTheme } from "./context/ThemeProvider";
 import AppRoutes from "./routes/AppRoutes";
 import Header from "./components/Header";
+import { Toaster } from "sonner";
 
 function AppContent() {
   const [mode, setMode] = useState("light");
@@ -33,6 +34,7 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" richColors closeButton />
       <AppContent />
     </BrowserRouter>
   );

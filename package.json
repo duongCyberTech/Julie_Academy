@@ -4,6 +4,7 @@
     "fe": "cd frontend && npm install && npm run dev",
     "be": "cd tutor-service && npm install && npm run start:dev",
     "be:all": "npm-run-all --parallel fapi be",
+    "start:tutor": "npm-run-all --parallel be fe",
     "start:all": "npm-run-all --parallel fapi be fe"
   },
   "dependencies": {

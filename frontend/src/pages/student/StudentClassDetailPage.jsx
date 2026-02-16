@@ -16,6 +16,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemButton,
   ListItemAvatar,
   Divider,
   IconButton,
@@ -28,7 +29,6 @@ import {
   Breadcrumbs,
   Link,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import { motion } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -43,6 +43,9 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import CloseIcon from '@mui/icons-material/Close';
 import ArticleIcon from '@mui/icons-material/Article';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+
+import ThreadForum from "../../components/thread/ThreadForum";
+import { ClassBanner, TabContentCard, ModalCard, TabPanel } from "../../components/Tab/Tab";
 
 // Import hình ảnh
 import ClassBg1 from "../../assets/images/homepage1.webp";
@@ -138,47 +141,6 @@ const mockMembers = [
     { id: 'u_stu_003', name: 'Trần Thị B', role: 'Học sinh', avatar: null, email: 'b.tran@hcmut.edu.vn', joined_date: '03/10/2025' },
 ];
 
-const ClassBanner = styled(Paper)(({ theme }) => ({
-    borderRadius: theme.shape.borderRadius * 2,
-    boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)',
-    border: `1px solid ${theme.palette.divider}`,
-    overflow: 'hidden',
-    marginBottom: theme.spacing(3),
-}));
-
-const TabContentCard = styled(Paper)(({ theme }) => ({
-    borderRadius: theme.shape.borderRadius * 2,
-    boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)',
-    border: `1px solid ${theme.palette.divider}`,
-    padding: theme.spacing(3),
-    height: '100%',
-}));
-
-const ModalCard = styled(Box)(({ theme }) => ({
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: '90vw',
-    maxWidth: '600px', 
-    backgroundColor: theme.palette.background.paper,
-    borderRadius: theme.shape.borderRadius * 2,
-    boxShadow: 24,
-    padding: theme.spacing(4),
-}));
-
-function TabPanel(props) {
-    const { children, value, index, ...other } = props;
-    return (
-        <div role="tabpanel" hidden={value !== index} {...other}>
-            {value === index && (
-                <Box sx={{ pt: 3 }}>
-                    {children}
-                </Box>
-            )}
-        </div>
-    );
-}
 // ------------------------------
 
 // --- COMPONENT CHÍNH ---
@@ -251,26 +213,9 @@ export default function StudentClassDetailPage() {
     handleClosePostModal();
   };
 
-  const handleOpenMenu = (event, thread) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedThread(thread);
-  };
-
   const handleCloseMenu = () => {
     setAnchorEl(null);
     setSelectedThread(null);
-  };
-
-  const handleDeletePost = () => {
-    if (selectedThread) {
-      setThreads(threads.filter(t => t.id !== selectedThread.id));
-      setToast({ open: true, message: 'Xóa bài viết thành công!', severity: 'error' });
-    }
-    handleCloseMenu();
-  };
-
-  const handleViewThread = (threadId) => {
-    navigate(`/student/classes/${classId}/${threadId}`);
   };
 
 //Handlers cho tài liệu
@@ -346,51 +291,7 @@ export default function StudentClassDetailPage() {
 
             {/* === TAB 1: DIỄN ĐÀN === */}
             <TabPanel value={tabValue} index={0}>
-                <TabContentCard>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            Bài viết
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            startIcon={<AddIcon />}
-                            onClick={() => handleOpenPostModal(null)}
-                        >
-                            Tạo bài viết
-                        </Button>
-                    </Box>
-                    <List>
-                        {threads.map((thread, index) => (
-                            <React.Fragment key={thread.id}>
-                                <ListItem
-                                    button 
-                                    onClick={() => handleViewThread(thread.id)}
-                                    secondaryAction={
-                                      <>
-                                        <Typography variant="body2" color="text.secondary" sx={{ mr: 2, display: { xs: 'none', sm: 'inline' } }}>
-                                            {thread.reply_count} trả lời
-                                        </Typography>
-                                        {thread.author_id === CURRENT_USER_ID && (
-                                          <IconButton edge="end" onClick={(e) => handleOpenMenu(e, thread)}>
-                                              <MoreVertIcon />
-                                          </IconButton>
-                                        )}
-                                      </>
-                                    }
-                                >
-                                    <ListItemAvatar>
-                                        <Avatar src={thread.author_avatar} />
-                                    </ListItemAvatar>
-                                    <ListItemText
-                                        primary={thread.title}
-                                        secondary={`Tác giả: ${thread.author_name} - ${new Date(thread.created_at).toLocaleDateString('vi-VN')}`}
-                                    />
-                                </ListItem>
-                                {index < threads.length - 1 && <Divider component="li" />}
-                            </React.Fragment>
-                        ))}
-                    </List>
-                </TabContentCard>
+                <ThreadForum class_id={classId} />
             </TabPanel>
 
             {/* === TAB 2: TÀI LIỆU === */}
@@ -419,7 +320,7 @@ export default function StudentClassDetailPage() {
                         {currentFolderItems.map((item, index) => (
                             <React.Fragment key={item.id}>
                                 <ListItem
-                                    button={item.type === 'folder'} 
+                                    button={item.type === "folder"}
                                     onClick={item.type === 'folder' ? () => handleFolderClick(item.id) : null}
                                     secondaryAction={
                                         item.type === 'file' ? (
@@ -493,64 +394,7 @@ export default function StudentClassDetailPage() {
           <Alert onClose={handleCloseToast} severity={toast.severity} sx={{ width: '100%' }} variant="filled">
               {toast.message}
           </Alert>
-      </Snackbar>
-
-      {/* === MODAL TẠO/SỬA BÀI VIẾT === */}
-      <Modal
-          open={isPostModalOpen}
-          onClose={handleClosePostModal}
-          closeAfterTransition
-          slots={{ backdrop: Backdrop }}
-          slotProps={{ backdrop: { timeout: 500 } }}
-      >
-          <Fade in={isPostModalOpen}>
-              <ModalCard>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-                          {editingPost ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
-                      </Typography>
-                      <IconButton onClick={handleClosePostModal}>
-                          <CloseIcon />
-                      </IconButton>
-                  </Box>
-                  <Box component="form" sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <TextField
-                          label="Tiêu đề"
-                          name="title"
-                          value={postFormData.title}
-                          onChange={handlePostFormChange}
-                          fullWidth
-                      />
-                      <TextField
-                          label="Nội dung"
-                          name="content"
-                          value={postFormData.content}
-                          onChange={handlePostFormChange}
-                          fullWidth
-                          multiline
-                          rows={6}
-                      />
-                      <Button
-                          variant="contained"
-                          onClick={handlePostSubmit}
-                          sx={{ alignSelf: 'flex-end' }}
-                      >
-                          {editingPost ? 'Lưu thay đổi' : 'Đăng bài'}
-                      </Button>
-                  </Box>
-              </ModalCard>
-          </Fade>
-      </Modal>
-
-      {/* === MENU SỬA/XÓA BÀI VIẾT === */}
-      <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleCloseMenu}
-      >
-          <MenuItem onClick={() => handleOpenPostModal(selectedThread)}>Sửa</MenuItem>
-          <MenuItem onClick={handleDeletePost} sx={{ color: 'error.main' }}>Xóa</MenuItem>
-      </Menu>   
+      </Snackbar>  
     </Container>
   );
 }

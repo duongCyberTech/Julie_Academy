@@ -197,7 +197,7 @@ export class ResourceService {
                     file_type: file.mimetype,
                     version: data.version || 1,
                     num_pages: data.num_pages || num_pages,
-                    tutor: { connect: {uid: tutor_id} },
+                    user: { connect: {uid: tutor_id} },
                 }
             })
 
@@ -216,7 +216,7 @@ export class ResourceService {
 
     async getAllDocs(tutor_id: string){
         return this.prisma.resources.findMany({
-            where: {tutor:{uid: tutor_id}}
+            where: {user:{uid: tutor_id}}
         })
     }
 
