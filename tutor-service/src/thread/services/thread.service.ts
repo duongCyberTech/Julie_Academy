@@ -3,7 +3,6 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { CreateThreadDto, UpdateThreadDto } from "../dto/ThreadDto.dto";
 import { DateTime } from 'luxon'
 import { CloudinaryService } from "src/resource/cloudinary/cloudinary.service";
-import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class ThreadService {
@@ -11,27 +10,6 @@ export class ThreadService {
         private readonly prisma: PrismaService,
         private cloudinaryService: CloudinaryService
     ){}
-
-    async uploadMultiMediaFiles(tx: Prisma.TransactionClient, tutor_id: string, title: string, files: Array<Express.Multer.File>) {
-        const uploadPromises = files.map(file => this.cloudinaryService.uploadFile(file));
-        const results = await Promise.all(uploadPromises);
-
-        const resImages = await tx.resources.createManyAndReturn({
-            data: results.map((img, idx) => {
-                return {
-                    title: img.original_filename,
-                    description: title + ` image ${idx}`,
-                    file_type: img.resource_type,
-                    file_path: img.secure_url,
-                    version: 1,
-                    num_pages: img.bytes,
-                    user_id: tutor_id
-                }
-            })
-        })
-
-        return resImages.map(img => img.did)
-    }
 
     async createThread(uid: string, data: CreateThreadDto, images: Array<Express.Multer.File>) {
         const now = DateTime.now().setZone('Asia/Ho_Chi_Minh').toJSDate()
@@ -48,7 +26,7 @@ export class ThreadService {
             });
 
             if (images && images.length) {
-                const thread_images = await this.uploadMultiMediaFiles(tx, uid, thread.title, images);
+                const thread_images = await this.cloudinaryService.uploadMultiMediaFiles(tx, uid, thread.title, images);
 
                 await tx.resource_of_Thread.createMany({
                     data: thread_images.map((item) => {
@@ -107,6 +85,10 @@ export class ThreadService {
             })
 
             return { data: res, message: "Create Thread Successfully!", status: 201 }
+        },
+        {
+            maxWait: 5000,
+            timeout: 10000
         })
     }
 
@@ -173,35 +155,53 @@ export class ThreadService {
 
     async getThreadById(uid: string, thread_id: string) {
         const thread = await this.prisma.thread.findUnique({
-            where: {thread_id},
-            include: {
-                class: {
-                    include: {
-                        tutor: true,
-                        learning: {
-                            include: {
-                                student: true
-                            }
-                        }
-                    }
-                },
+            where: {thread_id: thread_id},
+            select: {
+                thread_id: true,
+                title: true, 
+                content: true,
+                createAt: true,
                 sender: {
                     select: {
                         uid: true,
                         fname: true,
+                        mname: true,
                         lname: true,
-                        email: true
+                        email: true,
+                        avata_url: true
+                    }
+                },
+                Resource_of_Thread: {
+                    select: {
+                        Resources: {
+                            select: {
+                                file_path: true
+                            }
+                        }
+                    }
+                },
+                followers: {
+                    select: {
+                        follower: {
+                            select: {uid: true}
+                        }
                     }
                 }
+            },
+        }).then((res) => {
+            return {
+                thread_id: res.thread_id,
+                title: res.title,
+                content: res.content,
+                createAt: res.createAt,
+                sender: res.sender,
+                medias: res.Resource_of_Thread.map(item => item.Resources.file_path),
+                followers: res.followers.map(item => item.follower.uid)
             }
         })
         if (!thread) throw new NotFoundException("Thread not found")
-        const isTutor = thread.class.tutor.uid === uid
-        
-        const isStudent = thread.class.learning.some(learn => learn.student.uid === uid)
 
-        if (!isTutor && !isStudent) throw new ForbiddenException("User not have permission")
-        return thread
+        return { data: thread, message: "Update Thread Successfully!", status: 200 }
     }
 
     async updateThread(uid: string, thread_id: string, data: Partial<UpdateThreadDto>, addImages: Array<Express.Multer.File>) {
@@ -222,7 +222,7 @@ export class ThreadService {
             })
 
             if (addImages && addImages.length) {
-                const thread_images = await this.uploadMultiMediaFiles(tx, uid, updatedThread?.title || "Untitled", addImages)
+                const thread_images = await this.cloudinaryService.uploadMultiMediaFiles(tx, uid, updatedThread?.title || "Untitled", addImages)
 
                 await tx.resource_of_Thread.createMany({
                     data: thread_images.map((item) => {
@@ -294,7 +294,12 @@ export class ThreadService {
             })
 
             return { data: res, message: "Update Thread Successfully!", status: 200 }
-        })
+        },
+        {
+            maxWait: 5000,
+            timeout: 10000
+        }
+        )
     }
 
     async deleteThread(uid: string, thread_id: string) {

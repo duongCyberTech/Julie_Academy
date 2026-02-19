@@ -33,7 +33,6 @@ import {
   Delete
 } from '@mui/icons-material';
 
-import { styled } from '@mui/material/styles';
 import { toast } from 'sonner'
 
 import RichTextEditor from '../RichTextEditor';
@@ -46,9 +45,11 @@ import {
   deleteThread
 } from '../../services/ThreadService';
 import { getRelativeTime } from '../../utils/DateTimeFormatter';
-import BasicModal, { ListModal } from './ImageModal';
+import BasicModal, { ListModal } from '../Image/ImageModal';
 import { FollowToggleButton } from './FollowToggleButton';
 import { ModalCard } from "../Tab/Tab"
+import VisuallyHiddenInput from '../Input/VisuallyHiddenInput';
+import QuiltedImageList from '../Image/ImageList';
 
 // --- 1. CONFIG & STYLES ---
 const MOCK_USER = {
@@ -56,18 +57,6 @@ const MOCK_USER = {
   name: 'Nguyễn Văn Dev',
   avatar: 'https://i.pravatar.cc/150?u=u1',
 };
-
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
-  height: 1,
-  overflow: 'hidden',
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  whiteSpace: 'nowrap',
-  width: 1,
-});
 
 // CSS giả lập hiệu ứng Tag và Editor
 const globalStyles = `
@@ -87,97 +76,6 @@ const globalStyles = `
     display: block; /* For Firefox */
   }
 `;
-
-// --- 3. COMPONENT GRID ẢNH (Logic Facebook) ---
-function srcset(image, size, rows = 1, cols = 1) {
-  return {
-    src: `${image}?w=${size * cols}&h=${size * rows}&fit=crop&auto=format`,
-    srcSet: `${image}?w=${size * cols}&h=${
-      size * rows
-    }&fit=crop&auto=format&dpr=2 2x`,
-  };
-}
-
-export function QuiltedImageList({ images = [] }) {
-  const [open, setOpen] = React.useState(false);
-  const [openRemain, setOpenRemain] = useState(false)
-  const [selectedImg, setSelectedImg] = React.useState(null);
-
-  const handleOpen = (img) => {
-    setSelectedImg(img);
-    setOpen(true);
-  };
-
-  const getGridConfig = (index, total) => {
-    if (total === 1) return { cols: 4, rows: 4 };
-    if (total === 2) return { cols: 2, rows: 4 };
-    if (total === 3) return index === 0 ? { cols: 2, rows: 4 } : { cols: 2, rows: 2 };
-    if (total === 4) return { cols: 2, rows: 2 } 
-    if (total > 4) {
-      if (index === 0) return { cols: 2, rows: 2 };
-      if (index <= 3) return { cols: 2, rows: 2 }; 
-    }
-    return { cols: 2, rows: 2 };
-  };
-
-  return (
-    <Box sx={{ width: "100%" }}>
-      <ImageList
-        sx={{ width: "100%", mb: 0 }}
-        variant="quilted"
-        cols={4}
-        rowHeight={100}
-      >
-        {images.slice(0, 4).map((item, index) => {
-          const { cols, rows } = getGridConfig(index, images.length);
-          const isLastVisible = index === 3;
-          const remainingCount = images.length - 4;
-
-          return (
-            <ImageListItem 
-              key={index} 
-              cols={cols} 
-              rows={rows}
-              sx={{ position: 'relative', cursor: 'pointer' }}
-              onClick={images.length <= 4 ?
-                () => handleOpen(item) :
-                () => setOpenRemain(true)
-              }
-            >
-              <img
-                src={item}
-                alt="Post content"
-                loading="lazy"
-                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-              />
-              {isLastVisible && remainingCount > 0 && (
-                <Box sx={{
-                  position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.5)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontSize: '1.5rem', fontWeight: 'bold'
-                }}>
-                  +{remainingCount}
-                </Box>
-              )}
-            </ImageListItem>
-          );
-        })}
-      </ImageList>
-
-      {/* Đưa Modal ra ngoài vòng lặp */}
-      <BasicModal 
-        image={selectedImg} 
-        open={open} 
-        setOpen={setOpen} 
-      />
-      <ListModal 
-        images={images.slice(3)} 
-        open={openRemain} 
-        setOpen={setOpenRemain} 
-      />
-    </Box>
-  );
-}
 
 // --- 4. CREATE POST COMPONENT ---
 export const PostCreator = ({ class_id = "", closeModal, action = "create", post = null, handleAdd = null, handleUpdate = null }) => {
@@ -491,7 +389,7 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
 
   const handleViewThread = (threadId) => {
     if (threadId == "") return
-    navigate(`/student/classes/${class_id}/${threadId}`);
+    navigate(`/student/classes/${class_id}/${threadId}`, { state: post });
   };
 
   const handleDeleteThread = () => {

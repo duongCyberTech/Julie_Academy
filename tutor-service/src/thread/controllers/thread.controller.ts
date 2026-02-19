@@ -12,7 +12,6 @@ import {
     UploadedFiles,
     ParseFilePipe,
     MaxFileSizeValidator,
-    FileTypeValidator,
     UseInterceptors,
     Query,
     ParseIntPipe

@@ -73,7 +73,7 @@ export default function ThreadForum({class_id}) {
                     });
                     if (data.length < 10) setHasMore(false);
                 }
-                console.log("Current threads list: ", [...threads, ...data])
+
                 setLoading(false);
             } catch (error) {
                 console.error("Error fetching threads:", error);
