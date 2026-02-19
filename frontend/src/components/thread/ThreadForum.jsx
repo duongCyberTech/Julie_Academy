@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { TransitionGroup } from "react-transition-group";
+
 import {
   Typography,
   Box,
@@ -11,7 +13,8 @@ import {
   TextField,
   Menu,
   MenuItem,
-  CircularProgress
+  CircularProgress,
+  Collapse
 } from "@mui/material";
 
 // Icons
@@ -33,9 +36,6 @@ export default function ThreadForum({class_id}) {
     const [isPostModalOpen, setIsPostModalOpen] = useState(false);
     const [editingPost, setEditingPost] = useState(null); 
     const [postFormData, setPostFormData] = useState({ title: '', content: '' });
-    const [anchorEl, setAnchorEl] = useState(null); 
-    const [selectedThread, setSelectedThread] = useState(null); 
-    const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
     const lastThreadElementRef = useCallback(node => {
         if (loading) return;
@@ -48,7 +48,7 @@ export default function ThreadForum({class_id}) {
         });
 
         if (node) observer.current.observe(node);
-    }, [loading]);
+    }, [loading, hasMore]);
 
     useEffect(() => {
         const fetchThreads = async () => {
@@ -64,9 +64,16 @@ export default function ThreadForum({class_id}) {
                 if (!data || data.length === 0) {
                     setHasMore(false); 
                 } else {
-                    setThreads(prev => [...prev, ...data]);
+                    setThreads(prev => {
+                        const newThreads = data.filter(
+                            incoming => !prev.some(existing => existing.thread_id === incoming.thread_id)
+                        );
+                        
+                        return [...prev, ...newThreads];
+                    });
                     if (data.length < 10) setHasMore(false);
                 }
+                console.log("Current threads list: ", [...threads, ...data])
                 setLoading(false);
             } catch (error) {
                 console.error("Error fetching threads:", error);
@@ -75,11 +82,6 @@ export default function ThreadForum({class_id}) {
 
         fetchThreads();
     }, [page]);
-
-    const handleCloseMenu = () => {
-        setAnchorEl(null);
-        setSelectedThread(null);
-    };
 
     const handleClosePostModal = () => setIsPostModalOpen(false);
 
@@ -92,15 +94,29 @@ export default function ThreadForum({class_id}) {
             setPostFormData({ title: '', content: '' });
         }
         setIsPostModalOpen(true);
-        handleCloseMenu();
     };
 
-    const handleDeletePost = () => {
-        if (selectedThread) {
-        setThreads(threads.filter(t => t.id !== selectedThread.id));
-        setToast({ open: true, message: 'Xóa bài viết thành công!', severity: 'error' });
+    const handleAddNewPost = (post) => {
+        if (post) {
+            setThreads(prev => {
+                if (prev.some(t => t.thread_id === post.thread_id)) return prev;
+                return [post, ...prev];
+            });
         }
-        handleCloseMenu();
+    }
+
+    const handleUpdatePost = (updatedPost) => {
+        if (updatedPost) {
+            setThreads(prev => 
+                prev.map(t => t.thread_id === updatedPost.thread_id ? updatedPost : t)
+            );
+        }
+    };
+
+    const handleDeletePost = (threadId) => {
+        if (threadId) {
+            setThreads(threads.filter(t => t.thread_id !== threadId));
+        }
     };
 
     return(
@@ -135,32 +151,35 @@ export default function ThreadForum({class_id}) {
         >
             <Fade in={isPostModalOpen}>
                 <ModalCard sx={{margin: 0, padding: 0}}>
-                    <PostCreator class_id={class_id} closeModal={handleClosePostModal} action="create" />
+                    <PostCreator class_id={class_id} closeModal={handleClosePostModal} action="create" handleAdd={handleAddNewPost} />
                 </ModalCard>
             </Fade>
         </Modal>
         {/* === HIỆN CÁC BÀI VIẾT TRONG LỚP === */}
-        {threads && threads.length && threads.map((thread, index) => {
-            if (threads.length === index + 1) {
-                return (
-                        <div ref={lastThreadElementRef} key={thread.thread_id}>
-                            <PostItem post={thread} class_id={class_id} uid={currentUserId} />
-                        </div>
-                    );
-            } else {
-                return <PostItem key={thread.thread_id} post={thread} class_id={class_id} />;
-            }
+        <TransitionGroup>
+        {threads && threads.map((thread, index) => {
+            const isLast = threads.length === index + 1;
+            return (
+            <Collapse key={thread.thread_id}> {/* Key phải nằm ở đây */}
+                <Fade in={true} timeout={500}>
+                <Box 
+                    ref={isLast ? lastThreadElementRef : null} 
+                    sx={{ mb: 2 }}
+                >
+                    <PostItem 
+                    post={thread} 
+                    class_id={class_id} 
+                    uid={currentUserId} 
+                    handleDelete={handleDeletePost} 
+                    handleUpdate={handleUpdatePost} 
+                    />
+                </Box>
+                </Fade>
+            </Collapse>
+            );
         })}
+        </TransitionGroup>
         {loading && <CircularProgress />}
-        {/* === MENU SỬA/XÓA BÀI VIẾT === */}
-        <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleCloseMenu}
-        >
-            <MenuItem onClick={() => handleOpenPostModal(selectedThread)}>Sửa</MenuItem>
-            <MenuItem onClick={handleDeletePost} sx={{ color: 'error.main' }}>Xóa</MenuItem>
-        </Menu> 
     </Container>
     )                
 }

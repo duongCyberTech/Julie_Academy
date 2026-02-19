@@ -18,7 +18,8 @@ import {
   ImageListItem, 
   Modal,
   Backdrop,
-  Fade
+  Fade,
+  Tooltip
 } from '@mui/material';
 
 import { 
@@ -28,7 +29,8 @@ import {
   CloudUpload, 
   ArrowForwardIosSharp,
   ModeEditRounded,
-  MoreHoriz
+  MoreHoriz,
+  Delete
 } from '@mui/icons-material';
 
 import { styled } from '@mui/material/styles';
@@ -36,7 +38,13 @@ import { toast } from 'sonner'
 
 import RichTextEditor from '../RichTextEditor';
 
-import { createThread, followThread, unfollowThread, updateThread } from '../../services/ThreadService';
+import { 
+  createThread,
+  followThread,
+  unfollowThread,
+  updateThread,
+  deleteThread
+} from '../../services/ThreadService';
 import { getRelativeTime } from '../../utils/DateTimeFormatter';
 import BasicModal, { ListModal } from './ImageModal';
 import { FollowToggleButton } from './FollowToggleButton';
@@ -172,7 +180,7 @@ export function QuiltedImageList({ images = [] }) {
 }
 
 // --- 4. CREATE POST COMPONENT ---
-export const PostCreator = ({ class_id = "", closeModal, action = "create", post = null }) => {
+export const PostCreator = ({ class_id = "", closeModal, action = "create", post = null, handleAdd = null, handleUpdate = null }) => {
   const [isUpload, setIsUpload] = useState(action == "update")
   const [title, setTitle] = useState(post?.title || "")
   const [htmlContent, setHtmlContent] = useState(post?.content || "");
@@ -196,12 +204,10 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
     }
     toast.promise(createThread(newPostData), {
       loading: "Đang tạo bài viết...",
-      success: (data) => {
+      success: (data) => {  
+        console.log(data)
+        handleAdd(data.data.data);
         closeModal()
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
 
         return "Tạo bài viết thành công!"
       },
@@ -230,11 +236,8 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
     toast.promise(updateThread(post.thread_id, updatedPostData), {
       loading: `Đang cập nhật bài viết và thêm ${addImages.length} ảnh...`,
       success: (data) => {
+        handleUpdate(data.data.data)
         closeModal()
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
 
         return "Cập nhật bài viết thành công!"
       },
@@ -454,7 +457,7 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
 };
 
 // --- 5. POST ITEM (RENDERER) ---
-export const PostItem = ({ post, class_id }) => {
+export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
   const [uid, setUid] = useState('')
   const [initState, setInitState] = useState(false)
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
@@ -491,12 +494,27 @@ export const PostItem = ({ post, class_id }) => {
     navigate(`/student/classes/${class_id}/${threadId}`);
   };
 
+  const handleDeleteThread = () => {
+    toast.promise(deleteThread(post.thread_id), {
+      loading: 'Đang xóa bài viết...',
+      success: (data) => {
+        handleDelete(post.thread_id)
+        return "Đã xóa thành công!"
+      },
+      error: (err) => {
+        if (err.status === 401) return "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
+        return err.message || "Có lỗi xảy ra!";
+      },
+      duration: 2000
+    });
+  }
+
   return (
     <Card sx={{ mt: 2, borderRadius: 2 }}>
       <style>{globalStyles}</style>
       
       <CardHeader
-        avatar={<Avatar src={post.sender.avatar_url} alt={`${post.sender.fname[0] + post.sender.lname[0]}`} />}
+        avatar={<Avatar src={post?.sender?.avatar_url} alt={`${post?.sender?.fname[0] + post?.sender?.lname[0]}` || "Ava"} />}
         title={<Typography fontWeight="bold">{post.sender.fname + " " + post.sender.mname + " " + post.sender.lname}</Typography>}
         subheader={
             <Box display="flex" alignItems="center" gap={0.5}>
@@ -544,24 +562,82 @@ export const PostItem = ({ post, class_id }) => {
 
       {/* Footer Actions */}
       <Divider />
-      <Box sx={{ p: 1, display: 'flex', justifyContent: "end", gap: 3 }}>
+      <Box sx={{ p: 1, display: 'flex', justifyContent: "end", gap: 1 }}>
         {post.sender.uid == uid ? 
-          <Button
-            variant='outlined' color='primary'
-            startIcon={<ModeEditRounded />}
-            onClick={() => setIsPostModalOpen(true)}
-          >
-            Chỉnh sửa
-          </Button>
+          <>
+          <Tooltip title="Chỉnh sửa bài viết" arrow placement="top">
+            <IconButton
+              onClick={() => setIsPostModalOpen(true)}
+              sx={{ 
+                border: '1px solid', 
+                borderColor: 'primary.main', 
+                borderRadius: '8px',
+                p: '6px', 
+                color: 'primary.main',
+                "&:hover": {
+                  bgcolor: 'primary.main',
+                  border: "0px",
+                  borderColor: 'white',
+                  color: 'white',
+                  transform: 'translateY(-2px) translateZ(2px)',
+                  transition: 'all 0.2s ease-in-out',
+                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.3)"
+                }
+              }}
+            >
+              <ModeEditRounded />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Xóa bài viết" arrow placement="top">
+            <IconButton
+              onClick={() => handleDeleteThread()}
+              sx={{ 
+                border: '1px solid', 
+                borderColor: 'error.main', 
+                borderRadius: '8px',
+                p: '6px',
+                color: 'error.main',
+                "&:hover": {
+                  bgcolor: 'error.main',
+                  border: "0px",
+                  borderColor: 'white',
+                  color: 'white',
+                  transform: 'translateY(-2px) translateZ(2px)',
+                  transition: 'all 0.2s ease-in-out',
+                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.3)"
+                }
+              }}
+            >
+              <Delete />
+            </IconButton>
+          </Tooltip>
+          </>
          : null
         }
-
-        <Button size="medium" variant="contained" color="success" 
-          onClick={() => handleViewThread(post.thread_id)}
-          endIcon={<ArrowForwardIosSharp />}
-        >
-          Chi tiết
-        </Button>
+        <Tooltip title="Xem chi tiết" arrow placement="top">
+          <IconButton 
+            sx={{ 
+              border: '1px solid', 
+              borderColor: 'success.main', 
+              borderRadius: '8px',
+              p: '6px',
+              color: 'success.main',
+              "&:hover": {
+                bgcolor: 'success.main',
+                border: "0px",
+                borderColor: 'white',
+                color: 'white',
+                transform: 'translateY(-2px) translateZ(2px)',
+                transition: 'all 0.2s ease-in-out',
+                boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.3)"
+              }
+            }}
+            onClick={() => handleViewThread(post.thread_id)}
+          >
+            <ArrowForwardIosSharp />
+          </IconButton>
+        </Tooltip>
       </Box>
       <Modal
         open={isPostModalOpen}
@@ -578,7 +654,7 @@ export const PostItem = ({ post, class_id }) => {
       >
         <Fade in={isPostModalOpen}>
           <ModalCard sx={{margin: 0, padding: 0}}>
-            <PostCreator class_id={class_id} closeModal={handleClosePostModal} action="update" post={post} />
+            <PostCreator class_id={class_id} closeModal={handleClosePostModal} action="update" post={post} handleUpdate={handleUpdate} />
           </ModalCard>
         </Fade>
       </Modal>

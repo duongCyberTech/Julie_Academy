@@ -288,7 +288,7 @@ model Categories {
   createAt         DateTime     @default(now())
   updateAt         DateTime     @default(now())
   parent_id        String?
-  Categories       Categories?  @relation("CategoriesToCategories", fields: [parent_id], references: [category_id], onDelete: Cascade, onUpdate: Cascade, map: "fk_recursive_cate")
+  Categories       Categories?  @relation("CategoriesToCategories", fields: [parent_id], references: [category_id], map: "fk_recursive_cate")
   other_Categories Categories[] @relation("CategoriesToCategories")
   questions        Questions[]
   structure        Structure[]
@@ -321,8 +321,8 @@ model Folder_of_class {
 model Structure {
   plan_id  String
   cate_id  String
-  Category Categories  @relation(fields: [cate_id], references: [category_id], onDelete: Cascade, onUpdate: Cascade)
-  Plan     Lesson_Plan @relation(fields: [plan_id], references: [plan_id], onDelete: Cascade, onUpdate: Cascade)
+  Category Categories  @relation(fields: [cate_id], references: [category_id])
+  Plan     Lesson_Plan @relation(fields: [plan_id], references: [plan_id])
 
   @@id([plan_id, cate_id])
 }
@@ -452,7 +452,7 @@ model Lesson_Plan {
   type        PlanType    @default(custom)
   tutor_id    String?
   classes     Class[]
-  tutor       Tutor?      @relation(fields: [tutor_id], references: [uid])
+  tutor       Tutor?      @relation(fields: [tutor_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   structure   Structure[]
 }
 

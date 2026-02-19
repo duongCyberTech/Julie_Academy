@@ -30,6 +30,7 @@ export const createThread = async (threadData) => {
                 },
             }
         );
+        console.warn(">>> CREATE THREAD: ", response)
         return response;
     } catch (error) {
         throw error;
@@ -91,6 +92,19 @@ export const updateThread = async(threadId, threadData) => {
         throw error;
     }
 }
+
+export const deleteThread = async(threadId) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await apiClient.delete(
+            `/threads/${threadId}`,
+            getAuthHeaders(token)
+        );
+        return response
+    } catch (error) {
+        throw error;
+    }
+} 
 
 export const followThread = async(threadId) => {
     try {
