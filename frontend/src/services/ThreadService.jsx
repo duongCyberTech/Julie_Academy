@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
 
 const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000',
@@ -30,6 +29,7 @@ export const createThread = async (threadData) => {
                 },
             }
         );
+
         return response;
     } catch (error) {
         throw error;
@@ -54,9 +54,9 @@ export const getThreadById = async (threadId, token) => {
             `/threads/${threadId}`,
             getAuthHeaders(token)
         );
-        return response.data;
+        return response
     } catch (error) {
-        return error.response?.data || error;
+        throw error;
     }   
 };
 
@@ -91,6 +91,19 @@ export const updateThread = async(threadId, threadData) => {
         throw error;
     }
 }
+
+export const deleteThread = async(threadId) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await apiClient.delete(
+            `/threads/${threadId}`,
+            getAuthHeaders(token)
+        );
+        return response
+    } catch (error) {
+        throw error;
+    }
+} 
 
 export const followThread = async(threadId) => {
     try {

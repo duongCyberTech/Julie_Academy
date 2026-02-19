@@ -18,7 +18,8 @@ import {
   ImageListItem, 
   Modal,
   Backdrop,
-  Fade
+  Fade,
+  Tooltip
 } from '@mui/material';
 
 import { 
@@ -28,19 +29,27 @@ import {
   CloudUpload, 
   ArrowForwardIosSharp,
   ModeEditRounded,
-  MoreHoriz
+  MoreHoriz,
+  Delete
 } from '@mui/icons-material';
 
-import { styled } from '@mui/material/styles';
 import { toast } from 'sonner'
 
 import RichTextEditor from '../RichTextEditor';
 
-import { createThread, followThread, unfollowThread, updateThread } from '../../services/ThreadService';
+import { 
+  createThread,
+  followThread,
+  unfollowThread,
+  updateThread,
+  deleteThread
+} from '../../services/ThreadService';
 import { getRelativeTime } from '../../utils/DateTimeFormatter';
-import BasicModal, { ListModal } from './ImageModal';
+import BasicModal, { ListModal } from '../Image/ImageModal';
 import { FollowToggleButton } from './FollowToggleButton';
 import { ModalCard } from "../Tab/Tab"
+import VisuallyHiddenInput from '../Input/VisuallyHiddenInput';
+import QuiltedImageList from '../Image/ImageList';
 
 // --- 1. CONFIG & STYLES ---
 const MOCK_USER = {
@@ -48,18 +57,6 @@ const MOCK_USER = {
   name: 'Nguyễn Văn Dev',
   avatar: 'https://i.pravatar.cc/150?u=u1',
 };
-
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
-  height: 1,
-  overflow: 'hidden',
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  whiteSpace: 'nowrap',
-  width: 1,
-});
 
 // CSS giả lập hiệu ứng Tag và Editor
 const globalStyles = `
@@ -80,99 +77,8 @@ const globalStyles = `
   }
 `;
 
-// --- 3. COMPONENT GRID ẢNH (Logic Facebook) ---
-function srcset(image, size, rows = 1, cols = 1) {
-  return {
-    src: `${image}?w=${size * cols}&h=${size * rows}&fit=crop&auto=format`,
-    srcSet: `${image}?w=${size * cols}&h=${
-      size * rows
-    }&fit=crop&auto=format&dpr=2 2x`,
-  };
-}
-
-export function QuiltedImageList({ images = [] }) {
-  const [open, setOpen] = React.useState(false);
-  const [openRemain, setOpenRemain] = useState(false)
-  const [selectedImg, setSelectedImg] = React.useState(null);
-
-  const handleOpen = (img) => {
-    setSelectedImg(img);
-    setOpen(true);
-  };
-
-  const getGridConfig = (index, total) => {
-    if (total === 1) return { cols: 4, rows: 4 };
-    if (total === 2) return { cols: 2, rows: 4 };
-    if (total === 3) return index === 0 ? { cols: 2, rows: 4 } : { cols: 2, rows: 2 };
-    if (total === 4) return { cols: 2, rows: 2 } 
-    if (total > 4) {
-      if (index === 0) return { cols: 2, rows: 2 };
-      if (index <= 3) return { cols: 2, rows: 2 }; 
-    }
-    return { cols: 2, rows: 2 };
-  };
-
-  return (
-    <Box sx={{ width: "100%" }}>
-      <ImageList
-        sx={{ width: "100%", mb: 0 }}
-        variant="quilted"
-        cols={4}
-        rowHeight={100}
-      >
-        {images.slice(0, 4).map((item, index) => {
-          const { cols, rows } = getGridConfig(index, images.length);
-          const isLastVisible = index === 3;
-          const remainingCount = images.length - 4;
-
-          return (
-            <ImageListItem 
-              key={index} 
-              cols={cols} 
-              rows={rows}
-              sx={{ position: 'relative', cursor: 'pointer' }}
-              onClick={images.length <= 4 ?
-                () => handleOpen(item) :
-                () => setOpenRemain(true)
-              }
-            >
-              <img
-                src={item}
-                alt="Post content"
-                loading="lazy"
-                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-              />
-              {isLastVisible && remainingCount > 0 && (
-                <Box sx={{
-                  position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.5)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontSize: '1.5rem', fontWeight: 'bold'
-                }}>
-                  +{remainingCount}
-                </Box>
-              )}
-            </ImageListItem>
-          );
-        })}
-      </ImageList>
-
-      {/* Đưa Modal ra ngoài vòng lặp */}
-      <BasicModal 
-        image={selectedImg} 
-        open={open} 
-        setOpen={setOpen} 
-      />
-      <ListModal 
-        images={images.slice(3)} 
-        open={openRemain} 
-        setOpen={setOpenRemain} 
-      />
-    </Box>
-  );
-}
-
 // --- 4. CREATE POST COMPONENT ---
-export const PostCreator = ({ class_id = "", closeModal, action = "create", post = null }) => {
+export const PostCreator = ({ class_id = "", closeModal, action = "create", post = null, handleAdd = null, handleUpdate = null }) => {
   const [isUpload, setIsUpload] = useState(action == "update")
   const [title, setTitle] = useState(post?.title || "")
   const [htmlContent, setHtmlContent] = useState(post?.content || "");
@@ -196,12 +102,10 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
     }
     toast.promise(createThread(newPostData), {
       loading: "Đang tạo bài viết...",
-      success: (data) => {
+      success: (data) => {  
+        console.log(data)
+        handleAdd(data.data.data);
         closeModal()
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
 
         return "Tạo bài viết thành công!"
       },
@@ -230,11 +134,8 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
     toast.promise(updateThread(post.thread_id, updatedPostData), {
       loading: `Đang cập nhật bài viết và thêm ${addImages.length} ảnh...`,
       success: (data) => {
+        handleUpdate(data.data.data)
         closeModal()
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
 
         return "Cập nhật bài viết thành công!"
       },
@@ -454,7 +355,7 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
 };
 
 // --- 5. POST ITEM (RENDERER) ---
-export const PostItem = ({ post, class_id }) => {
+export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
   const [uid, setUid] = useState('')
   const [initState, setInitState] = useState(false)
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
@@ -488,15 +389,30 @@ export const PostItem = ({ post, class_id }) => {
 
   const handleViewThread = (threadId) => {
     if (threadId == "") return
-    navigate(`/student/classes/${class_id}/${threadId}`);
+    navigate(`/student/classes/${class_id}/${threadId}`, { state: post });
   };
+
+  const handleDeleteThread = () => {
+    toast.promise(deleteThread(post.thread_id), {
+      loading: 'Đang xóa bài viết...',
+      success: (data) => {
+        handleDelete(post.thread_id)
+        return "Đã xóa thành công!"
+      },
+      error: (err) => {
+        if (err.status === 401) return "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
+        return err.message || "Có lỗi xảy ra!";
+      },
+      duration: 2000
+    });
+  }
 
   return (
     <Card sx={{ mt: 2, borderRadius: 2 }}>
       <style>{globalStyles}</style>
       
       <CardHeader
-        avatar={<Avatar src={post.sender.avatar_url} alt={`${post.sender.fname[0] + post.sender.lname[0]}`} />}
+        avatar={<Avatar src={post?.sender?.avatar_url} alt={`${post?.sender?.fname[0] + post?.sender?.lname[0]}` || "Ava"} />}
         title={<Typography fontWeight="bold">{post.sender.fname + " " + post.sender.mname + " " + post.sender.lname}</Typography>}
         subheader={
             <Box display="flex" alignItems="center" gap={0.5}>
@@ -544,24 +460,82 @@ export const PostItem = ({ post, class_id }) => {
 
       {/* Footer Actions */}
       <Divider />
-      <Box sx={{ p: 1, display: 'flex', justifyContent: "end", gap: 3 }}>
+      <Box sx={{ p: 1, display: 'flex', justifyContent: "end", gap: 1 }}>
         {post.sender.uid == uid ? 
-          <Button
-            variant='outlined' color='primary'
-            startIcon={<ModeEditRounded />}
-            onClick={() => setIsPostModalOpen(true)}
-          >
-            Chỉnh sửa
-          </Button>
+          <>
+          <Tooltip title="Chỉnh sửa bài viết" arrow placement="top">
+            <IconButton
+              onClick={() => setIsPostModalOpen(true)}
+              sx={{ 
+                border: '1px solid', 
+                borderColor: 'primary.main', 
+                borderRadius: '8px',
+                p: '6px', 
+                color: 'primary.main',
+                "&:hover": {
+                  bgcolor: 'primary.main',
+                  border: "0px",
+                  borderColor: 'white',
+                  color: 'white',
+                  transform: 'translateY(-2px) translateZ(2px)',
+                  transition: 'all 0.2s ease-in-out',
+                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.3)"
+                }
+              }}
+            >
+              <ModeEditRounded />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Xóa bài viết" arrow placement="top">
+            <IconButton
+              onClick={() => handleDeleteThread()}
+              sx={{ 
+                border: '1px solid', 
+                borderColor: 'error.main', 
+                borderRadius: '8px',
+                p: '6px',
+                color: 'error.main',
+                "&:hover": {
+                  bgcolor: 'error.main',
+                  border: "0px",
+                  borderColor: 'white',
+                  color: 'white',
+                  transform: 'translateY(-2px) translateZ(2px)',
+                  transition: 'all 0.2s ease-in-out',
+                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.3)"
+                }
+              }}
+            >
+              <Delete />
+            </IconButton>
+          </Tooltip>
+          </>
          : null
         }
-
-        <Button size="medium" variant="contained" color="success" 
-          onClick={() => handleViewThread(post.thread_id)}
-          endIcon={<ArrowForwardIosSharp />}
-        >
-          Chi tiết
-        </Button>
+        <Tooltip title="Xem chi tiết" arrow placement="top">
+          <IconButton 
+            sx={{ 
+              border: '1px solid', 
+              borderColor: 'success.main', 
+              borderRadius: '8px',
+              p: '6px',
+              color: 'success.main',
+              "&:hover": {
+                bgcolor: 'success.main',
+                border: "0px",
+                borderColor: 'white',
+                color: 'white',
+                transform: 'translateY(-2px) translateZ(2px)',
+                transition: 'all 0.2s ease-in-out',
+                boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.3)"
+              }
+            }}
+            onClick={() => handleViewThread(post.thread_id)}
+          >
+            <ArrowForwardIosSharp />
+          </IconButton>
+        </Tooltip>
       </Box>
       <Modal
         open={isPostModalOpen}
@@ -578,7 +552,7 @@ export const PostItem = ({ post, class_id }) => {
       >
         <Fade in={isPostModalOpen}>
           <ModalCard sx={{margin: 0, padding: 0}}>
-            <PostCreator class_id={class_id} closeModal={handleClosePostModal} action="update" post={post} />
+            <PostCreator class_id={class_id} closeModal={handleClosePostModal} action="update" post={post} handleUpdate={handleUpdate} />
           </ModalCard>
         </Fade>
       </Modal>
