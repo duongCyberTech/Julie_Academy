@@ -11,6 +11,7 @@ import {
   NotFoundException,
   BadRequestException,
   Request,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from './user.service';
@@ -41,6 +42,7 @@ export class UserController {
     const limitNum = Number(limit) || 10;
     return this.userService.findAll(role, status, pageNum, limitNum, filter);
   }
+
   @Get('parents/children')
   @Roles('parents')
   async getMyChildren(@Request() req) {
@@ -66,6 +68,14 @@ export class UserController {
       throw new NotFoundException(`User with email ${email} not found`);
     }
     return user;
+  }
+
+  @Get('tag/:class_id')
+  getUserDetailToTagInClass(
+    @Param('class_id') class_id: string,
+    @Query('search', new DefaultValuePipe("")) filter: string
+  ) {
+    return this.userService.getUserDetailToTagInClass(class_id, filter)
   }
 
   /**

@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { socket, getCommentsByThread, createComment } from "../../services/CommentService";
 import QuiltedImageList from "../../components/Image/ImageList";
 import CommentItem from "../../components/comment/CommentItem";
+import CommentInput from "../../components/comment/CommentInput";
 import VisuallyHiddenInput from "../../components/Input/VisuallyHiddenInput";
 import { getRelativeTime } from "../../utils/DateTimeFormatter";
 
@@ -175,12 +176,14 @@ export default function ThreadDetailPage() {
   };
 
   // Gửi bình luận TRẢ LỜI (Nested)
-  const handleReplySubmit = (parentCommentId, content, parentAuthorName) => {
+  const handleReplySubmit = (parentCommentId, content, parentAuthorEmail, images) => {
+    console.log(">> [REPLY]: ", parentCommentId)
     const createNewCommentForm = {
       content: content,
-      parent_cmt_id: parentCommentId
+      parent_cmt_id: parentCommentId,
+      email: parentAuthorEmail
     }
-    toast.promise(createComment(thread.thread_id, createNewCommentForm, selectedImages), {
+    toast.promise(createComment(thread.thread_id, createNewCommentForm, images), {
       loading: "Đang đăng bình luận...",
       success: (response) => {
         return "Đã đăng bình luận!"
@@ -264,13 +267,10 @@ export default function ThreadDetailPage() {
             <Avatar sx={{ mt: 1 }}>
               <PersonIcon />
             </Avatar>
-            <TextField
-              label="Viết bình luận của bạn..."
-              variant="outlined"
-              fullWidth
-              multiline
+            <CommentInput 
+              class_id={classId}
               value={newComment}
-              onChange={handleCommentChange}
+              setValue={setNewComment}
             />
           </Box>
 

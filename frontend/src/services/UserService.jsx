@@ -80,6 +80,19 @@ export const getUserByEmail = async (email, token) => {
   }
 };
 
+export const getUserDetailsForTag = async (class_id, search = "") => {
+  try {
+    const token = localStorage.getItem('token')
+    const response = await apiClient.get(`/users/tag/${class_id}`, {
+      params: { search },
+      ...getAuthHeaders(token),
+    });
+    return response;    
+  } catch (error) {
+    throw error
+  }
+}
+
 /**
  * Tạo người dùng mới
  * Tương ứng với: POST /users
