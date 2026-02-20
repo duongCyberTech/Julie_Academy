@@ -15,9 +15,11 @@ const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:4000');
 const createComment = async (threadId, commentData, images) => {
     try {
         const token = localStorage.getItem('token')
+        console.log(">> [SUBMIT]: ", commentData.parent_cmt_id)
         const formData = new FormData()
         formData.append('content', commentData.content)
         if (commentData?.parent_cmt_id) formData.append('parent_cmt_id', commentData.parent_cmt_id)
+        if (commentData?.email) formData.append('email', commentData.email)
         images.forEach(item => {formData.append('images', item)})
 
         const response = await apiClient.post(
