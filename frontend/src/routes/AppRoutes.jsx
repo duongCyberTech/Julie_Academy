@@ -81,7 +81,10 @@ function AppRoutes(props) {
           <Route path="assignment" element={<AssignmentPage />} />
           <Route path="question/:id" element={<QuestionDetailPage />} />
           <Route path="profile" element={<TutorProfilePage />} />
-          
+          <Route
+            path="classes/:classId/:threadId"
+            element={<StudentThreadDetailPage />}
+          />
         </Route>
       </Route>
 
