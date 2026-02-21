@@ -356,7 +356,7 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
 
 // --- 5. POST ITEM (RENDERER) ---
 export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
-  const [uid, setUid] = useState('')
+  const [user, setUser] = useState(null)
   const [initState, setInitState] = useState(false)
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const navigate = useNavigate()
@@ -364,8 +364,9 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
   useEffect(() => {
     const token = localStorage.getItem('token')
     const decoded = jwtDecode(token)
+    console.log(decoded)
     if (post.followers?.length > 0 && post.followers.includes(decoded.sub)) setInitState(true)
-    setUid(decoded.sub)
+    setUser(decoded)
   }, [post, class_id])
 
   const handleClosePostModal = () => setIsPostModalOpen(false);
@@ -389,7 +390,7 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
 
   const handleViewThread = (threadId) => {
     if (threadId == "") return
-    navigate(`/student/classes/${class_id}/${threadId}`, { state: post });
+    navigate(`/${user.role}/classes/${class_id}/${threadId}`, { state: post });
   };
 
   const handleDeleteThread = () => {
@@ -420,7 +421,7 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
                 <Public sx={{ fontSize: 14, color: 'text.secondary' }} />
             </Box>
         }
-        action={ post.sender.uid !== uid ? (
+        action={ user && post.sender.uid !== user.sub ? (
           <Box sx={{ pr: 1, pt: 0.5 }}>
             <FollowToggleButton 
               initialIsFollowing={initState} 
@@ -461,7 +462,7 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
       {/* Footer Actions */}
       <Divider />
       <Box sx={{ p: 1, display: 'flex', justifyContent: "end", gap: 1 }}>
-        {post.sender.uid == uid ? 
+        {user && post.sender.uid == user.sub ? 
           <>
           <Tooltip title="Chỉnh sửa bài viết" arrow placement="top">
             <IconButton

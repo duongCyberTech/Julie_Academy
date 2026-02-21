@@ -101,7 +101,7 @@ export default function ThreadDetailPage() {
       console.log("New comment posted: ", newComment)
       setComments((prev) => {
         if (prev.some(c => c.comment_id === newComment.comment_id)) return prev;
-        return addReplyToTree(comments, curParent, newComment);
+        return addReplyToTree(comments, curParent, [newComment]);
       });
     });
 
@@ -156,19 +156,19 @@ export default function ThreadDetailPage() {
   };
   
   // Hàm đệ quy để thêm trả lời
-  const addReplyToTree = (nodes, parentId, newReply) => {
+  const addReplyToTree = (nodes, parentId, newReplies) => {
     return nodes.map(node => {
-      if (node.thread_id === parentId) {
+      if (node.comment_id === parentId) {
         const prevNodes = node?.replies && node.replies.length ? node.replies : []
         return {
           ...node,
-          replies: [newReply, ...prevNodes]
+          replies: [...newReplies, ...prevNodes]
         };
       }
       if (node.replies && node.replies.length > 0) {
         return {
           ...node,
-          replies: addReplyToTree(node.replies, parentId, newReply)
+          replies: addReplyToTree(node.replies, parentId, newReplies)
         };
       }
       return node;
@@ -194,7 +194,6 @@ export default function ThreadDetailPage() {
       duration: 3000
     })
   };
-  
   
   const motionVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -386,10 +385,13 @@ export default function ThreadDetailPage() {
           <List>
             {comments.map((comment) => (
               <CommentItem 
-                key={comment.id} 
+                key={comment.comment_id} 
                 comment={comment} 
                 onReplySubmit={handleReplySubmit} 
-                isNested={false} // <-- Bình luận gốc
+                isNested={false}
+                class_id={classId}
+                setComments={setComments}
+                addTreeNode={addReplyToTree}
               />
             ))}
           </List>

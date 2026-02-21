@@ -18,6 +18,7 @@ const mentionsInputStyle = {
     fontSize: 16,
     fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
     borderRadius: '8px',
+    color: '#1976d2'
   },
 
   '&multiLine': {

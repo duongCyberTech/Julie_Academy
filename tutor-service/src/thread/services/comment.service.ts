@@ -134,7 +134,8 @@ export class CommentService {
                 cnt_comments: res.comments.length,
                 medias: res.Resource_of_Comment.map(i => i.Resources.file_path),
                 parent_cmt_id: res.parent_cmt_id,
-                sender: res.sender
+                sender: res.sender,
+                replies: []
             }
         }))
 

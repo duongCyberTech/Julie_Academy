@@ -18,29 +18,45 @@ import {
   CardContent,
   Collapse,
   Chip,
-  Link as MuiLink, // Thêm Link của MUI
+  Link as MuiLink,
 } from "@mui/material";
 
 import PersonIcon from '@mui/icons-material/Person';
 import ReplyIcon from '@mui/icons-material/Reply'
 import SendIcon from '@mui/icons-material/Send';
 import { PhotoCamera, Close, CloudUpload } from "@mui/icons-material";
+import { jwtDecode } from "jwt-decode";
+import { toast } from "sonner";
 
 import { getRelativeTime } from "../../utils/DateTimeFormatter";
 import { CommentImageList } from "../Image/ImageList";
-import { renderContentWithTags } from "./CommentInput";
+import CommentInput, { renderContentWithTags } from "./CommentInput";
 import VisuallyHiddenInput from "../Input/VisuallyHiddenInput";
+import { getCommentsByThread } from "../../services/CommentService";
 
 // === COMPONENT BÌNH LUẬN ĐỆ QUY (ĐÃ NÂNG CẤP @MENTION) ===
 // === (YÊU CẦU 2) COMPONENT BÌNH LUẬN ĐỆ QUY (ĐÃ SỬA LỖI VALIDATE DOM) ===
-const CommentItem = ({ comment, onReplySubmit, isNested = false }) => {
+const CommentItem = ({ comment, onReplySubmit, isNested = false, class_id = null, setComments = null, addTreeNode = null }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [email, setEmail] = useState(comment.sender.email)
+  const [user, setUser] = useState(jwtDecode(localStorage.getItem('token')))
 
   const [isUpload, setIsUpload] = useState(false)
   const [selectedImages, setSelectedImages] = useState([]);
   
+  const handleFetchChildComments = async() => {
+    toast.promise(getCommentsByThread(comment.thread_id, comment.comment_id), {
+      loading: "Đang tải bình luận...",
+      success: (response) => {
+        setComments(prev => addTreeNode(prev, comment.comment_id, response))
+        return "Đã tải bình luận!"
+      },
+      error: (err) => {
+        return err.message
+      }
+    })
+  }
 
   const handleSubmitReply = () => {
     console.log(comment.comment_id)
@@ -89,25 +105,42 @@ const CommentItem = ({ comment, onReplySubmit, isNested = false }) => {
                 color="text.primary"
                 sx={{ whiteSpace: 'pre-wrap', mb: 2 }}
               >
-                {isNested && (comment.sender.fname + " " + comment.sender.mname + " " + comment.sender.lname) && (
-                  <MuiLink href="#" underline="hover" sx={{ fontWeight: 600, mr: 0.5 }}>
-                    @{comment.sender.fname + " " + comment.sender.mname + " " + comment.sender.lname}
-                  </MuiLink>
-                )}
                 {renderContentWithTags(comment.content)}
               </Typography>
 
               <CommentImageList images={comment?.medias} />
 
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 2 }}>
                 <Typography component="span" variant="caption" display="block">
                   {getRelativeTime(comment.createAt)}
                 </Typography>
+                {comment && comment.cnt_comments ? (
+                  <Typography 
+                    component="span" variant="caption" display="block"
+                    sx={{
+                      cursor: "pointer",
+                      '&:hover': {
+                        color: 'primary.main',
+                        fontWeight: 'bold'
+                      }
+                    }}
+                    onClick={() => handleFetchChildComments()}
+                  >
+                    Xem {comment.cnt_comments} phản hồi
+                  </Typography>
+                ) : null}
+
                 <Button 
                   size="small" 
                   startIcon={<ReplyIcon />} 
-                  onClick={() => setIsReplying(!isReplying)}
-                  sx={{ ml: 1, textTransform: 'none', fontSize: '0.75rem' }}
+                  onClick={
+                    () => {
+                      setIsReplying(!isReplying)
+                      if (comment.sender.email !== user.email)
+                      setReplyContent(`@[${comment.sender.fname + " " + (comment?.sender?.mname ? comment.sender.mname + " " : "") + comment.sender.lname}](${comment.sender.email})`)
+                    }
+                  }
+                  sx={{ textTransform: 'none', fontSize: '0.75rem' }}
                 >
                   Trả lời
                 </Button>
@@ -116,6 +149,23 @@ const CommentItem = ({ comment, onReplySubmit, isNested = false }) => {
           }
         />
       </ListItem>
+
+      {/* Vùng đệ quy: Render các trả lời con */}
+      {comment.replies && comment.replies.length > 0 && (
+        <Box sx={{ pl: 5, borderLeft: (theme) => `1px solid ${theme.palette.divider}` }}>
+          <List disablePadding>
+              {comment.replies.map((reply) => (
+                <CommentItem 
+                  key={reply.comment_id} 
+                  comment={reply} 
+                  onReplySubmit={onReplySubmit} 
+                  isNested={true}
+                  class_id={class_id}
+                />
+              ))}
+          </List>
+        </Box>
+      )}
       
       {/* Ô nhập liệu trả lời (ẩn/hiện) */}
       <Collapse in={isReplying}>
@@ -123,14 +173,10 @@ const CommentItem = ({ comment, onReplySubmit, isNested = false }) => {
           <Avatar sx={{ mt: 1, width: 32, height: 32 }}>
             <PersonIcon />
           </Avatar>
-          <TextField
-            label={`Trả lời ${comment.sender.fname + " " + comment.sender.mname + " " + comment.sender.lname}...`}
-            variant="outlined"
-            fullWidth
-            multiline
-            size="small"
+          <CommentInput 
+            class_id={class_id}
             value={replyContent}
-            onChange={(e) => setReplyContent(e.target.value)}
+            setValue={setReplyContent}
           />
         </Box>
 
@@ -241,22 +287,6 @@ const CommentItem = ({ comment, onReplySubmit, isNested = false }) => {
           </Button>
         </Box>
       </Collapse>
-
-      {/* Vùng đệ quy: Render các trả lời con */}
-      {comment.replies && comment.replies.length > 0 && (
-        <Box sx={{ pl: 5, borderLeft: (theme) => `1px solid ${theme.palette.divider}` }}>
-          <List disablePadding>
-              {comment.replies.map((reply) => (
-                <CommentItem 
-                  key={reply.id} 
-                  comment={reply} 
-                  onReplySubmit={onReplySubmit} 
-                  isNested={true} // Báo cho component con biết nó là 1 reply
-                />
-              ))}
-          </List>
-        </Box>
-      )}
       
       <Divider variant="inset" component="li" />
     </Box>
