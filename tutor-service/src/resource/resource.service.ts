@@ -1,4 +1,11 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { 
+    BadRequestException, 
+    Injectable, 
+    InternalServerErrorException, 
+    NotFoundException 
+} from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+
 import { PrismaService } from "src/prisma/prisma.service";
 import { FolderDto, ResourceDto } from "./dto/resource.dto";
 import { S3Service } from "./aws/aws-s3.service";
@@ -7,7 +14,8 @@ import { Prisma, PrismaClient } from "@prisma/client";
 @Injectable()
 export class FolderService {
     constructor(
-        private readonly prisma: PrismaService
+        private readonly prisma: PrismaService,
+        private eventEmitter: EventEmitter2
     ){}
 
     async createFolder(tutor_id: string, category_id: string, class_id: string, data: FolderDto){

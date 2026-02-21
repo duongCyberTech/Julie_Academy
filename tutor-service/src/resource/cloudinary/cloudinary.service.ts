@@ -43,4 +43,20 @@ export class CloudinaryService {
       streamifier.createReadStream(file.buffer).pipe(uploadStream);
     });
   }
+
+  async deleteFiles(publicIds: string[]) {
+    const failure: string[] = []
+    const success: string[] = []
+
+    publicIds.forEach((publicId) => {
+      try {
+        cloudinary.uploader.destroy(publicId)
+        success.push(publicId)
+      } catch (error) {
+        failure.push(publicId)
+      }
+    })
+
+    return { fnum: failure.length, snum: success.length }
+  }
 }

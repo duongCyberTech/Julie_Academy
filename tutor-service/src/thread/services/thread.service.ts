@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateThreadDto, UpdateThreadDto } from "../dto/ThreadDto.dto";
 import { DateTime } from 'luxon'
@@ -8,7 +9,8 @@ import { CloudinaryService } from "src/resource/cloudinary/cloudinary.service";
 export class ThreadService {
     constructor(
         private readonly prisma: PrismaService,
-        private cloudinaryService: CloudinaryService
+        private cloudinaryService: CloudinaryService,
+        private eventEmitter: EventEmitter2
     ){}
 
     async createThread(uid: string, data: CreateThreadDto, images: Array<Express.Multer.File>) {
@@ -245,6 +247,8 @@ export class ThreadService {
                         Resources: {file_path: {in: deleteArray}}
                     }
                 })
+
+                this.eventEmitter.emit('cloudinary.delete', deleteArray)
             }
 
             const res = await tx.thread.findUnique({
@@ -305,7 +309,22 @@ export class ThreadService {
     async deleteThread(uid: string, thread_id: string) {
         const checkPosess = await this.prisma.thread.findFirst({where: {thread_id, sender: {uid}}})
         if (!checkPosess) throw new NotFoundException("User not have access to thread")
-        return await this.prisma.thread.delete({where: {thread_id}})
+        return await this.prisma.$transaction(async(tx) => {
+            const deletedFiles = await tx.resource_of_Thread.findMany({
+                where: {thread_id},
+                select: {
+                    Resources: {
+                        select: {file_path: true}
+                    }
+                }
+            }).then(deletes => deletes.map(item => item.Resources.file_path))
+
+            await tx.thread.delete({where: {thread_id}})
+            
+            if (deletedFiles && deletedFiles.length) this.eventEmitter.emit('cloudinary.delete', deletedFiles)
+
+            return { message: "Delete Successfully!", status: 200 }
+        })
     }
 
     async followThread(uid: string, thread_id: string) {

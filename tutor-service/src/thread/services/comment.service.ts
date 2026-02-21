@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from "src/prisma/prisma.service";
 import { CloudinaryService } from "src/resource/cloudinary/cloudinary.service";
 import { CommentGateway } from "../controllers/comment.gateway";
-import { CreateCommentDto } from "../dto/CommentDto.dto";
+import { CreateCommentDto, UpdateCommentDto } from "../dto/CommentDto.dto";
 
 @Injectable()
 export class CommentService {
@@ -142,7 +143,10 @@ export class CommentService {
         return cmts && cmts.length ? cmts : []
     }
 
-    async updateComment(uid: string, thread_id: string) {
+    async updateComment(uid: string, thread_id: string, comment_id: number, data: Partial<UpdateCommentDto>) {
+        return this.prisma.$transaction(async(tx) => {
 
+            return await tx.comments
+        })
     }
 }

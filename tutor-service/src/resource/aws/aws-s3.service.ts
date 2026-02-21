@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 
@@ -48,5 +48,20 @@ export class S3Service {
     });
 
     return await this.s3Client.send(command);
+  }
+
+  async deleteFiles(keys: string[] = []) {
+    try {
+      keys.forEach(async(key) => {
+        const command = new DeleteObjectCommand({
+          Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+          Key: key
+        })
+
+        await this.s3Client.send(command);
+      })
+    } catch (error) {
+      console.log("Lỗi khi xóa file trên S3:", error);
+    }
   }
 }
