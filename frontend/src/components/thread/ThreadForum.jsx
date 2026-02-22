@@ -162,18 +162,18 @@ export default function ThreadForum({class_id}) {
             return (
             <Collapse key={thread.thread_id}> {/* Key phải nằm ở đây */}
                 <Fade in={true} timeout={500}>
-                <Box 
-                    ref={isLast ? lastThreadElementRef : null} 
-                    sx={{ mb: 2 }}
-                >
-                    <PostItem 
-                    post={thread} 
-                    class_id={class_id} 
-                    uid={currentUserId} 
-                    handleDelete={handleDeletePost} 
-                    handleUpdate={handleUpdatePost} 
-                    />
-                </Box>
+                    <Box 
+                        ref={isLast ? lastThreadElementRef : null} 
+                        sx={{ mb: 2 }}
+                    >
+                        <PostItem 
+                        post={thread} 
+                        class_id={class_id} 
+                        uid={currentUserId} 
+                        handleDelete={handleDeletePost} 
+                        handleUpdate={handleUpdatePost} 
+                        />
+                    </Box>
                 </Fade>
             </Collapse>
             );

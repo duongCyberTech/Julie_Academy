@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsAlpha, IsArray, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateCommentDto {
     @IsNotEmpty()
@@ -14,4 +14,14 @@ export class CreateCommentDto {
     @IsOptional()
     @IsEmail()
     email?: string
+}
+
+export class UpdateCommentDto {
+    @IsOptional()
+    @IsString()
+    content: string
+
+    @IsOptional()
+    @IsArray()
+    deletedImages: string[]
 }

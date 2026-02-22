@@ -208,8 +208,8 @@ model Comments {
   updateAt            DateTime              @default(now())
   uid                 String
   parent_cmt_id       Int? 
-  parent_cmt          Comments?             @relation("CommentToParent", fields: [thread_id, parent_cmt_id], references: [thread_id, comment_id])
-  thread              Thread                @relation(fields: [thread_id], references: [thread_id])
+  parent_cmt          Comments?             @relation("CommentToParent", fields: [thread_id, parent_cmt_id], references: [thread_id, comment_id], onDelete: Cascade, onUpdate: Cascade)
+  thread              Thread                @relation(fields: [thread_id], references: [thread_id], onDelete: Cascade, onUpdate: Cascade)
   sender              User                  @relation(fields: [uid], references: [uid])
   Resource_of_Comment Resource_of_Comment[]
   comments            Comments[]            @relation("CommentToParent")
