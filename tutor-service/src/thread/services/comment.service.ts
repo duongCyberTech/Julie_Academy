@@ -1,16 +1,19 @@
 import { Injectable } from "@nestjs/common";
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DateTime } from 'luxon'
 import { PrismaService } from "src/prisma/prisma.service";
 import { CloudinaryService } from "src/resource/cloudinary/cloudinary.service";
 import { CommentGateway } from "../controllers/comment.gateway";
 import { CreateCommentDto, UpdateCommentDto } from "../dto/CommentDto.dto";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class CommentService {
     constructor(
         private readonly prisma: PrismaService,
         private cloudinaryService: CloudinaryService,
-        private commentGateway: CommentGateway
+        private commentGateway: CommentGateway,
+        private eventEmitter: EventEmitter2
     ){}
 
     async createComment(uid: string, thread_id: string, data: CreateCommentDto, images: Array<Express.Multer.File> = []) {
@@ -77,6 +80,9 @@ export class CommentService {
                             avata_url: true,
                             email: true
                         }
+                    },
+                    _count: {
+                        select: {comments: true}
                     }
                 }
             }).then((res) => {
@@ -88,7 +94,8 @@ export class CommentService {
                     cnt_comments: res.comments.length,
                     medias: res.Resource_of_Comment.map(i => i.Resources.file_path),
                     parent_cmt_id: res.parent_cmt_id,
-                    sender: res.sender
+                    sender: res.sender,
+                    cnt: res._count.comments
                 }
             })
 
@@ -124,6 +131,11 @@ export class CommentService {
                         avata_url: true,
                         email: true
                     }
+                },
+                _count: {
+                    select: {
+                        comments: true
+                    }
                 }
             }
         }).then((resList) => resList.map((res) => {
@@ -136,17 +148,161 @@ export class CommentService {
                 medias: res.Resource_of_Comment.map(i => i.Resources.file_path),
                 parent_cmt_id: res.parent_cmt_id,
                 sender: res.sender,
-                replies: []
+                replies: [],
+                cnt: res._count.comments
             }
         }))
 
         return cmts && cmts.length ? cmts : []
     }
 
-    async updateComment(uid: string, thread_id: string, comment_id: number, data: Partial<UpdateCommentDto>) {
+    async updateComment(uid: string, thread_id: string, comment_id: number, data: Partial<UpdateCommentDto>, images: Array<Express.Multer.File> = []) {
         return this.prisma.$transaction(async(tx) => {
+            const updateComment = await tx.comments.update({
+                where: {thread_id_comment_id: {thread_id, comment_id}},
+                data: {
+                    ...(data.content ? {content: data.content} : {}),
+                    updateAt: DateTime.now().setZone('Asia/Ho_Chi_Minh').toJSDate()
+                }
+            })
+            
+            if (images && images.length) {
+                const comment_imgs = await this.cloudinaryService.uploadMultiMediaFiles(tx, uid, `Comment #${comment_id} - thread #${thread_id}`, images)
 
-            return await tx.comments
+                await tx.resource_of_Comment.createMany({
+                    data: comment_imgs.map((item) => {
+                        return {
+                            thread_id,
+                            comment_id,
+                            did: item
+                        }
+                    })
+                })
+            }
+
+            const deleteArray = Array.isArray(data.deletedImages) 
+                    ? data.deletedImages 
+                    : (data.deletedImages ? [data.deletedImages] : []);
+
+            if (deleteArray && deleteArray.length) {
+                await tx.resource_of_Comment.deleteMany({
+                    where: {
+                        thread_id,
+                        comment_id,
+                        Resources: {file_path: {in: deleteArray}}
+                    }
+                })
+
+                this.eventEmitter.emit('cloudinary.delete', deleteArray)
+            }
+
+            const cmt = await tx.comments.findUnique({
+                where: {thread_id_comment_id: {thread_id, comment_id: comment_id}},
+                select: {
+                    comment_id: true,
+                    content: true,
+                    comments: true,
+                    createAt: true,
+                    Resource_of_Comment: {
+                        select: {
+                            Resources: {
+                                select: {file_path: true}
+                            }
+                        }
+                    },
+                    parent_cmt_id: true,
+                    sender: {
+                        select: {
+                            uid: true,
+                            fname: true,
+                            mname: true, 
+                            lname: true,
+                            avata_url: true,
+                            email: true
+                        }
+                    },
+                    _count: {
+                        select: {comments: true}
+                    }
+                }
+            }).then((res) => {
+                return {
+                    thread_id,
+                    comment_id: res.comment_id,
+                    content: res.content,
+                    createAt: res.createAt,
+                    cnt_comments: res.comments.length,
+                    medias: res.Resource_of_Comment.map(i => i.Resources.file_path),
+                    parent_cmt_id: res.parent_cmt_id,
+                    sender: res.sender,
+                    cnt: res._count.comments
+                }
+            })
+
+            return cmt
+        })
+    }
+
+    async collectFilesOfDeleteBranch(
+        tx: Prisma.TransactionClient, 
+        thread_id: string, 
+        comment_id: number
+    ): Promise<string[]> {
+        const subComments = await tx.comments.findMany({
+            where: { 
+                thread_id: thread_id, 
+                parent_cmt_id: comment_id 
+            },
+            select: {
+                comment_id: true,
+                Resource_of_Comment: {
+                    select: {
+                        Resources: {
+                            select: { file_path: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (subComments.length === 0) return [];
+
+        let allFiles: string[] = [];
+
+        for (const comment of subComments) {
+            const currentFiles = comment.Resource_of_Comment.map(r => r.Resources.file_path);
+            allFiles = [...allFiles, ...currentFiles];
+
+            const branchFiles = await this.collectFilesOfDeleteBranch(tx, thread_id, comment.comment_id);
+            allFiles = [...allFiles, ...branchFiles];
+        }
+
+        console.log(`Collected ${allFiles.length} files from branch of comment #${comment_id}`);
+        return allFiles;
+    }
+
+    async deleteComment(thread_id: string, comment_id: number) {
+        return await this.prisma.$transaction(async(tx) => {
+            const deletedFilesOfNode = await tx.resource_of_Comment.findMany({
+                where: {thread_id, comment_id},
+                select: {
+                    Resources: {
+                        select: {file_path: true}
+                    }
+                }
+            }).then(res => res.map(item => item.Resources.file_path))
+
+            const deletedFilesOfBranch = await this.collectFilesOfDeleteBranch(tx, thread_id, comment_id)
+
+            const deletedFiles = [...deletedFilesOfNode, ...deletedFilesOfBranch]
+
+            console.log("X DELETE: ", deletedFiles)
+
+            await tx.comments.delete({where: {thread_id_comment_id: {thread_id, comment_id}}})
+
+            if (deletedFiles && deletedFiles.length) this.eventEmitter.emit('cloudinary.delete', deletedFiles)
+
+            return { message: "Delete Successfully!", status: 200 }
         })
     }
 }

@@ -140,6 +140,11 @@ export class ThreadService {
                             select: {uid: true}
                         }
                     }
+                },
+                _count: {
+                    select: {
+                        comments: true
+                    }
                 }
             },
         }).then(res => res.map((thread) => {
@@ -150,7 +155,8 @@ export class ThreadService {
                 createAt: thread.createAt,
                 sender: thread.sender,
                 medias: thread.Resource_of_Thread.map(item => item.Resources.file_path),
-                followers: thread.followers.map(item => item.follower.uid)
+                followers: thread.followers.map(item => item.follower.uid),
+                cnt_comments: thread._count.comments
             }
         }))
     }
@@ -188,6 +194,11 @@ export class ThreadService {
                             select: {uid: true}
                         }
                     }
+                },
+                _count: {
+                    select: {
+                        comments: true
+                    }
                 }
             },
         }).then((res) => {
@@ -198,7 +209,8 @@ export class ThreadService {
                 createAt: res.createAt,
                 sender: res.sender,
                 medias: res.Resource_of_Thread.map(item => item.Resources.file_path),
-                followers: res.followers.map(item => item.follower.uid)
+                followers: res.followers.map(item => item.follower.uid),
+                cnt_comments: res._count.comments
             }
         })
         if (!thread) throw new NotFoundException("Thread not found")
@@ -310,7 +322,7 @@ export class ThreadService {
         const checkPosess = await this.prisma.thread.findFirst({where: {thread_id, sender: {uid}}})
         if (!checkPosess) throw new NotFoundException("User not have access to thread")
         return await this.prisma.$transaction(async(tx) => {
-            const deletedFiles = await tx.resource_of_Thread.findMany({
+            const deletedThreadFiles = await tx.resource_of_Thread.findMany({
                 where: {thread_id},
                 select: {
                     Resources: {
@@ -319,8 +331,17 @@ export class ThreadService {
                 }
             }).then(deletes => deletes.map(item => item.Resources.file_path))
 
+            const deletedCommentFiles = await tx.resource_of_Comment.findMany({
+                where: {thread_id},
+                select: {
+                    Resources: {select: {file_path: true}}
+                }
+            }).then(res => res.map(i => i.Resources.file_path))
+
+            const deletedFiles = [...deletedThreadFiles, ...deletedCommentFiles]
+
             await tx.thread.delete({where: {thread_id}})
-            
+
             if (deletedFiles && deletedFiles.length) this.eventEmitter.emit('cloudinary.delete', deletedFiles)
 
             return { message: "Delete Successfully!", status: 200 }

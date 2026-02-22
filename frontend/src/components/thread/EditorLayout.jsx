@@ -14,8 +14,6 @@ import {
   CardContent, 
   Divider, 
   Chip,
-  ImageList, 
-  ImageListItem, 
   Modal,
   Backdrop,
   Fade,
@@ -30,7 +28,8 @@ import {
   ArrowForwardIosSharp,
   ModeEditRounded,
   MoreHoriz,
-  Delete
+  Delete,
+  DeleteOutline
 } from '@mui/icons-material';
 
 import { toast } from 'sonner'
@@ -45,18 +44,11 @@ import {
   deleteThread
 } from '../../services/ThreadService';
 import { getRelativeTime } from '../../utils/DateTimeFormatter';
-import BasicModal, { ListModal } from '../Image/ImageModal';
+import ConfirmAction from '../ActionModal/ConfirmModal';
 import { FollowToggleButton } from './FollowToggleButton';
 import { ModalCard } from "../Tab/Tab"
 import VisuallyHiddenInput from '../Input/VisuallyHiddenInput';
 import QuiltedImageList from '../Image/ImageList';
-
-// --- 1. CONFIG & STYLES ---
-const MOCK_USER = {
-  id: 'u1',
-  name: 'Nguyễn Văn Dev',
-  avatar: 'https://i.pravatar.cc/150?u=u1',
-};
 
 // CSS giả lập hiệu ứng Tag và Editor
 const globalStyles = `
@@ -359,6 +351,7 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
   const [user, setUser] = useState(null)
   const [initState, setInitState] = useState(false)
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -398,6 +391,7 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
       loading: 'Đang xóa bài viết...',
       success: (data) => {
         handleDelete(post.thread_id)
+        setDeleteModal(false)
         return "Đã xóa thành công!"
       },
       error: (err) => {
@@ -490,7 +484,7 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
 
           <Tooltip title="Xóa bài viết" arrow placement="top">
             <IconButton
-              onClick={() => handleDeleteThread()}
+              onClick={() => setDeleteModal(true)}
               sx={{ 
                 border: '1px solid', 
                 borderColor: 'error.main', 
@@ -557,32 +551,24 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
           </ModalCard>
         </Fade>
       </Modal>
+      <ConfirmAction 
+        title="Bạn chắc chắn muốn xóa bài viết?"
+        content="Ấn nút xóa để xác nhận."
+        btnContent="Xóa"
+        open={deleteModal}
+        setOpen={setDeleteModal}
+        action={handleDeleteThread}
+        btnColor="error"
+        startIcon={<DeleteOutline />}
+      />
     </Card>
   );
 };
 
 // --- 6. MAIN APP ---
 export default function FacebookCloneV2() {
-  const [posts, setPosts] = useState([
-    {
-      id: 999,
-      user: MOCK_USER,
-      contentHtml: 'Demo layout có <b>padding</b> và hỗ trợ <span class="mention-node">@Tag Bạn Bè</span>.',
-      images: [
-        'https://picsum.photos/id/1018/1000/600',
-        'https://picsum.photos/id/1015/1000/600', 
-        'https://picsum.photos/id/1019/1000/600'
-      ],
-      createdAt: '1 giờ trước',
-    }
-  ]);
-
   return (
     <Box sx={{ bgcolor: '#f0f2f5', minHeight: '100vh', py: 4 }}>
-      <Box sx={{ maxWidth: 600, mx: 'auto' }}>
-        <PostCreator onPost={(newPost) => setPosts([newPost, ...posts])} />
-        {posts.map(p => <PostItem key={p.id} post={p} />)}
-      </Box>
     </Box>
   );
 }

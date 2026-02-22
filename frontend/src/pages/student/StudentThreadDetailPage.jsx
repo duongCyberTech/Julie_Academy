@@ -60,6 +60,7 @@ export default function ThreadDetailPage() {
   const [newComment, setNewComment] = useState(""); 
   const [curParent, setCurParent] = useState(null)
   const [page, setPage] = useState(1)
+  const [cnt, setCnt] = useState(0)
 
   const { classId, threadId } = useParams();
   const navigate = useNavigate();
@@ -92,24 +93,45 @@ export default function ThreadDetailPage() {
     }
 
     fetchComments()
-  },[thread, curParent])
+  },[thread, curParent, page])
 
   useEffect(() => {
-    socket.emit('join_thread', thread.thread_id || threadId);
+    const targetId = thread.thread_id || threadId;
+    if (!targetId) return;
 
-    socket.on('receive_comment', (newComment) => {
-      console.log("New comment posted: ", newComment)
-      setComments((prev) => {
-        if (prev.some(c => c.comment_id === newComment.comment_id)) return prev;
-        return addReplyToTree(comments, curParent, [newComment]);
+    socket.emit('join_thread', targetId);
+
+    const handleReceiveComment = (newComment) => {
+      console.log("New comment received via Socket: ", newComment);
+      
+      setComments((prevList) => {
+        console.log(">> [OLDER LIST SIZE]: ", prevList.length);
+
+        const checkDuplicate = (nodes) => {
+          return nodes.some(c => 
+            c.comment_id === newComment.comment_id || 
+            (c.replies && checkDuplicate(c.replies))
+          );
+        };
+
+        if (checkDuplicate(prevList)) {
+          console.log("Comment already exists in tree, skipping...");
+          return prevList;
+        }
+
+        const updatedTree = addReplyToTree(prevList, newComment.parent_cmt_id, [newComment]);
+        
+        console.log(">> [NEWER LIST SIZE]: ", updatedTree.length);
+        return updatedTree;
       });
-    });
+    };
+
+    socket.on('receive_comment', (newComment) => handleReceiveComment(newComment));
 
     return () => {
-      socket.off('receive_comment');
-      socket.disconnect();
+      socket.off('receive_comment',(newComment) => handleReceiveComment(newComment));
     };
-  }, [thread, curParent])
+  }, [thread, curParent]);
 
   const handleNewImages = (event) => {
     const files = Array.from(event.target.files);
@@ -130,10 +152,6 @@ export default function ThreadDetailPage() {
     navigate(-1);
   };
   
-  const handleCommentChange = (event) => {
-    setNewComment(event.target.value);
-  };
-  
   // Gửi bình luận GỐC
   const handleCommentSubmit = async() => {
     const createNewCommentForm = {
@@ -143,6 +161,7 @@ export default function ThreadDetailPage() {
     toast.promise(createComment(thread.thread_id, createNewCommentForm, selectedImages), {
       loading: "Đang đăng bình luận...",
       success: (response) => {
+        setCnt(cnt + 1)
         return "Đã đăng bình luận!"
       },
       error: (err) => {
@@ -157,12 +176,22 @@ export default function ThreadDetailPage() {
   
   // Hàm đệ quy để thêm trả lời
   const addReplyToTree = (nodes, parentId, newReplies) => {
+    if (!parentId) {
+      const uniqueNewComments = newReplies.filter(
+        newC => !nodes.some(oldC => oldC.comment_id === newC.comment_id)
+      );
+      return [...uniqueNewComments, ...nodes];
+    }
+
     return nodes.map(node => {
       if (node.comment_id === parentId) {
         const prevNodes = node?.replies && node.replies.length ? node.replies : []
+        const uniqueNewComments = newReplies.filter(
+          newC => !prevNodes.some(oldC => oldC.comment_id === newC.comment_id)
+        );
         return {
           ...node,
-          replies: [...newReplies, ...prevNodes]
+          replies: [...uniqueNewComments, ...prevNodes]
         };
       }
       if (node.replies && node.replies.length > 0) {
@@ -186,6 +215,7 @@ export default function ThreadDetailPage() {
     toast.promise(createComment(thread.thread_id, createNewCommentForm, images), {
       loading: "Đang đăng bình luận...",
       success: (response) => {
+        setCnt(cnt + 1)
         return "Đã đăng bình luận!"
       },
       error: (err) => {
@@ -369,7 +399,7 @@ export default function ThreadDetailPage() {
           )}
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-            <Button startIcon={<PhotoCamera color="success" />} onClick={() => setIsUpload(true)}>Ảnh/Video</Button>
+            <Button startIcon={<PhotoCamera color="success" />} onClick={() => setIsUpload(!isUpload)}>Ảnh/Video</Button>
             <Button 
               variant="contained" 
               onClick={() => handleCommentSubmit()}
@@ -388,14 +418,27 @@ export default function ThreadDetailPage() {
                 key={comment.comment_id} 
                 comment={comment} 
                 onReplySubmit={handleReplySubmit} 
-                isNested={false}
                 class_id={classId}
                 setComments={setComments}
                 addTreeNode={addReplyToTree}
               />
             ))}
+            {thread.cnt_comments > page * 10 ? 
+              (<Typography
+                sx={{
+                  cursor: "pointer",
+                  mt: 2,
+                  '&:hover': {
+                    fontWeight: 'bold',
+                    color: 'primary.main'
+                  }
+                }}
+                onClick={() => setPage(page + 1)}
+              >
+                Xem thêm
+              </Typography>) : null
+            }
           </List>
-
         </CommentsCard>
       </motion.div>
       

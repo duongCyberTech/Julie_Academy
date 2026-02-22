@@ -52,8 +52,54 @@ const getCommentsByThread = async (threadId, parentCmtId, page = 1) => {
     }
 };
 
+const updateComment = async (threadId, commentId, updateData, images = []) => {
+    try {
+        const token = localStorage.getItem('token')
+
+        const formData = new FormData()
+        formData.append('content', updateData.content)
+        if (updateData?.deletedImages && updateData?.deletedImages.length)
+            updateData.deletedImages.forEach(img => {
+                formData.append('deletedImages', img)
+            });
+        images.forEach(img => {
+            formData.append('images', img)
+        })
+
+        const response = await apiClient.patch(
+            `comments/${threadId}/${commentId}`,
+            formData,
+            {
+                headers: {
+                    ...getAuthHeaders(token).headers,
+                    'Content-Type': 'multipart/form-data', 
+                },
+            }
+        )
+
+        return response
+    } catch (error) {
+        throw error
+    }
+}
+
+const deleteComment = async(threadId, commentId) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await apiClient.delete(
+            `/comments/${threadId}/${commentId}`,
+            getAuthHeaders(token)
+        );
+        return response
+    } catch (error) {
+        throw error;
+    }
+}
+
 export {
     socket,
     createComment,
-    getCommentsByThread
+    getCommentsByThread,
+    updateComment,
+    deleteComment
 }
