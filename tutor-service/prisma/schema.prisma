@@ -321,6 +321,7 @@ model Folder_of_class {
 model Structure {
   plan_id  String
   cate_id  String
+  alias    String      @default("")
   Category Categories  @relation(fields: [cate_id], references: [category_id])
   Plan     Lesson_Plan @relation(fields: [plan_id], references: [plan_id])
 
@@ -445,7 +446,7 @@ model Question_for_exam_taken {
 
 model Lesson_Plan {
   plan_id     String      @id @default(uuid()) @db.VarChar(255)
-  title       String      @unique @db.VarChar(255)
+  title       String      @db.VarChar(255)
   subject     String      @db.VarChar(20)
   grade       Int         @db.SmallInt
   description String?

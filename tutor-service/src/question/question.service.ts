@@ -28,7 +28,7 @@ export class LessonPlanService {
   async createLessonPlan(data: LessonPlanDto[], tutor_id?: string) {
     const createdLessonPlan = [];
     for (const plan of data) {
-      const existingLessonPlan = await this.prisma.lesson_Plan.findUnique({
+      const existingLessonPlan = await this.prisma.lesson_Plan.findFirst({
         where: { title: plan.title, tutor_id: tutor_id },
       });
       if (existingLessonPlan) continue;
@@ -45,6 +45,47 @@ export class LessonPlanService {
       createdLessonPlan.push(newPlan);
     }
     return createdLessonPlan;
+  }
+
+  async duplicateLessonPlan(uid: string, plan_id: string) {
+    return await this.prisma.$transaction(async(tx) => {
+      const existedPlan = await tx.lesson_Plan.findFirst({
+        where: {
+          plan_id, 
+          OR: [
+            {tutor_id: uid},
+            {type: 'book'}
+          ]
+        },
+        include: {structure: true}
+      })
+
+      console.log("? EXIST PLAN: ", existedPlan)
+
+      if (!existedPlan) return null;
+
+      const newPlan = await tx.lesson_Plan.create({
+        data: {
+          title: existedPlan.title,
+          subject: existedPlan.subject,
+          grade: existedPlan.grade,
+          description: existedPlan.description,
+          type: 'custom',
+          ...(uid ? { tutor: { connect: { uid } } } : {}),
+        },
+      });
+
+      await tx.structure.createMany({
+        data: existedPlan.structure.map(item => {
+          return {
+            cate_id: item.cate_id,
+            plan_id: newPlan.plan_id
+          }
+        })
+      })
+
+      return newPlan.plan_id
+    })
   }
 
   async getAllPlans(tutor_id?: string) {
@@ -230,11 +271,20 @@ export class CategoryService {
         parent_id: true,
         structure: {
           select: {
+            alias: true,
             Plan: { select: { title: true, subject: true, grade: true } },
           },
         },
       },
-    });
+    }).then(resList => resList.map(item => {
+      return {
+        category_id: item.category_id,
+        category_name: (plan_id && item.structure[0]?.alias) ? item.structure[0].alias : item.category_name,
+        description: item.description,
+        parent_id: item.parent_id,
+        structure: item.structure
+      }
+    }));
 
     const total = await this.prisma.categories.count({ where });
     return { data: categories, total };
@@ -242,10 +292,21 @@ export class CategoryService {
 
   async updateCategory(category_id: string, data: Partial<CategoryDto>) {
     try {
-      return await this.prisma.categories.update({
-        where: { category_id },
-        data,
-      });
+      return await this.prisma.$transaction(async(tx) => {
+        const { alias, ...updateData } = data
+
+        if (alias && updateData?.plan_id) await tx.structure.update({
+          where: {plan_id_cate_id: {plan_id: updateData.plan_id, cate_id: category_id}},
+          data: {alias}
+        })
+
+        const updated = await tx.categories.update({
+          where: { category_id },
+          data,
+        });
+
+        return { ...(alias ? {alias} : {}), ...updated }
+      })
     } catch (error) {
       return new ExceptionResponse().returnError(error, `categories`);
     }
@@ -254,6 +315,7 @@ export class CategoryService {
   async deleteWholeCategoryTree(
     tx: Prisma.TransactionClient,
     current_category_id: string,
+    plan_id: string
   ) {
     const childCategories = await tx.categories.findMany({
       where: { parent_id: current_category_id },
@@ -262,13 +324,9 @@ export class CategoryService {
 
     if (childCategories.length > 0) {
       for (const child of childCategories) {
-        await this.deleteWholeCategoryTree(tx, child.category_id);
+        await this.deleteWholeCategoryTree(tx, child.category_id, plan_id);
       }
     }
-
-    await tx.structure.deleteMany({
-      where: { Category: { category_id: current_category_id } },
-    });
 
     const questionsToDelete = await tx.questions.findMany({
       where: { category_id: current_category_id },
@@ -284,26 +342,44 @@ export class CategoryService {
         where: { category_id: current_category_id },
       });
     }
-
-    return await tx.categories.delete({
-      where: { category_id: current_category_id },
+    const cntBelonging = await tx.structure.count({where: {cate_id: current_category_id}})
+    
+    await tx.structure.delete({
+      where: { plan_id_cate_id: {plan_id, cate_id: current_category_id} },
     });
+
+    if (cntBelonging > 1) {
+      return await tx.categories.findUnique({where: {category_id: current_category_id}})
+    } else {
+      return await tx.categories.delete({
+        where: { category_id: current_category_id },
+      });
+    }
   }
 
   async deleteCategory(
+    plan_id: string,
     category_id: string,
     mode: ControlMode = ControlMode.SOFT,
   ) {
     try {
       return await this.prisma.$transaction(async (tx) => {
         if (mode === ControlMode.FORCE) {
-          return await this.deleteWholeCategoryTree(tx, category_id);
+          return await this.deleteWholeCategoryTree(tx, category_id, plan_id);
         } else {
-          await tx.structure.deleteMany({
-            where: { Category: { category_id: category_id } },
+          const cntBelonging = await tx.structure.count({where: {cate_id: category_id}})
+
+          await tx.structure.delete({
+            where: { plan_id_cate_id: {plan_id, cate_id: category_id} },
           });
 
-          return await tx.categories.delete({ where: { category_id } });
+          if (cntBelonging > 1) {
+            return await tx.categories.findUnique({where: {category_id: category_id}})
+          } else {
+            return await tx.categories.delete({
+              where: { category_id: category_id },
+            });
+          }
         }
       });
     } catch (error) {
