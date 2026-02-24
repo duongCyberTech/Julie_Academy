@@ -3,7 +3,8 @@ import {
     Get, Post, 
     Body, Query, Param,
     UseGuards, Patch, Delete, 
-    ParseIntPipe, BadRequestException 
+    ParseIntPipe, BadRequestException, 
+    Request
 } from '@nestjs/common'; 
 import { AuthGuard } from '@nestjs/passport'; 
 import { ControlMode } from 'src/mode/control.mode';
@@ -28,6 +29,16 @@ export class BookController {
     @Roles('admin')
     createLessonPlan( @Body() book: LessonPlanDto[] ) {
         return this.bookService.createLessonPlan(book);
+    }
+
+    @Post('duplicate/:plan_id')
+    @Roles('tutor')
+    duplicateLessonPlan(
+        @Request() req,
+        @Param('plan_id') plan_id: string
+    ) {
+        const uid = req.user.userId
+        return this.bookService.duplicateLessonPlan(uid, plan_id)
     }
 
     @Post(':tutor_id')
@@ -99,13 +110,14 @@ export class CategoryController {
     return this.categoryService.updateCategory(category_id, dto);
   }
 
-  @Delete(':category_id')
+  @Delete(':plan_id/:category_id')
   @Roles('tutor', 'admin')
   deleteCategory( 
     @Param('category_id') category_id: string,
+    @Param('plan_id') plan_id: string,
     @Query('mode') mode: ControlMode
   ) {
-    return this.categoryService.deleteCategory(category_id, mode);
+    return this.categoryService.deleteCategory(plan_id, category_id, mode);
   }
 }
 

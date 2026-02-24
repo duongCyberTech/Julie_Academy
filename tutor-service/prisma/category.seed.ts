@@ -107,46 +107,58 @@ async function main() {
   // ======================================================
 
   //Book: Toán 9 - Cánh Diều
-  const bookCD = await prisma.lesson_Plan.upsert({
+  let bookCD = await prisma.lesson_Plan.findFirst({
     where: { title: 'Toán 9 - Cánh Diều' },
-    update: {},
-    create: {
-      title: 'Toán 9 - Cánh Diều',
-      subject: 'Toán',
-      type: 'book',
-      grade: 9,
-      description: 'Sách giáo khoa Toán lớp 9 - Bộ sách Cánh Diều',
-    },
   });
+
+  if (!bookCD) {
+    bookCD = await prisma.lesson_Plan.create({
+      data: {
+        title: 'Toán 9 - Cánh Diều',
+        subject: 'Toán',
+        type: 'book',
+        grade: 9,
+        description: 'Sách giáo khoa Toán lớp 9 - Bộ sách Cánh Diều',
+      },
+    });
+  }
   console.log(`Đã tạo/cập nhật Book: ${bookCD.title}`);
 
   //Book: Toán 9 - Chân trời sáng tạo
-  const bookCTST = await prisma.lesson_Plan.upsert({
+  let bookCTST = await prisma.lesson_Plan.findFirst({
     where: { title: 'Toán 9 - Chân Trời Sáng Tạo' },
-    update: {},
-    create: {
-      title: 'Toán 9 - Chân Trời Sáng Tạo',
-      subject: 'Toán',
-      type: 'book',
-      grade: 9,
-      description: 'Sách giáo khoa Toán lớp 9 - Bộ sách Chân Trời Sáng Tạo',
-    },
   });
+
+  if (!bookCTST) {
+    bookCTST = await prisma.lesson_Plan.create({
+      data: {
+        title: 'Toán 9 - Chân Trời Sáng Tạo',
+        subject: 'Toán',
+        type: 'book',
+        grade: 9,
+        description: 'Sách giáo khoa Toán lớp 9 - Bộ sách Chân Trời Sáng Tạo',
+      },
+    });
+  }
   console.log(`Đã tạo/cập nhật Book: ${bookCTST.title}`);
 
   //Book: Toán 9 - Kết nối tri thức với cuộc sống
-  const bookKNTT = await prisma.lesson_Plan.upsert({
+  let bookKNTT = await prisma.lesson_Plan.findFirst({
     where: { title: 'Toán 9 - Kết Nối Tri Thức Với Cuộc Sống' },
-    update: {},
-    create: {
-      title: 'Toán 9 - Kết Nối Tri Thức Với Cuộc Sống',
-      subject: 'Toán',
-      type: 'book',
-      grade: 9,
-      description:
-        'Sách giáo khoa Toán lớp 9 - Bộ sách Kết Nối Tri Thức Với Cuộc Sống',
-    },
   });
+
+  if (!bookKNTT) {
+    bookKNTT = await prisma.lesson_Plan.create({
+      data: {
+        title: 'Toán 9 - Kết Nối Tri Thức Với Cuộc Sống',
+        subject: 'Toán',
+        type: 'book',
+        grade: 9,
+        description:
+          'Sách giáo khoa Toán lớp 9 - Bộ sách Kết Nối Tri Thức Với Cuộc Sống',
+      },
+    });
+  }
   console.log(`Đã tạo/cập nhật Book: ${bookKNTT.title}`);
 
   console.log(`\nBắt đầu seeding Categories (Cha-Con)...`);
