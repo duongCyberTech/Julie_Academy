@@ -31,7 +31,7 @@ import { toast } from "sonner";
 
 import { getRelativeTime } from "../../utils/DateTimeFormatter";
 import { CommentImageList } from "../Image/ImageList";
-import CommentInput, { renderContentWithTags } from "./CommentInput";
+import CommentInput, { renderContentWithTags, extractEmailsFromComment } from "./CommentInput";
 import VisuallyHiddenInput from "../Input/VisuallyHiddenInput";
 import { getCommentsByThread, updateComment, deleteComment } from "../../services/CommentService";
 
@@ -42,7 +42,6 @@ import ConfirmAction from "../ActionModal/ConfirmModal";
 const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = null, addTreeNode = null }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
-  const [email, setEmail] = useState(comment.sender.email)
   const [user, setUser] = useState(jwtDecode(localStorage.getItem('token')))
   const [cntInstance, setCntInstance] = useState(0)
 
@@ -74,7 +73,8 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
   const handleSubmitReply = () => {
     console.log(comment.comment_id)
     if (replyContent.trim() === "") return;
-    onReplySubmit(comment.comment_id, replyContent, email, selectedImages);
+    const taggedEmails = extractEmailsFromComment(replyContent)
+    onReplySubmit(comment.comment_id, replyContent, taggedEmails, selectedImages);
     setCntInstance(cntInstance + 1)
     setIsNested(true)
     setReplyContent("");

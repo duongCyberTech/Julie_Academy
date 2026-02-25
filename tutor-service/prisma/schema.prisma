@@ -32,6 +32,8 @@ model User {
   resources Resources[]
 
   tags Tag[]
+
+  notifications Notifications[]
 }
 
 model Tutor {
@@ -495,6 +497,18 @@ model Resource_of_Thread {
   @@id([did, thread_id])
 }
 
+model Notifications {
+  notice_id         String        @id @default(uuid())
+  message           String        @default("")
+  notifyAt          DateTime      @default(now())
+  type              NotificationType @default(system)
+  have_read         Boolean       @default(false)
+  user_id           String
+  link_primary_id   String?
+  link_partial_id   String?
+  receiver          User          @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+}
+
 enum UserRole {
   admin
   tutor
@@ -585,4 +599,10 @@ enum AggregateType {
 enum ValueType {
   value 
   percent
+}
+
+enum NotificationType {
+  thread
+  system
+  exam
 }

@@ -67,28 +67,37 @@ const mentionStyle = {
   fontWeight: 'bold'
 };
 
-const renderText = (content) => {
-  const regex = /@\[([^\]]+)\]\(([^\)]+)\)/g;
-  const parts = content.split(regex);
+/**
+ * Trích xuất tất cả email từ nội dung bình luận
+ * @param {string} text - Nội dung markup từ MentionsInput
+ * @returns {string[]} - Mảng chứa các email duy nhất (unique)
+ */
+export const extractEmailsFromComment = (text) => {
+  if (!text) return [];
+
+  // 1. Regex tìm email bên trong markup @[Name](email)
+  const mentionRegex = /@\[[^\]]+\]\(([^)]+)\)/g;
   
-  return parts.map((part, index) => {
-    if (index % 3 === 1) {
-      return (
-        <Typography 
-          key={index} 
-          component="span" 
-          sx={{ color: 'primary.main', fontWeight: 700 }}
-        >
-          @{part}
-        </Typography>
-      );
-    }
-    if (index % 3 === 2) return null;
-    return part;
-  });
+  // 2. Regex tìm email thuần túy trong văn bản
+  const plainEmailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+
+  const emails = new Set(); // Dùng Set để tránh trùng lặp
+
+  // Trích xuất từ Mentions
+  let match;
+  while ((match = mentionRegex.exec(text)) !== null) {
+    emails.add(match[1]);
+  }
+
+  // Trích xuất từ văn bản thuần (phòng trường hợp người dùng gõ email trực tiếp)
+  const plainMatches = text.match(plainEmailRegex);
+  if (plainMatches) {
+    plainMatches.forEach(email => emails.add(email));
+  }
+
+  return Array.from(emails);
 };
 
-// CommentContent.jsx
 export const renderContentWithTags = (text) => {
   const regex = /@\[([^\]]+)\]\(([^\)]+)\)/g;
   const parts = text.split(regex);

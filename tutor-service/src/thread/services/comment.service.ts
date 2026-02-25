@@ -6,6 +6,7 @@ import { CloudinaryService } from "src/resource/cloudinary/cloudinary.service";
 import { CommentGateway } from "../controllers/comment.gateway";
 import { CreateCommentDto, UpdateCommentDto } from "../dto/CommentDto.dto";
 import { Prisma } from "@prisma/client";
+import { CreateNotificationDTO } from "src/notifications/dto/notification.dto";
 
 @Injectable()
 export class CommentService {
@@ -42,6 +43,7 @@ export class CommentService {
                     } : {}),
                 }
             })
+
             if (images && images.length) {
                 const resImgs = await this.cloudinaryService.uploadMultiMediaFiles(tx, uid, `Comment of thread #${thread_id}`, images)
 
@@ -99,7 +101,40 @@ export class CommentService {
                 }
             })
 
-            if (cmt) this.commentGateway.sendNewComment(thread_id, cmt);
+            if (data.emails && data.emails.length) {
+                const taggedEmails = Array.isArray(data.emails)
+                        ? data.emails
+                        : [data.emails]
+
+                const mappedEmailsToIds = await tx.user.findMany({
+                    where: {email: {in: taggedEmails}},
+                    select: {
+                        uid: true
+                    }
+                }).then(ids => ids.map(item => item.uid))
+
+                await tx.tag.createMany({
+                    data: mappedEmailsToIds.map(item => ({
+                        uid: item,
+                        thread_id,
+                        comment_id: cmt.comment_id
+                    }))
+                })
+
+                mappedEmailsToIds.forEach((item, index) => {
+                    const notiData: CreateNotificationDTO = {
+                        message: `${cmt.sender.fname} ${cmt.sender.mname ? cmt.sender.mname : ""} ${cmt.sender.lname} nhắc đến bạn vào một bình luận.`,
+                        link_primary_id: cmt.thread_id,
+                        link_partial_id: `${cmt.comment_id}`
+                    }
+
+                    this.eventEmitter.emit('notify.new', {uid: item, notiData, email: taggedEmails[index]})
+                })
+            }
+
+            if (cmt) {
+                this.commentGateway.sendNewComment(thread_id, cmt);
+            }
         })
     }
 
