@@ -24,10 +24,11 @@ import { styled } from "@mui/material/styles";
 import { motion } from "framer-motion";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { socket, getCommentsByThread, createComment } from "../../services/CommentService";
+import { getCommentsByThread, createComment } from "../../services/CommentService";
+import { socket } from "../../services/ApiClient";
 import QuiltedImageList from "../../components/Image/ImageList";
 import CommentItem from "../../components/comment/CommentItem";
-import CommentInput from "../../components/comment/CommentInput";
+import CommentInput, {extractEmailsFromComment} from "../../components/comment/CommentInput";
 import VisuallyHiddenInput from "../../components/Input/VisuallyHiddenInput";
 import { getRelativeTime } from "../../utils/DateTimeFormatter";
 
@@ -102,10 +103,7 @@ export default function ThreadDetailPage() {
     socket.emit('join_thread', targetId);
 
     const handleReceiveComment = (newComment) => {
-      console.log("New comment received via Socket: ", newComment);
-      
       setComments((prevList) => {
-        console.log(">> [OLDER LIST SIZE]: ", prevList.length);
 
         const checkDuplicate = (nodes) => {
           return nodes.some(c => 
@@ -115,13 +113,11 @@ export default function ThreadDetailPage() {
         };
 
         if (checkDuplicate(prevList)) {
-          console.log("Comment already exists in tree, skipping...");
           return prevList;
         }
 
         const updatedTree = addReplyToTree(prevList, newComment.parent_cmt_id, [newComment]);
         
-        console.log(">> [NEWER LIST SIZE]: ", updatedTree.length);
         return updatedTree;
       });
     };
@@ -154,9 +150,12 @@ export default function ThreadDetailPage() {
   
   // Gửi bình luận GỐC
   const handleCommentSubmit = async() => {
+    const taggedEmails = extractEmailsFromComment(newComment)
+
     const createNewCommentForm = {
       content: newComment,
-      parent_cmt_id: null
+      parent_cmt_id: null,
+      ...(taggedEmails && taggedEmails.length ? {emails: taggedEmails} : {})
     }
     toast.promise(createComment(thread.thread_id, createNewCommentForm, selectedImages), {
       loading: "Đang đăng bình luận...",
@@ -205,12 +204,12 @@ export default function ThreadDetailPage() {
   };
 
   // Gửi bình luận TRẢ LỜI (Nested)
-  const handleReplySubmit = (parentCommentId, content, parentAuthorEmail, images) => {
+  const handleReplySubmit = (parentCommentId, content, parentAuthorEmails, images) => {
     console.log(">> [REPLY]: ", parentCommentId)
     const createNewCommentForm = {
       content: content,
       parent_cmt_id: parentCommentId,
-      email: parentAuthorEmail
+      emails: parentAuthorEmails
     }
     toast.promise(createComment(thread.thread_id, createNewCommentForm, images), {
       loading: "Đang đăng bình luận...",

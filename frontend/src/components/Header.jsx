@@ -33,6 +33,8 @@ import {
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
 import Logo from "../assets/images/logo.png";
+import { socket } from "../services/ApiClient";
+import { countNotifications } from "../services/NotificationService";
 
 const StyledAppBar = styled(AppBar, {
   shouldForwardProp: (prop) =>
@@ -85,12 +87,18 @@ const Header = React.memo(function Header({
 
   const [userInfo, setUserInfo] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [cntUnRead, setCntUnRead] = useState(0)
+  const [token, setToken] = useState(localStorage.getItem("token"))
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const fetchCnt = async() => {
+      const response = await countNotifications(-1)
+      setCntUnRead(response)
+    }
     if (!token) return;
     try {
       const decoded = jwtDecode(token);
+      socket.emit('notify', decoded.sub)
       if (decoded.exp * 1000 > Date.now()) {
         // --- [THAY ĐỔI 2]: Lấy thêm role từ token ---
         setUserInfo({ 
@@ -98,13 +106,21 @@ const Header = React.memo(function Header({
             email: decoded.email, 
             role: decoded.role 
         });
+
+        fetchCnt()
       } else {
         localStorage.removeItem("token");
       }
     } catch {
       localStorage.removeItem("token");
     }
-  }, []);
+
+    socket.on('cnt_unread', (cntUnRead) => setCntUnRead(cntUnRead))
+
+    return () => {
+      socket.off('cnt_unread', (cntUnRead) => setCntUnRead(cntUnRead))
+    }
+  }, [token]);
 
   // --- [THAY ĐỔI 3]: Tạo menu items động dựa trên role ---
   const userMenuItems = useMemo(() => {
@@ -218,7 +234,7 @@ const Header = React.memo(function Header({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Tooltip title="Thông báo">
             <HeaderIconButton>
-              <Badge badgeContent={0} color="primary">
+              <Badge badgeContent={cntUnRead} color="primary">
                 <NotificationsIcon />
               </Badge>
             </HeaderIconButton>

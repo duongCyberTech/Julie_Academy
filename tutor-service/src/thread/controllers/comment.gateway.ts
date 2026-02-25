@@ -10,12 +10,10 @@ export class CommentGateway {
 
   @SubscribeMessage('join_thread')
   handleJoinRoom(client: Socket, threadId: string) {
-    console.log("Join: ", threadId)
     client.join(threadId);
   }
 
   sendNewComment(threadId: string, commentData: any) {
-    console.log(commentData)
     this.server.to(threadId).emit('receive_comment', commentData);
   }
 }

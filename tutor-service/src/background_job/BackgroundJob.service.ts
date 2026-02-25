@@ -2,12 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { S3Service } from 'src/resource/aws/aws-s3.service';
 import { CloudinaryService } from 'src/resource/cloudinary/cloudinary.service';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { CreateNotificationDTO } from 'src/notifications/dto/notification.dto';
 
 @Injectable()
 export class BackgroundService {
   constructor(
     private cloudinary: CloudinaryService,
-    private s3: S3Service
+    private s3: S3Service,
+    private notify: NotificationsService
   ){}
 
   @OnEvent('cloudinary.delete')
@@ -20,7 +23,6 @@ export class BackgroundService {
     };
 
     const publicIds = deletedMedias.map(item => extractPublicId(item))
-    console.log(">> [CLOUDINARY DELETE ACTION]: ", publicIds)
 
     await this.cloudinary.deleteFiles(publicIds)
   }
@@ -38,5 +40,11 @@ export class BackgroundService {
     const s3Keys = deleteFiles.map(item => extractS3Key(item))
 
     await this.s3.deleteFiles(s3Keys)
+  }
+
+  @OnEvent('notify.new')
+  async handleSendNotification(payload: {uid: string, notiData: CreateNotificationDTO, email?: string}) {
+    console.log("notificaton to: ", payload.email)
+    await this.notify.createNotification(payload.uid, payload.notiData)
   }
 }
