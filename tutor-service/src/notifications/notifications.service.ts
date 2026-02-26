@@ -63,6 +63,9 @@ export class NotificationsService {
                             email: true
                         }
                     }
+                },
+                orderBy: {
+                    notifyAt: 'desc'
                 }
             })
         } catch (error) {

@@ -35,6 +35,7 @@ import {
 import Logo from "../assets/images/logo.png";
 import { socket } from "../services/ApiClient";
 import { countNotifications } from "../services/NotificationService";
+import notificationSfx from '../assets/sounds/notifications/ting-2.mp3'
 
 const StyledAppBar = styled(AppBar, {
   shouldForwardProp: (prop) =>
@@ -84,6 +85,7 @@ const Header = React.memo(function Header({
 }) {
   const theme = useTheme();
   const navigate = useNavigate();
+  const notifyAudio = useMemo(() => new Audio(notificationSfx), []);
 
   const [userInfo, setUserInfo] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -115,10 +117,15 @@ const Header = React.memo(function Header({
       localStorage.removeItem("token");
     }
 
-    socket.on('cnt_unread', (cntUnRead) => setCntUnRead(cntUnRead))
+    const handleUnreadCount = (newCount) => {
+      setCntUnRead(newCount);
+      notifyAudio.play().catch(err => console.warn("Audio play blocked:", err));
+    };
+
+    socket.on('cnt_unread', handleUnreadCount)
 
     return () => {
-      socket.off('cnt_unread', (cntUnRead) => setCntUnRead(cntUnRead))
+      socket.off('cnt_unread', handleUnreadCount)
     }
   }, [token]);
 
