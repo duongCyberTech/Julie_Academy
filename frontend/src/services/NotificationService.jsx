@@ -24,7 +24,23 @@ const getNotificationsByUser = async(page = 1, readStatus = 0) => {
     return response.data
 }
 
+const markAsRead = async(noticeId) => {
+    const token = localStorage.getItem('token')
+    if (!token) return 
+
+    try {
+        await apiClient.patch(
+            `/notifications/${noticeId}`,
+            {},
+            getAuthHeaders(token)
+        )
+    } catch (error) {
+        return
+    }
+}
+
 export {
     countNotifications,
-    getNotificationsByUser
+    getNotificationsByUser,
+    markAsRead
 }

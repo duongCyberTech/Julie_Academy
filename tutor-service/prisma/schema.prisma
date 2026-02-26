@@ -504,6 +504,7 @@ model Notifications {
   type              NotificationType @default(system)
   have_read         Boolean       @default(false)
   user_id           String
+  link_wrapper_id   String?
   link_primary_id   String?
   link_partial_id   String?
   receiver          User          @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)

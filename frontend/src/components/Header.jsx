@@ -233,7 +233,7 @@ const Header = React.memo(function Header({
         </BrandBox>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Tooltip title="Thông báo">
-            <HeaderIconButton>
+            <HeaderIconButton onClick={() => navigate('/settings/notifications')}>
               <Badge badgeContent={cntUnRead} color="primary">
                 <NotificationsIcon />
               </Badge>

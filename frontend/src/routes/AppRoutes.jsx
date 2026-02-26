@@ -46,6 +46,7 @@ import StudentEnrollPage from "../pages/student/StudentEnrollPage.jsx";
 import TutorProfilePage from "../pages/tutor/TutorProfilePage.jsx";
 import AdminProfilePage from "../pages/admin/AdminProfilePage.jsx";
 import ParentProfilePage from "../pages/parent/ParentProfilePage.jsx";
+import NotificationPage from "../pages/general/NotificationPage.jsx";
 
 function AppRoutes(props) {
   return (
@@ -142,6 +143,13 @@ function AppRoutes(props) {
           <Route path="dashboard" element={<ParentDashboard />} />
           <Route path="enroll" element={<ParentEnrollPage />} />
           <Route path="profile" element={<ParentProfilePage />} />
+        </Route>
+      </Route>
+
+      {/* Nhóm các route chung cho các role */}
+      <Route element={<ProtectedRoute allowedRoles={["admin", "student", "parents", "tutor"]} />}>
+        <Route path="/settings" element={<Layout />}>
+          <Route path="notifications" element={<NotificationPage />} />
         </Route>
       </Route>
 

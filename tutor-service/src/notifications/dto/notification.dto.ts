@@ -25,6 +25,10 @@ export class CreateNotificationDTO {
 
     @IsOptional()
     @IsString()
+    link_wrapper_id?: string 
+
+    @IsOptional()
+    @IsString()
     link_primary_id?: string 
 
     @IsOptional()

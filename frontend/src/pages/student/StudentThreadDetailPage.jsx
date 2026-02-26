@@ -25,6 +25,7 @@ import { motion } from "framer-motion";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { getCommentsByThread, createComment } from "../../services/CommentService";
+import { getThreadById } from "../../services/ThreadService";
 import { socket } from "../../services/ApiClient";
 import QuiltedImageList from "../../components/Image/ImageList";
 import CommentItem from "../../components/comment/CommentItem";
@@ -65,15 +66,27 @@ export default function ThreadDetailPage() {
 
   const { classId, threadId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [thread, setThread] = useState(location.state)
+  const [thread, setThread] = useState()
 
   const [isUpload, setIsUpload] = useState(false)
   const [selectedImages, setSelectedImages] = useState([]);
 
   useEffect(() => {
+    const fetchThread = async() => {
+      try {
+        const response = await getThreadById(threadId)
+        if (response.data.status === 200) setThread(response.data.data)
+      } catch (error) {
+        return
+      }
+    }
+
+    fetchThread()
+  }, [])
+
+  useEffect(() => {
     const fetchComments = async() => {
-      toast.promise(getCommentsByThread(thread.thread_id, curParent, page), {
+      toast.promise(getCommentsByThread(threadId, curParent, page), {
         loading: "Loading...",
         success: (response) => {
           setComments(prev => {
@@ -94,10 +107,10 @@ export default function ThreadDetailPage() {
     }
 
     fetchComments()
-  },[thread, curParent, page])
+  },[page])
 
   useEffect(() => {
-    const targetId = thread.thread_id || threadId;
+    const targetId = threadId;
     if (!targetId) return;
 
     socket.emit('join_thread', targetId);
@@ -236,7 +249,7 @@ export default function ThreadDetailPage() {
     }
   };
 
-  return (
+  return thread && (
     <Container maxWidth={false} sx={{ mt: 4, mb: 4 }}>
       
       <motion.div variants={motionVariants} initial="hidden" animate="visible">

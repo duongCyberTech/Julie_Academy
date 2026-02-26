@@ -69,4 +69,19 @@ export class NotificationsService {
             return []
         }
     }
+
+    async markAsRead(notice_id: string) {
+        try {
+            await this.prisma.notifications.update({
+                where: {notice_id},
+                data: {
+                    have_read: true
+                }
+            })
+
+            return { status: 200 }
+        } catch (error) {
+            throw error
+        }
+    }
 }
