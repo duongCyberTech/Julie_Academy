@@ -48,8 +48,9 @@ export const getThreadsByClass = async (classId, token, page = 1) => {
     }
 };
 
-export const getThreadById = async (threadId, token) => {
+export const getThreadById = async (threadId) => {
     try {
+        const token = localStorage.getItem('token')
         const response = await apiClient.get(
             `/threads/${threadId}`,
             getAuthHeaders(token)

@@ -5,7 +5,7 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { CloudinaryService } from "src/resource/cloudinary/cloudinary.service";
 import { CommentGateway } from "../controllers/comment.gateway";
 import { CreateCommentDto, UpdateCommentDto } from "../dto/CommentDto.dto";
-import { Prisma } from "@prisma/client";
+import { NotificationType, Prisma } from "@prisma/client";
 import { CreateNotificationDTO } from "src/notifications/dto/notification.dto";
 
 @Injectable()
@@ -83,12 +83,18 @@ export class CommentService {
                             email: true
                         }
                     },
+                    thread: {
+                        select: {
+                            class_id: true
+                        }
+                    },
                     _count: {
                         select: {comments: true}
                     }
                 }
             }).then((res) => {
                 return {
+                    class_id: res.thread.class_id,
                     thread_id,
                     comment_id: res.comment_id,
                     content: res.content,
@@ -124,6 +130,8 @@ export class CommentService {
                 mappedEmailsToIds.forEach((item, index) => {
                     const notiData: CreateNotificationDTO = {
                         message: `${cmt.sender.fname} ${cmt.sender.mname ? cmt.sender.mname : ""} ${cmt.sender.lname} nhắc đến bạn vào một bình luận.`,
+                        type: NotificationType.thread,
+                        link_wrapper_id: cmt.class_id,
                         link_primary_id: cmt.thread_id,
                         link_partial_id: `${cmt.comment_id}`
                     }

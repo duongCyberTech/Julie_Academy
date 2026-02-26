@@ -2,7 +2,10 @@ import {
     Controller, 
     DefaultValuePipe, 
     Get, 
+    Param, 
     ParseIntPipe, 
+    ParseUUIDPipe, 
+    Patch, 
     Query, 
     Request,
     UseGuards
@@ -11,6 +14,7 @@ import { NotificationsService } from "./notifications.service";
 import { ReadStatus } from "./dto/notification.dto";
 import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guard/roles.guard";
+import { ExceptionResponse } from "src/exception/Exception.exception";
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -36,5 +40,16 @@ export class NotificationsController {
     ) {
         const uid = req.user.userId
         return this.notificationsService.countNotifications(uid, have_read)
+    }
+
+    @Patch(':notice_id')
+    markAsRead(
+        @Param('notice_id', ParseUUIDPipe) notice_id: string
+    ) {
+        try {
+            return this.notificationsService.markAsRead(notice_id)
+        } catch (error) {
+            return new ExceptionResponse().returnError(error)
+        }
     }
 }
