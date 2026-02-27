@@ -17,7 +17,11 @@ import {
   Modal,
   Backdrop,
   Fade,
-  Tooltip
+  Tooltip,
+  FormControl,
+  Select,
+  InputLabel,
+  MenuItem,
 } from '@mui/material';
 
 import { 
@@ -45,6 +49,7 @@ import {
 } from '../../services/ThreadService';
 import { getRelativeTime } from '../../utils/DateTimeFormatter';
 import ConfirmAction from '../ActionModal/ConfirmModal';
+import ListUserModal from '../ActionModal/ThreadRestrictedModal';
 import { FollowToggleButton } from './FollowToggleButton';
 import { ModalCard } from "../Tab/Tab"
 import VisuallyHiddenInput from '../Input/VisuallyHiddenInput';
@@ -77,6 +82,9 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
   const [selectedImages, setSelectedImages] = useState(post?.medias || []);
   const [addImages, setAddImages] = useState([])
   const [deleteImages, setDeleteImages] = useState([])
+  const [isRestricted, setIsRestricted] = useState(false)
+  const [restrictedModal, setRestrictedModal] = useState(false)
+  const [openList, setOpenList] = useState([])
 
   const handleNewImages = (event) => {
     const files = Array.from(event.target.files);
@@ -90,7 +98,9 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
       title,
       content: htmlContent,
       images: selectedImages,
-      class_id
+      class_id,
+      open_list: openList,
+      is_restricted: isRestricted
     }
     toast.promise(createThread(newPostData), {
       loading: "Đang tạo bài viết...",
@@ -159,19 +169,47 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
     )
   }
 
+  const handleChangeAccess = (e) => {
+    e.preventDefault()
+    const value = e.target.value 
+    if (value) setRestrictedModal(true)
+    else setOpenList([])
+    setIsRestricted(value)
+  }
+
   return (
     <Paper elevation={1} sx={{ p: 4, borderRadius: 2 }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <Box sx={{ flex: 1 }}>
           {/* Nhúng Editor vào đây */}
-          <TextField
-              label="Tiêu đề"
-              name="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              fullWidth
-              sx={{ mb: 2 }}
-          />
+          <Box
+            sx={{display: 'flex', gap: 2}}
+          >
+            <TextField
+                label="Tiêu đề"
+                name="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                fullWidth
+                sx={{ mb: 2 }}
+            />
+            <Box>
+              <FormControl fullWidth>
+                <InputLabel id="demo-simple-select-label">Truy cập</InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  id="demo-simple-select"
+                  value={isRestricted}
+                  label="Truy cập"
+                  onChange={(e) => handleChangeAccess(e)}
+                >
+                  <MenuItem value={false}>Công khai</MenuItem>
+                  <MenuItem value={true}>Riêng tư</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
+
           <RichTextEditor 
             placeholder="Nhập nội dung... Gõ $ và công thức để viết toán (VD: $E=mc^2$)"
             value={htmlContent}
@@ -342,6 +380,13 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
           {action == "create" ? "Đăng" : "Lưu"}
         </Button>
       </Box>
+      <ListUserModal
+        class_id={class_id}
+        open={restrictedModal}
+        setOpen={setRestrictedModal}
+        setOpenList={setOpenList}
+        setRestricted={setIsRestricted}
+      />
     </Paper>
   );
 };

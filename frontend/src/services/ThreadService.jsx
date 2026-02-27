@@ -19,6 +19,11 @@ export const createThread = async (threadData) => {
         threadData.images.forEach(img => {
             formData.append('images', img)
         });
+        if (threadData?.open_list?.length)
+            formData.append('open_list', threadData.open_list)
+        formData.append('is_restricted', threadData.is_restricted)
+
+
         const response = await apiClient.post(
             '/threads', 
             formData, 

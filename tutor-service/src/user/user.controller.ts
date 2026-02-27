@@ -72,10 +72,12 @@ export class UserController {
 
   @Get('tag/:class_id')
   getUserDetailToTagInClass(
+    @Request() req,
     @Param('class_id') class_id: string,
     @Query('search', new DefaultValuePipe("")) filter: string
   ) {
-    return this.userService.getUserDetailToTagInClass(class_id, filter)
+    const uid = req.user.userId
+    return this.userService.getUserDetailToTagInClass(uid, class_id, filter)
   }
 
   /**

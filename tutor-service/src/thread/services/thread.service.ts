@@ -23,7 +23,9 @@ export class ThreadService {
                     content: data.content,
                     createAt: now,
                     updateAt: now,
-                    sender: {connect: {uid}}
+                    sender: {connect: {uid}},
+                    open_list: data.open_list,
+                    is_restricted: data.is_restricted
                 }
             });
 
@@ -106,7 +108,14 @@ export class ThreadService {
         })
         if (!checkInClass) throw new ForbiddenException("User not have permission")
         return await this.prisma.thread.findMany({
-            where: {class_id},
+            where: {
+                class_id,
+                OR: [
+                    {is_restricted: false},
+                    {open_list: {array_contains: uid}},
+                    {sender: {uid}}
+                ]
+            },
             take: 10,
             skip: (page - 1) * 10,
             orderBy: {createAt: 'desc'},
