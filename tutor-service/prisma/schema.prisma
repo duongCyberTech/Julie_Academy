@@ -192,6 +192,8 @@ model Thread {
   content            String
   createAt           DateTime             @default(now())
   updateAt           DateTime             @default(now())
+  is_restricted      Boolean              @default(false)
+  open_list          Json                 @db.JsonB @default("[]")
   uid                String
   class_id           String
   class              Class                @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
@@ -439,7 +441,7 @@ model Question_for_exam_taken {
   index                 Int 
   isDone                Boolean    @default(false)
   chosen_answer_at      DateTime?
-  answer_set            Json      @db.JsonB
+  answer_set            Json       @db.JsonB
   exam_taken Exam_taken @relation(fields: [et_id], references: [et_id], onDelete: Cascade, onUpdate: Cascade)
   question   Questions  @relation(fields: [ques_id], references: [ques_id], onDelete: Cascade, onUpdate: Cascade)
 

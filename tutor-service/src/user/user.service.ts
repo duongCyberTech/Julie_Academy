@@ -297,15 +297,16 @@ export class UserService {
     return children;
   }
 
-  async getUserDetailToTagInClass(class_id: string, filter: string = "") {
+  async getUserDetailToTagInClass(uid: string, class_id: string, filter: string = "") {
     const searchPattern = `%${filter}%`;
 
     const students = await this.prisma.$queryRaw`
-      SELECT u.uid, u.fname, u.mname, u.lname, u.email, u.avata_url as avatar
+      SELECT u.uid, u.fname, u.mname, u.lname, u.email, u.avata_url
       FROM "User" u
       JOIN "Student" s ON u.uid = s.uid
       JOIN "Learning" l ON s.uid = l.student_uid
       WHERE l.class_id = ${class_id}
+      AND u.uid != ${uid}
       AND (u.fname || ' ' || COALESCE(u.mname, '') || ' ' || u.lname) ILIKE ${searchPattern}
     `;
 
@@ -315,6 +316,7 @@ export class UserService {
       JOIN "Tutor" t ON u.uid = t.uid
       JOIN "Class" c ON t.uid = c."tutor_uid"
       WHERE c."class_id" = ${class_id}
+      AND u.uid != ${uid}
       AND (u.fname || ' ' || COALESCE(u.mname, '') || ' ' || u.lname) ILIKE ${searchPattern}
     `;
 
