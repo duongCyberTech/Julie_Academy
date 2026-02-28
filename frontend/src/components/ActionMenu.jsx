@@ -1,11 +1,9 @@
 import React from "react";
 import { Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Block as BlockIcon,
-  CheckCircle as CheckCircleIcon,
-} from "@mui/icons-material";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import BlockIcon from "@mui/icons-material/Block";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 const ActionMenu = ({
   anchorEl,

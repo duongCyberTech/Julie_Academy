@@ -28,33 +28,48 @@ import ClassDetailDrawer from './ClassDetailDrawer';
 import { getAllClasses, requestEnrollment } from '../../services/ClassService';
 import { getMyChildren } from '../../services/UserService'; 
 
-const PageContainer = styled(Box)(({ theme }) => ({
-    padding: theme.spacing(3),
-    backgroundColor: '#F8F9FA',
-    minHeight: '100vh',
+// ==========================================
+// STYLED COMPONENTS (SOFT UI)
+// ==========================================
+const PageWrapper = styled(Paper)(({ theme }) => ({
+    margin: theme.spacing(2),
+    padding: theme.spacing(4),
+    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
+    borderRadius: '24px',
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
+    minHeight: 'calc(100vh - 120px)',
+    display: 'flex',
+    flexDirection: 'column',
 }));
 
 const FilterBar = styled(Paper)(({ theme }) => ({
-    padding: theme.spacing(2),
+    padding: theme.spacing(2.5),
     marginBottom: theme.spacing(3),
     display: 'flex',
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: theme.spacing(2),
-    borderRadius: theme.shape.borderRadius * 2,
+    borderRadius: '16px',
+    backgroundColor: alpha(theme.palette.primary.main, 0.02),
     border: `1px solid ${theme.palette.divider}`,
-    boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
+    boxShadow: 'none'
 }));
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-    borderRadius: theme.shape.borderRadius * 2,
-    border: `1px solid ${theme.palette.divider}`,
-    backgroundColor: '#fff',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+    flexGrow: 1, 
+    overflowY: "auto",
+    "&::-webkit-scrollbar": { width: "6px", height: "6px" },
+    "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
+    "&::-webkit-scrollbar-thumb": {
+      backgroundColor: alpha(theme.palette.grey[400], 0.5),
+      borderRadius: "10px",
+    },
     '& .MuiTableCell-head': {
-        backgroundColor: '#eff6ff',
+        backgroundColor: alpha(theme.palette.grey[100], 0.8),
+        backdropFilter: 'blur(8px)',
         fontWeight: 700,
-        color: '#1e40af',
+        color: theme.palette.text.primary,
         borderBottom: `2px solid ${theme.palette.divider}`
     },
     '& .MuiTableRow-root:hover': {
@@ -134,8 +149,8 @@ function ParentEnrollPage() {
     const filteredClasses = useMemo(() => {
         return classes.filter((cls) => {
             const s = search.toLowerCase();
-            const matchSearch = cls.classname.toLowerCase().includes(s) || 
-                                cls.tutor?.user?.lname?.toLowerCase().includes(s);
+            const tutorName = [cls.tutor?.user?.lname, cls.tutor?.user?.mname, cls.tutor?.user?.fname].filter(Boolean).join(" ").toLowerCase();
+            const matchSearch = cls.classname.toLowerCase().includes(s) || tutorName.includes(s);
             const matchSubject = filterSubject === 'all' || cls.subject === filterSubject;
             const matchGrade = filterGrade === 'all' || cls.grade === filterGrade;
             
@@ -202,40 +217,40 @@ function ParentEnrollPage() {
     const getChildEnrollStatus = (childId, classData) => {
         if (!classData?.learning) return null;
         const record = classData.learning.find(l => 
-            l.student?.uid === childId || l.student_uid === childId
+            l.student?.uid === childId || l.student_uid === childId || l.student?.user?.uid === childId
         );
         return record ? record.status : null;
     };
 
-    if (loading) return <Box height="100vh" display="flex" justifyContent="center" alignItems="center"><CircularProgress /></Box>;
+    if (loading) return <Box height="100vh" display="flex" justifyContent="center" alignItems="center"><CircularProgress sx={{ color: '#ea580c' }} /></Box>;
 
     return (
-        <PageContainer>
+        <PageWrapper>
             <Box mb={4}>
-                <Typography variant="h4" fontWeight="700" color="#1e3a8a">Đăng ký lớp học</Typography>
+                <Typography variant="h4" fontWeight="bold" color="#1e293b">Đăng ký lớp học</Typography>
                 <Typography variant="body2" color="text.secondary">Tìm kiếm lớp học và đăng ký cho con</Typography>
             </Box>
 
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <FilterBar elevation={0}>
+                <FilterBar>
                     <TextField 
                         placeholder="Tìm lớp, giáo viên..." 
                         size="small" 
                         value={search} onChange={(e) => setSearch(e.target.value)}
                         InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon color="action"/></InputAdornment> }}
-                        sx={{ width: 280 }}
+                        sx={{ flexGrow: 1, minWidth: 250, bgcolor: 'background.paper', borderRadius: 1 }}
                     />
-                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <FormControl size="small" sx={{ minWidth: 150, bgcolor: 'background.paper', borderRadius: 1 }}>
                         <InputLabel>Môn học</InputLabel>
                         <Select value={filterSubject} label="Môn học" onChange={(e) => setFilterSubject(e.target.value)}>
-                            <MenuItem value="all"><em>Tất cả</em></MenuItem>
+                            <MenuItem value="all"><em>Tất cả môn</em></MenuItem>
                             {uniqueSubjects.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                         </Select>
                     </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 100 }}>
+                    <FormControl size="small" sx={{ minWidth: 120, bgcolor: 'background.paper', borderRadius: 1 }}>
                         <InputLabel>Khối</InputLabel>
                         <Select value={filterGrade} label="Khối" onChange={(e) => setFilterGrade(e.target.value)}>
-                            <MenuItem value="all"><em>Tất cả</em></MenuItem>
+                            <MenuItem value="all"><em>Tất cả khối</em></MenuItem>
                             {uniqueGrades.map(g => <MenuItem key={g} value={g}>Khối {g}</MenuItem>)}
                         </Select>
                     </FormControl>
@@ -243,41 +258,43 @@ function ParentEnrollPage() {
                         label="Khai giảng từ" 
                         value={filterDate} 
                         onChange={(newValue) => setFilterDate(newValue)} 
-                        slotProps={{ textField: { size: 'small', sx: { width: 170 } } }} 
+                        slotProps={{ textField: { size: 'small', sx: { minWidth: 160, bgcolor: 'background.paper', borderRadius: 1 } } }} 
                     />
                     <Button 
-                        variant="text" 
+                        variant="outlined" 
                         color="inherit"
                         startIcon={<RestartAltIcon/>} 
                         onClick={() => {setSearch(''); setFilterSubject('all'); setFilterGrade('all'); setFilterDate(null); setPage(0);}} 
-                        sx={{ ml: 'auto' }}
+                        sx={{ bgcolor: 'background.paper' }}
                     >
                         Đặt lại
                     </Button>
                 </FilterBar>
             </LocalizationProvider>
 
-            <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+            <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
                 <StyledTableContainer>
-                    <Table sx={{ minWidth: 750 }}>
+                    <Table stickyHeader sx={{ minWidth: 800 }}>
                         <TableHead>
                             <TableRow>
-                                <TableCell width="25%"><TableSortLabel active={orderBy === 'classname'} direction={order} onClick={() => handleRequestSort('classname')}>Tên lớp học</TableSortLabel></TableCell>
-                                <TableCell width="20%">Giáo viên</TableCell>
-                                <TableCell width="15%">Lịch học</TableCell>
-                                <TableCell width="10%">Môn/Khối</TableCell>
-                                <TableCell width="15%"><TableSortLabel active={orderBy === 'startat'} direction={order} onClick={() => handleRequestSort('startat')}>Khai giảng</TableSortLabel></TableCell>
-                                <TableCell width="15%" align="center">Hành động</TableCell>
+                                <TableCell sx={{ minWidth: 200 }}><TableSortLabel active={orderBy === 'classname'} direction={order} onClick={() => handleRequestSort('classname')}>Tên lớp học</TableSortLabel></TableCell>
+                                <TableCell sx={{ minWidth: 180 }}>Giáo viên</TableCell>
+                                <TableCell sx={{ minWidth: 140 }}>Lịch học</TableCell>
+                                <TableCell sx={{ minWidth: 120 }}>Môn/Khối</TableCell>
+                                <TableCell sx={{ minWidth: 140 }}><TableSortLabel active={orderBy === 'startat'} direction={order} onClick={() => handleRequestSort('startat')}>Khai giảng</TableSortLabel></TableCell>
+                                <TableCell align="center" sx={{ minWidth: 120 }}>Hành động</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {visibleRows.length === 0 ? (
-                                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>Không tìm thấy lớp học nào.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 6, color: 'text.secondary' }}>Không tìm thấy lớp học nào.</TableCell></TableRow>
                             ) : (
                                 visibleRows.map((row) => (
                                     <TableRow key={row.class_id} hover onClick={() => handleOpenDrawer(row)}>
                                         <TableCell>
-                                            <Typography variant="subtitle2" fontWeight="bold" color="#1d4ed8">{row.classname}</Typography>
+                                            <Typography variant="subtitle2" fontWeight="bold" color="primary.main" sx={{ wordBreak: 'break-word' }}>
+                                                {row.classname}
+                                            </Typography>
                                             <Stack direction="row" spacing={1} mt={0.5} alignItems="center">
                                                 <Chip label={row.status === 'pending' ? 'Tuyển sinh' : 'Đang học'} size="small" color={row.status === 'pending' ? 'success' : 'default'} sx={{height: 20, fontSize: '0.65rem', fontWeight: 600}}/>
                                                 <Typography variant="caption" color="text.secondary">{row.nb_of_student} học viên</Typography>
@@ -285,21 +302,23 @@ function ParentEnrollPage() {
                                         </TableCell>
                                         <TableCell>
                                             <Stack direction="row" alignItems="center" spacing={1.5}>
-                                                <Avatar src={row.tutor?.user?.avata_url} sx={{ width: 36, height: 36, border: '1px solid #e0e7ff' }}>{row.tutor?.user?.lname?.charAt(0)}</Avatar>
+                                                <Avatar src={row.tutor?.user?.avata_url} sx={{ width: 36, height: 36, bgcolor: '#fdba74', color: 'white' }}>{row.tutor?.user?.lname?.charAt(0)}</Avatar>
                                                 <Box>
-                                                    <Typography variant="body2" fontWeight={600} color="#1e293b">{row.tutor?.user?.lname} {row.tutor?.user?.fname}</Typography>
+                                                    <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ wordBreak: 'break-word' }}>
+                                                        {[row.tutor?.user?.lname, row.tutor?.user?.mname, row.tutor?.user?.fname].filter(Boolean).join(" ")}
+                                                    </Typography>
                                                     <Typography variant="caption" color="text.secondary">Gia sư</Typography>
                                                 </Box>
                                             </Stack>
                                         </TableCell>
                                         <TableCell>
-                                            <Typography variant="body2" fontWeight="600" color="#b45309">
+                                            <Typography variant="body2" fontWeight="600" color="text.secondary">
                                                 {formatShortSchedule(row.schedule)}
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
-                                            <Chip label={row.subject} size="small" sx={{bgcolor: '#eff6ff', color: '#1d4ed8', fontWeight: 600, border: 'none'}} />
-                                            <Typography variant="caption" color="text.secondary" ml={1}>K{row.grade}</Typography>
+                                            <Chip label={row.subject} size="small" sx={{ fontWeight: 600, mb: 0.5 }} />
+                                            <Typography variant="caption" color="text.secondary" display="block">Khối {row.grade}</Typography>
                                         </TableCell>
                                         <TableCell>{row.startat ? dayjs(row.startat).format('DD/MM/YYYY') : '---'}</TableCell>
                                         <TableCell align="center">
@@ -309,7 +328,7 @@ function ParentEnrollPage() {
                                                 disableElevation
                                                 startIcon={<PersonAddIcon />}
                                                 onClick={(e) => { e.stopPropagation(); handleOpenEnrollDialog(row); }}
-                                                sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#ea580c', '&:hover': {bgcolor: '#c2410c'} }}
+                                                sx={{ textTransform: 'none', borderRadius: 2, bgcolor: '#ea580c', '&:hover': {bgcolor: '#c2410c'}, fontWeight: 'bold' }}
                                             >
                                                 Đăng ký
                                             </Button>
@@ -321,10 +340,11 @@ function ParentEnrollPage() {
                     </Table>
                 </StyledTableContainer>
                 <TablePagination
+                    sx={{ flexShrink: 0, borderTop: '1px solid', borderColor: 'divider' }}
                     rowsPerPageOptions={[5, 10, 25]} component="div" count={filteredClasses.length} rowsPerPage={rowsPerPage} page={page}
                     onPageChange={(e, newPage) => setPage(newPage)}
                     onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                    labelRowsPerPage="Số dòng:"
+                    labelRowsPerPage="Số dòng mỗi trang:"
                 />
             </Paper>
 
@@ -335,15 +355,15 @@ function ParentEnrollPage() {
                 onEnrollClick={handleOpenEnrollDialog} 
             />
 
-            <Dialog open={dialogOpen} onClose={() => !isSubmitting && setDialogOpen(false)} fullWidth maxWidth="sm">
+            <Dialog open={dialogOpen} onClose={() => !isSubmitting && setDialogOpen(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
                 <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
                     <Typography variant="h6" fontWeight="bold">Chọn con để đăng ký</Typography>
                     {!isSubmitting && <IconButton onClick={() => setDialogOpen(false)} size="small"><CloseIcon/></IconButton>}
                 </DialogTitle>
                 <DialogContent dividers>
                     <Box mb={2} p={2} bgcolor="#fff7ed" borderRadius={2} border="1px dashed #fdba74">
-                        <Typography variant="body2" color="#c2410c">
-                            Lớp học: <strong>{selectedClass?.classname}</strong>
+                        <Typography variant="body2" color="#c2410c" sx={{ wordBreak: 'break-word' }}>
+                            Đăng ký lớp học: <strong>{selectedClass?.classname}</strong>
                         </Typography>
                     </Box>
                     {children.length === 0 ? (
@@ -359,6 +379,7 @@ function ParentEnrollPage() {
                                 const currentStatus = getChildEnrollStatus(child.uid, selectedClass);
                                 const isEnrolled = !!currentStatus;
                                 const isChecked = selectedChildIds.indexOf(child.uid) !== -1;
+                                const fullName = [userInfo.lname, userInfo.mname, userInfo.fname].filter(Boolean).join(" ");
                                 
                                 return (
                                     <ListItem 
@@ -377,6 +398,7 @@ function ParentEnrollPage() {
                                                     color={currentStatus === 'accepted' ? "success" : "warning"}
                                                     variant="outlined"
                                                     icon={currentStatus === 'accepted' ? <CheckCircleIcon/> : <HourglassEmptyIcon/>}
+                                                    sx={{ fontWeight: 'bold' }}
                                                 />
                                             ) : (
                                                 <Checkbox 
@@ -395,7 +417,7 @@ function ParentEnrollPage() {
                                                 </Avatar>
                                             </ListItemAvatar>
                                             <ListItemText 
-                                                primary={<Typography variant="subtitle2" fontWeight="bold">{userInfo.lname} {userInfo.fname}</Typography>}
+                                                primary={<Typography variant="subtitle2" fontWeight="bold" sx={{ pr: 2, wordBreak: 'break-word' }}>{fullName}</Typography>}
                                                 secondary={
                                                     <Stack spacing={0.5} mt={0.5}>
                                                         <Stack direction="row" alignItems="center" spacing={1}>
@@ -404,7 +426,7 @@ function ParentEnrollPage() {
                                                         </Stack>
                                                         <Stack direction="row" alignItems="center" spacing={1}>
                                                             <EmailOutlinedIcon sx={{fontSize: 16}} color="action" />
-                                                            <Typography variant="caption" color="text.secondary">{userInfo.email}</Typography>
+                                                            <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-all' }}>{userInfo.email}</Typography>
                                                         </Stack>
                                                     </Stack>
                                                 }
@@ -417,13 +439,13 @@ function ParentEnrollPage() {
                     )}
                 </DialogContent>
                 <DialogActions sx={{ p: 3, pt: 2 }}>
-                    <Button onClick={() => setDialogOpen(false)} disabled={isSubmitting} color="inherit" sx={{borderRadius: 2}}>Hủy</Button>
+                    <Button onClick={() => setDialogOpen(false)} disabled={isSubmitting} color="inherit" sx={{borderRadius: 2, fontWeight: 600}}>Hủy</Button>
                     <Button 
                         onClick={handleSubmit} 
                         variant="contained" 
                         disabled={isSubmitting || selectedChildIds.length === 0} 
                         startIcon={isSubmitting && <CircularProgress size={20} color="inherit"/>}
-                        sx={{ px: 3, borderRadius: 2, bgcolor: '#ea580c', '&:hover': {bgcolor: '#c2410c'} }}
+                        sx={{ px: 3, borderRadius: 2, bgcolor: '#ea580c', '&:hover': {bgcolor: '#c2410c'}, fontWeight: 'bold' }}
                     >
                         {isSubmitting ? "Đang xử lý..." : `Xác nhận (${selectedChildIds.length})`}
                     </Button>
@@ -431,9 +453,9 @@ function ParentEnrollPage() {
             </Dialog>
 
             <Snackbar open={toast.open} autoHideDuration={4000} onClose={() => setToast(prev => ({ ...prev, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-                <Alert severity={toast.severity} variant="filled" onClose={() => setToast(prev => ({ ...prev, open: false }))}>{toast.msg}</Alert>
+                <Alert severity={toast.severity} variant="filled" sx={{ borderRadius: 2 }} onClose={() => setToast(prev => ({ ...prev, open: false }))}>{toast.msg}</Alert>
             </Snackbar>
-        </PageContainer>
+        </PageWrapper>
     );
 }
 

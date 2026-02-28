@@ -19,7 +19,6 @@ import { BadgeModule } from './badge/badge.module';
 import { ThreadModule } from './thread/thread.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ConfigModule } from '@nestjs/config';
-import rabbitmqConfig from './config/rabbitmq.config';
 
 import { BackgroundService } from './background_job/BackgroundJob.service';
 import { S3Service } from './resource/aws/aws-s3.service';
@@ -30,7 +29,6 @@ import { NotificationsService } from './notifications/notifications.service';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      load: [rabbitmqConfig],
     }),
     ThrottlerModule.forRoot([
       {

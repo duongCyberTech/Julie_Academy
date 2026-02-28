@@ -20,36 +20,63 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import CreateClassDialog from '../../components/CreateClassDialog';
 import UpdateClassDialog from '../../components/UpdateClassDialog';
 
+// ==========================================
+// 1. PAGE WRAPPER CHUẨN SOFT UI
+// ==========================================
 const PageWrapper = styled(Paper)(({ theme }) => ({
-    padding: theme.spacing(3),
-    backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.background.paper,
-    borderRadius: theme.shape.borderRadius * 2,
+    margin: theme.spacing(2), 
+    padding: theme.spacing(4), 
+    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
+    borderRadius: '24px',
     border: `1px solid ${theme.palette.divider}`,
-    boxShadow: 'none',
-    minHeight: '80vh'
+    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
+    minHeight: 'calc(100vh - 120px)', 
+    display: 'flex',
+    flexDirection: 'column',
 }));
 
-const Header = styled(Box)({
+
+// Header fix để không bị ép nhỏ khi cuộn
+const Header = styled(Box)(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '24px',
-});
+    marginBottom: theme.spacing(3),
+    flexShrink: 0,
+}));
 
+// Khu vực nội dung cuộn độc lập
+const ScrollableContent = styled(Box)(({ theme }) => ({
+    flexGrow: 1,
+    overflowY: 'auto',
+    paddingRight: theme.spacing(1), // Tránh để thanh cuộn đè lên nội dung
+    // Tùy chỉnh thanh cuộn thanh mảnh
+    "&::-webkit-scrollbar": { width: "6px" },
+    "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
+    "&::-webkit-scrollbar-thumb": {
+        backgroundColor: alpha(theme.palette.grey[400], 0.5),
+        borderRadius: "10px",
+        "&:hover": { backgroundColor: theme.palette.grey[500] },
+    },
+}));
+
+// ==========================================
+// STYLED COMPONENTS KHÁC
+// ==========================================
 const ClassCardStyled = styled(Card)(({ theme }) => ({
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
     transition: 'all 0.2s ease-in-out',
+    borderRadius: 16, // Bo góc cho Card
     border: `1px solid ${theme.palette.divider}`,
-    boxShadow: 'none',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
     '&:hover': {
         transform: 'translateY(-4px)',
-        boxShadow: theme.shadows[4],
-        borderColor: theme.palette.primary.light,
+        boxShadow: '0 12px 24px rgba(0,0,0,0.08)',
+        borderColor: theme.palette.primary.main,
     }
 }));
-
 
 const EmptyIllustration = () => (
     <SvgIcon
@@ -66,12 +93,14 @@ const RenderEmptyState = memo(({ onOpenCreateDialog }) => (
     <Paper
         variant="outlined"
         sx={{
-            mt: 4, p: { xs: 3, md: 6 }, textAlign: 'center',
+            flexGrow: 1, // Căn giữa tự động trong ScrollableContent
+            minHeight: '400px',
+            p: { xs: 3, md: 6 }, textAlign: 'center',
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
             borderColor: 'divider',
-            backgroundColor: (theme) => theme.palette.mode === 'light' ? 'grey.50' : 'grey.900',
-            borderRadius: 2.5
+            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.02),
+            borderRadius: 3
         }}
     >
         <EmptyIllustration />
@@ -84,10 +113,9 @@ const RenderEmptyState = memo(({ onOpenCreateDialog }) => (
         </Typography>
         <Button
             variant="contained"
-            size="large"
             onClick={onOpenCreateDialog} 
             startIcon={<AddCircleOutlineIcon />}
-            sx={{ fontWeight: 'bold', px: 4, py: 1.5 }}
+            sx={{ fontWeight: 'bold', px: 4, py: 1.5, borderRadius: '12px' }}
         >
             Tạo lớp học đầu tiên
         </Button>
@@ -106,11 +134,11 @@ const StatusChip = memo(({ status }) => {
 });
 
 const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
-    <Grid container spacing={3} sx={{ mt: 2 }}>
+    <Grid container spacing={3} sx={{ pb: 2, m: 0, width: '100%' }}>
         {classes.map((classItem) => (
-            <Grid size={{ xs: 12 ,sm: 6, md: 4}} key={classItem.class_id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={classItem.class_id} sx={{ pl: "0 !important" }}>
                 <ClassCardStyled>
-                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
                         <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <StatusChip status={classItem.status} />
                         </Box>
@@ -130,18 +158,25 @@ const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
                                 WebkitLineClamp: 2,
                                 WebkitBoxOrient: 'vertical',
                                 overflow: 'hidden',
-                                textOverflow: 'ellipsis'
+                                textOverflow: 'ellipsis',
+                                lineHeight: 1.5
                             }}
                         >
                             {classItem.description || "Chưa có mô tả cho lớp học này."}
                         </Typography>
                         
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" fontWeight={500}>
                             Môn: {classItem.subject || 'N/A'} • Khối: {classItem.grade || 'N/A'}
                         </Typography>
                     </CardContent>
                     
-                    <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, pt: 0, backgroundColor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>
+                    <CardActions sx={{ 
+                        justifyContent: 'space-between', 
+                        px: 2.5, pb: 2, pt: 1.5, 
+                        backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.03),
+                        borderTop: '1px solid',
+                        borderColor: 'divider'
+                    }}>
                         <Box>
                             <Tooltip title="Chỉnh sửa thông tin">
                                 <IconButton size="small" onClick={() => onEdit(classItem)}>
@@ -152,8 +187,10 @@ const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
                         <Button
                             size="small"
                             variant="contained"
+                            disableElevation
                             endIcon={<ArrowForwardIcon />}
                             onClick={() => onNavigate(classItem.class_id)}
+                            sx={{ fontWeight: 600, borderRadius: '8px' }}
                         >
                             Chi tiết
                         </Button>
@@ -163,7 +200,6 @@ const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
         ))}
     </Grid>
 ));
-
 
 function ClassPage() {
     const navigate = useNavigate();
@@ -216,7 +252,7 @@ function ClassPage() {
     const renderContent = () => {
         if (loading) {
             return (
-                <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1, my: 8 }}>
                     <CircularProgress />
                 </Box>
             );
@@ -224,7 +260,7 @@ function ClassPage() {
         
         if (error) {
             return (
-                <Alert severity="error" sx={{ mt: 2 }} action={
+                <Alert severity="error" sx={{ mt: 2, flexShrink: 0 }} action={
                     <Button color="inherit" size="small" onClick={fetchClasses}>Thử lại</Button>
                 }>
                     {error}
@@ -248,23 +284,31 @@ function ClassPage() {
     return (
         <PageWrapper>
             <Header>
-                <Typography variant="h4" component="h1" fontWeight="bold">
-                    Lớp học của tôi
-                </Typography>
+                <Box>
+                    <Typography variant="h4" component="h1" fontWeight="bold">
+                        Lớp học của tôi
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Quản lý danh sách lớp học và học viên
+                    </Typography>
+                </Box>
                 {!loading && !error && classes.length > 0 && (
                     <Button
                         variant="contained"
                         color="primary"
                         onClick={() => setOpenCreateDialog(true)}
                         startIcon={<AddCircleOutlineIcon />}
-                        sx={{ fontWeight: 'bold' }}
+                        sx={{ fontWeight: 'bold', borderRadius: '12px', px: 3 }}
                     >
                         Tạo lớp mới
                     </Button>
                 )}
             </Header>
 
-            {renderContent()}
+            <ScrollableContent>
+                {renderContent()}
+            </ScrollableContent>
+
             <CreateClassDialog 
                 open={openCreateDialog} 
                 onClose={() => setOpenCreateDialog(false)} 

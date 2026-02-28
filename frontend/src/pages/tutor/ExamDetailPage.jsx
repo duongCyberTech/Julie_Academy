@@ -1,8 +1,5 @@
-import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import katex from 'katex';
-import 'katex/dist/katex.min.css';
-import renderMathInElement from "katex/dist/contrib/auto-render";
 
 import { getExamDetail, getQuestionsOfExam, removeQuestionFromExam } from '../../services/ExamService';
 import AddQuestionDialog from '../../components/AddQuestionDialog';
@@ -11,58 +8,44 @@ import {
     Box, Typography, Button, Paper, CircularProgress, Alert,
     Stack, Chip, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, IconButton, Tooltip, Dialog, DialogTitle,
-    DialogContent, DialogActions, DialogContentText, Snackbar, Breadcrumbs, Link
+    DialogContent, DialogActions, DialogContentText, Snackbar
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import StarBorderIcon from '@mui/icons-material/StarBorder';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import FormatListNumberedRoundedIcon from '@mui/icons-material/FormatListNumberedRounded';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
+// ==========================================
+// 1. PAGE WRAPPER CHUẨN SOFT UI
+// ==========================================
 const PageWrapper = styled(Paper)(({ theme }) => ({
-    padding: theme.spacing(3),
-    backgroundColor: theme.palette.mode === 'light' ? '#f9f9f9' : theme.palette.background.paper,
-    minHeight: '85vh',
-    boxShadow: 'none'
+    margin: theme.spacing(2),
+    padding: theme.spacing(4),
+    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
+    borderRadius: '24px',
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
+    minHeight: 'calc(100vh - 120px)',
+    display: 'flex',
+    flexDirection: 'column',
 }));
 
-const LatexContent = memo(({ content }) => {
-    const containerRef = useRef(null);
-    useEffect(() => {
-        if (containerRef.current && content) {
-            containerRef.current.innerHTML = content;
-            try {
-                renderMathInElement(containerRef.current, {
-                    delimiters: [
-                        { left: "$$", right: "$$", display: true },
-                        { left: "$", right: "$", display: false },
-                        { left: "\\(", right: "\\)", display: false },
-                        { left: "\\[", right: "\\]", display: true }
-                    ],
-                    throwOnError: false
-                });
-            } catch (e) { console.error(e); }
-        }
-    }, [content]);
-    
-    return (
-        <div 
-            ref={containerRef} 
-            style={{ 
-                fontSize: '0.95rem', 
-                overflow: 'hidden', 
-                textOverflow: 'ellipsis', 
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical'
-            }} 
-        />
-    );
-});
+const HeaderCard = styled(Paper)(({ theme }) => ({
+    padding: theme.spacing(3),
+    borderRadius: theme.shape.borderRadius * 2,
+    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+    backgroundColor: alpha(theme.palette.primary.main, 0.02),
+    boxShadow: 'none', 
+    marginBottom: theme.spacing(4),
+}));
 
+// ==========================================
+// CHIPS UI 
+// ==========================================
 const DifficultyChip = ({ level }) => {
     const map = { 
         EASY: { label: "Dễ", color: "success" }, 
@@ -70,30 +53,63 @@ const DifficultyChip = ({ level }) => {
         HARD: { label: "Khó", color: "error" } 
     };
     
-    const safeLevel = String(level).toUpperCase();
-    const conf = map[safeLevel] || { label: level, color: "default" };
+    const safeLevel = level ? String(level).toUpperCase() : "";
+    const conf = map[safeLevel];
 
-    return <Chip label={conf.label} color={conf.color} size="small" variant="outlined" sx={{ fontWeight: 500 }} />;
+    if (conf) {
+        return (
+            <Chip 
+                label={conf.label} 
+                size="small" 
+                sx={{ 
+                    fontWeight: 700, 
+                    border: '1.5px solid', 
+                    borderColor: `${conf.color}.main`,
+                    bgcolor: (theme) => alpha(theme.palette[conf.color].main, 0.08),
+                    color: `${conf.color}.dark` 
+                }} 
+            />
+        );
+    }
+
+    return (
+        <Chip 
+            label="Chưa phân loại" 
+            size="small" 
+            sx={{ 
+                fontWeight: 600, 
+                bgcolor: 'action.hover', 
+                color: 'text.secondary' 
+            }} 
+        />
+    );
 };
 
 const TypeChip = ({ type }) => {
     const map = {
         single_choice: "1 Đáp án",
         multiple_choice: "Nhiều đáp án",
-        essay: "Tự luận"
+        essay: "Tự luận",
+        true_false: "Đúng / Sai"
     };
     return (
-        <Typography variant="caption" sx={{ 
-            display: 'inline-block', 
-            bgcolor: 'action.hover', 
-            px: 1, py: 0.5, borderRadius: 1, 
-            color: 'text.secondary' 
-        }}>
-            {map[type] || type}
-        </Typography>
+        <Chip 
+            label={map[type] || type || "Không rõ"}
+            size="small"
+            sx={{ 
+                fontWeight: 700, 
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08), 
+                color: 'primary.dark',
+                border: '1.5px dashed',
+                borderColor: 'primary.main'
+            }}
+        />
     );
 };
 
+// ==========================================
+// MAIN PAGE COMPONENT
+// ==========================================
 function ExamDetailPage() {
     const { examId } = useParams();
     const navigate = useNavigate();
@@ -151,79 +167,133 @@ function ExamDetailPage() {
         }
     };
 
-    if (loading) return <Box display="flex" justifyContent="center" mt={10}><CircularProgress /></Box>;
-    if (!exam) return <Alert severity="error" sx={{ mt: 3 }}>Không tìm thấy thông tin đề thi.</Alert>;
+    if (loading) return (
+        <PageWrapper sx={{ justifyContent: 'center', alignItems: 'center' }}>
+            <CircularProgress />
+        </PageWrapper>
+    );
+
+    if (!exam) return (
+        <PageWrapper sx={{ alignItems: 'center' }}>
+            <Alert severity="error" sx={{ mt: 3, borderRadius: 2 }}>Không tìm thấy thông tin đề thi.</Alert>
+            <Button onClick={() => navigate('/tutor/exam')} sx={{ mt: 2 }} startIcon={<ArrowBackRoundedIcon />}>Quay lại</Button>
+        </PageWrapper>
+    );
 
     return (
         <PageWrapper>
-            {/* Header */}
-            <Box mb={4}>
-                <Breadcrumbs sx={{ mb: 2 }}>
-                    <Link 
-                        underline="hover" 
-                        color="inherit" 
-                        onClick={() => navigate('/tutor/exam')} 
-                        sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                    >
-                        <ArrowBackIcon sx={{ mr: 0.5 }} fontSize="inherit" /> Quản lý đề thi
-                    </Link>
-                    <Typography color="text.primary" fontWeight={500}>{exam.title}</Typography>
-                </Breadcrumbs>
-                
-                <Paper elevation={0} sx={{ p: 3, bgcolor: '#fff', border: '1px solid #eee', borderRadius: 2 }}>
-                    <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                        <Box>
-                            <Typography variant="h4" fontWeight="bold" color="primary.main" gutterBottom>
-                                {exam.title}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, maxWidth: 800 }}>
-                                {exam.description || "Chưa có mô tả cho đề thi này."}
-                            </Typography>
-                            
-                            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-                                <DifficultyChip level={exam.level} />
-                                <Chip icon={<AccessTimeIcon />} label={`${exam.duration} phút`} size="small" sx={{ bgcolor: '#f5f5f5' }} />
-                                <Chip icon={<FormatListNumberedIcon />} label={`${questions.length} câu hỏi`} size="small" sx={{ bgcolor: '#f5f5f5' }} />
-                            </Stack>
-                        </Box>
-                        <Button 
-                            variant="contained" 
-                            size="large"
-                            startIcon={<AddCircleOutlineIcon />} 
-                            onClick={() => setOpenAddDialog(true)}
-                            sx={{ minWidth: 160 }}
-                        >
-                            Thêm câu hỏi
-                        </Button>
-                    </Stack>
-                </Paper>
+            {/* NÚT QUAY LẠI */}
+            <Box sx={{ mb: 2, flexShrink: 0 }}>
+                <Button
+                    onClick={() => navigate('/tutor/exam')}
+                    startIcon={<ArrowBackRoundedIcon />}
+                    color="inherit"
+                    sx={{ 
+                        textTransform: 'none', 
+                        fontWeight: 600, 
+                        color: 'text.secondary',
+                        borderRadius: '10px',
+                        px: 2,
+                        '&:hover': { color: 'primary.main', bgcolor: alpha('#1976d2', 0.08) }
+                    }}
+                >
+                    Quay lại danh sách đề thi
+                </Button>
             </Box>
 
-            {/* Question Table */}
-            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', bgcolor: '#fff' }}>
+            {/* HEADER THÔNG TIN ĐỀ THI */}
+            <HeaderCard>
+                <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="flex-start" spacing={2}>
+                    <Box sx={{ flex: 1 }}>
+                        <Typography variant="h3" fontWeight="700" color="text.primary" gutterBottom>
+                            {exam.title}
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 700, lineHeight: 1.6 }}>
+                            {exam.description || "Chưa có mô tả chi tiết cho đề thi này."}
+                        </Typography>
+                        
+                        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+                            <DifficultyChip level={exam.level} />
+                            <Chip 
+                                icon={<AccessTimeRoundedIcon fontSize="small" />} 
+                                label={`${exam.duration} phút`} 
+                                size="small" 
+                                sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', fontWeight: 600 }} 
+                            />
+                            <Chip 
+                                icon={<FormatListNumberedRoundedIcon fontSize="small" />} 
+                                label={`${questions.length} câu hỏi`} 
+                                size="small" 
+                                sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', fontWeight: 600 }} 
+                            />
+                        </Stack>
+                    </Box>
+
+                    <Button 
+                        variant="contained" 
+                        startIcon={<AddCircleOutlineIcon />} 
+                        onClick={() => setOpenAddDialog(true)}
+                        sx={{ minWidth: 160, borderRadius: '12px', py: 1.5, fontWeight: 700 }}
+                    >
+                        Thêm câu hỏi
+                    </Button>
+                </Stack>
+            </HeaderCard>
+
+            {/* BẢNG DANH SÁCH CÂU HỎI */}
+            <Typography variant="h6" fontWeight="700" mb={2} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <InfoOutlinedIcon color="primary" /> Danh sách câu hỏi trong đề
+            </Typography>
+
+            <Paper 
+                variant="outlined" 
+                sx={{ 
+                    borderRadius: 4, 
+                    overflow: 'hidden', 
+                    flexGrow: 1, 
+                    borderColor: 'divider',
+                    bgcolor: '#fff' 
+                }}
+            >
                 <TableContainer>
                     <Table sx={{ minWidth: 650 }}>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: '#f8f9fa' }}>
-                                <TableCell width="5%" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>STT</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Nội dung câu hỏi</TableCell>
-                                <TableCell width="20%" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Thông tin</TableCell>
-                                <TableCell width="10%" align="center" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Thao tác</TableCell>
+                            <TableRow sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.03) }}>
+                                <TableCell align="center" width="5%" sx={{ fontWeight: 700, color: 'text.secondary' }}>STT</TableCell>
+                                <TableCell width="55%" sx={{ fontWeight: 700, color: 'text.secondary' }}>Tiêu đề câu hỏi</TableCell>
+                                <TableCell width="25%" sx={{ fontWeight: 700, color: 'text.secondary' }}>Phân loại</TableCell>
+                                <TableCell align="center" width="15%" sx={{ fontWeight: 700, color: 'text.secondary' }}>Thao tác</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {questions.length > 0 ? questions.map((q, idx) => (
-                                <TableRow key={q.ques_id || idx} hover>
-                                    <TableCell sx={{ color: 'text.secondary' }}>{idx + 1}</TableCell>
-                                    <TableCell>
-                                        <LatexContent content={q.content} />
+                                <TableRow key={q.ques_id || idx} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                    <TableCell align="center" sx={{ color: 'text.secondary', fontWeight: 600 }}>{idx + 1}</TableCell>
+                                    
+                                    <TableCell sx={{ py: 2 }}>
+                                        <Typography 
+                                            variant="subtitle2" 
+                                            fontWeight={600}
+                                            sx={{ 
+                                                color: 'text.primary',
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 2,
+                                                WebkitBoxOrient: 'vertical',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                            }}
+                                        >
+                                            {q.title || "(Chưa có tiêu đề)"}
+                                        </Typography>
                                     </TableCell>
+                                    
                                     <TableCell>
-                                        <Stack spacing={1} alignItems="flex-start">
+                                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                                             <DifficultyChip level={q.level} />
                                             <TypeChip type={q.type} />
                                         </Stack>
                                     </TableCell>
+
                                     <TableCell align="center">
                                         <Tooltip title="Xóa khỏi đề thi">
                                             <IconButton 
@@ -231,11 +301,13 @@ function ExamDetailPage() {
                                                 onClick={() => setQToDelete(q)}
                                                 sx={{ 
                                                     color: 'error.main',
-                                                    bgcolor: alpha('#d32f2f', 0.05),
-                                                    '&:hover': { bgcolor: alpha('#d32f2f', 0.15) }
+                                                    bgcolor: alpha('#d32f2f', 0.08),
+                                                    borderRadius: '10px',
+                                                    '&:hover': { bgcolor: alpha('#d32f2f', 0.2), transform: 'translateY(-2px)' },
+                                                    transition: 'all 0.2s'
                                                 }}
                                             >
-                                                <DeleteIcon fontSize="small" />
+                                                <DeleteOutlineRoundedIcon fontSize="small" />
                                             </IconButton>
                                         </Tooltip>
                                     </TableCell>
@@ -244,7 +316,7 @@ function ExamDetailPage() {
                                 <TableRow>
                                     <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
                                         <Typography color="text.secondary" gutterBottom>Chưa có câu hỏi nào trong đề thi này.</Typography>
-                                        <Button variant="outlined" size="small" onClick={() => setOpenAddDialog(true)}>
+                                        <Button variant="outlined" size="small" onClick={() => setOpenAddDialog(true)} sx={{ mt: 1, borderRadius: 2 }}>
                                             Thêm câu hỏi ngay
                                         </Button>
                                     </TableCell>
@@ -255,7 +327,7 @@ function ExamDetailPage() {
                 </TableContainer>
             </Paper>
 
-            {/* Dialogs */}
+            {/* DIALOGS & SNACKBAR */}
             <AddQuestionDialog 
                 open={openAddDialog} 
                 onClose={() => setOpenAddDialog(false)} 
@@ -264,17 +336,21 @@ function ExamDetailPage() {
                 existingQuestionIds={questions.map(q => q.ques_id)} 
             />
 
-            <Dialog open={!!qToDelete} onClose={() => setQToDelete(null)}>
-                <DialogTitle>Xác nhận xóa câu hỏi</DialogTitle>
+            <Dialog 
+                open={!!qToDelete} 
+                onClose={() => setQToDelete(null)}
+                PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+            >
+                <DialogTitle sx={{ fontWeight: 700 }}>Xác nhận xóa câu hỏi</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Bạn có chắc chắn muốn xóa câu hỏi này khỏi đề thi <strong>{exam.title}</strong> không? 
-                        <br/>Hành động này không thể hoàn tác.
+                        Bạn có chắc chắn muốn xóa câu hỏi này khỏi đề thi <Typography component="span" fontWeight="bold" color="text.primary">{exam.title}</Typography> không? 
+                        <br/><br/><i>Lưu ý: Hành động này không xóa câu hỏi khỏi thư viện tổng, chỉ gỡ khỏi đề thi hiện tại.</i>
                     </DialogContentText>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setQToDelete(null)} color="inherit">Hủy</Button>
-                    <Button onClick={handleDelete} color="error" variant="contained" autoFocus>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setQToDelete(null)} color="inherit" sx={{ fontWeight: 600 }}>Hủy</Button>
+                    <Button onClick={handleDelete} color="error" variant="contained" disableElevation sx={{ borderRadius: 2, fontWeight: 700 }}>
                         Xóa bỏ
                     </Button>
                 </DialogActions>
@@ -286,7 +362,7 @@ function ExamDetailPage() {
                 onClose={() => setToast(prev => ({...prev, open: false}))}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
-                <Alert onClose={() => setToast(prev => ({...prev, open: false}))} severity={toast.severity} variant="filled" sx={{ width: '100%' }}>
+                <Alert onClose={() => setToast(prev => ({...prev, open: false}))} severity={toast.severity} variant="filled" sx={{ width: '100%', borderRadius: 2 }}>
                     {toast.msg}
                 </Alert>
             </Snackbar>
