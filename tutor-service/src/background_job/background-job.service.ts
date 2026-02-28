@@ -5,6 +5,7 @@ import { CloudinaryService } from 'src/resource/cloudinary/cloudinary.service';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { CreateNotificationDTO } from 'src/notifications/dto/notification.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { QueueService } from './bull-queue.service';
 
 @Injectable()
 export class BackgroundService {
@@ -12,7 +13,8 @@ export class BackgroundService {
     private cloudinary: CloudinaryService,
     private s3: S3Service,
     private notify: NotificationsService,
-    private prisma: PrismaService
+    private prisma: PrismaService,
+    private jobQueue: QueueService
   ){}
 
   @OnEvent('cloudinary.delete')
@@ -97,5 +99,37 @@ export class BackgroundService {
     senders.forEach(async(sender) => {
       await this.notify.createNotification(sender.uid, notiData)
     })
+  }
+
+  @OnEvent('exam.new')
+  async handleSetupDeadlineNotify(newSession: any){
+    console.log("[LOG DELAYED JOB]")
+    try {
+      const TIME_NOTIFY_BEFORE_TEST = 60 * 60 * 1000;
+      const currentTime = new Date().getTime()
+      const delayTime = newSession.startAt.getTime() - currentTime - TIME_NOTIFY_BEFORE_TEST
+      const payload = {
+        exam_id: newSession.exam_id,
+        session_id: newSession.session_id,
+        action: "notify_test_starting",
+        message: "Sắp bắt đầu làm bài!"
+      }
+      const jobId = await this.jobQueue.setupNotifyDeadline(payload, delayTime)
+      if (jobId){
+        console.log(`[${jobId}]`)
+        await this.prisma.exam_session.update({
+          where: {exam_id_session_id: {exam_id: newSession.exam_id, session_id: newSession.session_id}},
+          data: {
+            job_id: jobId.toString()
+          }
+        })   
+
+        console.log(`[JOB SUBMITTED]`)
+      } else {
+        console.log(`[JOB NOT SUBMITTED]`)
+      }    
+    } catch (error) {
+      console.log(error.message)
+    }
   }
 }
