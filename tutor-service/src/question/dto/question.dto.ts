@@ -1,4 +1,4 @@
-import { isString } from "class-validator";
+import { IsOptional, IsString, isString } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { PlanType } from "@prisma/client";
 
@@ -24,6 +24,9 @@ export class CategoryDto {
     createdAt: Date;
     @ApiProperty()
     updateAt: Date;
+    @IsOptional()
+    @IsString()
+    alias?: string;
     @ApiProperty()
     children?: CategoryDto[];
     @ApiProperty()

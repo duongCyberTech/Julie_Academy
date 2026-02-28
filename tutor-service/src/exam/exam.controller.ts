@@ -5,7 +5,8 @@ import {
     InternalServerErrorException,
     UseGuards,
     ParseIntPipe,
-    ParseDatePipe
+    ParseDatePipe,
+    ParseBoolPipe
 } from "@nestjs/common";
 import { Request as Reqst } from "express";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
@@ -143,7 +144,7 @@ export class ExamSessionController {
     }
 }
 
-@Controller('exam/:exam_id/session/:session_id')
+@Controller('exam_taken')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ExamTakenController {
     constructor(
@@ -165,20 +166,18 @@ export class ExamTakenController {
         }
     }
 
-    @Post("/class/:class_id")
+    @Post(":et_id/class/:class_id")
     submitExam(
-        @Param("exam_id") exam_id: string,
-        @Param("session_id", ParseIntPipe) session_id: number,
+        @Param("et_id") et_id: string,
         @Param("class_id") class_id: string,
         @Body("submitAns") submitAns: SubmitAnswerDto[],
-        @Body("startAt") startAt: Date,
-        @Body('doneAt') doneAt: Date,
+        @Body("isDone", ParseBoolPipe) isDone: boolean,
         @Request() req
     ){
         const userId = req.user.userId
         
         try {
-            return this.et_service.submitExam(class_id, exam_id, session_id, userId, submitAns, startAt, doneAt);
+            return this.et_service.submitExam(class_id, et_id, isDone, userId, submitAns);
         } catch (error) {
             return new ExceptionResponse().returnError(error);
         }

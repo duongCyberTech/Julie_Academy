@@ -76,23 +76,23 @@ export default function StudentMyClassPage() {
   const [activeClasses, setActiveClasses] = useState([]);
   const [pendingClasses, setPendingClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(localStorage.getItem('tab') || 0);
 
   useEffect(() => {
     const fetchMyClasses = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
-          setLoading(false);
-          return;
+        setLoading(false);
+        return;
       }
 
       try {
         let currentUserId = "";
         try {
-            const decoded = jwtDecode(token);
-            currentUserId = decoded.sub || decoded.uid || decoded.userId;
+          const decoded = jwtDecode(token);
+          currentUserId = decoded.sub || decoded.uid || decoded.userId;
         } catch (e) {
-            console.error(e);
+          console.error(e);
         }
 
         setLoading(true);
@@ -103,33 +103,33 @@ export default function StudentMyClassPage() {
         const pending = [];
 
         allList.forEach(cls => {
-            const myEnrollment = cls.learning?.find(l => 
-                l.student?.user?.uid === currentUserId || 
-                l.student?.uid === currentUserId ||
-                l.student_uid === currentUserId
-            );
+          const myEnrollment = cls.learning?.find(l => 
+            l.student?.user?.uid === currentUserId || 
+            l.student?.uid === currentUserId ||
+            l.student_uid === currentUserId
+          );
 
-            if (myEnrollment) {
-                const mappedClass = {
-                    id: cls.class_id,
-                    name: cls.classname,
-                    description: cls.description || "Chưa có mô tả.",
-                    tutor_name: cls.tutor?.user ? `${cls.tutor.user.lname} ${cls.tutor.user.fname}` : "Giáo viên",
-                    tutor_avatar: cls.tutor?.user?.avata_url,
-                    student_count: cls.nb_of_student || 0,
-                    next_session: formatSchedule(cls.schedule),
-                    thumbnail_url: `https://api.dicebear.com/7.x/shapes/svg?seed=${cls.class_id}`,
-                    status: myEnrollment.status,
-                    grade: cls.grade,
-                    subject: cls.subject
-                };
+          if (myEnrollment) {
+            const mappedClass = {
+              id: cls.class_id,
+              name: cls.classname,
+              description: cls.description || "Chưa có mô tả.",
+              tutor_name: cls.tutor?.user ? `${cls.tutor.user.lname} ${cls.tutor.user.fname}` : "Giáo viên",
+              tutor_avatar: cls.tutor?.user?.avata_url,
+              student_count: cls.nb_of_student || 0,
+              next_session: formatSchedule(cls.schedule),
+              thumbnail_url: `https://api.dicebear.com/7.x/shapes/svg?seed=${cls.class_id}`,
+              status: myEnrollment.status,
+              grade: cls.grade,
+              subject: cls.subject
+            };
 
-                if (myEnrollment.status === 'accepted') {
-                    accepted.push(mappedClass);
-                } else if (myEnrollment.status === 'pending') {
-                    pending.push(mappedClass);
-                }
+            if (myEnrollment.status === 'accepted') {
+              accepted.push(mappedClass);
+            } else if (myEnrollment.status === 'pending') {
+              pending.push(mappedClass);
             }
+          }
         });
 
         setActiveClasses(accepted);
@@ -156,8 +156,8 @@ export default function StudentMyClassPage() {
   };
 
   const cardVariants = {
-      hidden: { opacity: 0, y: 20 },
-      visible: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.5 } })
+    hidden: { opacity: 0, y: 20 },
+    visible: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.5 } })
   };
 
   const displayList = tabValue === 0 ? activeClasses : pendingClasses;
@@ -179,18 +179,18 @@ export default function StudentMyClassPage() {
         <Tabs value={tabValue} onChange={handleChangeTab} aria-label="class tabs">
           <Tab 
             label={
-                <Stack direction="row" alignItems="center" spacing={1}>
-                    <CheckCircleIcon fontSize="small" />
-                    <span>Đang học ({activeClasses.length})</span>
-                </Stack>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <CheckCircleIcon fontSize="small" />
+                <span>Đang học ({activeClasses.length})</span>
+              </Stack>
             } 
           />
           <Tab 
             label={
-                <Stack direction="row" alignItems="center" spacing={1}>
-                    <HourglassEmptyIcon fontSize="small" />
-                    <span>Chờ duyệt ({pendingClasses.length})</span>
-                </Stack>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <HourglassEmptyIcon fontSize="small" />
+                <span>Chờ duyệt ({pendingClasses.length})</span>
+              </Stack>
             } 
           />
         </Tabs>
@@ -198,15 +198,15 @@ export default function StudentMyClassPage() {
 
       {displayList.length === 0 && (
         <Box textAlign="center" py={8} bgcolor="#f8fafc" borderRadius={4} border="1px dashed #cbd5e1">
-            <SchoolIcon sx={{ fontSize: 60, color: '#94a3b8', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-                {tabValue === 0 ? "Bạn chưa tham gia lớp học nào." : "Không có yêu cầu nào đang chờ duyệt."}
-            </Typography>
-            {tabValue === 0 && (
-                <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/student/enroll')}>
-                    Tìm lớp học ngay
-                </Button>
-            )}
+          <SchoolIcon sx={{ fontSize: 60, color: '#94a3b8', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary">
+            {tabValue === 0 ? "Bạn chưa tham gia lớp học nào." : "Không có yêu cầu nào đang chờ duyệt."}
+          </Typography>
+          {tabValue === 0 && (
+            <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/student/enroll')}>
+              Tìm lớp học ngay
+            </Button>
+          )}
         </Box>
       )}
 
@@ -229,19 +229,19 @@ export default function StudentMyClassPage() {
                   sx={{ bgcolor: "#e0f2fe" }}
                 />
                 <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="start" mb={1}>
-                        <Chip 
-                            label={cls.subject} 
-                            size="small" 
-                            sx={{ bgcolor: '#eff6ff', color: '#1d4ed8', fontWeight: 600 }} 
-                        />
-                         <Chip 
-                            label={tabValue === 0 ? "Đang học" : "Chờ duyệt"} 
-                            size="small" 
-                            color={tabValue === 0 ? "success" : "warning"} 
-                            variant="outlined"
-                        />
-                    </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="start" mb={1}>
+                    <Chip 
+                      label={cls.subject} 
+                      size="small" 
+                      sx={{ bgcolor: '#eff6ff', color: '#1d4ed8', fontWeight: 600 }} 
+                    />
+                    <Chip 
+                      label={tabValue === 0 ? "Đang học" : "Chờ duyệt"} 
+                      size="small" 
+                      color={tabValue === 0 ? "success" : "warning"} 
+                      variant="outlined"
+                    />
+                  </Stack>
 
                   <Typography
                     variant="h6"
@@ -268,10 +268,10 @@ export default function StudentMyClassPage() {
                       </Avatar>
                       <Box>
                         <Typography variant="body2" fontWeight="600" color="#334155">
-                            {cls.tutor_name}
+                          {cls.tutor_name}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                            Giáo viên
+                          Giáo viên
                         </Typography>
                       </Box>
                     </TutorInfo>
@@ -296,37 +296,37 @@ export default function StudentMyClassPage() {
                 </CardContent>
 
                 <CardActions sx={{ p: 2, pt: 0 }}>
-                    {tabValue === 0 ? (
-                        <Button
-                            fullWidth
-                            variant="contained"
-                            endIcon={<ArrowForwardIcon />}
-                            onClick={() => handleEnterClass(cls.id)}
-                            sx={{
-                            borderRadius: 2,
-                            textTransform: "none",
-                            fontWeight: 600,
-                            bgcolor: '#2563eb',
-                            '&:hover': { bgcolor: '#1d4ed8' }
-                            }}
-                        >
-                            Vào lớp học
-                        </Button>
-                    ) : (
-                        <Button
-                            fullWidth
-                            variant="outlined"
-                            disabled
-                            startIcon={<HourglassEmptyIcon />}
-                            sx={{
-                            borderRadius: 2,
-                            textTransform: "none",
-                            fontWeight: 600,
-                            }}
-                        >
-                            Đang chờ giáo viên duyệt
-                        </Button>
-                    )}
+                  {tabValue === 0 ? (
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      endIcon={<ArrowForwardIcon />}
+                      onClick={() => handleEnterClass(cls.id)}
+                      sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 600,
+                      bgcolor: '#2563eb',
+                      '&:hover': { bgcolor: '#1d4ed8' }
+                      }}
+                    >
+                      Vào lớp học
+                    </Button>
+                  ) : (
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      disabled
+                      startIcon={<HourglassEmptyIcon />}
+                      sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 600,
+                      }}
+                    >
+                      Đang chờ giáo viên duyệt
+                    </Button>
+                  )}
                 </CardActions>
               </StyledClassCard>
             </motion.div>

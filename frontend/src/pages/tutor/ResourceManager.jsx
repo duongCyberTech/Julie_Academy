@@ -375,7 +375,7 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
       if (type === "folder") {
         await deleteFolder(item.folder_id, token);
       } else if (type === "category") {
-        await deleteCategory(item.id, "FORCE", token);
+        await deleteCategory(planId, item.id, "FORCE", token);
         setSelectedCategoryId(null);
       } else if (type === "plan") {
         await deleteBook(item.id, "FORCE", token);

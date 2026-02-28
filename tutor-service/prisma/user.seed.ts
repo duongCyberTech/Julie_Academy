@@ -1,7 +1,12 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, UserRole, AccountStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
+require('dotenv').config()
+console.log("Database URL check:", process.env.DATABASE_URL);
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!
+})
+const prisma = new PrismaClient({adapter});
 
 // Danh sách tên mẫu
 const tutorNames = [
@@ -18,7 +23,7 @@ const studentNames = [
 ];
 
 const parentNames = [
-  'Mai Văn Giàu', 'Lý Thị Sen', 'Ngô Đức Trí', 'Dương Ngọc Mai', 'Trịnh Xuân Phúc',
+  'Mai Văn Giàu', 'Lý Thị Sen', 'Ngô Đứclec Trí', 'Dương Ngọc Mai', 'Trịnh Xuân Phúc',
   'Vương Minh Tâm', 'Châu Thị Lan', 'Lưu Hữu Phước', 'Tô Hoài Nam', 'Đoàn Kim Chi',
 ];
 

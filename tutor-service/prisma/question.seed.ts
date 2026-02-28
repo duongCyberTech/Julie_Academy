@@ -1,3 +1,4 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import {
   PrismaClient,
   QuestionType,
@@ -5,8 +6,11 @@ import {
   QuestionStatus,
   QuestionAccess,
 } from '@prisma/client';
-
-const prisma = new PrismaClient();
+require('dotenv').config()
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!
+})
+const prisma = new PrismaClient({adapter});
 
 function parseContentToTitle(content: string, maxLength = 100) {
   if (!content || typeof content !== 'string') {

@@ -4,6 +4,7 @@ import { RegisterDto } from "./dto/register.dto";
 import { AuthService } from "./auth.service";
 import { UserService } from "src/user/user.service";
 import { Throttle } from "@nestjs/throttler";
+import { UserDto } from "src/user/dto/user.dto";
 
 @Controller('auth')
 export class AuthController {
@@ -23,7 +24,7 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto){
-    return this.userService.createUser(dto)
+    return this.userService.createUser(dto as UserDto)
   }
 }
 
