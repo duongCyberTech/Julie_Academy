@@ -22,6 +22,6 @@ import { CloudinaryProvider } from "./cloudinary/cloudinary.provider";
     CloudinaryService,
     CloudinaryProvider
   ],
-  exports: [CloudinaryService],
+  exports: [CloudinaryService, S3Service],
 })
 export class ResourceModule{}

@@ -399,6 +399,7 @@ model Exam_session {
   exam_type          ExamType       @default(practice)
   limit_taken        Int            @default(1)
   total_student_done Int            @default(0)
+  job_id             String?
   exam_open_in       Exam_open_in[]
   exam               Exams          @relation(fields: [exam_id], references: [exam_id], onDelete: Cascade, onUpdate: Cascade)
 

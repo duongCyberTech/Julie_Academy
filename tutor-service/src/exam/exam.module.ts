@@ -8,9 +8,10 @@ import {
 } from "./exam.controller";
 import { PrismaModule } from "src/prisma/prisma.module";
 import { QuestionService } from "src/question/question.service";
+import { BackgroundJobModule } from "src/background_job/background-job.module";
 
 @Module({
-    imports: [PrismaModule],
+    imports: [BackgroundJobModule],
     controllers: [ExamController, ExamSessionController, ExamTakenController],
     providers: [ExamService, QuestionService, ExamTakenService]
 })

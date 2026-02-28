@@ -2,12 +2,14 @@ import { Injectable, BadRequestException, InternalServerErrorException } from '@
 import { PrismaService } from '../prisma/prisma.service';
 import { QuestionService } from '../question/question.service';
 import { ExamDto, ExamSessionDto, ExamTakenDto, SubmitAnswerDto } from './dto/exam.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ExamService {
     constructor(
         private prisma: PrismaService,
         private questionService: QuestionService,
+        private eventEmitter: EventEmitter2
     ) {}
 
     async createExam(dto: Partial<ExamDto>, tutor_uid: string) {
@@ -108,7 +110,7 @@ export class ExamService {
     }
 
     async createExamSession(exam_id: string, classes: string[], dto: ExamSessionDto) {
-        return this.prisma.$transaction(async (tx) => {
+        return await this.prisma.$transaction(async (tx) => {
             const sessionIndex = await tx.exam_session.count({ where: { exam_id } }) + 1;
             const newSession = await tx.exam_session.create({
                 data: {
@@ -132,8 +134,10 @@ export class ExamService {
                 cnt_ = openTest ? (cnt_ + 1) : cnt_;
             }
 
-
             if (cnt_ != classes.length) throw new BadRequestException("Create session failed!");
+
+            this.eventEmitter.emit('exam.new', newSession)
+
             return {status: 201, message: 'Exam session created successfully', session: newSession.session_id};
         })
     }
