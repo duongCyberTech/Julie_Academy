@@ -1,10 +1,10 @@
 import { MentionsInput, Mention } from 'react-mentions';
 import { useState, useEffect } from 'react';
 import {
-    Box,
-    Button,
-    Avatar,
-    Typography
+  Box,
+  Button,
+  Avatar,
+  Typography
 } from '@mui/material'
 import { jwtDecode } from 'jwt-decode'
 
@@ -32,15 +32,15 @@ const mentionsInputStyle = {
       boxSizing: 'border-box',
     },
     input: {
-        padding: 16,
-        border: '1px solid rgba(0, 0, 0, 0.23)',
-        borderRadius: '8px',
-        boxSizing: 'border-box',
-        outline: 'none',
-        '&:focus': {
-            outline: '2px solid #1976d2',
-            outlineOffset: '-1px',
-        },
+      padding: 16,
+      border: '1px solid rgba(0, 0, 0, 0.23)',
+      borderRadius: '8px',
+      boxSizing: 'border-box',
+      outline: 'none',
+      '&:focus': {
+        outline: '2px solid #1976d2',
+        outlineOffset: '-1px',
+      },
     },
   },
 
@@ -130,44 +130,44 @@ export const renderContentWithTags = (text) => {
 };
 
 export default function CommentInput({ class_id, value, setValue }) {
-    const handleSearchUsers = async (query, callback) => {
-        if (!query || query.length < 1) return;
-        
-        try {
-            const response = await getUserDetailsForTag(class_id, query);
-            const decoded = jwtDecode(localStorage.getItem('token'))
-            if (response.status === 200) {
-                callback(response.data?.filter(user => user.uid !== decoded.sub));
-            }
-        } catch (error) {
-            console.error("Tagging search error:", error.message);
-            callback([]); 
-        }
-    };
+  const handleSearchUsers = async (query, callback) => {
+    if (!query || query.length < 1) return;
+    
+    try {
+      const response = await getUserDetailsForTag(class_id, query);
+      const decoded = jwtDecode(localStorage.getItem('token'))
+      if (response.status === 200) {
+        callback(response.data?.filter(user => user.uid !== decoded.sub));
+      }
+    } catch (error) {
+      console.error("Tagging search error:", error.message);
+      callback([]); 
+    }
+  };
 
-    return (
-        <Box sx={{ p: 1, border: '1px solid #ccc', borderRadius: 2, flex: 1 }}>
-            <MentionsInput
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                style={mentionsInputStyle}
-                placeholder="Nhập nội dung, dùng @ để nhắc tên..."
-                a11ySuggestionsListLabel={"Gợi ý nhắc tên"}
-            >
-                <Mention
-                    trigger="@"
-                    data={handleSearchUsers} 
-                    markup={commentMarkup}
-                    style={mentionStyle}
-                    displayTransform={(id, display) => `@${display}`}
-                    renderSuggestion={(suggestion, search, highlightedDisplay) => (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar src={suggestion.avatar} sx={{ width: 24, height: 24 }} />
-                            <Typography variant="body2">{highlightedDisplay}</Typography>
-                        </Box>
-                    )}
-                />
-            </MentionsInput>
-        </Box>
-    );
+  return (
+    <Box sx={{ p: 1, border: '1px solid #ccc', borderRadius: 2, flex: 1 }}>
+      <MentionsInput
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        style={mentionsInputStyle}
+        placeholder="Nhập nội dung, dùng @ để nhắc tên..."
+        a11ySuggestionsListLabel={"Gợi ý nhắc tên"}
+      >
+        <Mention
+          trigger="@"
+          data={handleSearchUsers} 
+          markup={commentMarkup}
+          style={mentionStyle}
+          displayTransform={(id, display) => `@${display}`}
+          renderSuggestion={(suggestion, search, highlightedDisplay) => (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Avatar src={suggestion.avatar} sx={{ width: 24, height: 24 }} />
+              <Typography variant="body2">{highlightedDisplay}</Typography>
+            </Box>
+          )}
+        />
+      </MentionsInput>
+    </Box>
+  );
 }

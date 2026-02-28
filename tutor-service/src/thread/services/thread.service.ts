@@ -4,6 +4,8 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { CreateThreadDto, UpdateThreadDto } from "../dto/ThreadDto.dto";
 import { DateTime } from 'luxon'
 import { CloudinaryService } from "src/resource/cloudinary/cloudinary.service";
+import { CreateNotificationDTO } from "src/notifications/dto/notification.dto";
+import { NotificationType } from "@prisma/client";
 
 @Injectable()
 export class ThreadService {
@@ -74,10 +76,17 @@ export class ThreadService {
                                 select: {uid: true}
                             }
                         }
+                    },
+                    class: {
+                        select: {
+                            class_id: true,
+                            classname: true
+                        }
                     }
                 },
             }).then((res) => {
                 return {
+                    class: res.class,
                     thread_id: res.thread_id,
                     title: res.title,
                     content: res.content,
@@ -87,6 +96,15 @@ export class ThreadService {
                     followers: res.followers.map(item => item.follower.uid)
                 }
             })
+
+            const notiData: CreateNotificationDTO = {
+                message: `${res.sender.fname} ${res.sender.mname ? res.sender.mname : ""} ${res.sender.lname} đã tạo một bài viết mới trong lớp ${res.class.classname}.`,
+                type: NotificationType.thread,
+                link_wrapper_id: res.class.class_id,
+                link_primary_id: res.thread_id,
+            }
+
+            this.eventEmitter.emit('thread.new', notiData)
 
             return { data: res, message: "Create Thread Successfully!", status: 201 }
         },
@@ -212,7 +230,9 @@ export class ThreadService {
                 },
                 _count: {
                     select: {
-                        comments: true
+                        comments: {
+                            where: {parent_cmt_id: null}
+                        }
                     }
                 }
             },
