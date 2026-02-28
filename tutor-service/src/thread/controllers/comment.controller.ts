@@ -62,6 +62,16 @@ export class CommentController {
         return this.commentService.getCommentsByThread(thread_id, parent_cmt_id, page)
     }
 
+    @Get('/until/:thread_id/:comment_id')
+    fetchCommentsUntil(
+        @Request() req,
+        @Param('thread_id', ParseUUIDPipe) thread_id: string,
+        @Param('comment_id', ParseIntPipe) comment_id: number
+    ) {
+        const uid = req.user.userId
+        return this.commentService.fetchCommentUntil(uid, thread_id, comment_id)
+    }
+
     @Patch(':thread_id/:comment_id')
     @UseInterceptors(FilesInterceptor('images'))
     updateComment(

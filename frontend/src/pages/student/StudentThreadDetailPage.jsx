@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Container,
   Typography,
@@ -24,7 +24,7 @@ import { styled } from "@mui/material/styles";
 import { motion } from "framer-motion";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { getCommentsByThread, createComment } from "../../services/CommentService";
+import { getCommentsByThread, createComment, fetchCommentsUntil } from "../../services/CommentService";
 import { getThreadById } from "../../services/ThreadService";
 import { socket } from "../../services/ApiClient";
 import QuiltedImageList from "../../components/Image/ImageList";
@@ -37,7 +37,9 @@ import { getRelativeTime } from "../../utils/DateTimeFormatter";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendIcon from '@mui/icons-material/Send';
 import PersonIcon from '@mui/icons-material/Person';
-import { PhotoCamera, Close, CloudUpload } from "@mui/icons-material";
+import PhotoCamera from '@mui/icons-material/PhotoCamera'
+import Close from '@mui/icons-material/Close'
+import CloudUpload from "@mui/icons-material/CloudUpload";
 
 // --- STYLED COMPONENTS ---
 const OriginalPostCard = styled(Paper)(({ theme }) => ({
@@ -56,8 +58,38 @@ const CommentsCard = styled(Paper)(({ theme }) => ({
 }));
 // ------------------------------
 
+const updateCommentInTree = (nodes, updatedComment) => {
+  return nodes.map((node) => {
+    if (node.comment_id === updatedComment.parent_cmt_id){
+      return {
+        ...node,
+        cnt_comments: node.cnt + 1,
+        replies: updateCommentInTree(node.replies, updatedComment),
+        isNested: true
+      }
+    }
+    // Tìm thấy node cần cập nhật
+    if (node.comment_id === updatedComment.comment_id) {
+      return {
+        ...node,
+        ...updatedComment,
+      };
+    }
+
+    // Nếu có bình luận con, tiếp tục đệ quy tìm kiếm
+    if (node.replies && node.replies.length > 0) {
+      return {
+        ...node,
+        replies: updateCommentInTree(node.replies, updatedComment),
+      };
+    }
+
+    return node;
+  });
+};
+
 // --- COMPONENT CHÍNH ---
-export default function ThreadDetailPage() {
+const ThreadDetailPage = React.memo(() => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState(""); 
   const [curParent, setCurParent] = useState(null)
@@ -70,6 +102,10 @@ export default function ThreadDetailPage() {
 
   const [isUpload, setIsUpload] = useState(false)
   const [selectedImages, setSelectedImages] = useState([]);
+
+  const location = useLocation();
+  const link_data = location.state;
+  const hasHandledNav = useRef(false);
 
   useEffect(() => {
     const fetchThread = async() => {
@@ -85,29 +121,55 @@ export default function ThreadDetailPage() {
   }, [])
 
   useEffect(() => {
-    const fetchComments = async() => {
+    const loadData = async () => {
+      if (link_data?.isNested && link_data?.comment_id && !hasHandledNav.current) {
+        hasHandledNav.current = true;
+        
+        try {
+          const targetCommentTree = await fetchCommentsUntil(threadId, link_data.comment_id);
+          
+          if (targetCommentTree) {
+            setComments(prev => {
+              const exists = prev.some(c => c.comment_id === targetCommentTree.comment_id);
+              if (exists) {
+                return updateCommentInTree(prev, targetCommentTree);
+              }
+              return [targetCommentTree, ...prev]; 
+            });
+
+            setTimeout(() => {
+              const element = document.getElementById(`comment-${link_data.comment_id}`);
+              if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 500);
+          }
+        } catch (error) {
+          console.error("Lỗi khi tải bình luận từ thông báo", error);
+        }
+      }
+
       toast.promise(getCommentsByThread(threadId, curParent, page), {
-        loading: "Loading...",
+        loading: page === 1 ? "Đang tải bình luận..." : "Đang tải thêm...",
         success: (response) => {
           setComments(prev => {
-              const newComments = response && response.length ? response.filter(
-                incoming => !prev.some(existing => existing.comment_id === incoming.comment_id)
-              ) : [];
-              
-              return [...prev, ...newComments];
+            const newComments = response && response.length ? response.filter(
+              incoming => !prev.some(existing => existing.comment_id === incoming.comment_id)
+            ) : [];
+            return [...prev, ...newComments];
           });
-          return
+          return "Tải thành công!";
         },
         error: (err) => {
-          if (err.status === 401) return "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
+          if (err.status === 401) return "Phiên đăng nhập hết hạn.";
           return err.message || "Có lỗi xảy ra!";
         },
         duration: 2000
-      })
-    }
+      });
+    };
 
-    fetchComments()
-  },[page])
+    loadData();
+  }, [page, threadId]);
 
   useEffect(() => {
     const targetId = threadId;
@@ -467,4 +529,6 @@ export default function ThreadDetailPage() {
 
     </Container>
   );
-}
+})
+
+export default ThreadDetailPage;

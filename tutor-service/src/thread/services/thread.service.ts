@@ -212,7 +212,9 @@ export class ThreadService {
                 },
                 _count: {
                     select: {
-                        comments: true
+                        comments: {
+                            where: {parent_cmt_id: null}
+                        }
                     }
                 }
             },
