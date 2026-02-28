@@ -134,40 +134,40 @@ export default function CommentInput({ class_id, value, setValue }) {
         if (!query || query.length < 1) return;
         
         try {
-            const response = await getUserDetailsForTag(class_id, query);
-            const decoded = jwtDecode(localStorage.getItem('token'))
-            if (response.status === 200) {
-                callback(response.data?.filter(user => user.uid !== decoded.sub));
-            }
+          const response = await getUserDetailsForTag(class_id, query);
+          const decoded = jwtDecode(localStorage.getItem('token'))
+          if (response.status === 200) {
+            callback(response.data?.filter(user => user.uid !== decoded.sub));
+          }
         } catch (error) {
-            console.error("Tagging search error:", error.message);
-            callback([]); 
+          console.error("Tagging search error:", error.message);
+          callback([]); 
         }
     };
 
     return (
-        <Box sx={{ p: 1, border: '1px solid #ccc', borderRadius: 2, flex: 1 }}>
-            <MentionsInput
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                style={mentionsInputStyle}
-                placeholder="Nhập nội dung, dùng @ để nhắc tên..."
-                a11ySuggestionsListLabel={"Gợi ý nhắc tên"}
-            >
-                <Mention
-                    trigger="@"
-                    data={handleSearchUsers} 
-                    markup={commentMarkup}
-                    style={mentionStyle}
-                    displayTransform={(id, display) => `@${display}`}
-                    renderSuggestion={(suggestion, search, highlightedDisplay) => (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar src={suggestion.avatar} sx={{ width: 24, height: 24 }} />
-                            <Typography variant="body2">{highlightedDisplay}</Typography>
-                        </Box>
-                    )}
-                />
-            </MentionsInput>
-        </Box>
+      <Box sx={{ p: 1, border: '1px solid #ccc', borderRadius: 2, flex: 1 }}>
+        <MentionsInput
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          style={mentionsInputStyle}
+          placeholder="Nhập nội dung, dùng @ để nhắc tên..."
+          a11ySuggestionsListLabel={"Gợi ý nhắc tên"}
+        >
+          <Mention
+            trigger="@"
+            data={handleSearchUsers} 
+            markup={commentMarkup}
+            style={mentionStyle}
+            displayTransform={(id, display) => `@${display}`}
+            renderSuggestion={(suggestion, search, highlightedDisplay) => (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Avatar src={suggestion.avatar} sx={{ width: 24, height: 24 }} />
+                <Typography variant="body2">{highlightedDisplay}</Typography>
+              </Box>
+            )}
+          />
+        </MentionsInput>
+      </Box>
     );
 }
