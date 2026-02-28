@@ -57,7 +57,14 @@ const NotificationPage = React.memo(() => {
     switch(noti.type) {
       case "thread": {
         if (noti.link_wrapper_id && noti.link_primary_id && noti.link_partial_id)
-          navigate(`/${decodedData.role}/classes/${noti.link_wrapper_id}/${noti.link_primary_id}#${noti.link_partial_id}`)
+          navigate(
+            `/${decodedData.role}/classes/${noti.link_wrapper_id}/${noti.link_primary_id}#${noti.link_partial_id}`, 
+            {state: {
+              thread_id: noti.link_primary_id,
+              comment_id: noti.link_partial_id,
+              isNested: true
+            }}
+          )
 
         return
       }

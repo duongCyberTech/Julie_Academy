@@ -82,9 +82,9 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
   const [selectedImages, setSelectedImages] = useState(post?.medias || []);
   const [addImages, setAddImages] = useState([])
   const [deleteImages, setDeleteImages] = useState([])
-  const [isRestricted, setIsRestricted] = useState(false)
+  const [isRestricted, setIsRestricted] = useState((action == "create" ? false : post.is_restricted))
   const [restrictedModal, setRestrictedModal] = useState(false)
-  const [openList, setOpenList] = useState([])
+  const [openList, setOpenList] = useState((action == "create" ? [] : post.open_list))
 
   const handleNewImages = (event) => {
     const files = Array.from(event.target.files);
@@ -131,7 +131,9 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
       content: htmlContent,
       deletedImages: deleteImages,
       addImages,
-      class_id
+      class_id,
+      open_list: openList,
+      is_restricted: isRestricted
     }
     toast.promise(updateThread(post.thread_id, updatedPostData), {
       loading: `Đang cập nhật bài viết và thêm ${addImages.length} ảnh...`,
@@ -368,24 +370,37 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
       
       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <Button startIcon={<PhotoCamera color="success" />} onClick={() => setIsUpload(true)}>Ảnh/Video</Button>
-        <Button 
-          variant="contained" 
-          onClick={
-            action == "create" ? 
-            () => handleSubmit() :
-            () => handleSave()
-          } 
-          disabled={!htmlContent && !selectedImages.length}
-        >
-          {action == "create" ? "Đăng" : "Lưu"}
-        </Button>
+        <Box sx={{display: 'flex', gap: 2}}>
+          {isRestricted ? 
+            (
+              <Button
+                variant="outlined"
+                color="success"
+                onClick={() => setRestrictedModal(true)}
+              >Quyền truy cập</Button>
+            ) 
+          : null}
+
+          <Button 
+            variant="contained" 
+            onClick={
+              action == "create" ? 
+              () => handleSubmit() :
+              () => handleSave()
+            } 
+            disabled={!htmlContent && !selectedImages.length}
+          >
+            {action == "create" ? "Đăng" : "Lưu"}
+          </Button>
+        </Box>
       </Box>
       <ListUserModal
         class_id={class_id}
         open={restrictedModal}
         setOpen={setRestrictedModal}
-        setOpenList={setOpenList}
         setRestricted={setIsRestricted}
+        selectedIds={openList}
+        setSelectedIds={setOpenList}
       />
     </Paper>
   );
