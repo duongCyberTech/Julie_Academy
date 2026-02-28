@@ -82,6 +82,11 @@ export const updateThread = async(threadId, threadData) => {
             formData.append('addImages', img)
         })
 
+        if (threadData?.open_list?.length)
+            formData.append('open_list', threadData.open_list)
+
+        formData.append('is_restricted', threadData.is_restricted)
+
         const response = await apiClient.patch(
             `/threads/${threadId}`,
             formData,
