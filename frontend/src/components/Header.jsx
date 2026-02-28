@@ -1,115 +1,72 @@
+// Header.jsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import {
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Button,
-  Avatar,
-  Box,
-  Menu,
-  MenuItem,
-  Divider,
-  ListItemIcon,
-  Tooltip,
-  useTheme,
-  Badge,
-  styled,
-  alpha,
+  AppBar, Toolbar, IconButton, Typography, Button, Avatar, Box,
+  Menu, MenuItem, Divider, ListItemIcon, Tooltip, useTheme,
+  Badge, styled, alpha
 } from "@mui/material";
 
 import {
-  Menu as MenuIcon,
-  ExitToApp as ExitToAppIcon,
-  Brightness4 as Brightness4Icon,
-  Brightness7 as Brightness7Icon,
-  Notifications as NotificationsIcon,
-  PersonOutline as PersonOutlineIcon,
-  SettingsOutlined as SettingsOutlinedIcon,
-  Language as LanguageIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
+  Menu as MenuIcon, ExitToApp as ExitToAppIcon,
+  Notifications as NotificationsIcon, PersonOutline as PersonOutlineIcon,
+  SettingsOutlined as SettingsOutlinedIcon, Language as LanguageIcon,
+  DarkModeRounded as DarkModeRoundedIcon,
+  LightModeRounded as LightModeRoundedIcon 
 } from "@mui/icons-material";
-import Logo from "../assets/images/logo.png";
+
 import { socket } from "../services/ApiClient";
 import { countNotifications } from "../services/NotificationService";
-import notificationSfx from '../assets/sounds/notifications/ting-2.mp3'
+import notificationSfx from '../assets/sounds/notifications/ting-2.mp3';
 
-const StyledAppBar = styled(AppBar, {
-  shouldForwardProp: (prop) =>
-    !["isSidebarExpanded", "isSidebarMounted"].includes(prop),
-})(({ theme, isSidebarExpanded, isSidebarMounted }) => ({
-  transition: theme.transitions.create(["width", "margin"], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.standard,
-  }),
-  backdropFilter: "blur(6px)",
-  backgroundColor:
-    theme.palette.mode === "light"
-      ? alpha(theme.palette.accent?.light || theme.palette.primary.light, 0.85)
-      : alpha(theme.palette.background.paper, 0.85),
-  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
-  [theme.breakpoints.up("lg")]: {
-    width: isSidebarMounted
-      ? `calc(100% - ${isSidebarExpanded ? 260 : 80}px)`
-      : "100%",
-    marginLeft: isSidebarMounted ? `${isSidebarExpanded ? 260 : 80}px` : "0px",
-  },
+// 1. NỀN HEADER CHUẨN KÍNH MỜ
+const StyledAppBar = styled(AppBar)(({ theme }) => ({
+  backgroundColor: theme.palette.mode === 'light' 
+    ? 'rgba(255, 255, 255, 0.85)' 
+    : alpha(theme.palette.background.paper, 0.85),
+  backdropFilter: "blur(16px)", 
+  color: theme.palette.text.primary,
+  boxShadow: "none", 
+  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`, 
 }));
 
 const HeaderIconButton = styled(IconButton)(({ theme }) => ({
   color: theme.palette.text.secondary,
+  transition: "all 0.2s ease",
   "&:hover": {
-    backgroundColor: alpha(theme.palette.action.hover, 0.1),
+    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+    color: theme.palette.primary.main,
   },
+  "&:active": {
+    transform: "scale(0.92)",
+  }
 }));
 
-const BrandBox = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  textDecoration: "none",
-  color: "inherit",
-}));
-
-// --- [THAY ĐỔI 1]: Xóa biến USER_MENU_CONFIG tĩnh ---
-
-const Header = React.memo(function Header({
-  mode,
-  toggleMode,
-  isSidebarExpanded,
-  onDesktopSidebarToggle,
-  onMobileSidebarToggle,
-  isSidebarMounted,
-}) {
+const Header = React.memo(function Header({ mode, toggleMode, onMobileSidebarToggle }) {
   const theme = useTheme();
   const navigate = useNavigate();
   const notifyAudio = useMemo(() => new Audio(notificationSfx), []);
 
   const [userInfo, setUserInfo] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [cntUnRead, setCntUnRead] = useState(0)
-  const [token, setToken] = useState(localStorage.getItem("token"))
+  const [cntUnRead, setCntUnRead] = useState(0);
+  const [token] = useState(localStorage.getItem("token"));
 
   useEffect(() => {
     const fetchCnt = async() => {
-      const response = await countNotifications(-1)
-      setCntUnRead(response)
+      try {
+        const response = await countNotifications(-1);
+        setCntUnRead(response || 0);
+      } catch (e) { console.log(e) }
     }
     if (!token) return;
     try {
       const decoded = jwtDecode(token);
-      socket.emit('notify', decoded.sub)
+      socket.emit('notify', decoded.sub);
       if (decoded.exp * 1000 > Date.now()) {
-        // --- [THAY ĐỔI 2]: Lấy thêm role từ token ---
-        setUserInfo({ 
-            name: decoded.name, 
-            email: decoded.email, 
-            role: decoded.role 
-        });
-
-        fetchCnt()
+        setUserInfo({ name: decoded.name, email: decoded.email, role: decoded.role });
+        fetchCnt();
       } else {
         localStorage.removeItem("token");
       }
@@ -119,39 +76,20 @@ const Header = React.memo(function Header({
 
     const handleUnreadCount = (newCount) => {
       setCntUnRead(newCount);
-      notifyAudio.play().catch(err => console.warn("Audio play blocked:", err));
+      notifyAudio.play().catch(err => console.warn("Audio blocked:", err));
     };
 
-    socket.on('cnt_unread', handleUnreadCount)
+    socket.on('cnt_unread', handleUnreadCount);
+    return () => socket.off('cnt_unread', handleUnreadCount);
+  }, [token, notifyAudio]);
 
-    return () => {
-      socket.off('cnt_unread', handleUnreadCount)
-    }
-  }, [token]);
-
-  // --- [THAY ĐỔI 3]: Tạo menu items động dựa trên role ---
   const userMenuItems = useMemo(() => {
     let role = userInfo?.role ? userInfo.role.toLowerCase() : "";
-    if (role === "parents") {
-        role = "parent";
-    }
+    if (role === "parents") role = "parent";
     return [
-      {
-        text: "Hồ sơ",
-        // Tự động tạo link: /student/profile, /tutor/profile...
-        path: role ? `/${role}/profile` : "/login", 
-        icon: <PersonOutlineIcon fontSize="small" />,
-      },
-      {
-        text: "Cài đặt",
-        path: "/settings",
-        icon: <SettingsOutlinedIcon fontSize="small" />,
-      },
-      {
-        text: "Ngôn ngữ",
-        path: "/language",
-        icon: <LanguageIcon fontSize="small" />,
-      },
+      { text: "Hồ sơ", path: role ? `/${role}/profile` : "/login", icon: <PersonOutlineIcon fontSize="small" /> },
+      { text: "Cài đặt", path: "/settings", icon: <SettingsOutlinedIcon fontSize="small" /> },
+      { text: "Ngôn ngữ", path: "/language", icon: <LanguageIcon fontSize="small" /> },
     ];
   }, [userInfo]);
 
@@ -159,166 +97,108 @@ const Header = React.memo(function Header({
     localStorage.removeItem("token");
     setUserInfo(null);
     setAnchorEl(null);
-    navigate("/"); // Hoặc /login
+    navigate("/"); 
   }, [navigate]);
 
-  const handleNav = useCallback(
-    (path) => {
-      navigate(path);
-      setAnchorEl(null);
-    },
-    [navigate]
-  );
+  const handleNav = useCallback((path) => {
+    navigate(path);
+    setAnchorEl(null);
+  }, [navigate]);
 
   const isAuth = !!userInfo;
 
   return (
-    <StyledAppBar
-      position="fixed"
-      isSidebarExpanded={isSidebarExpanded}
-      isSidebarMounted={isSidebarMounted}
-    >
-      <Toolbar sx={{ minHeight: 64, px: { xs: 1, sm: 2 } }}>
-        <HeaderIconButton
-          edge="start"
-          onClick={onMobileSidebarToggle}
-          sx={{ mr: 1, display: { lg: "none" } }}
-        >
+    <StyledAppBar position="sticky">
+      <Toolbar sx={{ minHeight: "72px !important", px: { xs: 2, lg: 4 } }}>
+        
+        {/* Nút Toggle Sidebar trên Mobile */}
+        <HeaderIconButton edge="start" onClick={onMobileSidebarToggle} sx={{ mr: 1, display: { lg: "none" } }}>
           <MenuIcon />
         </HeaderIconButton>
-        {isSidebarMounted && (
-          <HeaderIconButton
-            onClick={onDesktopSidebarToggle}
-            sx={{ display: { xs: "none", lg: "flex" } }}
-          >
-            {isSidebarExpanded ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-          </HeaderIconButton>
-        )}
 
-        <BrandBox
-          component={RouterLink}
-          to="/"
-          sx={{ flexGrow: 1, justifyContent: { xs: "center" }, ml: 20 }}
-        >
-          <Box
-            component="img"
-            src={Logo}
-            alt="Logo"
-            sx={{
-              width: 40,
-              height: 40,
-              flexShrink: 0,
-              filter:
-                mode === "dark"
-                  ? "drop-shadow(0 0 5px rgba(100, 181, 246, 0.6)) brightness(1.1)"
-                  : "none",
-              transition: "filter 0.3s ease",
-            }}
-          />
-          <Typography
-            variant="h6"
-            noWrap
-            sx={{
-              ml: 1.5,
-              fontWeight: 700,
-              display: { xs: "none", sm: "block" },
-              background:
-                mode === "dark"
-                  ? `linear-gradient(45deg, #22d3ee 0%, #e879f9 100%)`
-                  : `linear-gradient(45deg, #6a11cb 0%, #2575fc 100%)`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              filter:
-                mode === "dark"
-                  ? "drop-shadow(0 0 10px rgba(34, 211, 238, 0.3))"
-                  : "none",
-              transition: "all 0.3s ease",
-            }}
-          >
-            Julie Academy
-          </Typography>
-        </BrandBox>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {/* Khoảng trống đẩy các icon tiện ích sang bên phải */}
+        <Box sx={{ flexGrow: 1 }} />
+
+        {/* KHU VỰC TIỆN ÍCH BÊN PHẢI */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1.5 } }}>
           <Tooltip title="Thông báo">
             <HeaderIconButton onClick={() => navigate('/settings/notifications')}>
-              <Badge badgeContent={cntUnRead} color="primary">
-                <NotificationsIcon />
+              <Badge badgeContent={cntUnRead} color="error" sx={{ '& .MuiBadge-badge': { right: 2, top: 4, fontWeight: 'bold' } }}>
+                <NotificationsIcon fontSize="small" />
               </Badge>
             </HeaderIconButton>
           </Tooltip>
 
-          <Tooltip title={mode === "dark" ? "Chế độ sáng" : "Chế độ tối"}>
-            <HeaderIconButton onClick={toggleMode}>
-              {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
+          {/* HOÁN ĐỔI ICON DARK/LIGHT MODE */}
+          <Tooltip title={mode === "dark" ? "Chuyển sang chế độ Sáng" : "Chuyển sang chế độ Tối"}>
+            <HeaderIconButton 
+              onClick={toggleMode}
+              sx={{ transition: 'transform 0.4s ease', '&:active': { transform: 'rotate(180deg) scale(0.8)' } }}
+            >
+              {mode === "dark" ? (
+                <DarkModeRoundedIcon fontSize="small" sx={{ color: theme.palette.primary.light }} />
+              ) : (
+                <LightModeRoundedIcon fontSize="small" color="warning" />
+              )}
             </HeaderIconButton>
           </Tooltip>
 
           {isAuth ? (
-            <Tooltip title="Tài khoản">
-              <IconButton
-                onClick={(e) => setAnchorEl(e.currentTarget)}
-                sx={{ p: 0, ml: 1 }}
-              >
-                <Avatar
-                  sx={{ width: 36, height: 36, bgcolor: "secondary.main" }}
-                >
+            <>
+              <Box sx={{ ml: 1, display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'text.primary' }}>
+                  {userInfo.name}
+                </Typography>
+              </Box>
+              
+              <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ p: 0, ml: 1, transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.05)' } }}>
+                <Avatar sx={{ width: 38, height: 38, bgcolor: "primary.main", fontWeight: 700, fontSize: '1rem' }}>
                   {userInfo.name?.charAt(0).toUpperCase()}
                 </Avatar>
               </IconButton>
-            </Tooltip>
+            </>
           ) : (
-            <Button
-              component={RouterLink}
-              to="/login"
-              variant="contained"
-              color="secondary"
-            >
+            <Button component={RouterLink} to="/login" variant="contained" sx={{ borderRadius: 2, px: 3, ml: 1 }}>
               Đăng nhập
             </Button>
           )}
         </Box>
       </Toolbar>
 
+      {/* DROPDOWN MENU TÀI KHOẢN */}
       {isAuth && (
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={() => setAnchorEl(null)}
           PaperProps={{
-            elevation: 2,
+            elevation: 0,
             sx: {
-              mt: 1.2,
-              borderRadius: 2,
+              mt: 1.5, 
+              minWidth: 200, 
+              borderRadius: '12px',
               border: `1px solid ${theme.palette.divider}`,
-              backgroundColor: alpha(theme.palette.background.paper, 0.9),
-              backdropFilter: "blur(6px)",
+              boxShadow: theme.palette.mode === "dark" ? '0px 10px 30px rgba(0,0,0,0.5)' : '0px 10px 30px rgba(0,0,0,0.08)',
             },
           }}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
-          <Box sx={{ px: 2, py: 1.5 }}>
-            <Typography fontWeight={600}>{userInfo.name}</Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
-              {userInfo.email}
-            </Typography>
+          <Box sx={{ px: 2, py: 1.5, display: { xs: 'block', sm: 'none' } }}>
+            <Typography fontWeight={700}>{userInfo.name}</Typography>
+            <Typography variant="body2" color="text.secondary" noWrap>{userInfo.email}</Typography>
           </Box>
-          <Divider />
-          
-          {/* --- [THAY ĐỔI 4]: Duyệt qua userMenuItems thay vì USER_MENU_CONFIG --- */}
+          <Divider sx={{ display: { xs: 'block', sm: 'none' } }} />
           {userMenuItems.map((item) => (
-            <MenuItem key={item.text} onClick={() => handleNav(item.path)}>
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              {item.text}
+            <MenuItem key={item.text} onClick={() => handleNav(item.path)} sx={{ py: 1.2, mx: 1, borderRadius: '8px', mb: 0.5 }}>
+              <ListItemIcon sx={{ minWidth: 32 }}>{item.icon}</ListItemIcon>
+              <Typography variant="body2" fontWeight={600}>{item.text}</Typography>
             </MenuItem>
           ))}
-          
-          <Divider />
-          <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
-            <ListItemIcon sx={{ color: "error.main" }}>
-              <ExitToAppIcon fontSize="small" />
-            </ListItemIcon>
-            Đăng xuất
+          <Divider sx={{ my: 0.5 }} />
+          <MenuItem onClick={handleLogout} sx={{ py: 1.2, mx: 1, borderRadius: '8px', color: "error.main", '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) } }}>
+            <ListItemIcon sx={{ color: "error.main", minWidth: 32 }}><ExitToAppIcon fontSize="small" /></ListItemIcon>
+            <Typography variant="body2" fontWeight={700}>Đăng xuất</Typography>
           </MenuItem>
         </Menu>
       )}

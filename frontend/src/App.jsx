@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { createAppTheme } from "./context/ThemeProvider";
 import AppRoutes from "./routes/AppRoutes";
-import Header from "./components/Header";
 import { Toaster } from "sonner";
 
 function AppContent() {
@@ -14,13 +13,9 @@ function AppContent() {
   const toggleMode = () =>
     setMode((prev) => (prev === "dark" ? "light" : "dark"));
 
-  const hideHeader =
-    location.pathname === "/login" || location.pathname === "/register";
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {!hideHeader && <Header mode={mode} toggleMode={toggleMode} />}
       <Routes>
         <Route
           path="/*"

@@ -367,14 +367,17 @@ export class ClassService {
           }
         },
         tutor:{
-          select:{ user:{
+          select:{ 
+            experiences: true, 
+            phone_number: true,
+            user:{
             select:{
               uid: true,
               fname: true,
               mname: true,
               lname: true,
               username: true,
-              avata_url: true 
+              avata_url: true,
             }
           }
           }

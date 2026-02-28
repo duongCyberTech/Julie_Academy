@@ -8,7 +8,7 @@ import {
     TextField, InputAdornment, Snackbar, Alert,
     FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { styled, alpha } from '@mui/material/styles';
 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -22,23 +22,51 @@ import SortIcon from '@mui/icons-material/Sort';
 
 import CreateExamDialog from '../../components/CreateExamDialog';
 
+// ==========================================
+// 1. PAGE WRAPPER CHUẨN SOFT UI
+// ==========================================
 const PageWrapper = styled(Paper)(({ theme }) => ({
-    padding: theme.spacing(3),
-    backgroundColor: theme.palette.mode === 'light' ? '#f9f9f9' : theme.palette.background.paper,
-    minHeight: '85vh',
-    boxShadow: 'none',
+    margin: theme.spacing(2), // 16px (Đã điều chỉnh theo yêu cầu)
+    padding: theme.spacing(4), // 32px
+    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
+    borderRadius: '24px',
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
+    height: 'calc(100vh - 120px)', // Chống double-scrollbar
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
 }));
 
+// Khu vực nội dung cuộn độc lập (Fit vừa vặn bên trong Wrapper)
+const ScrollableContent = styled(Box)(({ theme }) => ({
+    flexGrow: 1,
+    overflowY: 'auto',
+    paddingRight: theme.spacing(1), // Để trống chỗ cho thanh cuộn
+    // Tùy chỉnh thanh cuộn cho thanh mảnh
+    "&::-webkit-scrollbar": { width: "6px" },
+    "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
+    "&::-webkit-scrollbar-thumb": {
+        backgroundColor: alpha(theme.palette.grey[400], 0.5),
+        borderRadius: "10px",
+        "&:hover": { backgroundColor: theme.palette.grey[500] },
+    },
+}));
+
+// ==========================================
+// STYLED COMPONENTS KHÁC
+// ==========================================
 const ExamCard = styled(Card)(({ theme }) => ({
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
+    borderRadius: 16, // Bo góc cho Card
     border: `1px solid ${theme.palette.divider}`,
-    boxShadow: 'none',
-    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+    transition: 'all 0.3s',
     '&:hover': {
-        transform: 'translateY(-3px)',
-        boxShadow: theme.shadows[3],
+        transform: 'translateY(-4px)',
+        boxShadow: '0 12px 24px rgba(0,0,0,0.08)',
         borderColor: theme.palette.primary.main
     }
 }));
@@ -46,7 +74,7 @@ const ExamCard = styled(Card)(({ theme }) => ({
 const LevelChip = memo(({ level }) => {
     const map = { 
         EASY: { label: "Dễ", color: "success" }, 
-        MEDIUM: { label: "TB", color: "warning" }, 
+        MEDIUM: { label: "Trung bình", color: "warning" }, 
         HARD: { label: "Khó", color: "error" } 
     };
     const conf = map[String(level).toUpperCase()] || { label: "N/A", color: "default" };
@@ -113,19 +141,35 @@ function ExamPage() {
 
     return (
         <PageWrapper>
-            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" mb={3} spacing={2}>
+            {/* HEADER (Cố định phía trên) */}
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" mb={3} flexShrink={0}>
                 <Box>
-                    <Typography variant="h4" fontWeight="bold">Quản lý đề thi</Typography>
-                    <Typography variant="body2" color="text.secondary">Danh sách các bộ đề thi trắc nghiệm của bạn</Typography>
+                    <Typography variant="h4" fontWeight="700">Quản lý đề thi</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Danh sách các bộ đề thi trắc nghiệm của bạn
+                    </Typography>
                 </Box>
-                <Button variant="contained" size="large" startIcon={<AddCircleOutlineIcon />} onClick={() => setOpenCreate(true)}>
+                <Button 
+                    variant="contained" 
+                    startIcon={<AddCircleOutlineIcon />} 
+                    onClick={() => setOpenCreate(true)}
+                    sx={{ borderRadius: "10px", fontWeight: 600}}
+                >
                     Tạo đề mới
                 </Button>
             </Stack>
 
-            <Paper elevation={0} sx={{ p: 2, mb: 4, bgcolor: 'background.paper', border: '1px solid #e0e0e0', borderRadius: 2 }}>
-                {/* UPDATE: Grid v6 syntax */}
-                <Grid container spacing={2} alignItems="center">
+            {/* BỘ LỌC (Cố định phía trên) */}
+            <Paper 
+                elevation={0} 
+                flexShrink={0}
+                sx={{ 
+                    p: 2.5, mb: 3, 
+                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.03), 
+                    border: '1px solid', borderColor: 'divider', borderRadius: 3 
+                }}
+            >
+                <Grid container spacing={3} alignItems="center">
                     <Grid size={{ xs: 12, md: 5 }}>
                         <TextField
                             fullWidth
@@ -133,13 +177,14 @@ function ExamPage() {
                             placeholder="Tìm kiếm đề thi..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                             InputProps={{ 
                                 startAdornment: <InputAdornment position="start"><SearchIcon color="action" /></InputAdornment> 
                             }}
                         />
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
-                        <FormControl fullWidth size="small">
+                        <FormControl fullWidth size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                             <InputLabel>Cấp độ</InputLabel>
                             <Select
                                 value={filterLevel}
@@ -155,7 +200,7 @@ function ExamPage() {
                         </FormControl>
                     </Grid>
                     <Grid size={{ xs: 6, md: 4 }}>
-                         <FormControl fullWidth size="small">
+                         <FormControl fullWidth size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                             <InputLabel>Sắp xếp</InputLabel>
                             <Select
                                 value={sortBy}
@@ -173,66 +218,87 @@ function ExamPage() {
                 </Grid>
             </Paper>
 
-            {loading ? (
-                <Box display="flex" justifyContent="center" py={10}><CircularProgress /></Box>
-            ) : processedExams.length === 0 ? (
-                <Paper variant="outlined" sx={{ p: 8, textAlign: 'center', bgcolor: 'white', borderStyle: 'dashed', borderRadius: 2 }}>
-                    <QuizIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary">Không tìm thấy đề thi nào</Typography>
-                </Paper>
-            ) : (
-                <Grid container spacing={3}>
-                    {processedExams.map((exam) => (
-                        /* UPDATE: Grid v6 syntax - removed 'item', used 'size' */
-                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={exam.exam_id}>
-                            <ExamCard>
-                                <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                                    <Stack direction="row" justifyContent="space-between" mb={1}>
-                                        <LevelChip level={exam.level} />
-                                    </Stack>
-                                    
-                                    <Typography variant="h6" fontWeight="bold" noWrap title={exam.title} gutterBottom>
-                                        {exam.title}
-                                    </Typography>
-                                    
-                                    <Typography variant="body2" color="text.secondary" sx={{ 
-                                        mb: 2, height: 40, overflow: 'hidden', 
-                                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'
+            {/* DANH SÁCH ĐỀ THI (Có thanh cuộn riêng, không dính double scrollbar) */}
+            <ScrollableContent>
+                {loading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                        <CircularProgress />
+                    </Box>
+                ) : processedExams.length === 0 ? (
+                    <Paper elevation={0} sx={{ 
+                        p: 8, textAlign: 'center', bgcolor: 'transparent', 
+                        border: '2px dashed', borderColor: 'divider', borderRadius: 3,
+                        mt: 2
+                    }}>
+                        <QuizIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
+                        <Typography variant="h6" color="text.secondary" fontWeight={600}>
+                            Không tìm thấy đề thi nào
+                        </Typography>
+                        <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
+                            Hãy thử thay đổi bộ lọc hoặc tạo mới một đề thi
+                        </Typography>
+                    </Paper>
+                ) : (
+                    <Grid container spacing={3} sx={{ pb: 2 }}>
+                        {processedExams.map((exam) => (
+                            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={exam.exam_id}>
+                                <ExamCard>
+                                    <CardContent sx={{ flexGrow: 1, pb: 1, p: 2.5 }}>
+                                        <Stack direction="row" justifyContent="space-between" mb={1.5}>
+                                            <LevelChip level={exam.level} />
+                                        </Stack>
+                                        
+                                        <Typography variant="h6" fontWeight="bold" noWrap title={exam.title} sx={{ mb: 1 }}>
+                                            {exam.title}
+                                        </Typography>
+                                        
+                                        <Typography variant="body2" color="text.secondary" sx={{ 
+                                            mb: 2, height: 40, overflow: 'hidden', 
+                                            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                                            lineHeight: 1.5
+                                        }}>
+                                            {exam.description || "Chưa có mô tả cho đề thi này."}
+                                        </Typography>
+                                        
+                                        <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+                                        
+                                        <Stack direction="row" justifyContent="space-between" color="text.secondary">
+                                            <Box display="flex" alignItems="center" gap={0.5}>
+                                                <QuizIcon fontSize="small" color="primary" sx={{ opacity: 0.7 }} /> 
+                                                <Typography variant="caption" fontWeight={600}>{exam.total_ques} câu</Typography>
+                                            </Box>
+                                            <Box display="flex" alignItems="center" gap={0.5}>
+                                                <TimerIcon fontSize="small" color="primary" sx={{ opacity: 0.7 }} /> 
+                                                <Typography variant="caption" fontWeight={600}>{exam.duration} phút</Typography>
+                                            </Box>
+                                        </Stack>
+                                    </CardContent>
+                                    <CardActions sx={{ 
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.03), 
+                                        justifyContent: 'space-between', 
+                                        px: 2.5, py: 1.5,
+                                        borderTop: '1px solid', borderColor: 'divider'
                                     }}>
-                                        {exam.description || "Không có mô tả"}
-                                    </Typography>
-                                    
-                                    <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-                                    
-                                    <Stack direction="row" justifyContent="space-between" color="text.secondary" sx={{ px: 1 }}>
-                                        <Box display="flex" alignItems="center" gap={0.5}>
-                                            <QuizIcon fontSize="small" color="action" /> 
-                                            <Typography variant="caption" fontWeight="medium">{exam.total_ques} câu</Typography>
-                                        </Box>
-                                        <Box display="flex" alignItems="center" gap={0.5}>
-                                            <TimerIcon fontSize="small" color="action" /> 
-                                            <Typography variant="caption" fontWeight="medium">{exam.duration}p</Typography>
-                                        </Box>
-                                    </Stack>
-                                </CardContent>
-                                <CardActions sx={{ bgcolor: 'action.hover', justifyContent: 'space-between', px: 2, py: 1 }}>
-                                    <IconButton size="small" disabled sx={{ color: 'error.main' }}>
-                                        <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                    <Button 
-                                        size="small" 
-                                        endIcon={<ArrowForwardIcon />} 
-                                        onClick={() => navigate(`/tutor/exam/${exam.exam_id}`)}
-                                        sx={{ fontWeight: 600 }}
-                                    >
-                                        Chi tiết
-                                    </Button>
-                                </CardActions>
-                            </ExamCard>
-                        </Grid>
-                    ))}
-                </Grid>
-            )}
+                                        <IconButton size="small" disabled sx={{ color: 'error.main', opacity: 0.5 }}>
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                        <Button 
+                                            size="small" 
+                                            variant="contained"
+                                            disableElevation
+                                            endIcon={<ArrowForwardIcon />} 
+                                            onClick={() => navigate(`/tutor/exam/${exam.exam_id}`)}
+                                            sx={{ fontWeight: 600, borderRadius: '8px' }}
+                                        >
+                                            Chi tiết
+                                        </Button>
+                                    </CardActions>
+                                </ExamCard>
+                            </Grid>
+                        ))}
+                    </Grid>
+                )}
+            </ScrollableContent>
 
             <CreateExamDialog open={openCreate} onClose={() => setOpenCreate(false)} onRefresh={fetchExams} />
             
