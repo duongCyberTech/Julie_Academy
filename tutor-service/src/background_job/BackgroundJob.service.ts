@@ -4,13 +4,15 @@ import { S3Service } from 'src/resource/aws/aws-s3.service';
 import { CloudinaryService } from 'src/resource/cloudinary/cloudinary.service';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { CreateNotificationDTO } from 'src/notifications/dto/notification.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class BackgroundService {
   constructor(
     private cloudinary: CloudinaryService,
     private s3: S3Service,
-    private notify: NotificationsService
+    private notify: NotificationsService,
+    private prisma: PrismaService
   ){}
 
   @OnEvent('cloudinary.delete')
@@ -44,7 +46,56 @@ export class BackgroundService {
 
   @OnEvent('notify.new')
   async handleSendNotification(payload: {uid: string, notiData: CreateNotificationDTO, email?: string}) {
-    console.log("notificaton to: ", payload.email)
     await this.notify.createNotification(payload.uid, payload.notiData)
+  }
+
+  @OnEvent('thread.new')
+  async handleSendNotificationToClass(notiData: CreateNotificationDTO) {
+    const restriction = await this.prisma.thread.findUnique({
+      where: {thread_id: notiData.link_primary_id},
+      select: {
+        open_list: true,
+        is_restricted: true
+      }
+    })
+
+    const rawJsonData = restriction.open_list
+    
+    let validUids: string[] = [];
+
+    if (Array.isArray(rawJsonData)) {
+      validUids = rawJsonData as string[];
+    } else if (typeof rawJsonData === 'string') {
+      try {
+        const parsed = JSON.parse(rawJsonData);
+        validUids = Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        validUids = [];
+      }
+    }
+
+    const senders = await this.prisma.student.findMany({
+      where: {
+        learning: {some: {class: {class_id: notiData.link_wrapper_id}}},
+        ...(restriction.is_restricted ? {uid: {in: validUids}} : {}) 
+      },
+      select: {uid: true}
+    })
+
+    senders.forEach(async(sender) => {
+      await this.notify.createNotification(sender.uid, notiData)
+    })
+  }
+
+  @OnEvent('thread.comment.new')
+  async handleSendToFollower(notiData: CreateNotificationDTO) {
+    const senders = await this.prisma.follow.findMany({
+      where: {thread_id: notiData.link_primary_id},
+      select: {uid: true}
+    })
+
+    senders.forEach(async(sender) => {
+      await this.notify.createNotification(sender.uid, notiData)
+    })
   }
 }
