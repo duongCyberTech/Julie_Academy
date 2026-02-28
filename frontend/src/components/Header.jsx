@@ -33,6 +33,9 @@ import {
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
 import Logo from "../assets/images/logo.png";
+import { socket } from "../services/ApiClient";
+import { countNotifications } from "../services/NotificationService";
+import notificationSfx from '../assets/sounds/notifications/ting-2.mp3'
 
 const StyledAppBar = styled(AppBar, {
   shouldForwardProp: (prop) =>
@@ -82,15 +85,22 @@ const Header = React.memo(function Header({
 }) {
   const theme = useTheme();
   const navigate = useNavigate();
+  const notifyAudio = useMemo(() => new Audio(notificationSfx), []);
 
   const [userInfo, setUserInfo] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [cntUnRead, setCntUnRead] = useState(0)
+  const [token, setToken] = useState(localStorage.getItem("token"))
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const fetchCnt = async() => {
+      const response = await countNotifications(-1)
+      setCntUnRead(response)
+    }
     if (!token) return;
     try {
       const decoded = jwtDecode(token);
+      socket.emit('notify', decoded.sub)
       if (decoded.exp * 1000 > Date.now()) {
         // --- [THAY ĐỔI 2]: Lấy thêm role từ token ---
         setUserInfo({ 
@@ -98,13 +108,26 @@ const Header = React.memo(function Header({
             email: decoded.email, 
             role: decoded.role 
         });
+
+        fetchCnt()
       } else {
         localStorage.removeItem("token");
       }
     } catch {
       localStorage.removeItem("token");
     }
-  }, []);
+
+    const handleUnreadCount = (newCount) => {
+      setCntUnRead(newCount);
+      notifyAudio.play().catch(err => console.warn("Audio play blocked:", err));
+    };
+
+    socket.on('cnt_unread', handleUnreadCount)
+
+    return () => {
+      socket.off('cnt_unread', handleUnreadCount)
+    }
+  }, [token]);
 
   // --- [THAY ĐỔI 3]: Tạo menu items động dựa trên role ---
   const userMenuItems = useMemo(() => {
@@ -217,8 +240,8 @@ const Header = React.memo(function Header({
         </BrandBox>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Tooltip title="Thông báo">
-            <HeaderIconButton>
-              <Badge badgeContent={0} color="primary">
+            <HeaderIconButton onClick={() => navigate('/settings/notifications')}>
+              <Badge badgeContent={cntUnRead} color="primary">
                 <NotificationsIcon />
               </Badge>
             </HeaderIconButton>

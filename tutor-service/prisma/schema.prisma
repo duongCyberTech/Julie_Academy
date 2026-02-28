@@ -26,6 +26,14 @@ model User {
   student   Student?
   thread    Thread[]
   tutor     Tutor?
+
+  likes Likes[]
+
+  resources Resources[]
+
+  tags Tag[]
+
+  notifications Notifications[]
 }
 
 model Tutor {
@@ -38,14 +46,13 @@ model Tutor {
   folder       Folders[]
   lesson_plan  Lesson_Plan[]
   questions    Questions[]
-  resources    Resources[]
-  user         User          @relation(fields: [uid], references: [uid])
+  user         User          @relation(fields: [uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Parents {
   uid          String      @id @default(uuid())
   phone_number String?     @unique
-  user         User        @relation(fields: [uid], references: [uid])
+  user         User        @relation(fields: [uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   family       is_family[]
 }
 
@@ -58,7 +65,7 @@ model Student {
   feedback   Feedback[]
   learning   Learning[]
   review     Review[]
-  user       User         @relation(fields: [uid], references: [uid])
+  user       User         @relation(fields: [uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   family     is_family[]
 
   studentAnalytics Student_analytics[]
@@ -67,8 +74,8 @@ model Student {
 model is_family {
   student_uid String
   parents_uid String
-  parents     Parents @relation(fields: [parents_uid], references: [uid])
-  student     Student @relation(fields: [student_uid], references: [uid])
+  parents     Parents @relation(fields: [parents_uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  student     Student @relation(fields: [student_uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([student_uid, parents_uid])
 }
@@ -79,8 +86,8 @@ model Feedback {
   createdAt   DateTime @default(now())
   tutor_uid   String
   student_uid String
-  student     Student  @relation(fields: [student_uid], references: [uid])
-  tutor       Tutor    @relation(fields: [tutor_uid], references: [uid])
+  student     Student  @relation(fields: [student_uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  tutor       Tutor    @relation(fields: [tutor_uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Review {
@@ -89,8 +96,8 @@ model Review {
   createAt   DateTime @default(now())
   content    String
   rating     Decimal  @db.Decimal(3, 1)
-  class      Class    @relation(fields: [class_id], references: [class_id])
-  student    Student  @relation(fields: [student_id], references: [uid])
+  class      Class    @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
+  student    Student  @relation(fields: [student_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([student_id, class_id])
 }
@@ -107,7 +114,7 @@ model Student_analytics {
   last_exam_taken_date  DateTime   @default(now())
   sign_up_date          DateTime   @default(now())
   student_id            String
-  student               Student    @relation(fields: [student_id], references: [uid])
+  student               Student    @relation(fields: [student_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Badge {
@@ -127,8 +134,8 @@ model Claim {
   badge_id   String
   claim_at   DateTime @default(now())
   claim_level Int @default(0)
-  badge      Badge   @relation(fields: [badge_id], references: [badge_id])
-  student    Student @relation(fields: [student_id], references: [uid])
+  badge      Badge   @relation(fields: [badge_id], references: [badge_id], onDelete: Cascade, onUpdate: Cascade)
+  student    Student @relation(fields: [student_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([student_id, badge_id])
 }
@@ -147,13 +154,15 @@ model Class {
   tutor_uid     String
   startat       DateTime?            @default(now()) @db.Timestamp(6)
   plan_id       String?
-  plan          Lesson_Plan?         @relation(fields: [plan_id], references: [plan_id])
-  tutor         Tutor                @relation(fields: [tutor_uid], references: [uid])
+  plan          Lesson_Plan?         @relation(fields: [plan_id], references: [plan_id], onDelete: SetNull, onUpdate: Cascade)
+  tutor         Tutor                @relation(fields: [tutor_uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   exam_open_in  Exam_open_in[]
   learning      Learning[]
   reviews       Review[]
   schedule      Schedule[]
   folders       Folder_of_class[]
+
+  threads Thread[]
 }
 
 model Schedule {
@@ -163,7 +172,7 @@ model Schedule {
   endAt        String
   link_meet    String
   meeting_date Decimal @db.Decimal
-  class        Class   @relation(fields: [class_id], references: [class_id])
+  class        Class   @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([schedule_id, class_id])
 }
@@ -171,8 +180,8 @@ model Schedule {
 model Learning {
   class_id    String
   student_uid String
-  class       Class   @relation(fields: [class_id], references: [class_id])
-  student     Student @relation(fields: [student_uid], references: [uid])
+  class       Class   @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
+  student     Student @relation(fields: [student_uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   status      EnrollStatus  @default(pending)
   @@id([class_id, student_uid])
 }
@@ -183,25 +192,44 @@ model Thread {
   content            String
   createAt           DateTime             @default(now())
   updateAt           DateTime             @default(now())
+  is_restricted      Boolean              @default(false)
+  open_list          Json                 @db.JsonB @default("[]")
   uid                String
+  class_id           String
+  class              Class                @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
   comments           Comments[]
   followers          Follow[]
   Resource_of_Thread Resource_of_Thread[]
-  sender             User                 @relation(fields: [uid], references: [uid])
+  sender             User                 @relation(fields: [uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  likes              Likes[]
 }
 
 model Comments {
   thread_id           String
-  comment_id          String
+  comment_id          Int
   content             String
   createAt            DateTime              @default(now())
   updateAt            DateTime              @default(now())
   uid                 String
-  thread              Thread                @relation(fields: [thread_id], references: [thread_id])
+  parent_cmt_id       Int? 
+  parent_cmt          Comments?             @relation("CommentToParent", fields: [thread_id, parent_cmt_id], references: [thread_id, comment_id], onDelete: Cascade, onUpdate: Cascade)
+  thread              Thread                @relation(fields: [thread_id], references: [thread_id], onDelete: Cascade, onUpdate: Cascade)
   sender              User                  @relation(fields: [uid], references: [uid])
   Resource_of_Comment Resource_of_Comment[]
-
+  comments            Comments[]            @relation("CommentToParent")
   @@id([thread_id, comment_id])
+  likes Likes[]
+  tags Tag[]
+}
+
+model Likes {
+  react_id          String        @id @default(uuid())
+  uid               String
+  reactor           User          @relation(fields: [uid], references: [uid])
+  thread_id         String
+  comment_id        Int?
+  thread            Thread?        @relation(fields: [thread_id], references: [thread_id])
+  comment           Comments?      @relation(fields: [thread_id, comment_id], references: [thread_id, comment_id])
 }
 
 model Follow {
@@ -211,6 +239,17 @@ model Follow {
   follower  User   @relation(fields: [uid], references: [uid])
 
   @@id([thread_id, uid])
+}
+
+model Tag {
+  uid       String
+  tagger    User      @relation(fields: [uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)  
+  thread_id String
+  comment_id Int
+  comment    Comments    @relation(fields: [thread_id, comment_id], references: [thread_id, comment_id], onDelete: Cascade, onUpdate: Cascade)
+  tagAt     DateTime  @default(now())
+
+  @@id([uid, thread_id, comment_id])
 }
 
 model Resources {
@@ -223,13 +262,13 @@ model Resources {
   file_path            String
   version              Int
   num_pages            Int
-  tutor_id             String
+  user_id             String
   Resource_of_Answer   Resource_of_Answer[]
   Resource_of_Comment  Resource_of_Comment[]
   Resource_of_Question Resource_of_Question[]
   Resource_of_Thread   Resource_of_Thread[]
   Resource_in_Folder   Resources_in_folder[]
-  tutor                Tutor                  @relation(fields: [tutor_id], references: [uid])
+  user                 User                  @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Folders {
@@ -239,11 +278,11 @@ model Folders {
   updateAt      DateTime             @default(now())
   tutor_id      String
   parent_id     String?
-  Folders       Folders?             @relation("FoldersToFolders", fields: [parent_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction, map: "Child_folder_fkey")
+  Folders       Folders?             @relation("FoldersToFolders", fields: [parent_id], references: [folder_id], onDelete: Cascade, onUpdate: Cascade, map: "Child_folder_fkey")
   other_Folders Folders[]            @relation("FoldersToFolders")
   class         Folder_of_class[] 
   resources     Resources_in_folder[]  
-  tutor         Tutor                @relation(fields: [tutor_id], references: [uid])
+  tutor         Tutor                @relation(fields: [tutor_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Categories {
@@ -253,7 +292,7 @@ model Categories {
   createAt         DateTime     @default(now())
   updateAt         DateTime     @default(now())
   parent_id        String?
-  Categories       Categories?  @relation("CategoriesToCategories", fields: [parent_id], references: [category_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recursive_cate")
+  Categories       Categories?  @relation("CategoriesToCategories", fields: [parent_id], references: [category_id], map: "fk_recursive_cate")
   other_Categories Categories[] @relation("CategoriesToCategories")
   questions        Questions[]
   structure        Structure[]
@@ -263,9 +302,9 @@ model Categories {
 
 model Resources_in_folder {
   resource_id     String
-  resource        Resources     @relation(fields: [resource_id], references: [did])
+  resource        Resources     @relation(fields: [resource_id], references: [did], onDelete: Cascade, onUpdate: Cascade)
   folder_id       String
-  folder          Folders       @relation(fields: [folder_id], references: [folder_id])
+  folder          Folders       @relation(fields: [folder_id], references: [folder_id], onDelete: Cascade, onUpdate: Cascade)
 
   status          ResourceStatus  @default(show)
   @@id([resource_id, folder_id])
@@ -273,11 +312,11 @@ model Resources_in_folder {
 
 model Folder_of_class {
   category_id     String
-  category        Categories    @relation(fields: [category_id], references: [category_id])
+  category        Categories    @relation(fields: [category_id], references: [category_id], onDelete: Cascade, onUpdate: Cascade)
   class_id        String
-  class           Class         @relation(fields: [class_id], references: [class_id])
+  class           Class         @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
   folder_id       String
-  folder          Folders       @relation(fields: [folder_id], references: [folder_id])
+  folder          Folders       @relation(fields: [folder_id], references: [folder_id], onDelete: Cascade, onUpdate: Cascade)
 
   status          ResourceStatus  @default(show)
   @@id([category_id, class_id, folder_id])
@@ -286,6 +325,7 @@ model Folder_of_class {
 model Structure {
   plan_id  String
   cate_id  String
+  alias    String      @default("")
   Category Categories  @relation(fields: [cate_id], references: [category_id])
   Plan     Lesson_Plan @relation(fields: [plan_id], references: [plan_id])
 
@@ -308,8 +348,8 @@ model Questions {
   answers              Answers[]
   exam_takens          Question_for_exam_taken[]
   exam_questions       Question_of_exam[]
-  category             Categories?            @relation(fields: [category_id], references: [category_id])
-  tutor                Tutor                  @relation(fields: [tutor_id], references: [uid])
+  category             Categories?            @relation(fields: [category_id], references: [category_id], onDelete: SetNull, onUpdate: Cascade)
+  tutor                Tutor                  @relation(fields: [tutor_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   Resource_of_Question Resource_of_Question[]
 }
 
@@ -319,7 +359,7 @@ model Answers {
   content            String
   is_correct         Boolean              @default(false)
   explaination       String?
-  question           Questions            @relation(fields: [ques_id], references: [ques_id])
+  question           Questions            @relation(fields: [ques_id], references: [ques_id], onDelete: Cascade, onUpdate: Cascade)
   Resource_of_Answer Resource_of_Answer[]
 
   @@id([ques_id, aid])
@@ -337,7 +377,7 @@ model Exams {
   updateAt       DateTime           @default(now())
   tutor_id       String
   sessions       Exam_session[]
-  tutor          Tutor              @relation(fields: [tutor_id], references: [uid])
+  tutor          Tutor              @relation(fields: [tutor_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   exam_questions Question_of_exam[]
 }
 
@@ -345,8 +385,8 @@ model Question_of_exam {
   exam_id  String
   ques_id  String
   score    Decimal   @default(0.00) @db.Decimal(4, 2)
-  exam     Exams     @relation(fields: [exam_id], references: [exam_id])
-  question Questions @relation(fields: [ques_id], references: [ques_id])
+  exam     Exams     @relation(fields: [exam_id], references: [exam_id], onDelete: Cascade, onUpdate: Cascade)
+  question Questions @relation(fields: [ques_id], references: [ques_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([exam_id, ques_id])
 }
@@ -360,10 +400,11 @@ model Exam_session {
   limit_taken        Int            @default(1)
   total_student_done Int            @default(0)
   exam_open_in       Exam_open_in[]
-  exam               Exams          @relation(fields: [exam_id], references: [exam_id])
+  exam               Exams          @relation(fields: [exam_id], references: [exam_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([exam_id, session_id])
   examTakens Exam_taken[]
+  @@unique([session_id, exam_id])
 }
 
 model Exam_open_in {
@@ -371,8 +412,8 @@ model Exam_open_in {
   exam_id      String
   class_id     String
   ratio        Int?
-  class        Class        @relation(fields: [class_id], references: [class_id])
-  exam_session Exam_session @relation(fields: [session_id, exam_id], references: [session_id, exam_id])
+  class        Class        @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
+  exam_session Exam_session @relation(fields: [session_id, exam_id], references: [session_id, exam_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([session_id, exam_id, class_id])
 }
@@ -388,10 +429,10 @@ model Exam_taken {
   session_id           Int?
   student_uid          String
   category_id          String?
-  category             Categories?       @relation(fields: [category_id], references: [category_id])
-  exam_session         Exam_session?     @relation(fields: [exam_id, session_id], references: [exam_id, session_id])
+  category             Categories?       @relation(fields: [category_id], references: [category_id], onDelete: SetNull, onUpdate: Cascade)
+  exam_session         Exam_session?     @relation(fields: [exam_id, session_id], references: [exam_id, session_id], onDelete: SetNull, onUpdate: Cascade)
   questions            Question_for_exam_taken[]
-  student              Student           @relation(fields: [student_uid], references: [uid])
+  student              Student           @relation(fields: [student_uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Question_for_exam_taken {
@@ -399,25 +440,24 @@ model Question_for_exam_taken {
   et_id                 String 
   index                 Int 
   isDone                Boolean    @default(false)
-  ms_first_response     BigInt
-  ms_total_response     BigInt
-  answer_set            Json      @db.JsonB
-  exam_taken Exam_taken @relation(fields: [et_id], references: [et_id])
-  question   Questions  @relation(fields: [ques_id], references: [ques_id])
+  chosen_answer_at      DateTime?
+  answer_set            Json       @db.JsonB
+  exam_taken Exam_taken @relation(fields: [et_id], references: [et_id], onDelete: Cascade, onUpdate: Cascade)
+  question   Questions  @relation(fields: [ques_id], references: [ques_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([et_id, ques_id])     
 }
 
 model Lesson_Plan {
   plan_id     String      @id @default(uuid()) @db.VarChar(255)
-  title       String      @unique @db.VarChar(255)
+  title       String      @db.VarChar(255)
   subject     String      @db.VarChar(20)
   grade       Int         @db.SmallInt
   description String?
   type        PlanType    @default(custom)
   tutor_id    String?
   classes     Class[]
-  tutor       Tutor?      @relation(fields: [tutor_id], references: [uid])
+  tutor       Tutor?      @relation(fields: [tutor_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   structure   Structure[]
 }
 
@@ -425,18 +465,18 @@ model Resource_of_Answer {
   did       String    @db.VarChar(255)
   aid       Int       @db.SmallInt
   ques_id   String    @db.VarChar(255)
-  Resources Resources @relation(fields: [did], references: [did], onDelete: NoAction, onUpdate: NoAction)
-  Answers   Answers   @relation(fields: [ques_id, aid], references: [ques_id, aid], onDelete: NoAction, onUpdate: NoAction)
+  Resources Resources @relation(fields: [did], references: [did], onDelete: Cascade, onUpdate: Cascade)
+  Answers   Answers   @relation(fields: [ques_id, aid], references: [ques_id, aid], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([did, aid, ques_id])
 }
 
 model Resource_of_Comment {
   thread_id  String    @db.VarChar(255)
-  comment_id String    @db.VarChar(255)
+  comment_id Int       
   did        String    @db.VarChar(255)
-  Resources  Resources @relation(fields: [did], references: [did], onDelete: NoAction, onUpdate: NoAction)
-  Comments   Comments  @relation(fields: [thread_id, comment_id], references: [thread_id, comment_id], onDelete: NoAction, onUpdate: NoAction)
+  Resources  Resources @relation(fields: [did], references: [did], onDelete: Cascade, onUpdate: Cascade)
+  Comments   Comments  @relation(fields: [thread_id, comment_id], references: [thread_id, comment_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([did, comment_id, thread_id])
 }
@@ -444,8 +484,8 @@ model Resource_of_Comment {
 model Resource_of_Question {
   did       String    @db.VarChar(255)
   ques_id   String    @db.VarChar(255)
-  Resources Resources @relation(fields: [did], references: [did], onDelete: NoAction, onUpdate: NoAction)
-  Questions Questions @relation(fields: [ques_id], references: [ques_id], onDelete: NoAction, onUpdate: NoAction)
+  Resources Resources @relation(fields: [did], references: [did], onDelete: Cascade, onUpdate: Cascade)
+  Questions Questions @relation(fields: [ques_id], references: [ques_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([did, ques_id])
 }
@@ -453,10 +493,23 @@ model Resource_of_Question {
 model Resource_of_Thread {
   thread_id String    @db.VarChar(255)
   did       String    @db.VarChar(255)
-  Resources Resources @relation(fields: [did], references: [did], onDelete: NoAction, onUpdate: NoAction)
-  Thread    Thread    @relation(fields: [thread_id], references: [thread_id], onDelete: NoAction, onUpdate: NoAction)
+  Resources Resources @relation(fields: [did], references: [did], onDelete: Cascade, onUpdate: Cascade)
+  Thread    Thread    @relation(fields: [thread_id], references: [thread_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([did, thread_id])
+}
+
+model Notifications {
+  notice_id         String        @id @default(uuid())
+  message           String        @default("")
+  notifyAt          DateTime      @default(now())
+  type              NotificationType @default(system)
+  have_read         Boolean       @default(false)
+  user_id           String
+  link_wrapper_id   String?
+  link_primary_id   String?
+  link_partial_id   String?
+  receiver          User          @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
 
 enum UserRole {
@@ -549,4 +602,10 @@ enum AggregateType {
 enum ValueType {
   value 
   percent
+}
+
+enum NotificationType {
+  thread
+  system
+  exam
 }

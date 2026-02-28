@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -15,20 +16,25 @@ import { CronModule } from './scron-job/cron.module';
 import { MailModule } from './mail/mail.module';
 import { ResourceModule } from './resource/resource.module';
 import { BadgeModule } from './badge/badge.module';
+import { ThreadModule } from './thread/thread.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { ConfigModule } from '@nestjs/config';
 
+
+import { BackgroundService } from './background_job/BackgroundJob.service';
+import { S3Service } from './resource/aws/aws-s3.service';
+import { NotificationsService } from './notifications/notifications.service';
 
 @Module({
   imports: [
     ThrottlerModule.forRoot([
       {
-        // TTL: Time To Live (Thời gian) - 60 giây (1 phút)
         ttl: 60000, 
-        // Limit: Số lượng request tối đa trong khoảng thời gian TTL
         limit: 50,  
       },
     ]),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     UserModule, 
     AuthModule, 
     ClassModule, 
@@ -38,7 +44,9 @@ import { ConfigModule } from '@nestjs/config';
     CronModule, 
     MailModule, 
     ResourceModule,
-    BadgeModule
+    BadgeModule,
+    ThreadModule,
+    NotificationsModule
   ],
   controllers: [AppController],
   providers: [
@@ -46,6 +54,8 @@ import { ConfigModule } from '@nestjs/config';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    BackgroundService,
+    S3Service,
     AppService
   ],
 })

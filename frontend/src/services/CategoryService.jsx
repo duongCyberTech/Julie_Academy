@@ -61,6 +61,21 @@ export const createBookByTutor = async (tutorId, bookData, token) => {
   }
 };
 
+export const duplicateBook = async (planId) => {
+  try {
+    const token = localStorage.getItem('token')
+    const response = await apiClient.post(
+      `/books/duplicate/${planId}`,
+      {},
+      getAuthHeaders(token)
+    );
+    if (!response?.data) throw new Error("Lỗi khi tạo bản sao")
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  } 
+}
+
 export const updateBook = async (bookId, updatedData, token) => {
   try {
     const response = await apiClient.patch(
@@ -138,9 +153,9 @@ export const updateCategory = async (categoryId, updatedData, token) => {
   }
 };
 
-export const deleteCategory = async (categoryId, mode, token) => {
+export const deleteCategory = async (plan_id, categoryId, mode, token) => {
   try {
-    const response = await apiClient.delete(`/categories/${categoryId}`, {
+    const response = await apiClient.delete(`/categories/${plan_id}/${categoryId}`, {
       params: { mode },
       ...getAuthHeaders(token),
     });

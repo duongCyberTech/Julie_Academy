@@ -7,7 +7,7 @@ import {
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 
 // Services
-import { getPlansByTutor, createBookByTutor } from '../../services/CategoryService';
+import { getPlansByTutor, createBookByTutor, duplicateBook } from '../../services/CategoryService';
 import { updateClass } from '../../services/ClassService';
 
 // Components
@@ -34,10 +34,11 @@ const ResourceSetup = ({ classId, tutorId, token, onSetupComplete }) => {
     // 1. Xử lý chọn giáo án có sẵn
     const handleSelectExistingBook = async (bookId) => {
         try {
-            await updateClass(classId, { plan_id: bookId }, token);
-            onSetupComplete(bookId); // Báo cho cha biết đã xong
+            const duplicated_plan_id = await duplicateBook(bookId)
+            await updateClass(classId, { plan_id: duplicated_plan_id }, token);
+            onSetupComplete(duplicated_plan_id); // Báo cho cha biết đã xong
         } catch (e) {
-            setError('Lỗi khi cập nhật lớp học.');
+            setError(e?.message || 'Lỗi khi cập nhật lớp học.');
         }
     };
 
