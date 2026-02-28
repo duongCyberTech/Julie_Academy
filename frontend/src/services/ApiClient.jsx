@@ -17,7 +17,6 @@ const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:4000',{
     reconnectionAttempts: 5,
 });
 
-
 const decodedData = localStorage.getItem('token') ? jwtDecode(localStorage.getItem('token')) : null
 
 export {
