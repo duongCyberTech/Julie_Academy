@@ -24,17 +24,15 @@ import {
   MenuItem,
 } from '@mui/material';
 
-import { 
-  PhotoCamera, 
-  Close, 
-  Public,
-  CloudUpload, 
-  ArrowForwardIosSharp,
-  ModeEditRounded,
-  MoreHoriz,
-  Delete,
-  DeleteOutline
-} from '@mui/icons-material';
+import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import Close from '@mui/icons-material/Close';
+import Public from '@mui/icons-material/Public';
+import CloudUpload from '@mui/icons-material/CloudUpload';
+import ArrowForwardIosSharp from '@mui/icons-material/ArrowForwardIosSharp';
+import ModeEditRounded from '@mui/icons-material/ModeEditRounded';
+import MoreHoriz from '@mui/icons-material/MoreHoriz';
+import Delete from '@mui/icons-material/Delete';
+import DeleteOutline from '@mui/icons-material/DeleteOutline';
 
 import { toast } from 'sonner'
 

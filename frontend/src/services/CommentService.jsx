@@ -39,6 +39,20 @@ const getCommentsByThread = async (threadId, parentCmtId, page = 1) => {
     }
 };
 
+const fetchCommentsUntil = async (threadId, commentId) => {
+    try {
+        const token = localStorage.getItem('token')
+        const response = await apiClient.get(
+            `/comments/until/${threadId}/${commentId}`,
+            getAuthHeaders(token)
+        );
+        console.log("Ref response: ", response.data)
+        return response.data;
+    } catch (error) {
+        return error;
+    }
+}
+
 const updateComment = async (threadId, commentId, updateData, images = []) => {
     try {
         const token = localStorage.getItem('token')
@@ -86,6 +100,7 @@ const deleteComment = async(threadId, commentId) => {
 export {
     createComment,
     getCommentsByThread,
+    fetchCommentsUntil,
     updateComment,
     deleteComment
 }
