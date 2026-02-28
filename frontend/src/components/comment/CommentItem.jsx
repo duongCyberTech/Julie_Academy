@@ -197,7 +197,7 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
   }
 
   return (
-    <Box>
+    <Box id={`${comment.comment_id}`}>
       <ListItem sx={{ pl: 0, alignItems: 'flex-start' }}>
         <ListItemAvatar>
           <Avatar src={comment?.sender?.avata_url} sx={{ width: 32, height: 32 }}>
