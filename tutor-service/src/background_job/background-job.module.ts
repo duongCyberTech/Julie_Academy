@@ -5,6 +5,7 @@ import { QueueService } from './bull-queue.service';
 import { QueueProcessor } from './bull-queue.processor';
 import { ResourceModule } from 'src/resource/resource.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
+import { AnalysisModule } from 'src/analysis/analysis.module';
 
 @Module({
   imports: [
@@ -12,7 +13,8 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
       name: 'system-tasks-queue',
     }),
     ResourceModule,
-    NotificationsModule
+    NotificationsModule,
+    AnalysisModule
   ],
   providers: [QueueService, QueueProcessor, BackgroundService],
   exports: [QueueService, BackgroundService],

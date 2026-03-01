@@ -1,17 +1,17 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
-import { QuestionService } from "src/question/question.service";
 import { 
     ExamTakenDto, 
     SubmitAnswerDto 
 } from "./dto/exam.dto";
-import { DateTime } from 'luxon'
 import { ExamType, Prisma, PrismaClient, QuestionType } from "@prisma/client";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Injectable()
 export class ExamTakenService {
     constructor(
-        private prisma: PrismaService
+        private prisma: PrismaService,
+        private eventEmitter: EventEmitter2
     ){}
 
     async takeExam(class_id: string, exam_id: string, session_id: number, student_id: string) {
@@ -26,12 +26,11 @@ export class ExamTakenService {
                 throw new BadRequestException("Exam is not open in this class")
             }
 
-            const now = DateTime.now().setZone('Asia/Ho_Chi_Minh').toJSDate()
             const isTimeValid = await this.prisma.exam_session.findUnique({
                 where: {
                     exam_id_session_id: {exam_id, session_id},
-                    startAt: {lte: now},
-                    expireAt: {gt: now}
+                    startAt: {lte: new Date()},
+                    expireAt: {gt: new Date()}
                 }
             })
 
@@ -130,8 +129,8 @@ export class ExamTakenService {
 
             const takenTime = await tx.exam_taken.create({
                 data: {
-                    startAt: now,
-                    doneAt: now,
+                    startAt: new Date(),
+                    doneAt: null,
                     final_score: 0,
                     total_ques_completed: 0,
                     student: {connect: {uid: student_id}},
@@ -284,7 +283,7 @@ export class ExamTakenService {
                         ques_id: item.ques_id,
                         et_id,
                         index: item.index,
-                        chosen_answer_at: item.answers.length > 0 ? DateTime.now().setZone('Asia/Ho_Chi_Minh').toJSDate() : null,
+                        chosen_answer_at: item.answers.length > 0 ? new Date() : null,
                         isDone: (item.answers.length > 0),
                         answer_set: item.answers
                     }
@@ -293,16 +292,39 @@ export class ExamTakenService {
 
             const {score, cnt} = await this.calculateScore(tx, answers)
 
-            const now = DateTime.now().setZone('Asia/Ho_Chi_Minh').toJSDate()
+            const examData = await tx.exam_session.findFirst({
+                where: {examTakens: {some: {et_id}}},
+                select: {
+                    exam_type: true,
+                    exam: {
+                        select: {
+                            total_ques: true,
+                            total_score: true
+                        }
+                    }
+                }
+            })
+
             const examTaken = await tx.exam_taken.update({
                 where: {et_id},
                 data: {
                     isDone,
-                    doneAt: now,
+                    doneAt: new Date(),
                     total_ques_completed: cnt,
-                    final_score: score
+                    final_score: score * examData.exam.total_score / examData.exam.total_ques,
                 }
             })
+
+            const staticsData = {
+                uid: student_id,
+                sum_exam: 1,
+                total_questions: examData.exam.total_ques,
+                total_correct_questions: cnt,
+                final_score: score * examData.exam.total_score / examData.exam.total_ques,
+                exam_type: examData.exam_type
+            }
+
+            this.eventEmitter.emit('exam_taken.submit', staticsData)
 
             return {
                 message: "Exam Submitted Successfully",
