@@ -6,6 +6,8 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 import { CreateNotificationDTO } from 'src/notifications/dto/notification.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { QueueService } from './bull-queue.service';
+import { AnalysisService } from 'src/analysis/analysis.service';
+import { ExamType } from '@prisma/client';
 
 @Injectable()
 export class BackgroundService {
@@ -14,7 +16,8 @@ export class BackgroundService {
     private s3: S3Service,
     private notify: NotificationsService,
     private prisma: PrismaService,
-    private jobQueue: QueueService
+    private jobQueue: QueueService,
+    private analysisService: AnalysisService
   ){}
 
   @OnEvent('cloudinary.delete')
@@ -130,6 +133,27 @@ export class BackgroundService {
       }    
     } catch (error) {
       console.log(error.message)
+    }
+  }
+
+  @OnEvent('exam_taken.submit')
+  async handleExamSubmission(payload: {
+    uid: string,
+    sum_exam: number,
+    total_questions: number,
+    total_correct_questions: number,
+    final_score: number,
+    exam_type: ExamType
+  }) {
+    try {
+      await this.analysisService.createOrUpdateAnalytics(payload.uid, {
+        sum_exam: payload.sum_exam,
+        ...(payload.exam_type === ExamType.practice ? {max_score_practice: payload.final_score} : {}),
+        streak: 1,
+        last_exam_taken_date: new Date()
+      })
+    } catch (error) {
+      return
     }
   }
 }

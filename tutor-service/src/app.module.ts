@@ -21,6 +21,7 @@ import { ThreadModule } from './thread/thread.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ConfigModule } from '@nestjs/config';
 import { BackgroundJobModule } from './background_job/background-job.module';
+import { AnalysisModule } from './analysis/analysis.module';
 
 require('dotenv').config()
 
@@ -61,7 +62,8 @@ require('dotenv').config()
     BadgeModule,
     ThreadModule,
     NotificationsModule,
-    BackgroundJobModule
+    BackgroundJobModule,
+    AnalysisModule
   ],
   controllers: [AppController],
   providers: [
