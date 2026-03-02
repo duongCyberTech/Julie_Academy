@@ -9,7 +9,6 @@ import {
   FormControl,
   Select,
   MenuItem,
-  Divider,
   useTheme,
   Tooltip,
   Paper,
@@ -18,7 +17,10 @@ import {
   Collapse,
   CircularProgress,
   TextField,
+  Stack,
+  Grid,
 } from "@mui/material";
+import { styled, alpha } from "@mui/material/styles";
 import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 import SaveIcon from "@mui/icons-material/Save";
 import NotesIcon from "@mui/icons-material/Notes";
@@ -36,6 +38,46 @@ import MultipleChoiceEditor from "../../components/QuestionType/MultipleChoice";
 import RichTextEditor from "../../components/RichTextEditor";
 import AppSnackbar from "../../components/SnackBar";
 
+// ==========================================
+// 1. STYLED COMPONENTS (SOFT UI)
+// ==========================================
+const PageWrapper = styled(Paper)(({ theme }) => ({
+  margin: theme.spacing(2),
+  padding: theme.spacing(4),
+  backgroundColor: theme.palette.mode === "light" ? "#ffffff" : theme.palette.background.paper,
+  borderRadius: "24px",
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+  minHeight: "calc(100vh - 120px)",
+  display: "flex",
+  flexDirection: "column",
+}));
+
+const Header = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: theme.spacing(3),
+  flexShrink: 0,
+}));
+
+const SectionPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  borderRadius: "16px",
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: "none",
+  backgroundColor: alpha(theme.palette.background.default, 0.6),
+  marginBottom: theme.spacing(3),
+  transition: "all 0.3s ease",
+  "&:hover": {
+    boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
+    borderColor: theme.palette.primary.light,
+  },
+}));
+
+// ==========================================
+// 2. CÁC COMPONENT PHỤ TRỢ
+// ==========================================
 const DifficultyRating = ({ value, onChange }) => {
   const theme = useTheme();
   const levels = [
@@ -47,28 +89,13 @@ const DifficultyRating = ({ value, onChange }) => {
 
   return (
     <Tooltip title={`Độ khó: ${currentLevel.label}`}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-          cursor: "pointer",
-        }}
-      >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", py: 1 }}>
         {[1, 2, 3].map((star) => (
-          <Box
-            key={star}
-            component="span"
-            onClick={() => onChange(levels[star - 1].value)}
-          >
+          <Box key={star} component="span" onClick={() => onChange(levels[star - 1].value)}>
             {star <= currentLevel.stars ? (
-              <StarIcon
-                sx={{ color: theme.palette.warning.main, display: "block" }}
-              />
+              <StarIcon sx={{ color: theme.palette.warning.main, display: "block" }} />
             ) : (
-              <StarBorderIcon
-                sx={{ color: theme.palette.text.disabled, display: "block" }}
-              />
+              <StarBorderIcon sx={{ color: theme.palette.text.disabled, display: "block" }} />
             )}
           </Box>
         ))}
@@ -77,83 +104,103 @@ const DifficultyRating = ({ value, onChange }) => {
   );
 };
 
-const EditorHeader = ({
-  questionType,
-  onTypeChange,
-  difficulty,
-  onDifficultyChange,
-  onSubmit,
-  isSubmitting,
-}) => (
-  <Box
-    component={Paper}
-    square
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      p: "8px 16px",
-      borderBottom: 1,
-      borderColor: "divider",
-      flexShrink: 0,
-    }}
-  >
-    <FormControl size="small" sx={{ m: 1, minWidth: 220 }}>
-      <Select value={questionType} onChange={onTypeChange}>
-        <MenuItem value="single_choice">Nhiều lựa chọn - 1 đáp án</MenuItem>
-        <MenuItem value="multiple_choice">
-          Nhiều lựa chọn - nhiều đáp án
-        </MenuItem>
-      </Select>
-    </FormControl>
-    <Box sx={{ flexGrow: 1 }} />
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mx: 2 }}>
-      <Typography
-        variant="body2"
-        sx={{ color: "text.secondary", fontWeight: 500 }}
-      >
-        Độ khó:
-      </Typography>
-      <DifficultyRating value={difficulty} onChange={onDifficultyChange} />
-    </Box>
-    <Button
-      variant="contained"
-      color="primary"
-      startIcon={<SaveIcon />}
-      onClick={onSubmit}
-      disabled={isSubmitting}
-    >
-      {isSubmitting ? "Đang lưu..." : "Lưu câu hỏi"}
-    </Button>
-  </Box>
-);
+// ==========================================
+// 3. MAIN COMPONENT
+// ==========================================
+export default function CreateNewQuestionPage() {
+  const navigate = useNavigate();
+  const [token] = useState(localStorage.getItem("token"));
 
-const OptionsSidebar = ({
-  plans,
-  selectedPlanId,
-  onPlanChange,
-  loadingPlans,
-  categories,
-  category,
-  onCategoryChange,
-  loadingCategories,
-  accessMode,
-  onAccessModeChange,
-  status,
-  onStatusChange,
-  explanation,
-  onExplanationChange,
-}) => {
-  const [showExplanation, setShowExplanation] = useState(Boolean(explanation));
+  const userInfo = useMemo(() => {
+    try {
+      return token ? jwtDecode(token) : null;
+    } catch (e) {
+      return null;
+    }
+  }, [token]);
 
+  // Form States
+  const [questionType, setQuestionType] = useState("single_choice");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [explanation, setExplanation] = useState("");
+  const [difficulty, setDifficulty] = useState("easy");
+  const [accessMode, setAccessMode] = useState("private");
+  const [status, setStatus] = useState("ready");
+
+  const [plans, setPlans] = useState([]);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+
+  const [loadingPlans, setLoadingPlans] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [apiError, setApiError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
+
+  const [answerData, setAnswerData] = useState([]);
+  const [showExplanation, setShowExplanation] = useState(false);
+
+  // Lấy danh sách Giáo án
+  useEffect(() => {
+    const fetchPlans = async () => {
+      if (!token || !userInfo?.sub) {
+        setApiError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
+        setLoadingPlans(false);
+        return;
+      }
+      try {
+        setLoadingPlans(true);
+        const tutorPlans = await getPlansByTutor(userInfo.sub, token);
+        setPlans(Array.isArray(tutorPlans) ? tutorPlans : []);
+        setApiError(null);
+      } catch (err) {
+        setApiError("Lỗi tải danh sách giáo án.");
+      } finally {
+        setLoadingPlans(false);
+      }
+    };
+    fetchPlans();
+  }, [token, userInfo]);
+
+  // Lấy danh mục khi chọn Giáo án
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (!selectedPlanId || !token) {
+        setCategories([]);
+        return;
+      }
+      try {
+        setLoadingCategories(true);
+        setApiError(null);
+        const catData = await getAllCategories({ plan_id: selectedPlanId, mode: "tree" }, token);
+        let nodes = [];
+        if (Array.isArray(catData)) {
+          nodes = catData;
+        } else if (catData?.data) {
+          nodes = Array.isArray(catData.data) ? catData.data : [catData.data];
+        } else if (catData?.categories) {
+          nodes = Array.isArray(catData.categories) ? catData.categories : [catData.categories];
+        }
+        setCategories(nodes);
+      } catch (err) {
+        setApiError("Lỗi tải danh mục cho giáo án này.");
+        setCategories([]);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, [selectedPlanId, token]);
+
+  // Sinh cây chuyên đề
   const categoryTreeData = useMemo(() => {
     if (!categories || categories.length === 0) return [];
-
-    const getItemId = (itm) =>
-      String(itm.id ?? itm.category_id ?? itm._id ?? "");
+    const getItemId = (itm) => String(itm.id ?? itm.category_id ?? itm._id ?? "");
     const getParentId = (itm) => {
       const pid = itm.parent_id ?? itm.parentId ?? itm.parent_category_id;
-      if (!pid || pid === 0 || String(pid) === "0" || String(pid) === "null")
-        return null;
+      if (!pid || pid === 0 || String(pid) === "0" || String(pid) === "null") return null;
       return String(pid);
     };
 
@@ -179,10 +226,7 @@ const OptionsSidebar = ({
 
     const buildTree = (items, targetParentId = null) => {
       return items
-        .filter((item) => {
-          const itemPid = getParentId(item);
-          return itemPid === targetParentId;
-        })
+        .filter((item) => getParentId(item) === targetParentId)
         .map((item) => {
           const itemId = getItemId(item);
           return {
@@ -196,271 +240,20 @@ const OptionsSidebar = ({
     return buildTree(allNodes, null);
   }, [categories]);
 
-  const handleTreeSelection = (event, selectedItems) => {
-    let selectedId = "";
-    if (Array.isArray(selectedItems)) {
-      selectedId = selectedItems.length > 0 ? selectedItems[0] : "";
-    } else {
-      selectedId = selectedItems ?? "";
-    }
-    onCategoryChange({ target: { value: selectedId } });
-  };
-
-  return (
-    <Box
-      component={Paper}
-      square
-      sx={{
-        width: 320,
-        borderLeft: 1,
-        borderColor: "divider",
-        backgroundColor: "background.default",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <Box
-        sx={{
-          p: 2,
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          flexGrow: 1,
-          overflowY: "auto",
-        }}
-      >
-        <Typography variant="h6" fontWeight={600}>
-          Tùy chọn
-        </Typography>
-
-        <FormControl fullWidth size="small" disabled={loadingPlans}>
-          <InputLabel id="plan-select-label">Giáo án</InputLabel>
-          <Select
-            labelId="plan-select-label"
-            value={selectedPlanId}
-            label="Giáo án"
-            onChange={onPlanChange}
-          >
-            <MenuItem value="">
-              <em>{loadingPlans ? "Đang tải giáo án..." : "Chọn giáo án"}</em>
-            </MenuItem>
-            {plans.map((plan) => (
-              <MenuItem key={plan.plan_id} value={plan.plan_id}>
-                {`${plan.title} (Lớp ${plan.grade})`}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth size="small">
-          <InputLabel id="access-mode-select-label">Quyền xem</InputLabel>
-          <Select
-            labelId="access-mode-select-label"
-            value={accessMode}
-            label="Quyền xem"
-            onChange={onAccessModeChange}
-          >
-            <MenuItem value="private">Riêng tư (Private)</MenuItem>
-            <MenuItem value="public">Công khai (Public)</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth size="small">
-          <InputLabel id="status-select-label">Trạng thái</InputLabel>
-          <Select
-            labelId="status-select-label"
-            value={status}
-            label="Trạng thái"
-            onChange={onStatusChange}
-          >
-            <MenuItem value="draft">Bản nháp (Draft)</MenuItem>
-            <MenuItem value="ready">Sẵn sàng (Ready)</MenuItem>
-          </Select>
-        </FormControl>
-
-        <Collapse in={!!selectedPlanId} sx={{ width: "100%" }}>
-          <Typography
-            variant="subtitle2"
-            fontWeight={600}
-            sx={{ mb: 1, mt: 1 }}
-          >
-            Chuyên đề / Danh mục
-          </Typography>
-          <Paper
-            variant="outlined"
-            sx={{
-              maxHeight: 300,
-              overflowY: "auto",
-              p: 1,
-              borderColor: "divider",
-              bgcolor: "action.hover",
-            }}
-          >
-            {loadingCategories ? (
-              <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : categoryTreeData.length > 0 ? (
-              <RichTreeView
-                items={categoryTreeData}
-                slots={{
-                  collapseIcon: ExpandMoreIcon,
-                  expandIcon: ChevronRightIcon,
-                }}
-                onSelectedItemsChange={handleTreeSelection}
-                selectedItems={category ? [String(category)] : []}
-                sx={{
-                  "& .MuiTreeItem-content": {
-                    py: 0.5,
-                    "&:hover": { backgroundColor: "action.hover" },
-                    "&.Mui-selected": {
-                      backgroundColor: "primary.light",
-                      "&:hover": { backgroundColor: "primary.light" },
-                    },
-                  },
-                }}
-              />
-            ) : (
-              <Typography variant="caption" sx={{ p: 2, display: "block" }}>
-                {selectedPlanId
-                  ? "Giáo án này chưa có danh mục."
-                  : "Vui lòng chọn giáo án."}
-              </Typography>
-            )}
-          </Paper>
-        </Collapse>
-      </Box>
-
-      <Box sx={{ p: 2, pt: 0, flexShrink: 0 }}>
-        <Divider sx={{ mb: 2 }} />
-        <Button
-          fullWidth
-          startIcon={<NotesIcon />}
-          onClick={() => setShowExplanation(!showExplanation)}
-          sx={{ justifyContent: "flex-start", color: "text.secondary" }}
-        >
-          {showExplanation ? "Ẩn giải thích" : "Thêm giải thích"}
-        </Button>
-
-        <Collapse in={showExplanation}>
-          <Box pt={2}>
-            <RichTextEditor
-              placeholder="Nhập giải thích chi tiết..."
-              value={explanation}
-              onChange={onExplanationChange}
-              toolbarType="full"
-              style={{
-                minHeight: "150px",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            />
-          </Box>
-        </Collapse>
-      </Box>
-    </Box>
-  );
-};
-
-export default function CreateNewQuestionPage() {
-  const navigate = useNavigate();
-  const [token] = useState(localStorage.getItem("token"));
-
-  const userInfo = useMemo(() => {
-    try {
-      return token ? jwtDecode(token) : null;
-    } catch (e) {
-      return null;
-    }
-  }, [token]);
-
-  const [questionType, setQuestionType] = useState("single_choice");
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [explanation, setExplanation] = useState("");
-  const [difficulty, setDifficulty] = useState("easy");
-  const [accessMode, setAccessMode] = useState("private");
-  const [status, setStatus] = useState("ready");
-
-  const [plans, setPlans] = useState([]);
-  const [selectedPlanId, setSelectedPlanId] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState("");
-
-  const [loadingPlans, setLoadingPlans] = useState(true);
-  const [loadingCategories, setLoadingCategories] = useState(false);
-  const [apiError, setApiError] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
-
-  const [answerData, setAnswerData] = useState([]);
-
-  useEffect(() => {
-    const fetchPlans = async () => {
-      if (!token || !userInfo?.sub) {
-        setApiError("Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
-        setLoadingPlans(false);
-        return;
-      }
-      try {
-        setLoadingPlans(true);
-        const tutorPlans = await getPlansByTutor(userInfo.sub, token);
-        setPlans(Array.isArray(tutorPlans) ? tutorPlans : []);
-        setApiError(null);
-      } catch (err) {
-        setApiError("Lỗi tải danh sách giáo án.");
-      } finally {
-        setLoadingPlans(false);
-      }
-    };
-    fetchPlans();
-  }, [token, userInfo]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      if (!selectedPlanId || !token) {
-        setCategories([]);
-        return;
-      }
-      try {
-        setLoadingCategories(true);
-        setApiError(null);
-        const catData = await getAllCategories(
-          { plan_id: selectedPlanId, mode: "tree" },
-          token
-        );
-        let nodes = [];
-        if (Array.isArray(catData)) {
-          nodes = catData;
-        } else if (catData?.data) {
-          nodes = Array.isArray(catData.data) ? catData.data : [catData.data];
-        } else if (catData?.categories) {
-          nodes = Array.isArray(catData.categories)
-            ? catData.categories
-            : [catData.categories];
-        }
-        setCategories(nodes);
-      } catch (err) {
-        setApiError("Lỗi tải danh mục cho giáo án này.");
-        setCategories([]);
-      } finally {
-        setLoadingCategories(false);
-      }
-    };
-    fetchCategories();
-  }, [selectedPlanId, token]);
-
   const handlePlanChange = (e) => {
-    const newPlanId = e.target.value;
-    setSelectedPlanId(newPlanId);
+    setSelectedPlanId(e.target.value);
     setCategories([]);
     setSelectedCategoryId("");
   };
 
+  const handleTreeSelection = (event, selectedItems) => {
+    const selectedId = Array.isArray(selectedItems)
+      ? (selectedItems.length > 0 ? selectedItems[0] : "")
+      : (selectedItems ?? "");
+    setSelectedCategoryId(selectedId);
+  };
+
+  // Khởi tạo đáp án khi đổi loại câu hỏi
   useEffect(() => {
     const initialAnswers = Array.from({ length: 4 }, () => ({
       id: uuidv4(),
@@ -478,43 +271,23 @@ export default function CreateNewQuestionPage() {
   const handleSubmit = async () => {
     setApiError(null);
     if (!token || !userInfo?.sub) {
-      setToast({
-        open: true,
-        message: "Phiên đăng nhập hết hạn.",
-        severity: "error",
-      });
+      setToast({ open: true, message: "Phiên đăng nhập hết hạn.", severity: "error" });
       return;
     }
     if (!title.trim()) {
-      setToast({
-        open: true,
-        message: "Vui lòng nhập tiêu đề câu hỏi.",
-        severity: "warning",
-      });
+      setToast({ open: true, message: "Vui lòng nhập tiêu đề câu hỏi.", severity: "warning" });
       return;
     }
     if (!content.trim() || content === "<p><br></p>") {
-      setToast({
-        open: true,
-        message: "Vui lòng nhập nội dung câu hỏi.",
-        severity: "warning",
-      });
+      setToast({ open: true, message: "Vui lòng nhập nội dung câu hỏi.", severity: "warning" });
       return;
     }
     if (!selectedPlanId) {
-      setToast({
-        open: true,
-        message: "Vui lòng chọn giáo án.",
-        severity: "warning",
-      });
+      setToast({ open: true, message: "Vui lòng chọn giáo án.", severity: "warning" });
       return;
     }
     if (!selectedCategoryId) {
-      setToast({
-        open: true,
-        message: "Vui lòng chọn chuyên đề/danh mục.",
-        severity: "warning",
-      });
+      setToast({ open: true, message: "Vui lòng chọn chuyên đề/danh mục.", severity: "warning" });
       return;
     }
 
@@ -536,130 +309,237 @@ export default function CreateNewQuestionPage() {
     setIsSubmitting(true);
     try {
       await createQuestion(userInfo.sub, [payload], token);
-      setToast({
-        open: true,
-        message: "Tạo câu hỏi thành công!",
-        severity: "success",
-      });
+      setToast({ open: true, message: "Tạo câu hỏi thành công!", severity: "success" });
       navigate("/tutor/question");
     } catch (error) {
-      const msg =
-        "Lỗi tạo câu hỏi: " + (error.response?.data?.message || error.message);
+      const msg = "Lỗi tạo câu hỏi: " + (error.response?.data?.message || error.message);
       setApiError(msg);
-      setToast({
-        open: true,
-        message: "Tạo câu hỏi thất bại.",
-        severity: "error",
-      });
+      setToast({ open: true, message: "Tạo câu hỏi thất bại.", severity: "error" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCloseToast = (event, reason) => {
-    if (reason === "clickaway") return;
-    setToast((prev) => ({ ...prev, open: false }));
-  };
-
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        bgcolor: "background.default",
-      }}
-    >
-      <EditorHeader
-        questionType={questionType}
-        onTypeChange={(e) => setQuestionType(e.target.value)}
-        difficulty={difficulty}
-        onDifficultyChange={setDifficulty}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-      />
-      <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden" }}>
-        <Box
-          sx={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            p: { xs: 1, md: 2 },
-            overflowY: "auto",
-          }}
+    <PageWrapper>
+      <Header>
+        <Typography variant="h4" component="h1" fontWeight="bold">
+          Tạo câu hỏi mới
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<SaveIcon />}
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          sx={{ fontWeight: "bold", borderRadius: "10px", px: 3 }}
         >
-          {apiError && (
-            <Alert
-              severity="error"
-              sx={{ mb: 2 }}
-              onClose={() => setApiError(null)}
-            >
-              {apiError}
-            </Alert>
-          )}
+          {isSubmitting ? "Đang lưu..." : "Lưu câu hỏi"}
+        </Button>
+      </Header>
 
-          <Paper
-            variant="outlined"
-            sx={{ p: 2, flexGrow: 1, display: "flex", flexDirection: "column" }}
-          >
+      {apiError && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setApiError(null)}>
+          {apiError}
+        </Alert>
+      )}
+
+      <Grid container spacing={3}>
+        {/* CỘT TRÁI: NỘI DUNG CHÍNH */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <SectionPaper>
+            <Typography variant="h6" fontWeight={600} mb={3}>
+              Nội dung câu hỏi
+            </Typography>
             <TextField
               label="Tiêu đề câu hỏi"
               variant="outlined"
               fullWidth
-              size="small"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Nhập tiêu đề ngắn gọn..."
-              sx={{ mb: 2 }}
+              sx={{ mb: 3, bgcolor: "background.paper", borderRadius: 1 }}
             />
-
+            <Typography variant="body2" fontWeight={500} mb={1} color="text.secondary">
+              Nội dung chi tiết:
+            </Typography>
             <RichTextEditor
-              label="Nội dung câu hỏi"
               placeholder="Nhập nội dung câu hỏi tại đây..."
               value={content}
               onChange={setContent}
               toolbarType="full"
-              style={{
-                flexGrow: 1,
-                minHeight: "200px",
-                display: "flex",
-                flexDirection: "column",
-              }}
+              style={{ minHeight: "200px", display: "flex", flexDirection: "column" }}
             />
+          </SectionPaper>
 
-            <Box sx={{ my: 2 }} />
-
+          <SectionPaper>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+              <Typography variant="h6" fontWeight={600}>
+                Đáp án
+              </Typography>
+              <FormControl size="small" sx={{ minWidth: 220, bgcolor: "background.paper" }}>
+                <Select value={questionType} onChange={(e) => setQuestionType(e.target.value)}>
+                  <MenuItem value="single_choice">Nhiều lựa chọn - 1 đáp án</MenuItem>
+                  <MenuItem value="multiple_choice">Nhiều lựa chọn - nhiều đáp án</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
             <MultipleChoiceEditor
               questionType={questionType}
               answerData={answerData}
               setAnswerData={setAnswerData}
             />
-          </Paper>
-        </Box>
-        <OptionsSidebar
-          plans={plans}
-          selectedPlanId={selectedPlanId}
-          onPlanChange={handlePlanChange}
-          loadingPlans={loadingPlans}
-          categories={categories}
-          category={selectedCategoryId}
-          onCategoryChange={(e) => setSelectedCategoryId(e.target.value)}
-          loadingCategories={loadingCategories}
-          accessMode={accessMode}
-          onAccessModeChange={(e) => setAccessMode(e.target.value)}
-          status={status}
-          onStatusChange={(e) => setStatus(e.target.value)}
-          explanation={explanation}
-          onExplanationChange={setExplanation}
-        />
-      </Box>
+          </SectionPaper>
+
+          <SectionPaper>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Typography variant="h6" fontWeight={600}>
+                Giải thích chi tiết
+              </Typography>
+              <Button
+                startIcon={<NotesIcon />}
+                onClick={() => setShowExplanation(!showExplanation)}
+                color={showExplanation ? "primary" : "inherit"}
+              >
+                {showExplanation ? "Ẩn giải thích" : "Thêm giải thích"}
+              </Button>
+            </Box>
+            <Collapse in={showExplanation}>
+              <Box pt={3}>
+                <RichTextEditor
+                  placeholder="Nhập giải thích chi tiết..."
+                  value={explanation}
+                  onChange={setExplanation}
+                  toolbarType="full"
+                  style={{ minHeight: "150px", display: "flex", flexDirection: "column" }}
+                />
+              </Box>
+            </Collapse>
+          </SectionPaper>
+        </Grid>
+
+        {/* CỘT PHẢI: PHÂN LOẠI & CÀI ĐẶT */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <SectionPaper>
+            <Typography variant="h6" fontWeight={600} mb={3}>
+              Phân loại
+            </Typography>
+            <Stack spacing={3}>
+              <FormControl fullWidth size="small" disabled={loadingPlans}>
+                <InputLabel>Giáo án</InputLabel>
+                <Select
+                  value={selectedPlanId}
+                  label="Giáo án"
+                  onChange={handlePlanChange}
+                  sx={{ bgcolor: "background.paper" }}
+                >
+                  <MenuItem value="">
+                    <em>{loadingPlans ? "Đang tải giáo án..." : "Chọn giáo án"}</em>
+                  </MenuItem>
+                  {plans.map((plan) => (
+                    <MenuItem key={plan.plan_id} value={plan.plan_id}>
+                      {`${plan.title} (Lớp ${plan.grade})`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Collapse in={!!selectedPlanId}>
+                <Typography variant="subtitle2" fontWeight={600} mb={1}>
+                  Chuyên đề / Danh mục
+                </Typography>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    maxHeight: 300,
+                    overflowY: "auto",
+                    p: 1,
+                    borderColor: "divider",
+                    bgcolor: "background.paper",
+                  }}
+                >
+                  {loadingCategories ? (
+                    <Box display="flex" justifyContent="center" p={2}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : categoryTreeData.length > 0 ? (
+                    <RichTreeView
+                      items={categoryTreeData}
+                      slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
+                      onSelectedItemsChange={handleTreeSelection}
+                      selectedItems={selectedCategoryId ? [String(selectedCategoryId)] : []}
+                      sx={{
+                        "& .MuiTreeItem-content": {
+                          py: 0.5,
+                          borderRadius: 1,
+                          "&:hover": { backgroundColor: "action.hover" },
+                          "&.Mui-selected": {
+                            backgroundColor: "primary.light",
+                            "&:hover": { backgroundColor: "primary.light" },
+                          },
+                        },
+                      }}
+                    />
+                  ) : (
+                    <Typography variant="caption" sx={{ p: 2, display: "block", color: "text.secondary" }}>
+                      {selectedPlanId ? "Giáo án này chưa có danh mục." : "Vui lòng chọn giáo án."}
+                    </Typography>
+                  )}
+                </Paper>
+              </Collapse>
+            </Stack>
+          </SectionPaper>
+
+          <SectionPaper>
+            <Typography variant="h6" fontWeight={600} mb={3}>
+              Cài đặt thuộc tính
+            </Typography>
+            <Stack spacing={3}>
+              <Box>
+                <Typography variant="body2" fontWeight={500} color="text.secondary">
+                  Độ khó
+                </Typography>
+                <DifficultyRating value={difficulty} onChange={setDifficulty} />
+              </Box>
+
+              <FormControl fullWidth size="small">
+                <InputLabel>Quyền xem</InputLabel>
+                <Select
+                  value={accessMode}
+                  label="Quyền xem"
+                  onChange={(e) => setAccessMode(e.target.value)}
+                  sx={{ bgcolor: "background.paper" }}
+                >
+                  <MenuItem value="private">Riêng tư (Private)</MenuItem>
+                  <MenuItem value="public">Công khai (Public)</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth size="small">
+                <InputLabel>Trạng thái</InputLabel>
+                <Select
+                  value={status}
+                  label="Trạng thái"
+                  onChange={(e) => setStatus(e.target.value)}
+                  sx={{ bgcolor: "background.paper" }}
+                >
+                  <MenuItem value="draft">Bản nháp (Draft)</MenuItem>
+                  <MenuItem value="ready">Sẵn sàng (Ready)</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+          </SectionPaper>
+        </Grid>
+      </Grid>
 
       <AppSnackbar
         open={toast.open}
         message={toast.message}
         severity={toast.severity}
-        onClose={handleCloseToast}
+        onClose={(e, reason) => {
+          if (reason !== "clickaway") setToast((prev) => ({ ...prev, open: false }));
+        }}
       />
-    </Box>
+    </PageWrapper>
   );
 }

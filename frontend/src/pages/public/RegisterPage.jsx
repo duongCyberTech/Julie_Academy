@@ -22,13 +22,13 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import {
     Email,
-    Lock,
     Visibility,
     VisibilityOff,
     Person,
 } from "@mui/icons-material";
 import AppSnackbar from '../../components/Snackbar'; 
 import logobk from '../../assets/images/logobk.png';
+
 const PageWrapper = styled(Box)(({ theme }) => ({
     minHeight: "100vh",
     display: "flex",
@@ -54,11 +54,6 @@ const FormPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: alpha(theme.palette.background.paper, 0.95),
     border: `1px solid ${theme.palette.divider}`,
     boxShadow: theme.shadows[5],
-    transition: "transform 0.3s ease, box-shadow 0.3s ease",
-    "&:hover": {
-        transform: "translateY(-4px)",
-        boxShadow: theme.shadows[8],
-    },
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -70,6 +65,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.primary.contrastText,
     background: theme.palette.primary.main,
     boxShadow: `0 4px 15px ${alpha(theme.palette.primary.main, 0.25)}`,
+    transition: "background-color 0.2s ease, box-shadow 0.2s ease",
     "&:hover": {
         background: theme.palette.primary.dark,
         boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.35)}`,
@@ -82,6 +78,8 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 const RegisterPage = () => {
     const theme = useTheme();
+    const navigate = useNavigate();
+    
     const [formData, setFormData] = useState({
         fname: "",
         lname: "",
@@ -97,7 +95,6 @@ const RegisterPage = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
-    const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -286,7 +283,7 @@ const RegisterPage = () => {
                                     onChange={handleChange}
                                     label="Vai trò"
                                 >
-                                    <MenuItem value="student">Học sinh</MenuItem>
+                                    <MenuItem value="student">Học viên</MenuItem>
                                     <MenuItem value="tutor">Gia sư</MenuItem>
                                     <MenuItem value="parent">Phụ huynh</MenuItem>
                                 </Select>
@@ -329,17 +326,11 @@ const RegisterPage = () => {
                                     endAdornment: (
                                         <InputAdornment position="end">
                                             <IconButton
-                                                onClick={() =>
-                                                    setShowConfirmPassword(!showConfirmPassword)
-                                                }
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                                 edge="end"
                                                 aria-label="toggle password visibility"
                                             >
-                                                {showConfirmPassword ? (
-                                                    <VisibilityOff />
-                                                ) : (
-                                                    <Visibility />
-                                                )}
+                                                {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                                             </IconButton>
                                         </InputAdornment>
                                     ),
@@ -357,7 +348,7 @@ const RegisterPage = () => {
                                 variant="body2"
                                 color="text.secondary"
                                 align="center"
-                                sx={{ mt: 2 }}
+                                sx={{ mt: 1 }}
                             >
                                 Đã có tài khoản?{" "}
                                 <Button

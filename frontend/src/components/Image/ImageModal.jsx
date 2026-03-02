@@ -1,5 +1,6 @@
 import { Modal, Button, Box } from '@mui/material';
-import { ArrowBackIosRounded, ArrowForwardIosRounded } from '@mui/icons-material';
+import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded';
+import ArrowForwardIosRounded from '@mui/icons-material/ArrowForwardIosRounded';
 import { useState } from 'react';
 
 const modalStyle = {

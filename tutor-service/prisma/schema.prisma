@@ -68,7 +68,7 @@ model Student {
   user       User         @relation(fields: [uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   family     is_family[]
 
-  studentAnalytics Student_analytics[]
+  studentAnalytics Student_analytics?
 }
 
 model is_family {
@@ -113,7 +113,7 @@ model Student_analytics {
   streak     Int         @default(0)
   last_exam_taken_date  DateTime   @default(now())
   sign_up_date          DateTime   @default(now())
-  student_id            String
+  student_id            String     @unique
   student               Student    @relation(fields: [student_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
 
@@ -399,6 +399,7 @@ model Exam_session {
   exam_type          ExamType       @default(practice)
   limit_taken        Int            @default(1)
   total_student_done Int            @default(0)
+  job_id             String?
   exam_open_in       Exam_open_in[]
   exam               Exams          @relation(fields: [exam_id], references: [exam_id], onDelete: Cascade, onUpdate: Cascade)
 

@@ -30,7 +30,7 @@ import {
   InputAdornment,
   TableSortLabel,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { styled, alpha } from "@mui/material/styles";
 import { visuallyHidden } from "@mui/utils";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import SearchIcon from "@mui/icons-material/Search";
@@ -48,23 +48,30 @@ import {
   getPlansByTutor,
 } from "../../services/CategoryService";
 
+// ==========================================
+// 1. PAGE WRAPPER CHUẨN SOFT UI
+// ==========================================
 const PageWrapper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  backgroundColor:
-    theme.palette.mode === "light"
-      ? theme.palette.grey[50]
-      : theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius * 2,
-  border: `1px solid ${theme.palette.divider}`,
-  boxShadow: "none",
+    margin: theme.spacing(2), 
+    padding: theme.spacing(4), 
+    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
+    borderRadius: '24px',
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
+    minHeight: 'calc(100vh - 120px)', 
+    display: 'flex',
+    flexDirection: 'column',
 }));
 
-const Header = styled(Box)({
+
+// Header fix để không bị ép nhỏ
+const Header = styled(Box)(({ theme }) => ({
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: "24px",
-});
+  marginBottom: theme.spacing(3),
+  flexShrink: 0,
+}));
 
 const HEAD_CELLS = [
   { id: "title", label: "Tiêu đề câu hỏi", minWidth: 300, sortable: true },
@@ -189,7 +196,7 @@ const QuestionFilters = memo(
     };
 
     return (
-      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+      <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 3, flexShrink: 0, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) }}>
         <Stack direction="column" spacing={2}>
           <Stack
             direction={{ xs: "column", md: "row" }}
@@ -203,7 +210,7 @@ const QuestionFilters = memo(
               value={filters.search}
               onChange={onFilterChange}
               size="small"
-              sx={{ flexGrow: 1, minWidth: 200 }}
+              sx={{ flexGrow: 1, minWidth: 200, bgcolor: 'background.paper', borderRadius: 1 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -218,6 +225,7 @@ const QuestionFilters = memo(
                 color="inherit"
                 onClick={onReset}
                 startIcon={<RestartAltIcon />}
+                sx={{ bgcolor: 'background.paper' }}
               >
                 Xóa lọc
               </Button>
@@ -231,7 +239,7 @@ const QuestionFilters = memo(
           >
             <FormControl
               size="small"
-              sx={{ minWidth: 200 }}
+              sx={{ minWidth: 200, bgcolor: 'background.paper', borderRadius: 1 }}
               disabled={loadingBooks}
             >
               <InputLabel>Giáo án</InputLabel>
@@ -256,7 +264,7 @@ const QuestionFilters = memo(
               </Select>
             </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 120 }}>
+            <FormControl size="small" sx={{ minWidth: 120, bgcolor: 'background.paper', borderRadius: 1 }}>
               <InputLabel>Độ khó</InputLabel>
               <Select
                 name="level"
@@ -273,7 +281,7 @@ const QuestionFilters = memo(
               </Select>
             </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 150 }}>
+            <FormControl size="small" sx={{ minWidth: 150, bgcolor: 'background.paper', borderRadius: 1 }}>
               <InputLabel>Loại câu hỏi</InputLabel>
               <Select
                 name="type"
@@ -316,7 +324,7 @@ const QuestionFilters = memo(
                   <CircularProgress size={20} />
                 </Box>
               ) : categoryTreeData.length > 0 ? (
-                <Box sx={{ maxHeight: 300, overflowY: "auto", mt: 1 }}>
+                <Box sx={{ maxHeight: 250, overflowY: "auto", mt: 1 }}>
                   <RichTreeView
                     items={categoryTreeData}
                     slots={{
@@ -497,6 +505,7 @@ export default function QuestionPage() {
     order,
     orderBy,
   ]);
+  
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
@@ -525,6 +534,7 @@ export default function QuestionPage() {
     setOrderBy("created_at");
     setOrder("desc");
   };
+  
   const handleRequestSort = (property) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
@@ -551,16 +561,17 @@ export default function QuestionPage() {
               }
             }}
             size="small"
+            sx={{ bgcolor: 'background.paper' }}
           >
-            <ToggleButton value="my_questions">Của tôi</ToggleButton>
-            <ToggleButton value="public">Công khai</ToggleButton>
+            <ToggleButton value="my_questions" sx={{ fontWeight: 600 }}>Của tôi</ToggleButton>
+            <ToggleButton value="public" sx={{ fontWeight: 600 }}>Công khai</ToggleButton>
           </ToggleButtonGroup>
 
           <Button
             variant="contained"
             onClick={() => navigate("/tutor/new")}
             startIcon={<AddCircleOutlineIcon />}
-            sx={{ fontWeight: "bold" }}
+            sx={{ fontWeight: "bold", borderRadius: "10px" }}
           >
             Tạo mới
           </Button>
@@ -578,14 +589,35 @@ export default function QuestionPage() {
       />
 
       {loading ? (
-        <Box display="flex" justifyContent="center" my={8}>
+        <Box display="flex" flexGrow={1} justifyContent="center" alignItems="center">
           <CircularProgress />
         </Box>
       ) : error ? (
-        <Alert severity="error">{error}</Alert>
+        <Alert severity="error" sx={{ flexShrink: 0 }}>{error}</Alert>
       ) : (
-        <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden" }}>
-          <TableContainer sx={{ maxHeight: 600 }}>
+        <Paper 
+          variant="outlined" 
+          sx={{ 
+            borderRadius: 3, 
+            overflow: "hidden", 
+            display: 'flex', 
+            flexDirection: 'column', 
+            flexGrow: 1, 
+            minHeight: 0 // Cho phép tự động cuộn bên trong mà không bung layout
+          }}
+        >
+          <TableContainer 
+            sx={{ 
+              flexGrow: 1, 
+              overflowY: "auto",
+              "&::-webkit-scrollbar": { width: "6px", height: "6px" },
+              "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: (theme) => alpha(theme.palette.grey[400], 0.5),
+                borderRadius: "10px",
+              }
+            }}
+          >
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
@@ -595,12 +627,12 @@ export default function QuestionPage() {
                       align={cell.align || "left"}
                       sx={{
                         fontWeight: "bold",
-                        bgcolor: "grey.50",
+                        bgcolor: (theme) => alpha(theme.palette.grey[100], 0.8),
+                        backdropFilter: 'blur(8px)',
                         minWidth: cell.minWidth,
                       }}
                       sortDirection={orderBy === cell.id ? order : false}
                     >
-                      {/* Logic hiển thị Sort Label */}
                       {cell.sortable ? (
                         <TableSortLabel
                           active={orderBy === cell.id}
@@ -705,9 +737,9 @@ export default function QuestionPage() {
                     <TableCell
                       colSpan={6}
                       align="center"
-                      sx={{ py: 4, color: "text.secondary" }}
+                      sx={{ py: 6, color: "text.secondary" }}
                     >
-                      Không tìm thấy câu hỏi nào.
+                      <Typography variant="body1">Không tìm thấy câu hỏi nào.</Typography>
                     </TableCell>
                   </TableRow>
                 )}
@@ -716,6 +748,7 @@ export default function QuestionPage() {
           </TableContainer>
 
           <TablePagination
+            sx={{ flexShrink: 0, borderTop: '1px solid', borderColor: 'divider' }}
             rowsPerPageOptions={[10, 25, 50]}
             component="div"
             count={Number(totalQuestions ?? 0)}

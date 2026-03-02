@@ -24,8 +24,10 @@ import {
 import PersonIcon from '@mui/icons-material/Person';
 import ReplyIcon from '@mui/icons-material/Reply'
 import SendIcon from '@mui/icons-material/Send';
-import { DeleteOutline } from "@mui/icons-material";
-import { PhotoCamera, Close, CloudUpload } from "@mui/icons-material";
+import DeleteOutline from "@mui/icons-material/DeleteOutline";
+import PhotoCamera from '@mui/icons-material/PhotoCamera'
+import Close from '@mui/icons-material/Close'
+import CloudUpload from "@mui/icons-material/CloudUpload";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
 
@@ -43,7 +45,6 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [user, setUser] = useState(jwtDecode(localStorage.getItem('token')))
-  const [cntInstance, setCntInstance] = useState(0)
 
   const [isUpload, setIsUpload] = useState(false)
   const [isUpdate, setIsUpdate] = useState(false)
@@ -51,7 +52,7 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
   const [addImages, setAddImages] = useState([])
   const [deleteImages, setDeleteImages] = useState([])
   const [updateContent, setUpdateContent] = useState(comment.content || "")
-  const [isNested, setIsNested] = useState(false)
+  const [isNested, setIsNested] = useState(comment.isNested)
   const [page, setPage] = useState(1)
   const [isDeleteModal, setIsDeleteModal] = useState(false)
   
@@ -59,7 +60,21 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
     toast.promise(getCommentsByThread(comment.thread_id, comment.comment_id, page), {
       loading: "Đang tải bình luận...",
       success: (response) => {
-        setCntInstance(0)
+        setIsNested(true)
+        setComments(prev => addTreeNode(prev, comment.comment_id, response))
+        return "Đã tải bình luận!"
+      },
+      error: (err) => {
+        return err.message
+      }
+    })
+  }
+
+  const handleLoadMore = async() => {
+    setPage(page + 1)
+    toast.promise(getCommentsByThread(comment.thread_id, comment.comment_id, page + 1), {
+      loading: "Đang tải bình luận...",
+      success: (response) => {
         setIsNested(true)
         setComments(prev => addTreeNode(prev, comment.comment_id, response))
         return "Đã tải bình luận!"
@@ -75,7 +90,6 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
     if (replyContent.trim() === "") return;
     const taggedEmails = extractEmailsFromComment(replyContent)
     onReplySubmit(comment.comment_id, replyContent, taggedEmails, selectedImages);
-    setCntInstance(cntInstance + 1)
     setIsNested(true)
     setReplyContent("");
     setIsReplying(false);
@@ -94,6 +108,15 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
         setComments((prev) => {
           const updateCommentInTree = (nodes, updatedComment) => {
             return nodes.map((node) => {
+              if (node.comment_id === updatedComment.parent_cmt_id){
+                setIsNested(true)
+                return {
+                  ...node,
+                  cnt_comments: node.cnt + 1,
+                  replies: updateCommentInTree(node.replies, updatedComment)
+                }
+              }
+
               if (node.comment_id === updatedComment.comment_id) {
                 return {
                   ...node,
@@ -174,7 +197,7 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
   }
 
   return (
-    <Box>
+    <Box id={`${comment.comment_id}`}>
       <ListItem sx={{ pl: 0, alignItems: 'flex-start' }}>
         <ListItemAvatar>
           <Avatar src={comment?.sender?.avata_url} sx={{ width: 32, height: 32 }}>
@@ -216,7 +239,7 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
                 <Typography component="span" variant="caption" display="block">
                   {getRelativeTime(comment.createAt)}
                 </Typography>
-                {comment && (comment.cnt_comments + cntInstance) ? (
+                {comment && (comment.cnt_comments) ? (
                   !isNested ? 
                   (<Typography 
                     component="span" variant="caption" display="block"
@@ -231,7 +254,7 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
                       () => handleFetchChildComments()
                     }
                   >
-                    Xem {comment.cnt_comments + cntInstance} phản hồi
+                    Xem {comment.cnt_comments} phản hồi
                   </Typography>) : 
                   (<Typography 
                     component="span" variant="caption" display="block"
@@ -493,7 +516,7 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
                 addTreeNode={addTreeNode}
               />
             ))}
-            {comment.cnt > page * 10 ? 
+            {comment.cnt_comments > page * 10 ? 
               (<Typography
                 sx={{
                   cursor: "pointer",
@@ -503,7 +526,7 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
                     color: 'primary.main'
                   }
                 }}
-                onClick={() => setPage(page + 1)}
+                onClick={() => handleLoadMore()}
               >
                 Xem thêm
               </Typography>) : null
