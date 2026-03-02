@@ -3,6 +3,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { BullModule } from '@nestjs/bull';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -19,20 +20,34 @@ import { BadgeModule } from './badge/badge.module';
 import { ThreadModule } from './thread/thread.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ConfigModule } from '@nestjs/config';
+import { BackgroundJobModule } from './background_job/background-job.module';
+import { AnalysisModule } from './analysis/analysis.module';
 
-
-import { BackgroundService } from './background_job/BackgroundJob.service';
-import { S3Service } from './resource/aws/aws-s3.service';
-import { NotificationsService } from './notifications/notifications.service';
+require('dotenv').config()
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     ThrottlerModule.forRoot([
       {
         ttl: 60000, 
         limit: 50,  
       },
     ]),
+    BullModule.forRoot({
+      redis: {
+        host: process.env.UPSTASH_REDIS_HOST,
+        port: process.env.UPSTASH_REDIS_PORT ? parseInt(process.env.UPSTASH_REDIS_PORT) : 6379,
+        password: process.env.UPSTASH_REDIS_PASSWORD,
+        username: 'default',
+        tls: { rejectUnauthorized: false },
+        maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+      },
+    }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     UserModule, 
@@ -46,7 +61,9 @@ import { NotificationsService } from './notifications/notifications.service';
     ResourceModule,
     BadgeModule,
     ThreadModule,
-    NotificationsModule
+    NotificationsModule,
+    BackgroundJobModule,
+    AnalysisModule
   ],
   controllers: [AppController],
   providers: [
@@ -54,8 +71,6 @@ import { NotificationsService } from './notifications/notifications.service';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    BackgroundService,
-    S3Service,
     AppService
   ],
 })

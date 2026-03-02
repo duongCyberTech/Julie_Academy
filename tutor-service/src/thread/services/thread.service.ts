@@ -4,6 +4,8 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { CreateThreadDto, UpdateThreadDto } from "../dto/ThreadDto.dto";
 import { DateTime } from 'luxon'
 import { CloudinaryService } from "src/resource/cloudinary/cloudinary.service";
+import { CreateNotificationDTO } from "src/notifications/dto/notification.dto";
+import { NotificationType } from "@prisma/client";
 
 @Injectable()
 export class ThreadService {
@@ -74,10 +76,17 @@ export class ThreadService {
                                 select: {uid: true}
                             }
                         }
+                    },
+                    class: {
+                        select: {
+                            class_id: true,
+                            classname: true
+                        }
                     }
                 },
             }).then((res) => {
                 return {
+                    class: res.class,
                     thread_id: res.thread_id,
                     title: res.title,
                     content: res.content,
@@ -87,6 +96,15 @@ export class ThreadService {
                     followers: res.followers.map(item => item.follower.uid)
                 }
             })
+
+            const notiData: CreateNotificationDTO = {
+                message: `${res.sender.fname} ${res.sender.mname ? res.sender.mname : ""} ${res.sender.lname} đã tạo một bài viết mới trong lớp ${res.class.classname}.`,
+                type: NotificationType.thread,
+                link_wrapper_id: res.class.class_id,
+                link_primary_id: res.thread_id,
+            }
+
+            this.eventEmitter.emit('thread.new', notiData)
 
             return { data: res, message: "Create Thread Successfully!", status: 201 }
         },
@@ -124,6 +142,8 @@ export class ThreadService {
                 title: true, 
                 content: true,
                 createAt: true,
+                open_list: true,
+                is_restricted: true,
                 sender: {
                     select: {
                         uid: true,
@@ -165,7 +185,9 @@ export class ThreadService {
                 sender: thread.sender,
                 medias: thread.Resource_of_Thread.map(item => item.Resources.file_path),
                 followers: thread.followers.map(item => item.follower.uid),
-                cnt_comments: thread._count.comments
+                cnt_comments: thread._count.comments,
+                is_restricted: thread.is_restricted,
+                open_list: thread.open_list
             }
         }))
     }
@@ -178,6 +200,8 @@ export class ThreadService {
                 title: true, 
                 content: true,
                 createAt: true,
+                open_list: true,
+                is_restricted: true,
                 sender: {
                     select: {
                         uid: true,
@@ -206,7 +230,9 @@ export class ThreadService {
                 },
                 _count: {
                     select: {
-                        comments: true
+                        comments: {
+                            where: {parent_cmt_id: null}
+                        }
                     }
                 }
             },
@@ -219,7 +245,9 @@ export class ThreadService {
                 sender: res.sender,
                 medias: res.Resource_of_Thread.map(item => item.Resources.file_path),
                 followers: res.followers.map(item => item.follower.uid),
-                cnt_comments: res._count.comments
+                cnt_comments: res._count.comments,
+                is_restricted: res.is_restricted,
+                open_list: res.open_list
             }
         })
         if (!thread) throw new NotFoundException("Thread not found")

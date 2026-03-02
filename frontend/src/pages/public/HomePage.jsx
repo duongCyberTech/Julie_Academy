@@ -1,7 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Box,
   Button,
@@ -11,368 +11,294 @@ import {
   useTheme,
   alpha,
   styled,
+  Chip,
+  Stack,
+  Grid
 } from "@mui/material";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import MenuBookIcon from "@mui/icons-material/MenuBook";
-import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
+
+// Icons
+import TouchAppRoundedIcon from '@mui/icons-material/TouchAppRounded';
+import RocketLaunchRoundedIcon from "@mui/icons-material/RocketLaunchRounded";
+import AutoFixHighRoundedIcon from "@mui/icons-material/AutoFixHighRounded";
+import PeopleOutlineRoundedIcon from '@mui/icons-material/PeopleOutlineRounded';
+import VerifiedUserRoundedIcon from '@mui/icons-material/VerifiedUserRounded';
+import EmojiObjectsRoundedIcon from "@mui/icons-material/EmojiObjectsRounded";
+import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
+import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
+
 import Card from "../../components/Card";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import Background from "../../components/Background";
+import { Background } from "../../components/Background";
+
+// Images
 import homepage1 from "../../assets/images/homepage1.webp";
 import homepage2 from "../../assets/images/homepage2.webp";
 import homepage3 from "../../assets/images/homepage3.webp";
+import qt from "../../assets/images/qt.png"; 
 
 const MOTION_VARIANTS = {
   fadeInUp: {
     initial: { opacity: 0, y: 20 },
-    animate: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
-    },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
   },
 };
 
-const StyledSectionWrapper = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "hasDivider",
-})(({ theme, hasDivider }) => ({
+const FEATURES = [
+  { icon: EmojiObjectsRoundedIcon, title: "Cá nhân hóa lộ trình", description: "Phân tích năng lực thực tế, tạo ra lộ trình học tập tối ưu dành riêng cho từng học sinh." },
+  { icon: MenuBookRoundedIcon, title: "Học liệu tin cậy", description: "Hệ thống kiến thức chuẩn hóa, sinh động được kiểm duyệt bởi giáo viên giàu kinh nghiệm." },
+  { icon: SchoolRoundedIcon, title: "Gia sư đồng hành", description: "Kết nối nhanh chóng với mạng lưới gia sư chất lượng cao, sẵn sàng hỗ trợ 24/7." },
+];
+
+const StyledSectionWrapper = styled(Box)(({ theme }) => ({
   width: "100%",
-  paddingBlock: theme.spacing(4),
-  overflow: "hidden",
-  ...(hasDivider && { borderTop: `1px solid ${theme.palette.divider}` }),
-  [theme.breakpoints.down("md")]: { paddingBlock: theme.spacing(5) },
+  paddingBlock: theme.spacing(6),
+  [theme.breakpoints.down("md")]: { paddingBlock: theme.spacing(4) },
 }));
 
-const ContentDisplayCard = styled(Paper)(({ theme }) => {
-  const isDark = theme.palette.mode === "dark";
-  return {
-    display: "flex",
-    flexDirection: "column",
-    height: "100%",
-    padding: theme.spacing(4),
-    borderRadius: theme.shape.borderRadius * 2,
-    transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
-    background: isDark
-      ? alpha(theme.palette.background.paper, 0.8)
-      : theme.palette.background.paper,
-    border: isDark ? `1px solid ${alpha(theme.palette.common.white, 0.08)}` : "none",
-    boxShadow: isDark ? "none" : theme.shadows[3],
-    "&:hover": {
-      transform: isDark ? "none" : "translateY(-5px)",
-      border: isDark ? `1px solid ${alpha(theme.palette.primary.main, 0.3)}` : "none",
-      boxShadow: isDark ? "none" : theme.shadows[10],
-    },
-  };
-});
+const ContentDisplayCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  borderRadius: theme.shape.borderRadius * 2,
+  background: theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.6) : alpha(theme.palette.background.paper, 0.8),
+  backdropFilter: "blur(12px)",
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+}));
 
-const StyledImageBox = React.memo(({ src, alt, isFirst }) => {
-  const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
+const StyledImageBox = styled(Box)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius * 2.5,
+  overflow: "hidden",
+  boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
+  aspectRatio: "4/3",
+  maxWidth: "500px",
+  backgroundColor: alpha(theme.palette.divider, 0.1),
+  "& img": { width: "100%", height: "100%", objectFit: "cover", display: "block" }
+}));
 
-  return (
-    <Box
-      sx={{
-        p: 2,
-        borderRadius: theme.shape.borderRadius * 2.5,
-        background: isDark
-          ? `linear-gradient(145deg, ${alpha(theme.palette.primary.main, 0.15)}, ${alpha(theme.palette.secondary.main, 0.1)})`
-          : `linear-gradient(145deg, ${alpha(theme.palette.primary.light, 0.3)}, ${alpha(theme.palette.secondary.light, 0.25)})`,
-        border: isDark ? `1px solid ${alpha(theme.palette.primary.light, 0.1)}` : "none",
-        boxShadow: isDark
-          ? `0 0 20px ${alpha(theme.palette.primary.main, 0.1)}`
-          : theme.shadows[4],
-        transition: "all 0.3s ease",
-      }}
-    >
-      <Box
-        component="img"
-        src={src}
-        alt={alt}
-        loading={isFirst ? "eager" : "lazy"}
-        decoding="async"
-        sx={{
-          width: "100%",
-          height: "auto",
-          objectFit: "cover",
-          borderRadius: theme.shape.borderRadius * 2,
-          display: "block",
-          filter: isDark ? "brightness(0.9)" : "none",
-        }}
-      />
-    </Box>
-  );
-});
+const InteractiveWord = ({ word, onClick, colorTheme }) => (
+  <Box
+    component="span"
+    onClick={onClick}
+    sx={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: colorTheme.text,
+      fontWeight: 700,
+      cursor: "pointer",
+      padding: "2px 14px",
+      margin: "4px",
+      backgroundColor: colorTheme.bg,
+      border: `2px solid ${colorTheme.border}`,
+      borderRadius: "10px",
+      boxShadow: `0 3px 0 ${colorTheme.border}`,
+      transition: "all 0.1s ease",
+      minWidth: { xs: "100px", md: "140px" },
+      textAlign: "center",
+      "&:active": { transform: "translateY(2px)", boxShadow: "0 0px 0" },
+    }}
+  >
+    <AnimatePresence mode="wait">
+      <motion.span 
+        key={word} 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        exit={{ opacity: 0 }} 
+        transition={{ duration: 0.15 }}
+      >
+        {word}
+      </motion.span>
+    </AnimatePresence>
+  </Box>
+);
 
 const HeroSection = React.memo(() => {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
+  const navigate = useNavigate();
+  const [idx, setIdx] = useState({ sub: 0, goal: 0, tutor: 0 });
+
+  const data = {
+    subjects: ["Toán học", "Tiếng Anh", "Ngữ Văn", "Vật Lý", "Hóa Học", "Hình học 9"],
+    goals: ["hóa giải mọi đề khó", "chạm đỉnh phong độ", "vượt rào điểm 9+", "xóa tan mất gốc", "về đích sớm"],
+    tutors: ["gia sư tận tâm", "giáo viên tâm lý", "trùm lý thuyết", "chuyên gia gỡ rối", "phù thủy kiến thức"]
+  };
+
+  const pastel = {
+    blue: { bg: "#E0F2FE", text: "#0284C7", border: "#7DD3FC" },
+    orange: { bg: "#FFEDD5", text: "#EA580C", border: "#FDBA74" },
+    purple: { bg: "#F3E8FF", text: "#9333EA", border: "#D8B4FE" },
+  };
 
   return (
-    <StyledSectionWrapper
-      sx={{
-        pt: { xs: 6, md: 12 },
-        pb: { xs: 4, md: 4 },
-        background: isDark
-          ? theme.palette.background.default
-          : `linear-gradient(180deg, #fff 0%, ${alpha(theme.palette.primary.light, 0.07)} 100%)`,
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <Container
-        maxWidth="md"
-        sx={{ textAlign: "center", position: "relative", zIndex: 1 }}
-      >
-        <motion.div
-          initial="initial"
-          animate="animate"
-          variants={{ animate: { transition: { staggerChildren: 0.15 } } }}
-        >
-          <motion.div variants={MOTION_VARIANTS.fadeInUp}>
-            <Typography
-              component="h1"
-              variant="h1"
-              fontWeight={900}
-              sx={{
-                mb: 1,
-                background: isDark
-                  ? `linear-gradient(90deg, #FFFFFF 0%, ${theme.palette.primary.light} 100%)`
-                  : `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.accent.main} 100%)`,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                letterSpacing: "-1px",
-                transition: "all 0.5s ease",
-              }}
-            >
-              Julie Academy
-            </Typography>
-          </motion.div>
+    <StyledSectionWrapper sx={{ pt: { xs: 4, md: 6 }, pb: { xs: 6, md: 8 } }}>
+      <Container maxWidth="lg">
+        <Stack spacing={6} alignItems="center">
+          
+          {/* PHẦN 1: ẢNH VÀ CHỮ TRÊN CÙNG MỘT HÀNG */}
+          <Grid container spacing={4} alignItems="center" justifyContent="center">
+            
+            {/* Ảnh bên trái */}
+            <Grid item xs={12} md={5} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-end' } }}>
+              <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
+                <Box sx={{
+                  p: 1,
+                  borderRadius: "28px",
+                  bgcolor: alpha(theme.palette.background.paper, 0.5),
+                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  boxShadow: `0 20px 40px ${alpha(theme.palette.text.primary, 0.05)}`,
+                  width: { xs: "220px", md: "300px" },
+                  aspectRatio: "1/1",
+                  display: "flex", alignItems: "center", justifyContent: "center"
+                }}>
+                  <Box component="img" src={qt} alt="Julie Academy" sx={{ width: "80%", height: "80%", objectFit: "contain" }} />
+                </Box>
+              </motion.div>
+            </Grid>
 
-          <motion.div variants={MOTION_VARIANTS.fadeInUp}>
-            <Typography
-              component="h2"
-              variant="h4"
-              fontWeight={700}
-              sx={{
-                mb: 3,
-                background: `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.9)} 0%, ${alpha(theme.palette.accent.main, 0.8)} 100%)`,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                opacity: 0.95,
-              }}
-            >
-              Kiến tạo tri thức – Dẫn lối tương lai
-            </Typography>
-          </motion.div>
+            {/* Chữ bên phải */}
+            <Grid item xs={12} md={7}>
+              <Stack spacing={3} alignItems={{ xs: "center", md: "flex-start" }}>
+                <motion.div variants={MOTION_VARIANTS.fadeInUp} initial="initial" animate="animate">
+                  <Typography variant="h3" sx={{ 
+                    fontWeight: 700, 
+                    fontSize: { xs: "1.8rem", md: "2.6rem" }, 
+                    lineHeight: 1.3,
+                    textAlign: { xs: "center", md: "left" },
+                    color: "text.primary"
+                  }}>
+                    Xóa bỏ giới hạn, giúp bạn tự tin để <br />
+                    <InteractiveWord word={data.goals[idx.goal]} onClick={() => setIdx(p=>({...p, goal: (p.goal+1)%data.goals.length}))} colorTheme={pastel.orange} />
+                  </Typography>
+                </motion.div>
 
-          <motion.div variants={MOTION_VARIANTS.fadeInUp}>
-            <Typography
-              variant="body1"
+                <motion.div variants={MOTION_VARIANTS.fadeInUp} initial="initial" animate="animate">
+                  <Typography variant="h4" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: "2rem", md: "2rem" }, 
+                    color: "text.secondary",
+                    textAlign: { xs: "center", md: "left" },
+                    lineHeight: 1.5
+                  }}>
+                    Làm chủ <InteractiveWord word={data.subjects[idx.sub]} onClick={() => setIdx(p=>({...p, sub: (p.sub+1)%data.subjects.length}))} colorTheme={pastel.blue} /> cùng với <InteractiveWord word={data.tutors[idx.tutor]} onClick={() => setIdx(p=>({...p, tutor: (p.tutor+1)%data.tutors.length}))} colorTheme={pastel.purple} />.
+                  </Typography>
+                </motion.div>
+              </Stack>
+            </Grid>
+          </Grid>
+
+          {/* PHẦN 2: HƯỚNG DẪN VÀ CTA - CĂN GIỮA TUYỆT ĐỐI DƯỚI CẢ HAI */}
+          <Stack spacing={4} alignItems="center" sx={{ width: "100%" }}>
+            <motion.div variants={MOTION_VARIANTS.fadeInUp} initial="initial" animate="animate" style={{ width: "100%", display: 'flex', justifyContent: 'center' }}>
+              <Box sx={{ 
+                maxWidth: "880px",
+                py: 2, px: 3, borderRadius: "15px",
+                bgcolor: alpha(theme.palette.info.main, 0.05),
+                border: `1px dashed ${alpha(theme.palette.info.main, 0.3)}`,
+                display: "flex", alignItems: "center", gap: 2,
+                justifyContent: "center"
+              }}>
+                <TouchAppRoundedIcon color="info" />
+                <Typography variant="body1" sx={{ color: "info.main", fontWeight: 700, textAlign: "center" }}>
+                  Julie Academy đồng hành dựa trên năng lực của bạn — Chạm vào từ khóa để bắt đầu
+                </Typography>
+              </Box>
+            </motion.div>
+
+            <Button
+              variant="contained" 
+              onClick={() => navigate("/login")}
+              endIcon={<RocketLaunchRoundedIcon />}
               sx={{
-                maxWidth: 800,
-                mx: "auto",
-                lineHeight: 1.9,
-                color: isDark
-                  ? alpha(theme.palette.text.primary, 0.85)
-                  : alpha(theme.palette.text.secondary, 0.95),
-                fontSize: "1.1rem",
+                borderRadius: "20px", px: { xs: 6, md: 12 }, py: 2.5, 
+                fontSize: { xs: "2rem", md: "2rem" }, fontWeight: 700,
+                bgcolor: "text.primary", color: "background.paper",
+                boxShadow: `0 20px 40px ${alpha(theme.palette.text.primary, 0.2)}`,
+                "&:hover": { bgcolor: "primary.main", transform: "translateY(-5px)" },
+                transition: "all 0.3s ease"
               }}
             >
-              Mỗi học sinh đều xứng đáng được học tập, phát triển và tỏa sáng
-            </Typography>
-          </motion.div>
-        </motion.div>
+              Kích hoạt lộ trình bứt phá
+            </Button>
+          </Stack>
+
+        </Stack>
       </Container>
     </StyledSectionWrapper>
   );
 });
-
-const FeatureSection = React.memo(() => {
-  const FEATURES = useMemo(
-    () => [
-      {
-        icon: TrendingUpIcon,
-        title: "Cá nhân hóa việc học",
-        description: "Phân tích điểm mạnh, điểm yếu, tạo ra lộ trình học tập tối ưu và hiệu quả nhất dành riêng cho bạn.",
-        variant: "primary",
-      },
-      {
-        icon: MenuBookIcon,
-        title: "Nội dung đáng tin cậy",
-        description: "Hệ thống kiến thức chuẩn hóa từ nhiều bộ sách giáo khoa, được biên soạn và kiểm duyệt bởi các chuyên gia.",
-        variant: "success",
-      },
-      {
-        icon: VolunteerActivismIcon,
-        title: "Công cụ hỗ trợ giáo viên",
-        description: "Cung cấp công cụ mạnh mẽ giúp giáo viên và gia sư đổi mới phương pháp giảng dạy trong kỷ nguyên số.",
-        variant: "warning",
-      },
-    ],
-    []
-  );
-
-  return (
-    <Container maxWidth="lg">
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            sm: "repeat(2, 1fr)",
-            md: "repeat(3, 1fr)",
-          },
-          gap: { xs: 3, md: 4 },
-        }}
-      >
-        {FEATURES.map((feature) => (
-          <Card
-            key={feature.title}
-            title={feature.title}
-            description={feature.description}
-            icon={feature.icon}
-            iconColor={feature.variant}
-          />
-        ))}
+const ContentSection = React.memo(({ imgSrc, imgAlt, title, content, direction }) => (
+  <Container maxWidth="lg" sx={{ my: 4 }}>
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, alignItems: "center", gap: 6 }}>
+      <Box sx={{ order: { xs: 2, md: direction === "row" ? 1 : 2 } }}>
+        <ContentDisplayCard elevation={0}>
+          <Typography variant="h4" fontWeight={700} mb={2}>{title}</Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>{content}</Typography>
+        </ContentDisplayCard>
       </Box>
-    </Container>
-  );
-});
+      <Box sx={{ order: { xs: 1, md: direction === "row" ? 2 : 1 } }}>
+        <StyledImageBox>
+          <img src={imgSrc} alt={imgAlt} loading="lazy" />
+        </StyledImageBox>
+      </Box>
+    </Box>
+  </Container>
+));
 
-const ContentSection = React.memo(
-  ({ isFirstImage, imgSrc, imgAlt, title, content, showButton, direction }) => {
-    const navigate = useNavigate();
-
-    return (
-      <Container maxWidth="lg">
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-            alignItems: "center",
-            gap: { xs: 5, md: 8 },
-          }}
-        >
-          <Box sx={{ order: { xs: 2, md: direction === "row" ? 1 : 2 } }}>
-            <ContentDisplayCard>
-              <Typography component="h2" variant="h4" fontWeight={700} mb={2}>
-                {title}
-              </Typography>
-              <Typography
-                variant="body1"
-                sx={{ flexGrow: 1, lineHeight: 1.8, color: "text.secondary" }}
-              >
-                {content}
-              </Typography>
-              {showButton && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  onClick={() => navigate("/login")}
-                  sx={{ mt: 3, alignSelf: "center" }}
-                >
-                  Bắt đầu học ngay
-                </Button>
-              )}
-            </ContentDisplayCard>
-          </Box>
-
-          <Box
-            sx={{
-              order: { xs: 1, md: direction === "row" ? 2 : 1 },
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Box sx={{ maxWidth: "420px", width: "100%" }}>
-              <StyledImageBox
-                src={imgSrc}
-                alt={imgAlt}
-                isFirst={isFirstImage}
-              />
-            </Box>
-          </Box>
-        </Box>
-      </Container>
-    );
-  }
-);
-
-function HomePage({ mode, toggleMode }) {
-  const PAGE_SECTIONS = useMemo(
-    () => [
-      {
-        type: "content",
-        imgSrc: homepage1,
-        imgAlt: "Học sinh sử dụng công nghệ học tập hiện đại",
-        title: "CÙNG CHÚNG TÔI TẠO NÊN SỰ KHÁC BIỆT",
-        content: "Nền tảng học tập trực tuyến giúp chuẩn hóa kiến thức từ nhiều bộ sách, hỗ trợ gia sư cập nhật phương pháp giảng dạy mới, đồng thời nâng cao hiệu quả tự học và tự kiểm tra cho học sinh.",
-        showButton: true,
-        direction: "row",
-      },
-      { type: "features" },
-      {
-        type: "content",
-        imgSrc: homepage2,
-        imgAlt: "Kiến Tạo Tri Thức",
-        title: "KIẾN TẠO TRI THỨC – DẪN LỐI TƯƠNG LAI",
-        content: "Julie Academy không chỉ là một trang web ôn tập thông thường mà là người bạn đồng hành thông minh cho hành trình học tập của bạn.",
-        direction: "row-reverse",
-      },
-      {
-        type: "content",
-        imgSrc: homepage3,
-        imgAlt: "Học sinh và gia sư cùng phát triển",
-        title: "CÙNG PHÁT TRIỂN, CÙNG THÀNH CÔNG",
-        content: "Julie Academy là môi trường để gia sư, giáo viên cập nhật kiến thức, đổi mới phương pháp và cùng nhau phát triển trong kỷ nguyên giáo dục số.",
-        direction: "row",
-      },
-    ],
-    []
-  );
+export default function HomePage({ mode, toggleMode }) {
+const PAGE_SECTIONS = useMemo(() => [
+    { 
+      type: "content", 
+      imgSrc: homepage1, 
+      imgAlt: "Method", 
+      title: "Đánh thức tiềm năng vô hạn", 
+      content: "Không chỉ dừng lại ở những con số và lý thuyết khô khan, Julie Academy mang đến một hệ sinh thái học tập tương tác đa chiều. Chúng tôi giúp bạn nắm bắt bản chất vấn đề một cách tự nhiên, biến những kiến thức phức tạp thành những trải nghiệm thú vị và khắc sâu vào tư duy.", 
+      direction: "row" 
+    },
+    { type: "features" },
+    { 
+      type: "content", 
+      imgSrc: homepage2, 
+      imgAlt: "Journey", 
+      title: "Lộ trình riêng biệt - Thành công khác biệt", 
+      content: "Mỗi học sinh là một cá thể duy nhất với những thế mạnh riêng. Tại đây, chúng tôi không chỉ cung cấp bài giảng, mà còn là người bạn đồng hành thấu hiểu, theo sát từng bước ngoặt trong hành trình chinh phục tri thức, giúp bạn tự tin vượt qua mọi rào cản để chạm đến mục tiêu cao nhất.", 
+      direction: "row-reverse" 
+    },
+    { 
+      type: "content", 
+      imgSrc: homepage3, 
+      imgAlt: "Connect", 
+      title: "Gắn kết tri thức trong kỷ nguyên số", 
+      content: "Chúng tôi xóa nhòa khoảng cách giữa giáo viên và học sinh bằng môi trường kết nối thông minh. Sự tương tác liên tục, phản hồi kịp thời và tinh thần cùng nhau tiến bộ chính là chìa khóa giúp bạn không bao giờ cảm thấy đơn độc trên con đường học thuật đầy thử thách.", 
+      direction: "row" 
+    },
+  ], []);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <Background>
       <Helmet>
-        <title>Julie Academy - Nền tảng học tập trực tuyến</title>
-        <meta
-          name="description"
-          content="Julie Academy - Nền tảng học tập AI kết nối gia sư và học sinh, cá nhân hóa lộ trình học, miễn phí trọn đời."
-        />
-        <link rel="canonical" href="https://julieacademy.vn/" />
-        <link rel="preload" href={homepage1} as="image" />
+        <title>Julie Academy | Nền tảng học tập thông minh</title>
       </Helmet>
-
-      <Background />
       <Header mode={mode} toggleMode={toggleMode} />
-
-      <Box component="main" sx={{ flexGrow: 1, position: "relative" }}>
+      <Box component="main" sx={{ flexGrow: 1 }}>
         <HeroSection />
         {PAGE_SECTIONS.map((section, index) => (
-          <motion.div
-            key={`${section.type}-${index}`}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true, amount: 0.2 }}
-            variants={MOTION_VARIANTS.fadeInUp}
-          >
-            <StyledSectionWrapper hasDivider={index > 0}>
-              {section.type === "features" ? (
-                <FeatureSection />
-              ) : (
-                <ContentSection {...section} isFirstImage={index === 0} />
-              )}
-            </StyledSectionWrapper>
-          </motion.div>
+          <StyledSectionWrapper key={index}>
+            {section.type === "features" ? (
+              <Container maxWidth="lg">
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "0.75fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }, gap: 2 }}>
+                  {FEATURES.map((f) => <Card key={f.title} {...f} />)}
+                </Box>
+              </Container>
+            ) : (
+              <ContentSection {...section} />
+            )}
+          </StyledSectionWrapper>
         ))}
       </Box>
-
       <Footer />
-    </Box>
+    </Background>
   );
 }
-
-export default HomePage;

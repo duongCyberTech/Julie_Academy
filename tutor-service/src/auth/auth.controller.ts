@@ -3,6 +3,7 @@ import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { AuthService } from "./auth.service";
 import { UserService } from "src/user/user.service";
+import { AnalysisService } from "src/analysis/analysis.service";
 import { Throttle } from "@nestjs/throttler";
 import { UserDto } from "src/user/dto/user.dto";
 
@@ -11,6 +12,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
+    private analysisService: AnalysisService
   ) {}
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
@@ -24,7 +26,15 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto){
-    return this.userService.createUser(dto as UserDto)
+    const user = await this.userService.createUser(dto as UserDto);
+    if (user && user.data.role === 'student') {
+      await this.analysisService.createOrUpdateAnalytics(user.data.uid, {
+        student_id: user.data.uid,
+        last_exam_taken_date: new Date(),
+        sign_up_date: new Date(),
+      });
+    }
+    return user;
   }
 }
 

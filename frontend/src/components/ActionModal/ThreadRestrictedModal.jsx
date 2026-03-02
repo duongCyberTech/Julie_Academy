@@ -38,10 +38,10 @@ const modalStyle = {
   outline: 'none',
 };
 
-export default function ListUserModal({ class_id, open, setOpen, setOpenList, setRestricted }) {
+export default function ListUserModal({ class_id, open, setOpen, setRestricted, selectedIds, setSelectedIds }) {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
-  const [selectedIds, setSelectedIds] = useState([]);
+  
 
   const handleClose = () => {
     setOpen(false);
@@ -74,13 +74,12 @@ export default function ListUserModal({ class_id, open, setOpen, setOpenList, se
 
   // Hàm xử lý khi nhấn "Xong"
   const handleConfirmSelection = () => {
-    // Lọc ra danh sách đối tượng user đầy đủ dựa trên các ID đã chọn
-    setOpenList(selectedIds)
-    
-    // Thực hiện hành động tiếp theo (ví dụ: gắn thẻ, thêm vào nhóm...) ở đây
-    
     handleClose();
   };
+
+  const handleCancel = () => {
+    handleClose()
+  }
 
   return (
     <Modal
@@ -117,7 +116,7 @@ export default function ListUserModal({ class_id, open, setOpen, setOpenList, se
         <List sx={{ overflowY: 'auto', flexGrow: 1, px: 1, minHeight: 200, '&::-webkit-scrollbar': { width: '8px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#4E4F50', borderRadius: '4px' } }}>
           {users.length > 0 ? (
             users.map((user) => {
-              const isSelected = selectedIds.includes(user.uid);
+              const isSelected = selectedIds && selectedIds.length && selectedIds.includes(user.uid);
 
               return (
                 <ListItem
@@ -152,12 +151,12 @@ export default function ListUserModal({ class_id, open, setOpen, setOpenList, se
 
         {/* --- FOOTER --- */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 2, gap: 2, borderTop: '1px solid #3E4042' }}>
-          <Button onClick={handleClose} sx={{ color: '#2D88FF', textTransform: 'none', fontWeight: 600 }}>
+          <Button onClick={handleCancel} sx={{ color: '#2D88FF', textTransform: 'none', fontWeight: 600 }}>
             Hủy
           </Button>
           <Button
             variant="contained"
-            disabled={selectedIds.length === 0}
+            disabled={!selectedIds?.length || selectedIds.length === 0}
             onClick={handleConfirmSelection}
             sx={{
               bgcolor: '#2D88FF',

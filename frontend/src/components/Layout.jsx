@@ -1,73 +1,61 @@
+// Layout.jsx
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { Box, Toolbar, IconButton, CssBaseline } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
+import { Box, CssBaseline } from "@mui/material";
 import Sidebar from "../components/SideBar";
-import Background from "../components/Background";
+import Header from "../components/Header"; 
+import { Background } from "../components/Background";
 
-const SIDEBAR_WIDTH_DEFAULT = 220;
+const SIDEBAR_WIDTH_DEFAULT = 260; 
 const SIDEBAR_WIDTH_COLLAPSED = 88;
 
-const Layout = () => {
+const Layout = ({ mode, toggleMode }) => {
   const [isMobileOpen, setMobileOpen] = useState(false);
   const [isCollapsed, setCollapsed] = useState(false);
 
-  const handleToggleCollapse = () => {
-    setCollapsed((prev) => !prev);
-  };
+  const handleToggleCollapse = () => setCollapsed((prev) => !prev);
+  const handleMobileToggle = () => setMobileOpen(!isMobileOpen);
 
-  const handleMobileToggle = () => {
-    setMobileOpen(!isMobileOpen);
-  };
-
-  const currentSidebarWidth = isCollapsed
-    ? SIDEBAR_WIDTH_COLLAPSED
-    : SIDEBAR_WIDTH_DEFAULT;
+  const currentSidebarWidth = isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_DEFAULT;
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Background>
       <CssBaseline />
-      <Background />
-      <Toolbar>
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          edge="start"
-          onClick={handleMobileToggle}
+      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+        <Sidebar
+          width={currentSidebarWidth}
+          isCollapsed={isCollapsed}
+          onToggleCollapse={handleToggleCollapse}
+          isMobileOpen={isMobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
+        />
+
+        <Box
           sx={{
-            mr: 2,
-            display: { lg: "none" },
-            color: "text.primary",
+            display: "flex",
+            flexDirection: "column",
+            flexGrow: 1,
+            width: { xs: "100%", lg: `calc(100% - ${currentSidebarWidth}px)` },
+            transition: "width 0.3s ease",
+            minHeight: "100vh",
           }}
         >
-          <MenuIcon />
-        </IconButton>
-      </Toolbar>
-      <Sidebar
-        width={currentSidebarWidth}
-        isCollapsed={isCollapsed}
-        onToggleCollapse={handleToggleCollapse}
-        isMobileOpen={isMobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-      />
+          <Header mode={mode} toggleMode={toggleMode} onMobileSidebarToggle={handleMobileToggle} />
 
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { xs: "100%", lg: `calc(100% - ${currentSidebarWidth}px)` },
-          transition: (theme) =>
-            theme.transitions.create("width", {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-        }}
-      >
-        <Toolbar />
-        <Outlet />
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              p: { xs: 2, md: 3, lg: 4 },
+              backgroundColor: "transparent",
+              overflowX: "hidden",
+            }}
+          >
+            <Outlet />
+          </Box>
+        </Box>
       </Box>
-    </Box>
+    </Background>
   );
 };
 

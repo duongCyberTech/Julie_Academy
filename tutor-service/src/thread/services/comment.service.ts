@@ -103,7 +103,9 @@ export class CommentService {
                     medias: res.Resource_of_Comment.map(i => i.Resources.file_path),
                     parent_cmt_id: res.parent_cmt_id,
                     sender: res.sender,
-                    cnt: res._count.comments
+                    cnt: res._count.comments,
+                    isNested: false,
+                    replies: []
                 }
             })
 
@@ -141,6 +143,15 @@ export class CommentService {
             }
 
             if (cmt) {
+                const newCommentNoti: CreateNotificationDTO = {
+                    message: `Có bình luận mới trong bài viết mà bạn theo dõi.`,
+                    type: NotificationType.thread,
+                    link_wrapper_id: cmt.class_id,
+                    link_primary_id: cmt.thread_id,
+                    link_partial_id: `${cmt.comment_id}`
+                }
+
+                this.eventEmitter.emit('thread.comment.new', newCommentNoti)
                 this.commentGateway.sendNewComment(thread_id, cmt);
             }
         })
@@ -191,12 +202,72 @@ export class CommentService {
                 medias: res.Resource_of_Comment.map(i => i.Resources.file_path),
                 parent_cmt_id: res.parent_cmt_id,
                 sender: res.sender,
+                isNested: false,
                 replies: [],
                 cnt: res._count.comments
             }
         }))
 
         return cmts && cmts.length ? cmts : []
+    }
+
+    async fetchCommentUntil(uid: string, thread_id: string, comment_id: number, current_replies: any[] = []) {
+        try {
+            const current_comment = await this.prisma.comments.findFirst({
+                where: {
+                    thread: {class: {learning: {some: {student: {uid}}}}},
+                    thread_id,
+                    comment_id
+                },
+                select: {
+                    comment_id: true,
+                    content: true,
+                    comments: true,
+                    createAt: true,
+                    Resource_of_Comment: {
+                        select: {
+                            Resources: {
+                                select: {file_path: true}
+                            }
+                        }
+                    },
+                    parent_cmt_id: true,
+                    sender: {
+                        select: {
+                            uid: true,
+                            fname: true,
+                            mname: true, 
+                            lname: true,
+                            avata_url: true,
+                            email: true
+                        }
+                    },
+                    _count: {
+                        select: {comments: true}
+                    }
+                }
+            }).then((res) => {
+                return {
+                    thread_id,
+                    comment_id: res.comment_id,
+                    content: res.content,
+                    createAt: res.createAt,
+                    cnt_comments: res.comments.length,
+                    medias: res.Resource_of_Comment.map(i => i.Resources.file_path),
+                    parent_cmt_id: res.parent_cmt_id,
+                    sender: res.sender,
+                    cnt: res._count.comments,
+                    isNested: true,
+                    replies: [...current_replies]
+                }
+            })
+
+            if (current_comment.parent_cmt_id) return this.fetchCommentUntil(uid, thread_id, current_comment.parent_cmt_id, [current_comment])
+            console.log("$ >> Log: ", current_comment)
+            return current_comment  
+        } catch (error) {
+            return null
+        }
     }
 
     async updateComment(uid: string, thread_id: string, comment_id: number, data: Partial<UpdateCommentDto>, images: Array<Express.Multer.File> = []) {

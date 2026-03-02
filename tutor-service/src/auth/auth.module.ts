@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { UserModule } from "src/user/user.module";
+import { AnalysisModule } from "src/analysis/analysis.module";
 import { AuthService } from "./auth.service";
 import { JwtStrategy } from "./jwt.strategy";
 import { AuthController } from "./auth.controller";
@@ -14,6 +15,7 @@ require('dotenv').config()
       signOptions: { expiresIn: '2h' },
     }),
     UserModule,
+    AnalysisModule
   ],
   providers: [AuthService, JwtStrategy, UserService],
   controllers: [AuthController],

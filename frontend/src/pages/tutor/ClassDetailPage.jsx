@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { useParams, Link as RouterLink } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getClassDetails } from '../../services/ClassService';
 
 import {
-    Box, Typography, Paper, Alert, Tabs, Tab, Container,
-    Stack, Chip, Skeleton, Avatar, IconButton, Tooltip, Breadcrumbs, Link, Button
+    Box, Typography, Paper, Alert, Tabs, Tab,
+    Stack, Chip, Skeleton, Avatar, Button
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 
+// Icons
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import TopicOutlinedIcon from '@mui/icons-material/TopicOutlined';
@@ -19,7 +20,7 @@ import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined'; 
 import TimelapseOutlinedIcon from '@mui/icons-material/TimelapseOutlined'; 
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'; // Icon quay lại mới
 
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
@@ -33,22 +34,32 @@ import ResourceTab from './ResourceTab';
 import AssignmentTab from './AssignmentTab';
 import ThreadForum from '../../components/thread/ThreadForum';
 
-
-const PageContainer = styled(Container)(({ theme }) => ({
-    paddingTop: theme.spacing(3),
-    paddingBottom: theme.spacing(5),
-    minHeight: '100vh',
+// ==========================================
+// 1. PAGE WRAPPER CHUẨN SOFT UI
+// ==========================================
+const PageWrapper = styled(Paper)(({ theme }) => ({
+    margin: theme.spacing(2), 
+    padding: theme.spacing(4), 
+    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
+    borderRadius: '24px',
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
+    minHeight: 'calc(100vh - 120px)', 
+    display: 'flex',
+    flexDirection: 'column',
 }));
 
+// ==========================================
+// STYLED COMPONENTS KHÁC
+// ==========================================
 const HeaderCard = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
     borderRadius: theme.shape.borderRadius * 2,
-    border: `1px solid ${theme.palette.divider}`,
+    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+    backgroundColor: alpha(theme.palette.primary.main, 0.02),
     boxShadow: 'none', 
     marginBottom: theme.spacing(3),
-    background: '#fff',
-    position: 'relative',
-    overflow: 'hidden'
+    flexShrink: 0, // Không bị bóp nhỏ khi cuộn
 }));
 
 const StatBox = styled(Box)(({ theme }) => ({
@@ -56,11 +67,12 @@ const StatBox = styled(Box)(({ theme }) => ({
     alignItems: 'center',
     gap: theme.spacing(1.5),
     padding: theme.spacing(1.5, 2),
-    borderRadius: theme.shape.borderRadius,
-    backgroundColor: theme.palette.mode === 'light' ? '#f8f9fa' : alpha(theme.palette.common.white, 0.05),
+    borderRadius: theme.shape.borderRadius * 1.5,
+    backgroundColor: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider}`,
     minWidth: 160,
-    flex: '1 1 auto'
+    flex: '1 1 auto',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
 }));
 
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -79,6 +91,20 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     }
 }));
 
+const ScrollableContent = styled(Box)(({ theme }) => ({
+    flexGrow: 1,
+    overflowY: 'auto',
+    backgroundColor: theme.palette.mode === 'light' ? '#fafafa' : theme.palette.background.default,
+    padding: theme.spacing(3),
+    "&::-webkit-scrollbar": { width: "6px" },
+    "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
+    "&::-webkit-scrollbar-thumb": {
+        backgroundColor: alpha(theme.palette.grey[400], 0.5),
+        borderRadius: "10px",
+        "&:hover": { backgroundColor: theme.palette.grey[500] },
+    },
+}));
+
 const StatusChip = memo(({ status }) => {
     const config = {
         pending: { label: "Chờ mở lớp", color: "warning", icon: <PendingActionsIcon fontSize="small"/> },
@@ -94,14 +120,19 @@ const StatusChip = memo(({ status }) => {
             label={label} 
             color={color} 
             size="small" 
-            variant="outlined" 
-            sx={{ fontWeight: 600, border: '1px solid', bgcolor: alpha(color === 'default' ? '#000' : '#fff', 0.05) }} 
+            sx={{ 
+                fontWeight: 600, 
+                border: '1px solid', 
+                borderColor: `${color}.main`,
+                bgcolor: alpha(color === 'default' ? '#000' : '#fff', 0.1) 
+            }} 
         />
     );
 });
 
 function ClassDetailPage() {
     const { classId } = useParams();
+    const navigate = useNavigate(); // Dùng để xử lý nút quay lại
     const [token] = useState(() => localStorage.getItem('token'));
 
     const [classData, setClassData] = useState(null);
@@ -137,89 +168,102 @@ function ClassDetailPage() {
 
     if (loading) {
         return (
-            <Container maxWidth="xl" sx={{ mt: 3 }}>
-                <Box mb={2}><Skeleton width={200} /></Box>
+            <PageWrapper>
+                <Box mb={2}><Skeleton width={120} height={40} /></Box>
                 <Skeleton variant="rectangular" height={180} sx={{ borderRadius: 4, mb: 3 }} />
-                <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 4 }} />
-            </Container>
+                <Skeleton variant="rectangular" sx={{ flexGrow: 1, borderRadius: 4 }} />
+            </PageWrapper>
         );
     }
     
     if (error) {
         return (
-            <Container maxWidth="md" sx={{ mt: 4 }}>
-                <Alert severity="error" variant="filled" sx={{ borderRadius: 2 }}>{error}</Alert>
-                <Button component={RouterLink} to="/tutor/classes" sx={{ mt: 2 }} variant="outlined">Quay lại danh sách</Button>
-            </Container>
+            <PageWrapper sx={{ alignItems: 'center', justifyContent: 'center' }}>
+                <Alert severity="error" variant="filled" sx={{ borderRadius: 2, mb: 2 }}>{error}</Alert>
+                <Button onClick={() => navigate('/tutor/classes')} variant="outlined" startIcon={<ArrowBackRoundedIcon />}>
+                    Quay lại danh sách
+                </Button>
+            </PageWrapper>
         );
     }
 
     if (!classData) return null;
 
     return (
-        <PageContainer maxWidth="xl">
-            {/* 1. Breadcrumbs */}
-            <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ mb: 2 }}>
-                <Link component={RouterLink} to="/tutor/classes" underline="hover" color="inherit">
-                    Quản lý lớp học
-                </Link>
-                <Typography color="text.primary" fontWeight={500}>{classData.classname}</Typography>
-            </Breadcrumbs>
+        <PageWrapper>
+            {/* 1. NÚT QUAY LẠI NỔI BẬT */}
+            <Box sx={{ mb: 2, flexShrink: 0 }}>
+                <Button
+                    onClick={() => navigate('/tutor/classes')}
+                    startIcon={<ArrowBackRoundedIcon />}
+                    color="inherit"
+                    sx={{ 
+                        textTransform: 'none', 
+                        fontWeight: 600, 
+                        color: 'text.secondary',
+                        borderRadius: '10px',
+                        px: 2,
+                        '&:hover': { color: 'primary.main', bgcolor: alpha('#1976d2', 0.08) }
+                    }}
+                >
+                    Quay lại danh sách lớp
+                </Button>
+            </Box>
 
-            {/* 2. Header Info Card */}
+            {/* 2. HEADER THÔNG TIN LỚP HỌC (Cố định) */}
             <HeaderCard>
                 <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                    <Box sx={{ flex: 1 }}>
-                        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-                            <Typography variant="h4" fontWeight="800" color="text.primary">
+                    <Box sx={{ flex: 1, width: '100%' }}>
+                        <Stack direction="row" alignItems="center" spacing={2} mb={1}>
+                            <Typography variant="h3" fontWeight="800" color="text.primary">
                                 {classData.classname}
                             </Typography>
                             <StatusChip status={classData.status} />
                         </Stack>
                         
-                        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '800px', lineHeight: 1.6, mb: 2 }}>
+                        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '900px', lineHeight: 1.6, mb: 3 }}>
                             {classData.description || "Chưa có mô tả cho lớp học này."}
                         </Typography>
 
                         {/* Quick Stats Row */}
                         <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
                             <StatBox>
-                                <Avatar sx={{ bgcolor: 'primary.lighter', color: 'primary.main', width: 32, height: 32 }}>
+                                <Avatar sx={{ bgcolor: 'primary.lighter', color: 'primary.main', width: 36, height: 36 }}>
                                     <SchoolOutlinedIcon fontSize="small"/>
                                 </Avatar>
                                 <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>KHỐI</Typography>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700}>KHỐI</Typography>
                                     <Typography variant="subtitle2" fontWeight={700}>Lớp {classData.grade}</Typography>
                                 </Box>
                             </StatBox>
 
                             <StatBox>
-                                <Avatar sx={{ bgcolor: 'info.lighter', color: 'info.main', width: 32, height: 32 }}>
+                                <Avatar sx={{ bgcolor: 'info.lighter', color: 'info.main', width: 36, height: 36 }}>
                                     <MenuBookOutlinedIcon fontSize="small"/>
                                 </Avatar>
                                 <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>MÔN HỌC</Typography>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700}>MÔN HỌC</Typography>
                                     <Typography variant="subtitle2" fontWeight={700}>{classData.subject}</Typography>
                                 </Box>
                             </StatBox>
 
                             <StatBox>
-                                <Avatar sx={{ bgcolor: 'success.lighter', color: 'success.main', width: 32, height: 32 }}>
+                                <Avatar sx={{ bgcolor: 'success.lighter', color: 'success.main', width: 36, height: 36 }}>
                                     <GroupOutlinedIcon fontSize="small"/>
                                 </Avatar>
                                 <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>SĨ SỐ</Typography>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700}>SĨ SỐ</Typography>
                                     <Typography variant="subtitle2" fontWeight={700}>
                                         {classData.nb_of_student} học viên
                                     </Typography>
                                 </Box>
                             </StatBox>
                             <StatBox>
-                                <Avatar sx={{ bgcolor: 'error.lighter', color: 'error.main', width: 32, height: 32 }}>
+                                <Avatar sx={{ bgcolor: 'error.lighter', color: 'error.main', width: 36, height: 36 }}>
                                     <TimelapseOutlinedIcon fontSize="small"/>
                                 </Avatar>
                                 <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>THỜI LƯỢNG</Typography>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700}>THỜI LƯỢNG</Typography>
                                     <Typography variant="subtitle2" fontWeight={700}>
                                         {classData.duration_time || 0} tuần
                                     </Typography>
@@ -227,11 +271,11 @@ function ClassDetailPage() {
                             </StatBox>
 
                             <StatBox>
-                                <Avatar sx={{ bgcolor: 'warning.lighter', color: 'warning.main', width: 32, height: 32 }}>
+                                <Avatar sx={{ bgcolor: 'warning.lighter', color: 'warning.main', width: 36, height: 36 }}>
                                     <AccessTimeOutlinedIcon fontSize="small"/>
                                 </Avatar>
                                 <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>BẮT ĐẦU</Typography>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700}>BẮT ĐẦU TỪ</Typography>
                                     <Typography variant="subtitle2" fontWeight={700}>
                                         {dayjs(classData.startat).format('DD/MM/YYYY')}
                                     </Typography>
@@ -242,9 +286,21 @@ function ClassDetailPage() {
                 </Stack>
             </HeaderCard>
 
-            {/* 3. Main Content Tabs */}
-            <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: '#fff' }}>
-                <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 2, bgcolor: '#fff' }}>
+            {/* 3. KHU VỰC TABS & NỘI DUNG CUỘN */}
+            <Paper 
+                variant="outlined" 
+                sx={{ 
+                    borderRadius: 3, 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    flexGrow: 1, 
+                    minHeight: 0, // Cho phép ScrollableContent hoạt động
+                    overflow: 'hidden', 
+                    bgcolor: '#fff' 
+                }}
+            >
+                {/* Thanh Tabs (Cố định) */}
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1.5, bgcolor: '#fff', flexShrink: 0 }}>
                     <Tabs 
                         value={currentTab} 
                         onChange={handleChangeTab} 
@@ -260,7 +316,8 @@ function ClassDetailPage() {
                     </Tabs>
                 </Box>
 
-                <Box sx={{ p: 3, minHeight: 500, bgcolor: '#fafafa' }}>
+                {/* Nội dung Tab (Cuộn độc lập) */}
+                <ScrollableContent>
                     {currentTab === 'students' && (
                         <StudentsTab 
                             studentsData={classData.learning} 
@@ -285,9 +342,9 @@ function ClassDetailPage() {
                     {currentTab === 'threads' && (
                         <ThreadForum class_id={classId} />  
                     )}
-                </Box>
+                </ScrollableContent>
             </Paper>
-        </PageContainer>
+        </PageWrapper>
     );
 }
 

@@ -5,8 +5,9 @@ import { v4 as uuidv4 } from "uuid";
 import {
   Box, Typography, Button, FormControl, Select, MenuItem, Divider,
   useTheme, Tooltip, Paper, InputLabel, Alert, Collapse, CircularProgress,
-  TextField, Backdrop, Chip, Autocomplete
+  TextField, Backdrop, Autocomplete, Stack, Grid
 } from "@mui/material";
+import { styled, alpha } from "@mui/material/styles";
 import SaveIcon from "@mui/icons-material/Save";
 import NotesIcon from "@mui/icons-material/Notes";
 import StarIcon from "@mui/icons-material/Star";
@@ -23,6 +24,46 @@ import MultipleChoiceEditor from "../../components/QuestionType/MultipleChoice";
 import RichTextEditor from "../../components/RichTextEditor";
 import AppSnackbar from "../../components/SnackBar";
 
+// ==========================================
+// 1. STYLED COMPONENTS (SOFT UI)
+// ==========================================
+const PageWrapper = styled(Paper)(({ theme }) => ({
+  margin: theme.spacing(2),
+  padding: theme.spacing(4),
+  backgroundColor: theme.palette.mode === "light" ? "#ffffff" : theme.palette.background.paper,
+  borderRadius: "24px",
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+  minHeight: "calc(100vh - 120px)",
+  display: "flex",
+  flexDirection: "column",
+}));
+
+const Header = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: theme.spacing(3),
+  flexShrink: 0,
+}));
+
+const SectionPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  borderRadius: "16px",
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: "none",
+  backgroundColor: alpha(theme.palette.background.default, 0.6),
+  marginBottom: theme.spacing(3),
+  transition: "all 0.3s ease",
+  "&:hover": {
+    boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
+    borderColor: theme.palette.primary.light,
+  },
+}));
+
+// ==========================================
+// 2. PHỤ TRỢ COMPONENTS
+// ==========================================
 const DifficultyRating = React.memo(({ value, onChange }) => {
   const theme = useTheme();
   const levels = [
@@ -34,7 +75,7 @@ const DifficultyRating = React.memo(({ value, onChange }) => {
 
   return (
     <Tooltip title={`Độ khó: ${currentLevel.label}`}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", py: 1 }}>
         {[1, 2, 3].map((star) => (
           <Box key={star} component="span" onClick={() => onChange(levels[star - 1].value)}>
             {star <= currentLevel.stars ? (
@@ -49,232 +90,9 @@ const DifficultyRating = React.memo(({ value, onChange }) => {
   );
 });
 
-const EditorHeader = React.memo(({ 
-  isEditMode, questionType, onTypeChange, difficulty, onDifficultyChange, onSubmit, isSubmitting, onBack 
-}) => (
-  <Box
-    component={Paper} elevation={0} square
-    sx={{
-      display: "flex", alignItems: "center", p: 2,
-      borderBottom: 1, borderColor: "divider", flexShrink: 0,
-      bgcolor: "background.paper", position: 'sticky', top: 0, zIndex: 10
-    }}
-  >
-    <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ mr: 2, color: 'text.secondary' }}>Quay lại</Button>
-    <Typography variant="h6" fontWeight="bold" sx={{ mr: 3, display: { xs: 'none', md: 'block' } }}>
-      {isEditMode ? "Chỉnh sửa câu hỏi" : "Tạo câu hỏi mới"}
-    </Typography>
-    <FormControl size="small" sx={{ minWidth: 220 }}>
-      <Select value={questionType} onChange={onTypeChange} displayEmpty>
-        <MenuItem value="single_choice">Trắc nghiệm - 1 đáp án</MenuItem>
-        <MenuItem value="multiple_choice">Trắc nghiệm - nhiều đáp án</MenuItem>
-      </Select>
-    </FormControl>
-    <Box sx={{ flexGrow: 1 }} />
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mx: 2 }}>
-      <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, display: { xs: 'none', sm: 'block' } }}>
-        Độ khó:
-      </Typography>
-      <DifficultyRating value={difficulty} onChange={onDifficultyChange} />
-    </Box>
-    <Button variant="contained" color="primary" startIcon={<SaveIcon />} onClick={onSubmit} disabled={isSubmitting} sx={{ px: 3 }}>
-      {isSubmitting ? "Đang lưu..." : "Lưu"}
-    </Button>
-  </Box>
-));
-
-const OptionsSidebar = React.memo(({
-  isEditMode, categoryName, 
-  plans, selectedPlanId, onPlanChange, loadingPlans,
-  categories, category, onCategoryChange, loadingCategories,
-  accessMode, onAccessModeChange,
-  status, onStatusChange,
-  explaination, onExplainationChange,
-  deferredRender 
-}) => {
-  const [showExplaination, setShowExplaination] = useState(false);
-
-  useEffect(() => {
-    if (explaination && explaination.trim() !== "" && explaination !== "<p><br></p>") {
-      setShowExplaination(true);
-    }
-  }, [explaination]);
-
-  const categoryTreeData = useMemo(() => {
-    if (isEditMode) return [];
-
-    let flattenedCategories = [];
-    if (Array.isArray(categories)) {
-      categories.forEach(item => {
-        if (Array.isArray(item)) flattenedCategories = flattenedCategories.concat(item);
-        else if (item && (item.id || item.category_id)) flattenedCategories.push(item);
-      });
-    }
-    if (flattenedCategories.length === 0) return [];
-    
-    const parentMap = new Map();
-    flattenedCategories.forEach(item => {
-      const parentId = item.parent_id ?? item.parentId ?? item.parent_category_id;
-      const description = item.description;
-      if (parentId && !parentMap.has(parentId)) {
-        const exists = flattenedCategories.some(cat => String(cat.id ?? cat.category_id) === String(parentId));
-        if (!exists) parentMap.set(parentId, description || 'Danh mục cha');
-      }
-    });
-    
-    const parentNodes = Array.from(parentMap.entries()).map(([parentId, description]) => ({
-      id: String(parentId), category_id: String(parentId), category_name: description, parent_id: null, isParent: true,
-    }));
-  
-    const allNodes = [...parentNodes, ...flattenedCategories];
-    const buildTree = (items, parentId = null) => {
-      const filtered = items.filter(item => {
-        const itemParentId = item.parent_id ?? item.parentId ?? item.parent_category_id;
-        if (parentId === null) return itemParentId === null || itemParentId === undefined;
-        return String(itemParentId) === String(parentId);
-      });
-      return filtered.map(item => {
-        const id = item.id ?? item.category_id;
-        const name = item.name ?? item.category_name ?? "Không có tên";
-        return { id: String(id), label: name, children: buildTree(items, id) };
-      });
-    };
-    return buildTree(allNodes);
-  }, [categories, isEditMode]); 
-
-  const handleTreeSelection = (event, selectedItems) => {
-    const selectedId = Array.isArray(selectedItems) ? (selectedItems[0] || "") : (selectedItems || "");
-    if (selectedId !== category) {
-        onCategoryChange(selectedId);
-    }
-  };
-
-  return (
-    <Box
-      component={Paper} elevation={0} square
-      sx={{
-        width: { xs: '100%', md: 320 }, 
-        borderLeft: { md: 1 }, borderTop: { xs: 1, md: 0 }, borderColor: "divider",
-        bgcolor: "background.default", display: "flex", flexDirection: "column",
-        height: { xs: 'auto', md: '100%' },
-      }}
-    >
-      <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2.5, flexGrow: 1, overflowY: "auto" }}>
-        <Typography variant="subtitle1" fontWeight={700}>Tùy chọn thiết lập</Typography>
-
-        <FormControl fullWidth size="small" disabled={loadingPlans || isEditMode}>
-            {plans.length > 50 ? (
-                 <Autocomplete
-                    options={plans}
-                    getOptionLabel={(option) => `${option.title} ${option.grade ? `(K${option.grade})` : ""}`}
-                    value={plans.find(p => p.plan_id === selectedPlanId) || null}
-                    onChange={(event, newValue) => {
-                         if(newValue) onPlanChange({ target: { value: newValue.plan_id } });
-                         else onPlanChange({ target: { value: "" } });
-                    }}
-                    renderInput={(params) => <TextField {...params} label="Giáo án" size="small" />}
-                    disabled={loadingPlans || isEditMode}
-                 />
-            ) : (
-                <>
-                <InputLabel>Giáo án</InputLabel>
-                <Select value={selectedPlanId} label="Giáo án" onChange={onPlanChange}>
-                    <MenuItem value=""><em>{loadingPlans ? "Đang tải..." : "Chọn giáo án"}</em></MenuItem>
-                    {plans.map((plan) => (
-                    <MenuItem key={plan.plan_id} value={plan.plan_id}>
-                        {plan.title} {plan.grade ? `(K${plan.grade})` : ""}
-                    </MenuItem>
-                    ))}
-                </Select>
-                </>
-            )}
-        </FormControl>
-
-        <FormControl fullWidth size="small">
-          <InputLabel>Quyền xem</InputLabel>
-          <Select value={accessMode} label="Quyền xem" onChange={onAccessModeChange}>
-            <MenuItem value="private">Riêng tư (Private)</MenuItem>
-            <MenuItem value="public">Công khai (Public)</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth size="small">
-          <InputLabel>Trạng thái</InputLabel>
-          <Select value={status} label="Trạng thái" onChange={onStatusChange}>
-            <MenuItem value="draft">Bản nháp (Draft)</MenuItem>
-            <MenuItem value="ready">Sẵn sàng (Ready)</MenuItem>
-          </Select>
-        </FormControl>
-
-        <Collapse in={!!selectedPlanId} sx={{ width: "100%" }}>
-          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Chuyên đề / Danh mục</Typography>
-          
-          {/* LOGIC HIỂN THỊ QUAN TRỌNG: */}
-          {/* NẾU EDIT: Chỉ hiện ô nhập liệu Read-only (Không render Tree -> Không lỗi, không chậm) */}
-          {isEditMode ? (
-             <TextField 
-                fullWidth size="small" variant="outlined" label="Danh mục hiện tại"
-                value={categoryName || "Đang tải..."} 
-                InputProps={{ readOnly: true }}
-                helperText="Chế độ chỉnh sửa không cho phép đổi danh mục."
-             />
-          ) : (
-             /* NẾU CREATE: Render Tree như cũ */
-             <Paper variant="outlined" sx={{ maxHeight: 350, overflowY: "auto", p: 1, bgcolor: "background.paper" }}>
-                {loadingCategories ? (
-                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><CircularProgress size={24} /></Box>
-                ) : categoryTreeData.length > 0 ? (
-                  <RichTreeView
-                    items={categoryTreeData}
-                    slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
-                    onSelectedItemsChange={handleTreeSelection}
-                    selectedItems={category ? [String(category)] : []}
-                    sx={{
-                        '& .MuiTreeItem-content': {
-                          py: 0.5, borderRadius: 1,
-                          '&:hover': { bgcolor: 'action.hover' },
-                          '&.Mui-selected': { bgcolor: 'primary.lighter', color: 'primary.main', fontWeight: 'bold' },
-                        },
-                      }}
-                  />
-                ) : (
-                  <Typography variant="caption" color="text.secondary" sx={{ p: 1, display: "block" }}>
-                    {selectedPlanId ? "Giáo án này trống hoặc chưa tải xong." : "Vui lòng chọn giáo án."}
-                  </Typography>
-                )}
-             </Paper>
-          )}
-        </Collapse>
-      </Box>
-
-      <Box sx={{ p: 2, pt: 0, flexShrink: 0, bgcolor: "background.default" }}>
-        <Divider sx={{ mb: 2 }} />
-        <Button
-          fullWidth startIcon={<NotesIcon />}
-          onClick={() => setShowExplaination(!showExplaination)}
-          sx={{ justifyContent: "flex-start", color: showExplaination ? "primary.main" : "text.secondary" }}
-        >
-          {showExplaination ? "Ẩn giải thích chi tiết" : "Thêm giải thích chi tiết"}
-        </Button>
-        <Collapse in={showExplaination}>
-          <Box pt={2} sx={{ minHeight: "120px" }}>
-            {/* LAZY LOAD CHO EDITOR GIẢI THÍCH */}
-            {deferredRender ? (
-                <RichTextEditor
-                value={explaination} onChange={onExplainationChange} toolbarType="basic" 
-                style={{ minHeight: "120px", maxHeight: "200px", display: "flex", flexDirection: "column" }}
-                />
-            ) : (
-                <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>Đang tải trình soạn thảo...</Box>
-            )}
-          </Box>
-        </Collapse>
-      </Box>
-    </Box>
-  );
-});
-
-
+// ==========================================
+// 3. MAIN COMPONENT
+// ==========================================
 export default function QuestionEditorPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -293,7 +111,8 @@ export default function QuestionEditorPage() {
     status: "ready",
     selectedPlanId: "",
     selectedCategoryId: "",
-    categoryName: "" 
+    categoryName: "",
+    planName: "" // Lưu tên giáo án để hiển thị siêu tốc
   });
   
   const [answerData, setAnswerData] = useState([]);
@@ -307,6 +126,7 @@ export default function QuestionEditorPage() {
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
   const [deferredRender, setDeferredRender] = useState(false);
+  const [showExplaination, setShowExplaination] = useState(false);
 
   const handleFieldChange = useCallback((field, value) => {
     setFormData(prev => {
@@ -353,9 +173,20 @@ export default function QuestionEditorPage() {
             const correctCategoryName = catObj.category_name || catObj.name || "Danh mục cũ";
 
             let detectedPlanId = "";
-            if (catObj.plan_id) detectedPlanId = catObj.plan_id;
-            else if (catObj.structure?.[0]?.Plan?.plan_id) detectedPlanId = catObj.structure[0].Plan.plan_id;
-            else if (catObj.Categories?.structure?.[0]?.Plan?.plan_id) detectedPlanId = catObj.Categories.structure[0].Plan.plan_id;
+            let extractedPlanName = "Đang tải...";
+
+            // Bắt chước logic lấy cục Plan siêu nhanh từ QuestionDetailPage
+            let structures = catObj.structure;
+            if (!structures || (Array.isArray(structures) && structures.length === 0)) {
+              structures = catObj.Categories?.structure;
+            }
+            if (Array.isArray(structures) && structures.length > 0 && structures[0].Plan) {
+              const planData = structures[0].Plan;
+              detectedPlanId = planData.plan_id;
+              extractedPlanName = `${planData.title} ${planData.grade ? `(K${planData.grade})` : ""}`;
+            } else if (catObj.plan_id) {
+              detectedPlanId = catObj.plan_id;
+            }
 
             let initialAnswers = [];
             if (questionData.answers && Array.isArray(questionData.answers)) {
@@ -377,9 +208,15 @@ export default function QuestionEditorPage() {
                 status: questionData.status || "ready",
                 selectedPlanId: detectedPlanId || "",
                 selectedCategoryId: correctCategoryId ? String(correctCategoryId) : "",
-                categoryName: correctCategoryName 
+                categoryName: correctCategoryName,
+                planName: extractedPlanName // Gán tên giáo án lấy trực tiếp từ data câu hỏi
             });
+            
             setAnswerData(initialAnswers);
+            
+            if (questionData.explaination && questionData.explaination.trim() !== "" && questionData.explaination !== "<p><br></p>") {
+                setShowExplaination(true);
+            }
         } else {
             setAnswerData(Array.from({ length: 4 }, () => ({
                 id: uuidv4(), content: "", isCorrect: false, explaination: ""
@@ -405,6 +242,55 @@ export default function QuestionEditorPage() {
     if (newPlanId) fetchCategoriesByPlan(newPlanId);
   }, [handleFieldChange, fetchCategoriesByPlan]);
 
+  const categoryTreeData = useMemo(() => {
+    if (isEditMode) return [];
+
+    let flattenedCategories = [];
+    if (Array.isArray(categories)) {
+      categories.forEach(item => {
+        if (Array.isArray(item)) flattenedCategories = flattenedCategories.concat(item);
+        else if (item && (item.id || item.category_id)) flattenedCategories.push(item);
+      });
+    }
+    if (flattenedCategories.length === 0) return [];
+    
+    const parentMap = new Map();
+    flattenedCategories.forEach(item => {
+      const parentId = item.parent_id ?? item.parentId ?? item.parent_category_id;
+      const description = item.description;
+      if (parentId && !parentMap.has(parentId)) {
+        const exists = flattenedCategories.some(cat => String(cat.id ?? cat.category_id) === String(parentId));
+        if (!exists) parentMap.set(parentId, description || 'Danh mục cha');
+      }
+    });
+    
+    const parentNodes = Array.from(parentMap.entries()).map(([parentId, description]) => ({
+      id: String(parentId), category_id: String(parentId), category_name: description, parent_id: null, isParent: true,
+    }));
+  
+    const allNodes = [...parentNodes, ...flattenedCategories];
+    const buildTree = (items, parentId = null) => {
+      const filtered = items.filter(item => {
+        const itemParentId = item.parent_id ?? item.parentId ?? item.parent_category_id;
+        if (parentId === null) return itemParentId === null || itemParentId === undefined;
+        return String(itemParentId) === String(parentId);
+      });
+      return filtered.map(item => {
+        const id = item.id ?? item.category_id;
+        const name = item.name ?? item.category_name ?? "Không có tên";
+        return { id: String(id), label: name, children: buildTree(items, id) };
+      });
+    };
+    return buildTree(allNodes);
+  }, [categories, isEditMode]); 
+
+  const handleTreeSelection = (event, selectedItems) => {
+    const selectedId = Array.isArray(selectedItems) ? (selectedItems[0] || "") : (selectedItems || "");
+    if (selectedId !== formData.selectedCategoryId) {
+        handleFieldChange('selectedCategoryId', selectedId);
+    }
+  };
+
   const showToast = (message, severity) => setToast({ open: true, message, severity });
 
   const handleSubmit = async () => {
@@ -413,8 +299,10 @@ export default function QuestionEditorPage() {
 
     if (!title.trim()) return showToast("Vui lòng nhập tiêu đề.", "warning");
     if (!content.trim() || content === "<p><br></p>") return showToast("Vui lòng nhập nội dung.", "warning");
-    if (!selectedPlanId) return showToast("Vui lòng chọn giáo án.", "warning");
-    if (!selectedCategoryId) return showToast("Vui lòng chọn danh mục.", "warning");
+    if (!isEditMode) {
+        if (!selectedPlanId) return showToast("Vui lòng chọn giáo án.", "warning");
+        if (!selectedCategoryId) return showToast("Vui lòng chọn danh mục.", "warning");
+    }
     
     const validAnswers = answerData.filter(a => a.content.trim() !== "" && a.content !== "<p><br></p>");
     if (validAnswers.length < 2) return showToast("Cần ít nhất 2 đáp án.", "warning");
@@ -423,7 +311,7 @@ export default function QuestionEditorPage() {
     const payload = {
       title, content, explaination,
       type: questionType, level: difficulty,
-      categoryId: selectedCategoryId,
+      categoryId: selectedCategoryId || undefined, 
       accessMode, status,
       tutorId: userInfo.sub,
       answers: validAnswers.map(a => ({
@@ -460,83 +348,231 @@ export default function QuestionEditorPage() {
       );
   }
 
-  const onTypeChange = (e) => handleFieldChange('questionType', e.target.value);
-  const onDifficultyChange = (val) => handleFieldChange('difficulty', val);
-  const onAccessModeChange = (e) => handleFieldChange('accessMode', e.target.value);
-  const onStatusChange = (e) => handleFieldChange('status', e.target.value);
-  const onExplainationChange = (val) => handleFieldChange('explaination', val);
-  const onCategoryChange = (val) => handleFieldChange('selectedCategoryId', val);
-
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: "background.default" }}>
-      <EditorHeader
-        isEditMode={isEditMode}
-        questionType={formData.questionType}
-        onTypeChange={onTypeChange}
-        difficulty={formData.difficulty}
-        onDifficultyChange={onDifficultyChange}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        onBack={() => navigate(-1)}
-      />
-      
-      <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden", flexDirection: { xs: 'column', md: 'row' } }}>
-        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 3, overflowY: "auto", gap: 3 }}>
-          {apiError && <Alert severity="error" onClose={() => setApiError(null)}>{apiError}</Alert>}
-          <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, display: "flex", flexDirection: "column", gap: 3 }}>
+    <PageWrapper>
+      {/* HEADER */}
+      <Header>
+        <Box display="flex" alignItems="center" gap={2}>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} color="inherit">
+            Quay lại
+          </Button>
+          <Typography variant="h5" fontWeight="bold" sx={{ display: { xs: 'none', md: 'block' } }}>
+            {isEditMode ? "Chỉnh sửa câu hỏi" : "Tạo câu hỏi mới"}
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<SaveIcon />}
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          sx={{ fontWeight: "bold", borderRadius: "10px", px: 3 }}
+        >
+          {isSubmitting ? "Đang lưu..." : "Lưu câu hỏi"}
+        </Button>
+      </Header>
+
+      {apiError && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setApiError(null)}>{apiError}</Alert>}
+
+      <Grid container spacing={3}>
+        {/* CỘT TRÁI: NỘI DUNG CHÍNH */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          
+          <SectionPaper>
+            <Typography variant="h6" fontWeight={600} mb={3}>
+              Nội dung câu hỏi
+            </Typography>
             <TextField
               label="Tiêu đề câu hỏi" variant="outlined" fullWidth
               value={formData.title} onChange={(e) => handleFieldChange('title', e.target.value)}
+              placeholder="Nhập tiêu đề ngắn gọn..."
+              sx={{ mb: 3, bgcolor: "background.paper", borderRadius: 1 }}
             />
             <Box sx={{ minHeight: "250px" }}>
-                <Typography variant="subtitle2" gutterBottom color="text.secondary">Nội dung câu hỏi</Typography>
-                
-                {/* LAZY LOAD EDITOR CHÍNH */}
+                <Typography variant="body2" fontWeight={500} mb={1} color="text.secondary">Nội dung chi tiết:</Typography>
                 {deferredRender ? (
                     <RichTextEditor
                         value={formData.content} onChange={(val) => handleFieldChange('content', val)}
                         toolbarType="full" style={{ minHeight: "250px", display: "flex", flexDirection: "column" }}
                     />
                 ) : (
-                    <Box sx={{ height: 250, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Box sx={{ height: 250, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 1 }}>
                         <CircularProgress size={20} sx={{ mr: 1 }} /> Đang tải trình soạn thảo...
                     </Box>
                 )}
             </Box>
-            <Divider sx={{ my: 1 }} ><Chip label="Cấu hình đáp án" size="small" /></Divider>
+          </SectionPaper>
+
+          <SectionPaper>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+              <Typography variant="h6" fontWeight={600}>
+                Cấu hình đáp án
+              </Typography>
+              <FormControl size="small" sx={{ minWidth: 220, bgcolor: "background.paper" }}>
+                <Select value={formData.questionType} onChange={(e) => handleFieldChange('questionType', e.target.value)} displayEmpty>
+                  <MenuItem value="single_choice">Trắc nghiệm - 1 đáp án</MenuItem>
+                  <MenuItem value="multiple_choice">Trắc nghiệm - nhiều đáp án</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
             
-            {/* LAZY LOAD EDITOR ĐÁP ÁN */}
             {deferredRender ? (
                 <MultipleChoiceEditor questionType={formData.questionType} answerData={answerData} setAnswerData={setAnswerData} />
             ) : null}
-          </Paper>
-        </Box>
+          </SectionPaper>
 
-        <OptionsSidebar
-          isEditMode={isEditMode}
-          categoryName={formData.categoryName}
-          plans={plans} 
-          selectedPlanId={formData.selectedPlanId} 
-          onPlanChange={handlePlanChange}
-          loadingPlans={false}
-          categories={categories} 
-          category={formData.selectedCategoryId} 
-          onCategoryChange={onCategoryChange}
-          loadingCategories={loadingCategories}
-          accessMode={formData.accessMode} 
-          onAccessModeChange={onAccessModeChange}
-          status={formData.status} 
-          onStatusChange={onStatusChange}
-          explaination={formData.explaination} 
-          onExplainationChange={onExplainationChange}
-          deferredRender={deferredRender}
-        />
-      </Box>
+          <SectionPaper>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Typography variant="h6" fontWeight={600}>
+                Giải thích chi tiết
+              </Typography>
+              <Button
+                startIcon={<NotesIcon />}
+                onClick={() => setShowExplaination(!showExplaination)}
+                color={showExplaination ? "primary" : "inherit"}
+              >
+                {showExplaination ? "Ẩn giải thích" : "Thêm giải thích"}
+              </Button>
+            </Box>
+            <Collapse in={showExplaination}>
+              <Box pt={3} sx={{ minHeight: "120px" }}>
+                {deferredRender ? (
+                    <RichTextEditor
+                      placeholder="Nhập giải thích chi tiết..."
+                      value={formData.explaination} onChange={(val) => handleFieldChange('explaination', val)} toolbarType="full" 
+                      style={{ minHeight: "150px", display: "flex", flexDirection: "column" }}
+                    />
+                ) : (
+                    <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>Đang tải trình soạn thảo...</Box>
+                )}
+              </Box>
+            </Collapse>
+          </SectionPaper>
+
+        </Grid>
+
+        {/* CỘT PHẢI: PHÂN LOẠI & CÀI ĐẶT */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <SectionPaper>
+            <Typography variant="h6" fontWeight={600} mb={3}>
+              Phân loại
+            </Typography>
+            <Stack spacing={3}>
+              
+              {/* GIÁO ÁN */}
+              {isEditMode ? (
+                <TextField 
+                    fullWidth size="small" variant="outlined" label="Giáo án hiện tại"
+                    value={formData.planName || "Đang tải..."} 
+                    InputProps={{ readOnly: true }}
+                    helperText="Chế độ chỉnh sửa không cho phép đổi giáo án."
+                    sx={{ bgcolor: "background.paper" }}
+                />
+              ) : (
+                <FormControl fullWidth size="small">
+                    {plans.length > 50 ? (
+                        <Autocomplete
+                            options={plans}
+                            getOptionLabel={(option) => `${option.title} ${option.grade ? `(K${option.grade})` : ""}`}
+                            value={plans.find(p => p.plan_id === formData.selectedPlanId) || null}
+                            onChange={(event, newValue) => {
+                                if(newValue) handlePlanChange({ target: { value: newValue.plan_id } });
+                                else handlePlanChange({ target: { value: "" } });
+                            }}
+                            renderInput={(params) => <TextField {...params} label="Giáo án" size="small" sx={{ bgcolor: "background.paper" }}/>}
+                        />
+                    ) : (
+                        <>
+                        <InputLabel>Giáo án</InputLabel>
+                        <Select value={formData.selectedPlanId} label="Giáo án" onChange={handlePlanChange} sx={{ bgcolor: "background.paper" }}>
+                            <MenuItem value=""><em>Chọn giáo án</em></MenuItem>
+                            {plans.map((plan) => (
+                            <MenuItem key={plan.plan_id} value={plan.plan_id}>
+                                {plan.title} {plan.grade ? `(K${plan.grade})` : ""}
+                            </MenuItem>
+                            ))}
+                        </Select>
+                        </>
+                    )}
+                </FormControl>
+              )}
+
+              <Collapse in={!!formData.selectedPlanId}>
+                <Typography variant="subtitle2" fontWeight={600} mb={1}>Chuyên đề / Danh mục</Typography>
+                
+                {isEditMode ? (
+                  <TextField 
+                      fullWidth size="small" variant="outlined" label="Danh mục hiện tại"
+                      value={formData.categoryName || "Đang tải..."} 
+                      InputProps={{ readOnly: true }}
+                      helperText="Chế độ chỉnh sửa không cho phép đổi danh mục."
+                      sx={{ bgcolor: "background.paper" }}
+                  />
+                ) : (
+                  <Paper variant="outlined" sx={{ maxHeight: 350, overflowY: "auto", p: 1, bgcolor: "background.paper" }}>
+                      {loadingCategories ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><CircularProgress size={24} /></Box>
+                      ) : categoryTreeData.length > 0 ? (
+                        <RichTreeView
+                          items={categoryTreeData}
+                          slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
+                          onSelectedItemsChange={handleTreeSelection}
+                          selectedItems={formData.selectedCategoryId ? [String(formData.selectedCategoryId)] : []}
+                          sx={{
+                              '& .MuiTreeItem-content': {
+                                py: 0.5, borderRadius: 1,
+                                '&:hover': { bgcolor: 'action.hover' },
+                                '&.Mui-selected': { bgcolor: 'primary.lighter', color: 'primary.main', fontWeight: 'bold' },
+                              },
+                            }}
+                        />
+                      ) : (
+                        <Typography variant="caption" color="text.secondary" sx={{ p: 1, display: "block" }}>
+                          {formData.selectedPlanId ? "Giáo án này trống hoặc chưa tải xong." : "Vui lòng chọn giáo án."}
+                        </Typography>
+                      )}
+                  </Paper>
+                )}
+              </Collapse>
+            </Stack>
+          </SectionPaper>
+
+          <SectionPaper>
+            <Typography variant="h6" fontWeight={600} mb={3}>
+              Cài đặt thuộc tính
+            </Typography>
+            <Stack spacing={3}>
+              <Box>
+                <Typography variant="body2" fontWeight={500} color="text.secondary">
+                  Độ khó
+                </Typography>
+                <DifficultyRating value={formData.difficulty} onChange={(val) => handleFieldChange('difficulty', val)} />
+              </Box>
+
+              <FormControl fullWidth size="small">
+                <InputLabel>Quyền xem</InputLabel>
+                <Select value={formData.accessMode} label="Quyền xem" onChange={(e) => handleFieldChange('accessMode', e.target.value)} sx={{ bgcolor: "background.paper" }}>
+                  <MenuItem value="private">Riêng tư (Private)</MenuItem>
+                  <MenuItem value="public">Công khai (Public)</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth size="small">
+                <InputLabel>Trạng thái</InputLabel>
+                <Select value={formData.status} label="Trạng thái" onChange={(e) => handleFieldChange('status', e.target.value)} sx={{ bgcolor: "background.paper" }}>
+                  <MenuItem value="draft">Bản nháp (Draft)</MenuItem>
+                  <MenuItem value="ready">Sẵn sàng (Ready)</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+          </SectionPaper>
+        </Grid>
+      </Grid>
 
       <AppSnackbar
         open={toast.open} message={toast.message} severity={toast.severity}
         onClose={(e, r) => r !== "clickaway" && setToast(p => ({ ...p, open: false }))}
       />
-    </Box>
+    </PageWrapper>
   );
 }
