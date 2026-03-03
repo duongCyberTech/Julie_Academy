@@ -72,6 +72,10 @@ const NotificationPage = React.memo(() => {
         }
         return
       }
+      case "exam": {
+        navigate(`/student/assignment`)
+        return
+      }
     }
   }
 
