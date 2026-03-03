@@ -60,7 +60,8 @@ export class BackgroundService {
       where: {thread_id: notiData.link_primary_id},
       select: {
         open_list: true,
-        is_restricted: true
+        is_restricted: true,
+        sender: {select: {uid: true}}
       }
     })
 
@@ -82,6 +83,7 @@ export class BackgroundService {
     const senders = await this.prisma.student.findMany({
       where: {
         learning: {some: {class: {class_id: notiData.link_wrapper_id}}},
+        user: {thread: {some: {uid: {not: restriction.sender.uid}}}}, 
         ...(restriction.is_restricted ? {uid: {in: validUids}} : {}) 
       },
       select: {uid: true}
