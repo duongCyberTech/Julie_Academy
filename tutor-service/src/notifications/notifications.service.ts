@@ -25,8 +25,10 @@ export class NotificationsService {
             const cnt = await this.countNotifications(uid, ReadStatus.have_not_read)
 
             this.notify.sendNewNotification(uid, resData, cnt)
+
+            return resData
         } catch (error) {
-            return
+            return false
         }
     }
 
