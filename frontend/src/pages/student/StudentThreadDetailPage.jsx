@@ -26,7 +26,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { getCommentsByThread, createComment, fetchCommentsUntil } from "../../services/CommentService";
 import { getThreadById } from "../../services/ThreadService";
-import { socket } from "../../services/ApiClient";
+import { socket, decodedData } from "../../services/ApiClient";
 import QuiltedImageList from "../../components/Image/ImageList";
 import CommentItem from "../../components/comment/CommentItem";
 import CommentInput, {extractEmailsFromComment} from "../../components/comment/CommentInput";
@@ -220,7 +220,7 @@ const ThreadDetailPage = React.memo(() => {
   };
 
   const handleGoBack = () => {
-    navigate(-1);
+    navigate(`/${decodedData.role}/classes/${classId}`);
   };
   
   // Gửi bình luận GỐC
