@@ -1,8 +1,6 @@
 import { MentionsInput, Mention } from 'react-mentions';
-import { useState, useEffect } from 'react';
 import {
   Box,
-  Button,
   Avatar,
   Typography
 } from '@mui/material'

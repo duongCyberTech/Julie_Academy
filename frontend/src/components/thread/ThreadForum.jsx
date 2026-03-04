@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { TransitionGroup } from "react-transition-group";
 
 import {
@@ -10,9 +9,6 @@ import {
   Modal,
   Backdrop,
   Fade,
-  TextField,
-  Menu,
-  MenuItem,
   CircularProgress,
   Collapse
 } from "@mui/material";
@@ -34,8 +30,6 @@ export default function ThreadForum({class_id}) {
     const [currentUserId, setCurrentUserId] = useState("");
     const [threads, setThreads] = useState([]);
     const [isPostModalOpen, setIsPostModalOpen] = useState(false);
-    const [editingPost, setEditingPost] = useState(null); 
-    const [postFormData, setPostFormData] = useState({ title: '', content: '' });
 
     const lastThreadElementRef = useCallback(node => {
         if (loading) return;
@@ -85,14 +79,7 @@ export default function ThreadForum({class_id}) {
 
     const handleClosePostModal = () => setIsPostModalOpen(false);
 
-    const handleOpenPostModal = (postToEdit = null) => {
-        if (postToEdit) {
-            setEditingPost(postToEdit);
-            setPostFormData({ title: postToEdit.title, content: postToEdit.content });
-        } else {
-            setEditingPost(null);
-            setPostFormData({ title: '', content: '' });
-        }
+    const handleOpenPostModal = () => {
         setIsPostModalOpen(true);
     };
 
@@ -129,7 +116,7 @@ export default function ThreadForum({class_id}) {
                 <Button
                     variant="contained"
                     startIcon={<AddIcon />}
-                    onClick={() => handleOpenPostModal(null)}
+                    onClick={() => handleOpenPostModal()}
                 >
                     Tạo bài viết
                 </Button>
