@@ -112,12 +112,22 @@ export class ExamService {
     async createExamSession(exam_id: string, classes: string[], dto: ExamSessionDto) {
         return await this.prisma.$transaction(async (tx) => {
             const sessionIndex = await tx.exam_session.count({ where: { exam_id } }) + 1;
+            const duration = await tx.exams.findUnique({where: {exam_id}, select: {duration: true}}).then(res => res.duration);
+            if (
+                dto.expireAt && dto.startAt && 
+                (
+                    dto.expireAt < dto.startAt 
+                    && 
+                    (new Date(dto.expireAt).getTime() - new Date(dto.startAt).getTime() < duration*60*1000 || dto.exam_type === 'practice')
+                )
+            ) throw new BadRequestException(dto.exam_type === 'practice' ? "Expire time must be at least equal to start time" : "Expire time must be at least equal to start time plus exam duration!");
+            
             const newSession = await tx.exam_session.create({
                 data: {
                     exam: { connect: { exam_id } },
                     session_id: sessionIndex,
                     startAt: dto.startAt || new Date(),
-                    expireAt: dto.expireAt || new Date(new Date().getTime() + 60*60*1000),
+                    expireAt: dto.expireAt || new Date(new Date().getTime() + duration*60*1000),
                     exam_type: dto.exam_type || 'practice',
                     limit_taken: dto.limit_taken || 1,
                     total_student_done: 0,
