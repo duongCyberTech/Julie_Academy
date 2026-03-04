@@ -121,9 +121,10 @@ export class ExamService {
                     exam_type: dto.exam_type || 'practice',
                     limit_taken: dto.limit_taken || 1,
                     total_student_done: 0,
-                },
+                }
             });
-            var cnt_ = 0
+
+            const openList = []
             for (const class_id of classes){
                 const openTest = await tx.exam_open_in.create({
                     data:{
@@ -131,12 +132,12 @@ export class ExamService {
                         exam_session: { connect: { exam_id_session_id: { exam_id, session_id: newSession.session_id } } }
                     }
                 })
-                cnt_ = openTest ? (cnt_ + 1) : cnt_;
+                if (openTest) openList.push(class_id)
             }
 
-            if (cnt_ != classes.length) throw new BadRequestException("Create session failed!");
+            if (openList.length != classes.length) throw new BadRequestException("Create session failed!");
 
-            this.eventEmitter.emit('exam.new', newSession)
+            this.eventEmitter.emit('exam.new', {newSession, openList});
 
             return {status: 201, message: 'Exam session created successfully', session: newSession.session_id};
         })
