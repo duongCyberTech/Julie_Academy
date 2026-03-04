@@ -54,7 +54,7 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
       loading: "Đang tải bình luận...",
       success: (response) => {
         setIsNested(true)
-        setComments(prev => addTreeNode(prev, comment.comment_id, response))
+        setComments(prev => addTreeNode(prev, comment.comment_id, response.data))
         return "Đã tải bình luận!"
       },
       error: (err) => {

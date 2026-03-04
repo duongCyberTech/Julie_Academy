@@ -146,23 +146,21 @@ const ThreadDetailPage = React.memo(() => {
         }
       }
 
-      toast.promise(getCommentsByThread(threadId, curParent, page), {
-        loading: page === 1 ? "Đang tải bình luận..." : "Đang tải thêm...",
-        success: (response) => {
+      try {
+        const response = await getCommentsByThread(threadId, curParent, page);
+        if (response.status === 200)
           setComments(prev => {
-            const newComments = response && response.length ? response.filter(
+            const newComments = response.data && response.data.length ? response.data.filter(
               incoming => !prev.some(existing => existing.comment_id === incoming.comment_id)
             ) : [];
             return [...prev, ...newComments];
           });
-          return "Tải thành công!";
-        },
-        error: (err) => {
-          if (err.status === 401) return "Phiên đăng nhập hết hạn.";
-          return err.message || "Có lỗi xảy ra!";
-        },
-        duration: 2000
-      });
+      } catch (error) {
+        if (error.status === 401) {
+          toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+          navigate('/login');
+        }
+      }
     };
 
     loadData();
