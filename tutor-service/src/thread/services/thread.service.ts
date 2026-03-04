@@ -51,6 +51,8 @@ export class ThreadService {
                     title: true, 
                     content: true,
                     createAt: true,
+                    open_list: true,
+                    is_restricted: true,
                     sender: {
                         select: {
                             uid: true,
@@ -93,7 +95,10 @@ export class ThreadService {
                     createAt: res.createAt,
                     sender: res.sender,
                     medias: res.Resource_of_Thread.map(item => item.Resources.file_path),
-                    followers: res.followers.map(item => item.follower.uid)
+                    followers: res.followers.map(item => item.follower.uid),
+                    cnt_comments: 0,
+                    is_restricted: thread.is_restricted,
+                    open_list: thread.open_list
                 }
             })
 
