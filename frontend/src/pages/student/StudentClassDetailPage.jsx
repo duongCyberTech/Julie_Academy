@@ -3,44 +3,31 @@ import {
   Container,
   Typography,
   Box,
-  Card,
   CardMedia,
   CardContent,
-  Button,
   Snackbar,
   Alert,
   Avatar,
-  Paper,
   Tabs,
   Tab,
   List,
   ListItem,
   ListItemText,
-  ListItemButton,
   ListItemAvatar,
   Divider,
   IconButton,
-  Modal,
-  Backdrop,
-  Fade,
-  TextField,
-  Menu,
-  MenuItem,
   Breadcrumbs,
   Link,
 } from "@mui/material";
 import { motion } from "framer-motion";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 // Icons
 import ForumIcon from '@mui/icons-material/Forum';
 import FolderIcon from '@mui/icons-material/Folder';
 import PeopleIcon from '@mui/icons-material/People';
-import AddIcon from '@mui/icons-material/Add';
 import DownloadIcon from '@mui/icons-material/Download';
 import PersonIcon from '@mui/icons-material/Person';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import CloseIcon from '@mui/icons-material/Close';
 import ArticleIcon from '@mui/icons-material/Article';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
