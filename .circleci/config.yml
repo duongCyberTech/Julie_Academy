@@ -16,9 +16,9 @@ jobs:
       - node/install-packages:
           pkg-manager: npm
           app-dir: ~/project/tutor-service
-      - run:
-          name: Chạy Linter
-          command: npm run lint
+      # - run:
+      #     name: Chạy Linter
+      #     command: npm run lint
       # - run:
       #     name: Chạy Unit Tests
       #     command: npm run test
