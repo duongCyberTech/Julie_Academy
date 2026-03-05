@@ -23,9 +23,9 @@ jobs:
       # - run:
       #     name: Chạy Linter
       #     command: npm run lint
-      # - run:
-      #     name: Chạy Unit Tests
-      #     command: npm run test
+      - run:
+          name: Chạy Unit Tests
+          command: npm run test
       - run:
           name: Build ứng dụng NestJS
           command: npm run build
