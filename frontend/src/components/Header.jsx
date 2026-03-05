@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 // Header.jsx
+=======
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -15,10 +18,14 @@ import {
   DarkModeRounded as DarkModeRoundedIcon,
   LightModeRounded as LightModeRoundedIcon 
 } from "@mui/icons-material";
+<<<<<<< HEAD
 
 import { socket } from "../services/ApiClient";
 import { countNotifications } from "../services/NotificationService";
 import notificationSfx from '../assets/sounds/notifications/ting-2.mp3';
+=======
+import Logo from "../assets/images/logo.png";
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
 
 // 1. NỀN HEADER CHUẨN KÍNH MỜ
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
@@ -43,7 +50,27 @@ const HeaderIconButton = styled(IconButton)(({ theme }) => ({
   }
 }));
 
+<<<<<<< HEAD
 const Header = React.memo(function Header({ mode, toggleMode, onMobileSidebarToggle }) {
+=======
+const BrandBox = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  textDecoration: "none",
+  color: "inherit",
+}));
+
+// --- [THAY ĐỔI 1]: Xóa biến USER_MENU_CONFIG tĩnh ---
+
+const Header = React.memo(function Header({
+  mode,
+  toggleMode,
+  isSidebarExpanded,
+  onDesktopSidebarToggle,
+  onMobileSidebarToggle,
+  isSidebarMounted,
+}) {
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
   const theme = useTheme();
   const navigate = useNavigate();
   const notifyAudio = useMemo(() => new Audio(notificationSfx), []);
@@ -65,8 +92,17 @@ const Header = React.memo(function Header({ mode, toggleMode, onMobileSidebarTog
       const decoded = jwtDecode(token);
       socket.emit('notify', decoded.sub);
       if (decoded.exp * 1000 > Date.now()) {
+<<<<<<< HEAD
         setUserInfo({ name: decoded.name, email: decoded.email, role: decoded.role });
         fetchCnt();
+=======
+        // --- [THAY ĐỔI 2]: Lấy thêm role từ token ---
+        setUserInfo({ 
+            name: decoded.name, 
+            email: decoded.email, 
+            role: decoded.role 
+        });
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
       } else {
         localStorage.removeItem("token");
       }
@@ -93,11 +129,41 @@ const Header = React.memo(function Header({ mode, toggleMode, onMobileSidebarTog
     ];
   }, [userInfo]);
 
+  // --- [THAY ĐỔI 3]: Tạo menu items động dựa trên role ---
+  const userMenuItems = useMemo(() => {
+    let role = userInfo?.role ? userInfo.role.toLowerCase() : "";
+    if (role === "parents") {
+        role = "parent";
+    }
+    return [
+      {
+        text: "Hồ sơ",
+        // Tự động tạo link: /student/profile, /tutor/profile...
+        path: role ? `/${role}/profile` : "/login", 
+        icon: <PersonOutlineIcon fontSize="small" />,
+      },
+      {
+        text: "Cài đặt",
+        path: "/settings",
+        icon: <SettingsOutlinedIcon fontSize="small" />,
+      },
+      {
+        text: "Ngôn ngữ",
+        path: "/language",
+        icon: <LanguageIcon fontSize="small" />,
+      },
+    ];
+  }, [userInfo]);
+
   const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
     setUserInfo(null);
     setAnchorEl(null);
+<<<<<<< HEAD
     navigate("/"); 
+=======
+    navigate("/"); // Hoặc /login
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
   }, [navigate]);
 
   const handleNav = useCallback((path) => {
@@ -108,19 +174,80 @@ const Header = React.memo(function Header({ mode, toggleMode, onMobileSidebarTog
   const isAuth = !!userInfo;
 
   return (
+<<<<<<< HEAD
     <StyledAppBar position="sticky">
       <Toolbar sx={{ minHeight: "72px !important", px: { xs: 2, lg: 4 } }}>
         
         {/* Nút Toggle Sidebar trên Mobile */}
         <HeaderIconButton edge="start" onClick={onMobileSidebarToggle} sx={{ mr: 1, display: { lg: "none" } }}>
+=======
+    <StyledAppBar
+      position="fixed"
+      isSidebarExpanded={isSidebarExpanded}
+      isSidebarMounted={isSidebarMounted}
+    >
+      <Toolbar sx={{ minHeight: 64, px: { xs: 1, sm: 2 } }}>
+        <HeaderIconButton
+          edge="start"
+          onClick={onMobileSidebarToggle}
+          sx={{ mr: 1, display: { lg: "none" } }}
+        >
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
           <MenuIcon />
         </HeaderIconButton>
 
+<<<<<<< HEAD
         {/* Khoảng trống đẩy các icon tiện ích sang bên phải */}
         <Box sx={{ flexGrow: 1 }} />
 
         {/* KHU VỰC TIỆN ÍCH BÊN PHẢI */}
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1.5 } }}>
+=======
+        <BrandBox
+          component={RouterLink}
+          to="/"
+          sx={{ flexGrow: 1, justifyContent: { xs: "center" }, ml: 20 }}
+        >
+          <Box
+            component="img"
+            src={Logo}
+            alt="Logo"
+            sx={{
+              width: 40,
+              height: 40,
+              flexShrink: 0,
+              filter:
+                mode === "dark"
+                  ? "drop-shadow(0 0 5px rgba(100, 181, 246, 0.6)) brightness(1.1)"
+                  : "none",
+              transition: "filter 0.3s ease",
+            }}
+          />
+          <Typography
+            variant="h6"
+            noWrap
+            sx={{
+              ml: 1.5,
+              fontWeight: 700,
+              display: { xs: "none", sm: "block" },
+              background:
+                mode === "dark"
+                  ? `linear-gradient(45deg, #22d3ee 0%, #e879f9 100%)`
+                  : `linear-gradient(45deg, #6a11cb 0%, #2575fc 100%)`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              filter:
+                mode === "dark"
+                  ? "drop-shadow(0 0 10px rgba(34, 211, 238, 0.3))"
+                  : "none",
+              transition: "all 0.3s ease",
+            }}
+          >
+            Julie Academy
+          </Typography>
+        </BrandBox>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
           <Tooltip title="Thông báo">
             <HeaderIconButton onClick={() => navigate('/settings/notifications')}>
               <Badge badgeContent={cntUnRead} color="error" sx={{ '& .MuiBadge-badge': { right: 2, top: 4, fontWeight: 'bold' } }}>
@@ -165,7 +292,10 @@ const Header = React.memo(function Header({ mode, toggleMode, onMobileSidebarTog
         </Box>
       </Toolbar>
 
+<<<<<<< HEAD
       {/* DROPDOWN MENU TÀI KHOẢN */}
+=======
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
       {isAuth && (
         <Menu
           anchorEl={anchorEl}
@@ -184,6 +314,7 @@ const Header = React.memo(function Header({ mode, toggleMode, onMobileSidebarTog
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
+<<<<<<< HEAD
           <Box sx={{ px: 2, py: 1.5, display: { xs: 'block', sm: 'none' } }}>
             <Typography fontWeight={700}>{userInfo.name}</Typography>
             <Typography variant="body2" color="text.secondary" noWrap>{userInfo.email}</Typography>
@@ -199,6 +330,30 @@ const Header = React.memo(function Header({ mode, toggleMode, onMobileSidebarTog
           <MenuItem onClick={handleLogout} sx={{ py: 1.2, mx: 1, borderRadius: '8px', color: "error.main", '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) } }}>
             <ListItemIcon sx={{ color: "error.main", minWidth: 32 }}><ExitToAppIcon fontSize="small" /></ListItemIcon>
             <Typography variant="body2" fontWeight={700}>Đăng xuất</Typography>
+=======
+          <Box sx={{ px: 2, py: 1.5 }}>
+            <Typography fontWeight={600}>{userInfo.name}</Typography>
+            <Typography variant="body2" color="text.secondary" noWrap>
+              {userInfo.email}
+            </Typography>
+          </Box>
+          <Divider />
+          
+          {/* --- [THAY ĐỔI 4]: Duyệt qua userMenuItems thay vì USER_MENU_CONFIG --- */}
+          {userMenuItems.map((item) => (
+            <MenuItem key={item.text} onClick={() => handleNav(item.path)}>
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              {item.text}
+            </MenuItem>
+          ))}
+          
+          <Divider />
+          <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
+            <ListItemIcon sx={{ color: "error.main" }}>
+              <ExitToAppIcon fontSize="small" />
+            </ListItemIcon>
+            Đăng xuất
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
           </MenuItem>
         </Menu>
       )}

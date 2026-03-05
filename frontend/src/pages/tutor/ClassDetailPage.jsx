@@ -3,8 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getClassDetails } from '../../services/ClassService';
 
 import {
+<<<<<<< HEAD
     Box, Typography, Paper, Alert, Tabs, Tab,
     Stack, Chip, Skeleton, Avatar, Button
+=======
+    Box, Typography, Paper, Alert, Tabs, Tab, Container,
+    Stack, Chip, Skeleton, Avatar, IconButton, Tooltip, Breadcrumbs, Link, Button
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 

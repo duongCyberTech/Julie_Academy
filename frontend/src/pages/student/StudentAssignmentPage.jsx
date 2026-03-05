@@ -294,6 +294,10 @@ export default function StudentAssignmentPage() {
 
 // Xử lý khi bấm "Xem kết quả"
   const handleViewResult = (session) => {
+<<<<<<< HEAD
+=======
+    console.log(`Xem kết quả của sessionId: ${session.sessionId}`);
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
     
     // 1. Lấy dữ liệu câu hỏi từ Mock
     // Fallback nếu không có mock cho session này thì tạo mảng rỗng để tránh crash

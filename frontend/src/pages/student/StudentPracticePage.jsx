@@ -484,13 +484,23 @@ export default function StudentPracticePage() {
   };
 
   const handleStartTopicPractice = (lessonId, lessonName) => {
+<<<<<<< HEAD
+=======
+    console.log(
+      `Bắt đầu buổi luyện tập (thích ứng) cho: ${lessonName} (ID: ${lessonId})`
+    );
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
     navigate(`session/${lessonId}`);
   };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
+<<<<<<< HEAD
         Thư viện Luyện tập
+=======
+        Thư viện luyện tập
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
       </Typography>
 
       <Paper

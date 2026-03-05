@@ -5,15 +5,24 @@ import {
   Body,
   Query,
   Param,
-  Put,
   Patch,
   UseGuards,
   NotFoundException,
   BadRequestException,
+<<<<<<< HEAD:tutor-service/src/user/user.controller.ts
   Request,
   DefaultValuePipe,
+=======
+  UseInterceptors, // Thêm
+  UploadedFile,    // Thêm
+  Request,       //Thêm
+  Req            // Thêm
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4:backend/src/user/user.controller.ts
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express'; // Thêm để xử lý file
+import { diskStorage } from 'multer'; // Thêm cấu hình lưu trữ
+import { extname } from 'path'; // Thêm để lấy đuôi file
 import { UserService } from './user.service';
 import { UserDto } from './dto/user.dto';
 import { AccountStatus } from '@prisma/client';
@@ -95,6 +104,46 @@ export class UserController {
     return user;
   }
 
+  // --- THÊM API UPLOAD AVATAR MỚI ---
+  @Post(':id/avatar')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: './uploads', // Lưu file vào thư mục 'uploads' ở root dự án
+      filename: (req, file, callback) => {
+        // Tạo tên file ngẫu nhiên để tránh trùng
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        const filename = `${uniqueSuffix}${ext}`;
+        callback(null, filename);
+      },
+    }),
+    fileFilter: (req, file, callback) => {
+      // Chỉ cho phép ảnh
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+        return callback(new BadRequestException('Only image files are allowed!'), false);
+      }
+      callback(null, true);
+    },
+  }))
+  async uploadAvatar(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any
+  ) {
+    if (!file) {
+      throw new BadRequestException('File is not provided');
+    }
+
+    // Tạo đường dẫn URL để truy cập ảnh
+    // Ví dụ: http://localhost:3000/uploads/filename.jpg
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const avatarUrl = `${protocol}://${host}/uploads/${file.filename}`;
+
+    // Cập nhật URL vào Database
+    return this.userService.updateUser(id, { avata_url: avatarUrl });
+  }
+
   /**
    * POST /users
    * Tạo user mới
@@ -120,6 +169,4 @@ export class UserController {
   ) {
     return this.userService.updateUserStatus(id, status);
   }
-
-  
 }

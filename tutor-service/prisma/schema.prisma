@@ -578,6 +578,7 @@ enum EnrollStatus {
   cancelled
   completed
 }
+<<<<<<< HEAD:tutor-service/prisma/schema.prisma
 
 enum BadgeType {
   exam
@@ -610,3 +611,5 @@ enum NotificationType {
   system
   exam
 }
+=======
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4:backend/prisma/schema.prisma

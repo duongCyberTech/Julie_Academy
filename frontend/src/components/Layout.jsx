@@ -42,6 +42,7 @@ const Layout = ({ mode, toggleMode }) => {
         >
           <Header mode={mode} toggleMode={toggleMode} onMobileSidebarToggle={handleMobileToggle} />
 
+<<<<<<< HEAD
           <Box
             component="main"
             sx={{
@@ -54,6 +55,23 @@ const Layout = ({ mode, toggleMode }) => {
             <Outlet />
           </Box>
         </Box>
+=======
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          width: { xs: "100%", lg: `calc(100% - ${currentSidebarWidth}px)` },
+          transition: (theme) =>
+            theme.transitions.create("width", {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
+        }}
+      >
+        <Toolbar />
+        <Outlet />
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
       </Box>
     </Background>
   );

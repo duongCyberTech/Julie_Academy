@@ -166,6 +166,7 @@ export const deleteCategory = async (plan_id, categoryId, mode, token) => {
 };
 
 export const getPlanDetail = async (planId, token) => {
+<<<<<<< HEAD
   try {
     const response = await apiClient.get(
       `/books/plan/${planId}`,
@@ -176,4 +177,16 @@ export const getPlanDetail = async (planId, token) => {
     console.error("Lỗi lấy chi tiết giáo án:", error);
     throw error.response?.data || error;
   }
+=======
+    try {
+        const response = await apiClient.get(
+            `/books/plan/${planId}`, 
+            getAuthHeaders(token)
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi lấy chi tiết giáo án:", error);
+        throw error.response?.data || error;
+    }
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
 };

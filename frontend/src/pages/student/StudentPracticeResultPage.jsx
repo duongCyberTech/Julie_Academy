@@ -107,7 +107,11 @@ export default function StudentPracticeResultPage() {
                           <Typography variant="overline" color="text.secondary" fontWeight={700} letterSpacing={1}>
                               KẾT QUẢ LUYỆN TẬP
                           </Typography>
+<<<<<<< HEAD
                           <Typography variant="h4" fontWeight={700} gutterBottom sx={{ mt: 1 }}>
+=======
+                          <Typography variant="h4" fontWeight={800} gutterBottom sx={{ mt: 1 }}>
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
                               {sessionInfo.topic}
                           </Typography>
                           
@@ -165,7 +169,11 @@ export default function StudentPracticeResultPage() {
                               <Box sx={{
                                   position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center'
                               }}>
+<<<<<<< HEAD
                                   <Typography variant="h4" fontWeight={700} color={resultColor}>
+=======
+                                  <Typography variant="h4" fontWeight={800} color={resultColor}>
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
                                       {percentage}%
                                   </Typography>
                                   <Typography variant="caption" color="text.secondary" display="block">

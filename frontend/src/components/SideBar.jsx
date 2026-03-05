@@ -31,7 +31,51 @@ import HomeworkOutlined from "@mui/icons-material/HomeworkOutlined";
 
 import Logo from "../assets/images/logo.png";
 
+<<<<<<< HEAD
 // Cấu hình Menu (Gọn gàng, dễ thêm/sửa)
+=======
+const COLLAPSED_WIDTH = 80;
+const FULL_WIDTH_DEFAULT_FOR_MOBILE = 260;
+
+
+// Cấu hình cho Tutor
+const tutorMenuItems = [
+  { label: "Tổng quan", to: "/tutor/dashboard", Icon: DashboardIcon },
+  { label: "Lớp học của tôi", to: "/tutor/classes", Icon: GroupOutlined },
+  { label: "Thư viện câu hỏi", to: "/tutor/question", Icon: LibraryIcon },
+  { label: "Quản lý đề thi", to: "/tutor/exam", Icon: ArticleOutlined },
+  { label: "Giao bài", to: "/tutor/assignment", Icon: AssignmentTurnedInOutlined },
+  { label: "Diễn đàn", to: "/tutor/forum", Icon: ForumOutlined },
+];
+
+// Cấu hình cho Admin
+const adminMenuItems = [
+  { label: "Tổng quan", to: "/admin/dashboard", Icon: DashboardIcon },
+  { label: "Quản lý người dùng", to: "/admin/users", Icon: GroupOutlined },
+  {
+    label: "Quản lý học liệu",
+    to: "/admin/resources",
+    Icon: AutoStoriesOutlined,
+  },
+  { label: "Cài đặt hệ thống", to: "/admin/settings", Icon: SettingsIcon },
+];
+
+// Cấu hình cho Student
+const studentMenuItems = [
+  { label: "Góc học tập", to: "/student/dashboard", Icon: DashboardIcon },
+  { label: "Đăng ký lớp học", to: "/student/enroll", Icon: AccountBoxIcon },
+  { label: "Lớp học của tôi", to: "/student/classes", Icon: GroupOutlined },
+  { label: "Luyện tập", to: "/student/practice", Icon: LibraryIcon },
+  { label: "Bài tập", to: "/student/assignment", Icon: HomeworkOutlined },
+];
+
+// Cấu hình cho Parent
+const parentMenuItems = [
+  { label: "Tiến độ của con", to: "/parent/dashboard", Icon: DashboardIcon },
+  { label: "Đăng kí lớp học", to: "/parent/enroll", Icon: AccountBoxIcon }, 
+];
+
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4
 const menuConfigByRole = {
   tutor: [
     { label: "Tổng quan", to: "/tutor/dashboard", Icon: DashboardIcon },

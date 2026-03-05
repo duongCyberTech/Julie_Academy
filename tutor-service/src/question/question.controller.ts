@@ -21,9 +21,15 @@ import { ExceptionResponse } from 'src/exception/Exception.exception';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BookController {
     constructor(private readonly bookService: LessonPlanService){}
+<<<<<<< HEAD:tutor-service/src/question/question.controller.ts
     @Get('/plan/:plan_id')
     getPlanDetail(@Param('plan_id') plan_id: string) {
         return this.bookService.getPlanById(plan_id);
+=======
+    @Get('plan/:plan_id')
+    getPlanDetail(@Param('plan_id') plan_id: string) {
+      return this.bookService.getPlanDetail(plan_id);
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4:backend/src/question/question.controller.ts
     }
     @Post()
     @Roles('admin')
@@ -196,7 +202,6 @@ export class QuestionController {
     ) {
         return this.questionService.updateAnswer(aid, ques_id, dto);
     }
-
     @Delete('delete/question/:ques_id')
     deleteQuestion( @Param('ques_id') ques_id: string ) {
         return this.questionService.deleteQuestion(ques_id);

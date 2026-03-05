@@ -42,16 +42,22 @@ export class FolderService {
         })
     }
 
-    async traverseFolderTree(class_id:string, parent_id: string | null = null){
+    async traverseFolderTree(class_id: string, parent_id: string | null = null) {
         const fatherLayer = await this.prisma.folders.findMany({
             where: {
-                class: {some: {class_id}},
+                class: { some: { class_id } },
                 parent_id: parent_id
             },
             include: {
+<<<<<<< HEAD:tutor-service/src/resource/resource.service.ts
                 class: { 
                     where: { class_id: class_id },
                     select: { category_id: true } 
+=======
+                class: {
+                    where: { class_id },
+                    select: { category_id: true }
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4:backend/src/resource/resource.service.ts
                 },
                 resources: {
                     include: {
@@ -64,9 +70,9 @@ export class FolderService {
         if (!fatherLayer || fatherLayer.length === 0) return []
 
         let result = []
-        
-        for (const item of fatherLayer) { 
+        for (const item of fatherLayer) {
             const children = await this.traverseFolderTree(class_id, item.folder_id)
+<<<<<<< HEAD:tutor-service/src/resource/resource.service.ts
             
             const formattedItem = {
                 ...item,
@@ -77,6 +83,19 @@ export class FolderService {
                 children
             }
             result.push(formattedItem)
+=======
+            const fileList = item.resources.map(r => ({
+                ...r.resource,
+                category_id: item.class[0]?.category_id 
+            }))
+
+            result.push({
+                ...item,
+                category_id: item.class[0]?.category_id, 
+                children,   
+                resources: fileList 
+            })
+>>>>>>> fe8270f68b2d2783ea7b1ceb8cff470866f711d4:backend/src/resource/resource.service.ts
         }
 
         return result
