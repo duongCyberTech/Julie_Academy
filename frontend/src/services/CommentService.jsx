@@ -33,7 +33,7 @@ const getCommentsByThread = async (threadId, parentCmtId, page = 1) => {
             `/comments/thread/${threadId}?page=${page}` + (parentCmtId ? `&pnt=${parentCmtId}` : ""),
             getAuthHeaders(token)
         );
-        return response.data;
+        return response;
     } catch (error) {
         return error;
     }

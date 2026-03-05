@@ -11,15 +11,13 @@ import {
   Divider,
   Paper,
   Chip,
-  IconButton,
-  Badge
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CircleIcon from '@mui/icons-material/Circle';
 import { getRelativeTime } from "../../utils/DateTimeFormatter";
 import { socket, decodedData } from '../../services/ApiClient';
-import { getNotificationsByUser, countNotifications, markAsRead } from '../../services/NotificationService';
+import { getNotificationsByUser, markAsRead } from '../../services/NotificationService';
 
 const NotificationPage = React.memo(() => {
   const [notifications, setNotifications] = useState([]);
@@ -70,6 +68,10 @@ const NotificationPage = React.memo(() => {
             navigate(`/${decodedData.role}/classes/${noti.link_wrapper_id}/${noti.link_primary_id}`)
           }
         }
+        return
+      }
+      case "exam": {
+        navigate(`/student/assignment`)
         return
       }
     }
