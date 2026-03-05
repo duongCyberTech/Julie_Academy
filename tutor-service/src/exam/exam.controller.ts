@@ -151,7 +151,7 @@ export class ExamTakenController {
         private et_service: ExamTakenService
     ){}
 
-    @Get("/class/:class_id")
+    @Get("/class/:class_id/:exam_id/:session_id")
     takeExam(
         @Param("exam_id") exam_id: string,
         @Param("session_id", ParseIntPipe) session_id: number,
