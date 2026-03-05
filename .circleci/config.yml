@@ -9,6 +9,7 @@ jobs:
     docker:
       # Chọn phiên bản Node tương ứng với dự án NestJS của bạn
       - image: cimg/node:22.14.0
+    working_directory: ~/project/tutor-service
     steps:
       - checkout:
           path: ~/project
