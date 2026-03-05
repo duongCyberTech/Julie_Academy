@@ -16,12 +16,24 @@ jobs:
       - node/install-packages:
           pkg-manager: npm
           app-dir: ~/project/tutor-service
-      # - run:
-      #     name: Chạy Linter
-      #     command: npm run lint
+      - run:
+          name: Debug Directory & package.json
+          command: |
+            echo "Thư mục hiện tại đang đứng:"
+            pwd
+            echo "Danh sách file trong thư mục này:"
+            ls -la
+            echo "Nội dung file package.json CI đang đọc:"
+            cat package.json
+      - run:
+          name: Chạy Linter
+          command: npm run lint
       # - run:
       #     name: Chạy Unit Tests
       #     command: npm run test
+      - run:
+          name: Generate Prisma Client
+          command: npx prisma generate
       - run:
           name: Build ứng dụng NestJS
           command: npm run build
