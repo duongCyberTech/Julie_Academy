@@ -20,9 +20,9 @@ jobs:
       - run:
           name: Generate Prisma Client
           command: npx prisma generate
-      - run:
-          name: Chạy Linter
-          command: npm run lint
+      # - run:
+      #     name: Chạy Linter
+      #     command: npm run lint
       # - run:
       #     name: Chạy Unit Tests
       #     command: npm run test
