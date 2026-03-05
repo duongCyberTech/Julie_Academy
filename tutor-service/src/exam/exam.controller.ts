@@ -182,4 +182,30 @@ export class ExamTakenController {
             return new ExceptionResponse().returnError(error);
         }
     }
+
+    @Get("pending/:class_id")
+    getAllPendingExamTaken(
+        @Param("class_id") class_id: string,
+        @Request() req
+    ){
+        const userId = req.user.userId
+        try {
+            return this.et_service.getAllPendingExamTaken(userId, class_id);
+        } catch (error) {
+            return new ExceptionResponse().returnError(error);
+        }
+    }
+
+    @Get("continue/:et_id")
+    continueTakeExam(
+        @Param("et_id") et_id: string,
+        @Request() req
+    ){
+        const userId = req.user.userId
+        try {
+            return this.et_service.continueTakeExam(et_id, userId);
+        } catch (error) {
+            return new ExceptionResponse().returnError(error);
+        }
+    }
 }
