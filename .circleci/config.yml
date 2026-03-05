@@ -8,7 +8,7 @@ jobs:
   build-and-test:
     docker:
       # Chọn phiên bản Node tương ứng với dự án NestJS của bạn
-      - image: cimg/node:18.19.0
+      - image: cimg/node:22.14.0
     steps:
       - checkout:
           path: ~/project
