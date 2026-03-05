@@ -1,6 +1,16 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
-require('dotenv').config()
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// 1. Xác định môi trường
+const env = process.env.NODE_ENV || 'development';
+
+// 2. Chỉ định chính xác đường dẫn file env
+dotenv.config({
+  path: path.resolve(process.cwd(), `.env.${env}`),
+});
+
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!
 })
