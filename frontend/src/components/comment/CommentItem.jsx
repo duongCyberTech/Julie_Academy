@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import {
-  Container,
   Typography,
   Box,
-  Paper,
   Button,
-  Snackbar,
-  Alert,
   Avatar,
   List,
   ListItem,
@@ -14,11 +10,8 @@ import {
   ListItemAvatar,
   Divider,
   IconButton,
-  TextField,
-  CardContent,
   Collapse,
   Chip,
-  Link as MuiLink,
 } from "@mui/material";
 
 import PersonIcon from '@mui/icons-material/Person';
@@ -61,7 +54,7 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
       loading: "Đang tải bình luận...",
       success: (response) => {
         setIsNested(true)
-        setComments(prev => addTreeNode(prev, comment.comment_id, response))
+        setComments(prev => addTreeNode(prev, comment.comment_id, response.data))
         return "Đã tải bình luận!"
       },
       error: (err) => {

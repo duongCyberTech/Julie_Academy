@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsArray, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class ExamDto {
     @ApiProperty({ example: "Final Math Exam", description: "Exam Title" })
@@ -22,16 +23,31 @@ export class ExamDto {
 
 export class ExamSessionDto {
     @ApiProperty()
+    @IsOptional()
+    @IsNumber()
     session_id: number;
+
     @ApiProperty()
+    @Type(() => Date)
+    @IsDate()
     startAt: Date;
+
     @ApiProperty()
+    @Type(() => Date)
+    @IsDate()
     expireAt: Date;
+
     @ApiProperty()
+    @IsEnum(['practice', 'test', 'final'])
     exam_type: 'practice' | 'test' | 'final';
+
     @ApiProperty()
+    @IsNumber()
     limit_taken: number | 1;
+
     @ApiProperty()
+    @IsOptional()
+    @IsNumber()
     ratio: number | 0;
 }
 

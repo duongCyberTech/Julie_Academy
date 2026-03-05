@@ -38,10 +38,9 @@ const modalStyle = {
   outline: 'none',
 };
 
-export default function ListUserModal({ class_id, open, setOpen, setRestricted, selectedIds, setSelectedIds }) {
+export default function ListUserModal({ class_id, open, setOpen, selectedIds, setSelectedIds }) {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
-  
 
   const handleClose = () => {
     setOpen(false);

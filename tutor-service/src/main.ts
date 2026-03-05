@@ -11,7 +11,10 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true, // Loại bỏ các field không được định nghĩa trong DTO
     forbidNonWhitelisted: false, // Quăng lỗi nếu có field lạ
-    transform: true, // Tự động convert type (VD: string sang number)
+    transform: true,       // ✅ BẮT BUỘC ĐỂ ÉP KIỂU DỮ LIỆU
+    transformOptions: {
+      enableImplicitConversion: true, // (Tùy chọn) Tự động ép kiểu theo type khai báo
+    },
   }));
 
   const config = new DocumentBuilder()

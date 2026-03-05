@@ -7,7 +7,7 @@ import { CreateNotificationDTO } from 'src/notifications/dto/notification.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { QueueService } from './bull-queue.service';
 import { AnalysisService } from 'src/analysis/analysis.service';
-import { ExamType } from '@prisma/client';
+import { ExamType, NotificationType } from '@prisma/client';
 
 @Injectable()
 export class BackgroundService {
@@ -60,7 +60,8 @@ export class BackgroundService {
       where: {thread_id: notiData.link_primary_id},
       select: {
         open_list: true,
-        is_restricted: true
+        is_restricted: true,
+        sender: {select: {uid: true}}
       }
     })
 
@@ -82,6 +83,7 @@ export class BackgroundService {
     const senders = await this.prisma.student.findMany({
       where: {
         learning: {some: {class: {class_id: notiData.link_wrapper_id}}},
+        user: {thread: {some: {uid: {not: restriction.sender.uid}}}}, 
         ...(restriction.is_restricted ? {uid: {in: validUids}} : {}) 
       },
       select: {uid: true}
@@ -105,7 +107,8 @@ export class BackgroundService {
   }
 
   @OnEvent('exam.new')
-  async handleSetupDeadlineNotify(newSession: any){
+  async handleSetupDeadlineNotify(data: {newSession: any, openList: string[]}){
+    const { newSession, openList } = data;
     console.log("[LOG DELAYED JOB]")
     try {
       const TIME_NOTIFY_BEFORE_TEST = 60 * 60 * 1000;
@@ -134,6 +137,36 @@ export class BackgroundService {
     } catch (error) {
       console.log(error.message)
     }
+
+    openList.forEach(async (class_id) => {
+      try {
+        const klass = await this.prisma.class.findUnique({
+          where: {class_id},
+          select: {class_id: true, classname: true}
+        })
+
+        const receivers = await this.prisma.student.findMany({
+          where: {
+            learning: {some: {class: {class_id}}}
+          },
+          select: {
+            uid: true
+          }
+        })
+
+        receivers.forEach(async (receiver) => {
+          await this.notify.createNotification(receiver.uid, {
+            message: `Một bài tập mới được thêm tại lớp ${klass.classname}.`,
+            type: NotificationType.exam,
+            link_wrapper_id: class_id,
+            link_primary_id: newSession.exam_id,
+            link_partial_id: `${newSession.session_id}`
+          });
+        });
+      } catch (error) {
+        console.log(error.message)
+      }
+    })
   }
 
   @OnEvent('exam_taken.submit')
