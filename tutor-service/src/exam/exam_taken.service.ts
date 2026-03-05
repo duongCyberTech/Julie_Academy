@@ -159,13 +159,89 @@ export class ExamTakenService {
         })
     }
 
+    async getAllPendingExamTaken(student_id: string, class_id: string) {
+        try {
+            const currentTime = new Date()
+            await this.prisma.exam_taken.updateMany({
+                where: {
+                    student_uid: student_id,
+                    isDone: false,
+                    exam_session: {
+                        exam_open_in: {
+                            some: {
+                                class_id,
+                                exam_session: {
+                                    expireAt: {lt: currentTime}
+                                }
+                            }
+                        }
+                    }
+                },
+                data: {
+                    isDone: true,
+                    doneAt: currentTime
+                }
+            })
+        } catch (error) {
+            
+        }
+
+        return this.prisma.exam_taken.findMany({
+            where: {
+                student_uid: student_id,
+                isDone: false,
+                exam_session: {exam_open_in: {some: {class_id}}}
+            },
+            select: {
+                et_id: true,
+                exam_session: {
+                    select: {
+                        exam: {
+                            select: {
+                                exam_id: true,
+                                title: true,
+                                total_ques: true,
+                                total_score: true,
+                                description: true
+                            }
+                        },
+                        exam_type: true,
+                        startAt: true,
+                        expireAt: true,
+                        limit_taken: true
+                    }
+                },
+                questions: {
+                    select: {
+                        question: {
+                            select: {
+                                ques_id: true,
+                                title: true,
+                                content: true,
+                                type: true,
+                                level: true,
+                                answers: {
+                                    select: {
+                                        aid: true,
+                                        content: true,
+                                    }
+                                }
+                            }
+                        },
+                        answer_set: true
+                    }
+                }
+            }
+        })
+    }
+
     async continueTakeExam(et_id: string, student_id: string) {
         return await this.prisma.$transaction(async(tx) => {
             const checkExist = await tx.exam_taken.findFirst({where: {et_id, student: {uid: student_id}}})
 
             if (!checkExist) throw new NotFoundException("Exam not found");
 
-            const questionsList = await tx.exam_taken.findUnique({
+            const questionsList = await tx.exam_taken.findFirst({
                 where: {et_id},
                 select: {
                     et_id: true,

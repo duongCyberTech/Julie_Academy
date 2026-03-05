@@ -1,0 +1,38 @@
+version: 2.1
+
+# Sử dụng Node orb của CircleCI để quản lý cache và cài đặt nhanh hơn
+orbs:
+  node: circleci/node@5.0.0
+
+jobs:
+  build-and-test:
+    docker:
+      # Chọn phiên bản Node tương ứng với dự án NestJS của bạn
+      - image: cimg/node:18.19.0
+    steps:
+      - checkout:
+          path: ~/project
+      # Lệnh này tự động cài đặt npm và quản lý cache cho thư mục node_modules
+      - node/install-packages:
+          pkg-manager: npm
+          app-dir: ~/project/tutor-service
+      - run:
+          name: Chạy Linter
+          command: npm run lint
+      # - run:
+      #     name: Chạy Unit Tests
+      #     command: npm run test
+      - run:
+          name: Build ứng dụng NestJS
+          command: npm run build
+
+workflows:
+  nest-ci-workflow:
+    jobs:
+      - build-and-test:
+          filters:
+            # CI sẽ chạy trên mọi nhánh
+            branches:
+              only:
+                - main
+                - staging
