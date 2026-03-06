@@ -130,7 +130,6 @@ export class ExamTakenService {
             const takenTime = await tx.exam_taken.create({
                 data: {
                     startAt: new Date(),
-                    doneAt: null,
                     final_score: 0,
                     total_ques_completed: 0,
                     student: {connect: {uid: student_id}},

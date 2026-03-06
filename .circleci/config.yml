@@ -8,7 +8,8 @@ jobs:
   build-and-test:
     docker:
       # Chọn phiên bản Node tương ứng với dự án NestJS của bạn
-      - image: cimg/node:18.19.0
+      - image: cimg/node:22.14.0
+    working_directory: ~/project/tutor-service
     steps:
       - checkout:
           path: ~/project
@@ -17,11 +18,14 @@ jobs:
           pkg-manager: npm
           app-dir: ~/project/tutor-service
       - run:
-          name: Chạy Linter
-          command: npm run lint
+          name: Generate Prisma Client
+          command: npx prisma generate
       # - run:
-      #     name: Chạy Unit Tests
-      #     command: npm run test
+      #     name: Chạy Linter
+      #     command: npm run lint
+      - run:
+          name: Chạy Unit Tests
+          command: npm run test
       - run:
           name: Build ứng dụng NestJS
           command: npm run build

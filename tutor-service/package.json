@@ -8,7 +8,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start:dev": "cross-env NODE_ENV=development nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -20,7 +20,15 @@
     "db:seed:category": "ts-node prisma/category.seed.ts",
     "db:seed:question": "ts-node prisma/question.seed.ts",
     "db:seed:all": "npm-run-all db:seed:user db:seed:category db:seed:question",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+
+    "prisma:migrate:staging": "cross-env NODE_ENV=staging npx prisma migrate dev",
+    "prisma:generate:staging": "cross-env NODE_ENV=staging npx prisma generate",
+    "db:seed:user:staging": "cross-env NODE_ENV=staging ts-node prisma/user.seed.ts",
+    "db:seed:category:staging": "cross-env NODE_ENV=staging ts-node prisma/category.seed.ts",
+    "db:seed:question:staging": "cross-env NODE_ENV=staging ts-node prisma/question.seed.ts",
+    "db:seed:all:staging": "cross-env NODE_ENV=staging npm-run-all db:seed:user:staging db:seed:category:staging db:seed:question:staging",
+    "start:staging": "cross-env NODE_ENV=staging nest start --watch"
   },
   "engines": {
     "npm": ">=10.0.0",
