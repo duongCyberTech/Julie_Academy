@@ -50,6 +50,7 @@ const StudentAssignmentPage = React.lazy(() => import("../pages/student/StudentA
 const StudentAssignmentSessionPage = React.lazy(() => import("../pages/student/StudentAssignmentSessionPage"));
 const StudentAssignmentResultPage = React.lazy(() => import("../pages/student/StudentAssignmentResultPage"));
 const StudentEnrollPage = React.lazy(() => import("../pages/student/StudentEnrollPage.jsx"));
+const StudentGlobalAssignmentPage = React.lazy(() => import("../pages/student/StudentGlobalAssignmentPage"));
 
 // --- PARENT (Lazy Load) ---
 const ParentDashboard = React.lazy(() => import("../pages/parent/ParentDashboard.jsx"));
@@ -122,6 +123,7 @@ function AppRoutes(props) {
           </Route>
         </Route>
 
+
         {/* Nhóm các route cho Student */}
         <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
           {/* ĐÃ THÊM {...props} VÀO LAYOUT */}
@@ -148,17 +150,29 @@ function AppRoutes(props) {
               path="practice/review/:reviewId"
               element={<StudentPracticeReviewPage />}
             />
-            <Route path="assignment" element={<StudentAssignmentPage />} />
+
+            <Route path="assignment" element={<StudentGlobalAssignmentPage />} />
+            
+            <Route path="assignment/class/:classId" element={<StudentAssignmentPage />} />
+            
             <Route
-              path="assignment/session/:sessionId"
+              path="assignment/class/:classId/exam/:examId/session/:sessionId"
               element={<StudentAssignmentSessionPage />}
             />
+            <Route
+              path="assignment/continue/:etId"
+              element={<StudentAssignmentSessionPage />}
+            />
+            
             <Route
               path="assignment/session/:sessionId/result"
               element={<StudentAssignmentResultPage />}
             />
+
+
           </Route>
         </Route>
+
 
         {/* Nhóm các route cho Parent */}
         <Route element={<ProtectedRoute allowedRoles={["parents"]} />}>

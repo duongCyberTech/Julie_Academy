@@ -30,9 +30,13 @@ import DownloadIcon from '@mui/icons-material/Download';
 import PersonIcon from '@mui/icons-material/Person';
 import ArticleIcon from '@mui/icons-material/Article';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import AssignmentIcon from '@mui/icons-material/Assignment'; // Thêm icon Bài tập
 
 import ThreadForum from "../../components/thread/ThreadForum";
 import { ClassBanner, TabContentCard, ModalCard, TabPanel } from "../../components/Tab/Tab";
+
+// Đã import trang Danh sách bài tập (Sửa lại đường dẫn nếu khác)
+import StudentAssignmentPage from "./StudentAssignmentPage";
 
 // Import hình ảnh
 import ClassBg1 from "../../assets/images/homepage1.webp";
@@ -218,6 +222,7 @@ export default function StudentClassDetailPage() {
               <Tab label="Diễn đàn" icon={<ForumIcon />} iconPosition="start" />
               <Tab label="Tài liệu" icon={<FolderIcon />} iconPosition="start" />
               <Tab label={`Thành viên (${mockMembers.length})`} icon={<PeopleIcon />} iconPosition="start" />
+              <Tab label="Bài tập" icon={<AssignmentIcon />} iconPosition="start" /> {/* Đã thêm Tab Bài tập */}
             </Tabs>
           </Box>
 
@@ -314,6 +319,12 @@ export default function StudentClassDetailPage() {
               </List>
             </TabContentCard>
           </TabPanel>
+
+          {/* === TAB 4: BÀI TẬP === */}
+          <TabPanel value={tabValue} index={3}>
+            <StudentAssignmentPage /> 
+          </TabPanel>
+
         </Box>
       </motion.div>
       
