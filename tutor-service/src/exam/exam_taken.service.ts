@@ -130,7 +130,6 @@ export class ExamTakenService {
             const takenTime = await tx.exam_taken.create({
                 data: {
                     startAt: new Date(),
-                    doneAt: null,
                     final_score: 0,
                     total_ques_completed: 0,
                     student: {connect: {uid: student_id}},
@@ -290,6 +289,31 @@ export class ExamTakenService {
                 data: questionsList
             }
         })
+    }
+
+    async getCompletedExamTakens(student_id: string, class_id: string) {
+        try {
+            return await this.prisma.exam_taken.findMany({
+                where: {
+                    student_uid: student_id,
+                    isDone: true, 
+                    exam_session: {
+                        exam_open_in: {
+                            some: { class_id: class_id } 
+                        }
+                    }
+                },
+                select: {
+                    et_id: true,
+                    exam_id: true,
+                    session_id: true,
+                    final_score: true,
+                    doneAt: true,
+                    isDone: true
+                }
+            });
+        } catch (error) {
+        }
     }
 
     async calculateScore(tx: Prisma.TransactionClient, answers: SubmitAnswerDto[]) {

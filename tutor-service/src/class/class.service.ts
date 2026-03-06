@@ -319,6 +319,10 @@ export class ClassService {
         if (!newClass) throw new InternalServerErrorException("Create class fail!")
         
         return {class: newClass.class_id}
+    },
+    {
+      maxWait: 5000,
+      timeout: 10000
     })
   }
 
