@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Box, Tabs, Tab, Card, CardContent, CardActions, Button, Grid, Chip, Paper, CircularProgress } from '@mui/material';
-import { useNavigate, useParams } from 'react-router-dom';
-import { getSessionsByClass, getPendingExamTakens, getCompletedExamTakens } from '../../services/ExamService';
+import { useNavigate } from 'react-router-dom';
+import { getAllAssignmentsForStudent } from '../../services/ExamService';
 
 // Icons
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -10,45 +10,29 @@ import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
-import SchoolIcon from '@mui/icons-material/School';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import ClassIcon from '@mui/icons-material/Class';
 
-// Thuật toán phân loại dữ liệu từ 3 API
-const filterAssignments = (sessionsData, pendingData, completedData) => {
+const filterAssignments = (sessionsData) => {
   const now = new Date();
   const todo = [];
   const overdue = [];
   const completed = [];
 
-  // Tạo map tra cứu nhanh (Dictionary) cho bài làm dở
-  const pendingMap = {};
-  pendingData.forEach(p => {
-    pendingMap[`${p.exam_id}_${p.session_id}`] = p.et_id;
-  });
-
-  // Tạo map tra cứu nhanh cho bài đã hoàn thành
-  const completedMap = {};
-  completedData.forEach(c => {
-    completedMap[`${c.exam_id}_${c.session_id}`] = c;
-  });
-
-  // Duyệt qua danh sách bài tập được giao
   sessionsData.forEach((session) => {
-    const key = `${session.exam.exam_id}_${session.session_id}`;
-    
-    // 1. Kiểm tra xem đã nộp bài chưa
-    if (completedMap[key]) {
-      session.exam_taken = completedMap[key]; // Gắn thông tin điểm, ngày nộp vào session
+    const history = session.examTakens && session.examTakens.length > 0 ? session.examTakens[0] : null;
+
+    if (history && history.isDone) {
+      // Đã nộp bài
+      session.exam_taken = history;
       completed.push(session);
-    } 
-    // 2. Kiểm tra xem có đang làm dở không
-    else if (pendingMap[key]) {
-      session.pending_et_id = pendingMap[key]; // Gắn ID bài dở để đi tiếp
+    } else if (history && !history.isDone) {
+      // Đang làm dở
+      session.pending_et_id = history.et_id;
       todo.push(session);
-    } 
-    // 3. Chưa làm thì xét thời gian
-    else {
+    } else {
+      // Chưa đụng tới
       const dueDate = new Date(session.expireAt);
       if (dueDate < now) {
         overdue.push(session);
@@ -70,8 +54,13 @@ function TabPanel(props) {
   );
 }
 
-const AssignmentCard = ({ session, status, onStart, onContinue, onView }) => {
-  const { exam, exam_taken, expireAt, pending_et_id } = session;
+const GlobalAssignmentCard = ({ session, status, onStart, onContinue, onView }) => {
+  const { exam, exam_taken, expireAt, pending_et_id, exam_open_in } = session;
+  
+  // Lấy thông tin lớp học từ dữ liệu trả về
+  const classNames = exam_open_in && exam_open_in.length > 0 
+    ? exam_open_in.map(item => item.class.classname).join(', ') 
+    : 'Lớp học không xác định';
 
   const cardBorderColor = status === 'todo' ? (pending_et_id ? 'warning.main' : 'primary.main') : status === 'overdue' ? 'error.main' : 'divider';
 
@@ -91,8 +80,10 @@ const AssignmentCard = ({ session, status, onStart, onContinue, onView }) => {
               {pending_et_id && <Chip label="Đang làm dở" size="small" color="warning" sx={{ ml: 2 }} />}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, color: 'text.secondary' }}>
-              <MenuBookIcon fontSize="small" sx={{ mr: 1 }} />
-              <Typography variant="body1">Môn: <strong>{exam.category?.subject || 'Toán'}</strong></Typography>
+              <ClassIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
+              <Typography variant="body1" sx={{ color: 'primary.main', fontWeight: 500 }}>
+                Lớp: {classNames}
+              </Typography>
             </Box>
           </Box>
           {status === 'completed' && exam_taken && (
@@ -159,50 +150,47 @@ const AssignmentCard = ({ session, status, onStart, onContinue, onView }) => {
   );
 };
 
-export default function StudentAssignmentPage() {
+export default function StudentGlobalAssignmentPage() {
   const [tabValue, setTabValue] = useState(0);
   const [assignments, setAssignments] = useState({ todo: [], overdue: [], completed: [] });
   const [loading, setLoading] = useState(true);
   
   const navigate = useNavigate();
-  const { classId } = useParams(); 
   const token = localStorage.getItem('token'); 
 
- useEffect(() => {
-    // 1. Kiểm tra ngay từ đầu, nếu thiếu thì tắt loading và báo lỗi luôn
-    if (!classId || !token) {
-      console.error("Lỗi: Thiếu classId trên URL hoặc chưa có token đăng nhập!");
-      setLoading(false); 
-      return; // Dừng lại, không chạy fetchData nữa
-    }
-
+  useEffect(() => {
     const fetchData = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
-        const [sessionsData, pendingData, completedData] = await Promise.all([
-          getSessionsByClass(classId, token),
-          getPendingExamTakens(classId, token),
-          getCompletedExamTakens(classId, token)
-        ]);
-        
-        const { todo, overdue, completed } = filterAssignments(sessionsData, pendingData, completedData);
+        const allData = await getAllAssignmentsForStudent(token);
+        const { todo, overdue, completed } = filterAssignments(allData);
         setAssignments({ todo, overdue, completed });
       } catch (error) {
-        console.error("Lỗi khi tải dữ liệu bài tập:", error);
+        console.error("Lỗi khi tải dữ liệu bài tập tổng hợp:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [classId, token]);
+  }, [token]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
   const handleStartAssignment = (session) => {
-    navigate(`/student/assignment/class/${classId}/exam/${session.exam.exam_id}/session/${session.session_id}`);
+    // Trích xuất classId từ session để truyền đi
+    const classId = session.exam_open_in[0]?.class_id;
+    if (classId) {
+      navigate(`/student/assignment/class/${classId}/exam/${session.exam.exam_id}/session/${session.session_id}`);
+    } else {
+      console.error("Không tìm thấy classId cho bài tập này!");
+    }
   };
 
   const handleContinueAssignment = (et_id) => {
@@ -210,7 +198,6 @@ export default function StudentAssignmentPage() {
   };
 
   const handleViewResult = (session) => {
-    // Sẽ chuyển hướng sang trang xem điểm chi tiết sau
     navigate(`/student/assignment/session/${session.session_id}/result`);
   };
 
@@ -220,8 +207,11 @@ export default function StudentAssignmentPage() {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-        Bài tập được giao
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
+        Tổng hợp Bài tập
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+        Tất cả bài tập từ các lớp bạn đang tham gia đều được tổng hợp tại đây.
       </Typography>
 
       <Paper elevation={0} variant="outlined" sx={{ border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
@@ -236,7 +226,7 @@ export default function StudentAssignmentPage() {
         <TabPanel value={tabValue} index={0}>
           {assignments.todo.length > 0 ? (
             assignments.todo.map((session) => (
-              <AssignmentCard 
+              <GlobalAssignmentCard 
                 key={`${session.exam.exam_id}_${session.session_id}`} 
                 session={session} 
                 status="todo" 
@@ -244,13 +234,13 @@ export default function StudentAssignmentPage() {
                 onContinue={handleContinueAssignment}
               />
             ))
-          ) : <Typography sx={{ p: 2, textAlign: 'center' }}>Bạn không có bài tập nào cần làm.</Typography>}
+          ) : <Typography sx={{ p: 2, textAlign: 'center' }}>Tuyệt vời! Bạn không có bài tập nào đang tồn đọng.</Typography>}
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
           {assignments.overdue.length > 0 ? (
             assignments.overdue.map((session) => (
-              <AssignmentCard key={`${session.exam.exam_id}_${session.session_id}`} session={session} status="overdue" />
+              <GlobalAssignmentCard key={`${session.exam.exam_id}_${session.session_id}`} session={session} status="overdue" />
             ))
           ) : <Typography sx={{ p: 2, textAlign: 'center' }}>Không có bài tập nào quá hạn.</Typography>}
         </TabPanel>
@@ -258,7 +248,7 @@ export default function StudentAssignmentPage() {
         <TabPanel value={tabValue} index={2}>
           {assignments.completed.length > 0 ? (
             assignments.completed.map((session) => (
-              <AssignmentCard key={`${session.exam.exam_id}_${session.session_id}`} session={session} status="completed" onView={handleViewResult} />
+              <GlobalAssignmentCard key={`${session.exam.exam_id}_${session.session_id}`} session={session} status="completed" onView={handleViewResult} />
             ))
           ) : <Typography sx={{ p: 2, textAlign: 'center' }}>Bạn chưa hoàn thành bài tập nào.</Typography>}
         </TabPanel>

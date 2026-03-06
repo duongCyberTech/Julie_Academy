@@ -142,6 +142,17 @@ export class ExamSessionController {
             throw new InternalServerErrorException(error.message)
         }
     }
+    @Get('student/all')
+    getAllSessionsForStudent(
+        @Request() req
+    ){
+        try {
+            const userId = req.user.userId;
+            return this.examService.getAllExamSessionsForStudent(userId);
+        } catch (error) {
+            throw new InternalServerErrorException(error.message);
+        }
+    }
 }
 
 @Controller('exam_taken')
@@ -221,4 +232,5 @@ export class ExamTakenController {
             return new ExceptionResponse().returnError(error);
         }
     }
+    
 }

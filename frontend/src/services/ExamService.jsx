@@ -147,3 +147,72 @@ export const getSessionsByClass = async (classId, token) => {
         throw error;
     }
 };
+
+// 1. Lấy danh sách bài đang làm dở
+export const getPendingExamTakens = async (classId, token) => {
+    try {
+        const response = await apiClient.get(`/exam_taken/pending/${classId}`, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching pending exams for class ${classId}:`, error.response?.data || error.message);
+        throw error;
+    }
+};
+
+// 2. Lấy danh sách bài đã nộp (đã hoàn thành)
+export const getCompletedExamTakens = async (classId, token) => {
+    try {
+        const response = await apiClient.get(`/exam_taken/completed/${classId}`, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching completed exams for class ${classId}:`, error.response?.data || error.message);
+        throw error;
+    }
+};
+
+// 3. Bắt đầu làm bài mới (Lấy đề)
+export const takeExam = async (classId, examId, sessionId, token) => {
+    try {
+        const response = await apiClient.get(`/exam_taken/class/${classId}/${examId}/${sessionId}`, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        console.error(`Error taking exam (Class: ${classId}, Exam: ${examId}):`, error.response?.data || error.message);
+        throw error;
+    }
+};
+
+// 4. Tiếp tục làm bài dở dang
+export const continueTakeExam = async (etId, token) => {
+    try {
+        const response = await apiClient.get(`/exam_taken/continue/${etId}`, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        console.error(`Error continuing exam (ET_ID: ${etId}):`, error.response?.data || error.message);
+        throw error;
+    }
+};
+
+// 5. Nộp bài
+export const submitExam = async (etId, classId, submitAns, isDone, token) => {
+    try {
+        const body = {
+            submitAns: submitAns,
+            isDone: isDone
+        };
+        const response = await apiClient.post(`/exam_taken/${etId}/class/${classId}`, body, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        console.error(`Error submitting exam (ET_ID: ${etId}):`, error.response?.data || error.message);
+        throw error;
+    }
+};
+
+export const getAllAssignmentsForStudent = async (token) => {
+    try {
+        const response = await apiClient.get(`/exam/session/student/all`, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching all student assignments:`, error.response?.data || error.message);
+        throw error;
+    }
+};

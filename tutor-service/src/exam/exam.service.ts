@@ -367,4 +367,59 @@ export class ExamService {
             })
         })
     }
+
+    // Lấy tất cả bài tập từ tất cả các lớp mà học sinh đang học
+    async getAllExamSessionsForStudent(student_id: string) {
+        try {
+            const sessions = await this.prisma.exam_session.findMany({
+                where: {
+                    exam_open_in: {
+                        some: {
+                            class: {
+                                learning: {
+                                    some: { student_uid: student_id }
+                                }
+                            }
+                        }
+                    }
+                },
+                select: {
+                    session_id: true,
+                    limit_taken: true,
+                    startAt: true,
+                    expireAt: true,
+                    exam_type: true,
+                    exam: {
+                        select: {
+                            exam_id: true,
+                            title: true,
+                            duration: true,
+                            total_ques: true,
+                        }
+                    },
+                    exam_open_in: {
+                        select: {
+                            class_id: true,
+                            class: {
+                                select: { classname: true }
+                            }
+                        }
+                    },
+                    examTakens: {
+                        where: { student_uid: student_id },
+                        select: {
+                            et_id: true,
+                            isDone: true,
+                            final_score: true,
+                            doneAt: true
+                        }
+                    }
+                },
+                orderBy: [{ startAt: "asc" }, { expireAt: "asc" }]
+            });
+            return sessions;
+        } catch (error) {
+            throw new InternalServerErrorException(error.message);
+        }
+    }
 }
