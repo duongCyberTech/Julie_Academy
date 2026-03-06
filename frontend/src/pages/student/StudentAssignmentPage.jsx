@@ -93,6 +93,7 @@ const AssignmentCard = ({ session, status, onStart, onContinue, onView }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, color: 'text.secondary' }}>
               <MenuBookIcon fontSize="small" sx={{ mr: 1 }} />
               <Typography variant="body1">Môn: <strong>{exam.category?.subject || 'Toán'}</strong></Typography>
+        
             </Box>
           </Box>
           {status === 'completed' && exam_taken && (
