@@ -292,6 +292,31 @@ export class ExamTakenService {
         })
     }
 
+    async getCompletedExamTakens(student_id: string, class_id: string) {
+        try {
+            return await this.prisma.exam_taken.findMany({
+                where: {
+                    student_uid: student_id,
+                    isDone: true, 
+                    exam_session: {
+                        exam_open_in: {
+                            some: { class_id: class_id } 
+                        }
+                    }
+                },
+                select: {
+                    et_id: true,
+                    exam_id: true,
+                    session_id: true,
+                    final_score: true,
+                    doneAt: true,
+                    isDone: true
+                }
+            });
+        } catch (error) {
+        }
+    }
+
     async calculateScore(tx: Prisma.TransactionClient, answers: SubmitAnswerDto[]) {
         const trueAnswers = await tx.questions.findMany({
             where: {

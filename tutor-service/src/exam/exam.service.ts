@@ -222,7 +222,6 @@ export class ExamService {
 
             return examSessions
         } catch (error) {
-            throw new InternalServerErrorException(error.message)
         }
     }
 

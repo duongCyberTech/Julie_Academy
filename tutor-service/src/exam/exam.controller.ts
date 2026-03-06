@@ -208,4 +208,17 @@ export class ExamTakenController {
             return new ExceptionResponse().returnError(error);
         }
     }
+
+    @Get("completed/:class_id")
+    getCompletedExamTakens(
+        @Param("class_id") class_id: string,
+        @Request() req
+    ){
+        const userId = req.user.userId;
+        try {
+            return this.et_service.getCompletedExamTakens(userId, class_id);
+        } catch (error) {
+            return new ExceptionResponse().returnError(error);
+        }
+    }
 }
