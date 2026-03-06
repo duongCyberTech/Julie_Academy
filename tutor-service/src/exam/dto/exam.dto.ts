@@ -2,6 +2,14 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Transform, Type } from 'class-transformer';
 import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
+export enum ExamSessionStatus {
+    UPCOMING = 'upcoming',
+    OPEN = 'open',
+    EXPIRED = 'expired',
+    PENDING = 'pending',
+    COMPLETED = 'completed'
+}
+
 export class ExamDto {
     @ApiProperty({ example: "Final Math Exam", description: "Exam Title" })
     @IsString()
