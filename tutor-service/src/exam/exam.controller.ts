@@ -6,16 +6,19 @@ import {
     UseGuards,
     ParseIntPipe,
     ParseDatePipe,
-    ParseBoolPipe
+    ParseBoolPipe,
+    DefaultValuePipe,
+    ParseEnumPipe
 } from "@nestjs/common";
 import { Request as Reqst } from "express";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { ExamService } from "./exam.service";
 import { ExamTakenService } from "./exam_taken.service";
-import { ExamDto, ExamSessionDto, ExamTakenDto, SubmitAnswerDto } from "./dto/exam.dto";
+import { ExamDto, ExamSessionDto, ExamSessionStatus, ExamTakenDto, SubmitAnswerDto } from "./dto/exam.dto";
 import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guard/roles.guard";
 import { ExceptionResponse } from "src/exception/Exception.exception";
+import { IsEnum } from "class-validator/types/decorator/typechecker/IsEnum";
 
 @Controller('exam')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -134,21 +137,29 @@ export class ExamSessionController {
 
     @Get('class/:class_id')
     getAllSessionByClass(
-        @Param('class_id') class_id: string
+        @Param('class_id') class_id: string,
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+        @Query('status', new DefaultValuePipe(ExamSessionStatus.OPEN), new ParseEnumPipe(ExamSessionStatus))
+        status: ExamSessionStatus,
     ){
         try {
-            return this.examService.getAllExamSessionByClass(class_id)
+            return this.examService.getAllExamSessionByClass(class_id, page, limit, status)
         } catch (error) {
             throw new InternalServerErrorException(error.message)
         }
     }
     @Get('student/all')
     getAllSessionsForStudent(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+        @Query('status', new DefaultValuePipe(ExamSessionStatus.OPEN), new ParseEnumPipe(ExamSessionStatus))
+        status: ExamSessionStatus,
         @Request() req
     ){
         try {
             const userId = req.user.userId;
-            return this.examService.getAllExamSessionsForStudent(userId);
+            return this.examService.getAllExamSessionsForStudent(userId, page, limit, status);
         } catch (error) {
             throw new InternalServerErrorException(error.message);
         }

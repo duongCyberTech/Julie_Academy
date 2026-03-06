@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuestionService } from '../question/question.service';
-import { ExamDto, ExamSessionDto, ExamTakenDto, SubmitAnswerDto } from './dto/exam.dto';
+import { ExamDto, ExamSessionDto, ExamSessionStatus, ExamTakenDto, SubmitAnswerDto } from './dto/exam.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
@@ -191,10 +191,31 @@ export class ExamService {
         }
     }
 
-    async getAllExamSessionByClass(class_id: string) {
+    async getAllExamSessionByClass(class_id: string, page: number = 1, limit: number = 10, status: ExamSessionStatus = ExamSessionStatus.OPEN) {
         try {
+            const currentDate = new Date();
+            const timeCondition = status === ExamSessionStatus.UPCOMING
+                ? { startAt: { gt: currentDate } }
+                : status === ExamSessionStatus.OPEN
+                    ? { startAt: { lte: currentDate }, expireAt: { gt: currentDate } }
+                    : status === ExamSessionStatus.EXPIRED
+                        ? { expireAt: { lte: currentDate } }
+                        : {};
+
+            const etStatusCondition = status === ExamSessionStatus.PENDING
+                ? { examTakens: { some: { isDone: false } } }
+                : status === ExamSessionStatus.COMPLETED
+                    ? { examTakens: { some: { isDone: true } } }
+                    : {};
+
             const examSessions = await this.prisma.exam_session.findMany({
-                where: {exam_open_in: {some: {class: {class_id}}}},
+                take: limit,
+                skip: (page - 1) * limit,
+                where: {
+                    exam_open_in: {some: {class: {class_id}}},
+                    ...timeCondition,
+                    ...etStatusCondition
+                },
                 select: {
                     session_id: true,
                     limit_taken: true,
@@ -369,10 +390,29 @@ export class ExamService {
     }
 
     // Lấy tất cả bài tập từ tất cả các lớp mà học sinh đang học
-    async getAllExamSessionsForStudent(student_id: string) {
+    async getAllExamSessionsForStudent(student_id: string, page: number = 1, limit: number = 10, status: ExamSessionStatus = ExamSessionStatus.OPEN) {
         try {
+            const currentDate = new Date();
+            const timeCondition = status === ExamSessionStatus.UPCOMING
+                ? { startAt: { gt: currentDate } }
+                : status === ExamSessionStatus.OPEN
+                    ? { startAt: { lte: currentDate }, expireAt: { gt: currentDate } }
+                    : status === ExamSessionStatus.EXPIRED
+                        ? { expireAt: { lte: currentDate } }
+                        : {};
+
+            const etStatusCondition = status === ExamSessionStatus.PENDING
+                ? { examTakens: { some: { isDone: false } } }
+                : status === ExamSessionStatus.COMPLETED
+                    ? { examTakens: { some: { isDone: true } } }
+                    : {};
+
             const sessions = await this.prisma.exam_session.findMany({
+                take: limit,
+                skip: (page - 1) * limit,
                 where: {
+                    ...timeCondition,
+                    ...etStatusCondition,
                     exam_open_in: {
                         some: {
                             class: {
@@ -405,15 +445,20 @@ export class ExamService {
                             }
                         }
                     },
-                    examTakens: {
-                        where: { student_uid: student_id },
-                        select: {
-                            et_id: true,
-                            isDone: true,
-                            final_score: true,
-                            doneAt: true
-                        }
-                    }
+                    ...(status === ExamSessionStatus.PENDING || status === ExamSessionStatus.COMPLETED ?
+                        {examTakens: {
+                            where: { student_uid: student_id },
+                            select: {
+                                et_id: true,
+                                isDone: true,
+                                ...(status === ExamSessionStatus.COMPLETED ? {
+                                    final_score: true,
+                                } : {}),
+                                doneAt: true
+                            }
+                        }} : {}
+                    )
+
                 },
                 orderBy: [{ startAt: "asc" }, { expireAt: "asc" }]
             });
