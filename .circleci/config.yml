@@ -40,3 +40,4 @@ workflows:
               only:
                 - main
                 - staging
+                - backend
