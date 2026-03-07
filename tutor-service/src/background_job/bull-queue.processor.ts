@@ -15,6 +15,28 @@ export class QueueProcessor {
     private notify: NotificationsService
   ) {}
 
+  @Process('exam-taken-timeout')
+  async handleExamTakenTimeout(job: Job) {
+    this.logger.log(`Queue Job ID: ${job.id}`);
+    const {
+      et_id,
+      timeoutAt
+    } = job.data;
+
+    try {
+      await this.prisma.exam_taken.update({
+        where: {et_id},
+        data: {
+          isDone: true,
+          doneAt: new Date()
+        }
+      })
+      this.logger.log(`[EXAM SESSION TIMEOUT] - ${timeoutAt} [LOG] Phiên thi đã được đánh dấu là timeout!`);
+    } catch (error) {
+      this.logger.error(`[EXAM SESSION TIMEOUT] thất bại: ${error.message}`, error.stack);
+    }
+  }
+
   @Process('setup-deadline')
   async handleSetupDeadline(job: Job) {
     this.logger.log(`Queue Job ID: ${job.id}`);
@@ -44,16 +66,17 @@ export class QueueProcessor {
         message,
         type: NotificationType.exam,
         link_primary_id: exam_id,
-        link_partial_id: session_id
+        link_partial_id: `${session_id}`
       }
 
+      this.logger.log(`[THÔNG BÁO] Đang thiết lập thông báo với dữ liệu: ${JSON.stringify(notiData)} cho người nhận: ${receivers.join(", ")}`);
       receivers.forEach(async(r) => {
        await this.notify.createNotification(r, notiData)
       })
 
       this.logger.log(`[THÔNG BÁO] Thông báo đã được thiết lập thành công!`);
     } catch (error) {
-      this.logger.error(`Job X thất bại: ${error.message}`, error.stack);
+      this.logger.error(`[THÔNG BÁO] thất bại: ${error.message}`, error.stack);
     }
   }
 }

@@ -169,6 +169,19 @@ export class BackgroundService {
     })
   }
 
+  @OnEvent('exam_taken.new')
+  async handleSetupExamTimeout(payload: {et_id: string, timeoutAt: Date}) {
+    const {et_id, timeoutAt} = payload
+    try {
+      const currentTime = new Date().getTime()
+      const timeoutTime = timeoutAt.getTime()
+      const delayTime = timeoutTime - currentTime
+      await this.jobQueue.setupExamTakenTimeout({et_id, timeoutAt}, delayTime)
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
   @OnEvent('exam_taken.submit')
   async handleExamSubmission(payload: {
     uid: string,

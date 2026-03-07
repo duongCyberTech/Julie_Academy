@@ -21,7 +21,6 @@
     "db:seed:question": "ts-node prisma/question.seed.ts",
     "db:seed:all": "npm-run-all db:seed:user db:seed:category db:seed:question",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-
     "prisma:migrate:staging": "cross-env NODE_ENV=staging npx prisma migrate dev",
     "prisma:generate:staging": "cross-env NODE_ENV=staging npx prisma generate",
     "db:seed:user:staging": "cross-env NODE_ENV=staging ts-node prisma/user.seed.ts",
@@ -37,6 +36,9 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.970.0",
     "@aws-sdk/s3-request-presigner": "^3.970.0",
+    "@bull-board/api": "^6.20.3",
+    "@bull-board/express": "^6.20.3",
+    "@bull-board/nestjs": "^6.20.3",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/bull": "^11.0.4",
     "@nestjs/common": "^11.1.12",
@@ -58,6 +60,7 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "bull": "^4.16.5",
+    "bullmq": "^5.70.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "cloudinary": "^2.9.0",
