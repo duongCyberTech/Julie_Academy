@@ -66,9 +66,10 @@ export class QueueProcessor {
         message,
         type: NotificationType.exam,
         link_primary_id: exam_id,
-        link_partial_id: session_id
+        link_partial_id: `${session_id}`
       }
 
+      this.logger.log(`[THÔNG BÁO] Đang thiết lập thông báo với dữ liệu: ${JSON.stringify(notiData)} cho người nhận: ${receivers.join(", ")}`);
       receivers.forEach(async(r) => {
        await this.notify.createNotification(r, notiData)
       })
