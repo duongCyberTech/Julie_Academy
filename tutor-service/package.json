@@ -21,6 +21,7 @@
     "db:seed:question": "ts-node prisma/question.seed.ts",
     "db:seed:all": "npm-run-all db:seed:user db:seed:category db:seed:question",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+
     "prisma:migrate:staging": "cross-env NODE_ENV=staging npx prisma migrate dev",
     "prisma:generate:staging": "cross-env NODE_ENV=staging npx prisma generate",
     "db:seed:user:staging": "cross-env NODE_ENV=staging ts-node prisma/user.seed.ts",
@@ -66,6 +67,7 @@
     "cloudinary": "^2.9.0",
     "cors": "^2.8.5",
     "cron": "^4.3.4",
+    "cross-env": "^10.1.0",
     "date-fns": "^4.1.0",
     "googleapis": "^164.1.0",
     "kafkajs": "^2.2.4",
