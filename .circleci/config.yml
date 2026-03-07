@@ -1,19 +1,17 @@
 version: 2.1
 
-# Sử dụng Node orb của CircleCI để quản lý cache và cài đặt nhanh hơn
 orbs:
   node: circleci/node@5.0.0
 
 jobs:
+  # --- JOB 1: CHẠY CI ---
   build-and-test:
     docker:
-      # Chọn phiên bản Node tương ứng với dự án NestJS của bạn
       - image: cimg/node:22.14.0
     working_directory: ~/project/tutor-service
     steps:
       - checkout:
           path: ~/project
-      # Lệnh này tự động cài đặt npm và quản lý cache cho thư mục node_modules
       - node/install-packages:
           pkg-manager: npm
           app-dir: ~/project/tutor-service
@@ -30,14 +28,31 @@ jobs:
           name: Build ứng dụng NestJS
           command: npm run build
 
+  # --- JOB 2: CHẠY CD (DEPLOY) ---
+  deploy-to-render:
+    docker:
+      - image: cimg/base:current # Dùng image base cực nhẹ chỉ để chạy curl
+    steps:
+      - run:
+          name: Trigger Render Deploy
+          # Trong CircleCI, gọi biến môi trường bằng $TÊN_BIẾN thay vì ${{ secrets... }}
+          command: curl -X POST $RENDER_DEPLOY_HOOK
+
 workflows:
-  nest-ci-workflow:
+  nest-ci-cd-workflow:
     jobs:
       - build-and-test:
           filters:
-            # CI sẽ chạy trên mọi nhánh
             branches:
-              only:
+              # CI sẽ chạy trên mọi nhánh để test code
+              only: /.*/ 
+              
+      - deploy-to-render:
+          # Điều kiện 1: Bắt buộc job build-and-test phải Xanh (Pass) mới được chạy
+          requires:
+            - build-and-test
+          # Điều kiện 2: CHỈ kích hoạt deploy khi code nằm trên nhánh main
+          filters:
+            branches:
+              only: 
                 - main
-                - staging
-                - backend
