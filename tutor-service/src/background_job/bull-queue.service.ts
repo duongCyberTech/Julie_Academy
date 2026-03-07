@@ -19,7 +19,8 @@ export class QueueService {
         payload,
         {
           delay: delayInMs,
-          removeOnComplete: true,
+          removeOnComplete: { count: 10 },
+          removeOnFail: { count: 10 },
           attempts: 3,
           backoff: 5000
         }
@@ -41,7 +42,8 @@ export class QueueService {
         payload,
         {
           delay: delayInMs,
-          removeOnComplete: true,
+          removeOnComplete: { count: 10 },
+          removeOnFail: { count: 10 },
           attempts: 3,
           backoff: 5000
         }

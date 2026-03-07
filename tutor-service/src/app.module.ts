@@ -4,6 +4,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from '@nestjs/bull';
+import { BullBoardModule } from "@bull-board/nestjs";
+import { ExpressAdapter } from "@bull-board/express";
+import { BullAdapter } from "@bull-board/api/bullAdapter";
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -37,6 +40,15 @@ require('dotenv').config()
         limit: 50,  
       },
     ]),
+    BullBoardModule.forRoot({
+      route: '/admin/queues',
+      adapter: ExpressAdapter,
+    }),
+    // Đăng ký queue cụ thể vào dashboard
+    BullBoardModule.forFeature({
+      name: 'system-tasks-queue',
+      adapter: BullAdapter, // Hoặc BullAdapter
+    }),
     BullModule.forRoot({
       redis: {
         host: process.env.UPSTASH_REDIS_HOST,
