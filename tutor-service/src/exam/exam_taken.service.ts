@@ -150,6 +150,17 @@ export class ExamTakenService {
                 })
             })
 
+            const expectedEndTime = new Date(new Date().getTime() + testInfo.duration * 60 * 1000)
+
+            const jobPayload = {
+                et_id: takenTime.et_id,
+                timeoutAt: testInfo.exam_type === ExamType.practice 
+                        ? expectedEndTime
+                        : (expectedEndTime < testInfo.expireAt ? expectedEndTime : testInfo.expireAt)
+            }
+
+            this.eventEmitter.emit('exam_taken.new', jobPayload)
+
             return {
                 message: "Taking exam",
                 info: {et_id: takenTime.et_id, ...testInfo},
@@ -159,32 +170,6 @@ export class ExamTakenService {
     }
 
     async getAllPendingExamTaken(student_id: string, class_id: string) {
-        try {
-            const currentTime = new Date()
-            await this.prisma.exam_taken.updateMany({
-                where: {
-                    student_uid: student_id,
-                    isDone: false,
-                    exam_session: {
-                        exam_open_in: {
-                            some: {
-                                class_id,
-                                exam_session: {
-                                    expireAt: {lt: currentTime}
-                                }
-                            }
-                        }
-                    }
-                },
-                data: {
-                    isDone: true,
-                    doneAt: currentTime
-                }
-            })
-        } catch (error) {
-            
-        }
-
         return this.prisma.exam_taken.findMany({
             where: {
                 student_uid: student_id,

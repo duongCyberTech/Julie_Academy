@@ -15,6 +15,28 @@ export class QueueProcessor {
     private notify: NotificationsService
   ) {}
 
+  @Process('exam-taken-timeout')
+  async handleExamTakenTimeout(job: Job) {
+    this.logger.log(`Queue Job ID: ${job.id}`);
+    const {
+      et_id,
+      timeoutAt
+    } = job.data;
+
+    try {
+      await this.prisma.exam_taken.update({
+        where: {et_id},
+        data: {
+          isDone: true,
+          doneAt: new Date()
+        }
+      })
+      this.logger.log(`[EXAM SESSION TIMEOUT] - ${timeoutAt} [LOG] Phiên thi đã được đánh dấu là timeout!`);
+    } catch (error) {
+      this.logger.error(`[EXAM SESSION TIMEOUT] thất bại: ${error.message}`, error.stack);
+    }
+  }
+
   @Process('setup-deadline')
   async handleSetupDeadline(job: Job) {
     this.logger.log(`Queue Job ID: ${job.id}`);
@@ -53,7 +75,7 @@ export class QueueProcessor {
 
       this.logger.log(`[THÔNG BÁO] Thông báo đã được thiết lập thành công!`);
     } catch (error) {
-      this.logger.error(`Job X thất bại: ${error.message}`, error.stack);
+      this.logger.error(`[THÔNG BÁO] thất bại: ${error.message}`, error.stack);
     }
   }
 }
