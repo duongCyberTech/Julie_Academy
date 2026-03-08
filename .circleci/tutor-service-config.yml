@@ -7,6 +7,9 @@ parameters:
   run-tutor-service:
     type: boolean
     default: false
+  run-frontend: # KHAI BÁO THÊM BIẾN CHO FRONTEND
+    type: boolean
+    default: false
 
 jobs:
   # --- JOB 1: CHẠY CI ---
