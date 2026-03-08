@@ -138,9 +138,12 @@ export const updateSession = async (examId, sessionId, sessionData, token) => {
         throw error;
     }
 };
-export const getSessionsByClass = async (classId, token) => {
+export const getSessionsByClass = async (classId, token, params = {}) => { // Thêm params = {}
     try {
-        const response = await apiClient.get(`/exam/session/class/${classId}`, getAuthHeaders(token));
+        const response = await apiClient.get(`/exam/session/class/${classId}`, {
+            params, // Truyền params vào cấu hình axios
+            ...getAuthHeaders(token)
+        });
         return response.data;
     } catch (error) {
         console.error(`Error fetching sessions for class ${classId}:`, error.response?.data || error.message);
@@ -193,10 +196,11 @@ export const continueTakeExam = async (etId, token) => {
 };
 
 // 5. Nộp bài
+// 5. Nộp bài
 export const submitExam = async (etId, classId, submitAns, isDone, token) => {
     try {
         const body = {
-            submitAns: submitAns,
+            submitAns: submitAns, // ĐÂY LÀ CHÌA KHÓA: Tên biến phải khớp 100% với @Body("submitAns") ở Backend
             isDone: isDone
         };
         const response = await apiClient.post(`/exam_taken/${etId}/class/${classId}`, body, getAuthHeaders(token));
@@ -207,9 +211,12 @@ export const submitExam = async (etId, classId, submitAns, isDone, token) => {
     }
 };
 
-export const getAllAssignmentsForStudent = async (token) => {
+export const getAllAssignmentsForStudent = async (token, params = {}) => {
     try {
-        const response = await apiClient.get(`/exam/session/student/all`, getAuthHeaders(token));
+        const response = await apiClient.get(`/exam/session/student/all`, {
+            params, // ĐÃ THÊM PARAMS Ở ĐÂY ĐỂ TRUYỀN LÊN BACKEND
+            ...getAuthHeaders(token)
+        });
         return response.data;
     } catch (error) {
         console.error(`Error fetching all student assignments:`, error.response?.data || error.message);

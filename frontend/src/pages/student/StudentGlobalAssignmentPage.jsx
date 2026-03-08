@@ -1,257 +1,205 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Tabs, Tab, Card, CardContent, CardActions, Button, Grid, Chip, Paper, CircularProgress } from '@mui/material';
+import { Container, Typography, Box, Tabs, Tab, Paper, CircularProgress, Pagination } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { getAllAssignmentsForStudent } from '../../services/ExamService';
+import AssignmentCard from '../../components/AssignmentCard';
 
-// Icons
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AssignmentLateIcon from '@mui/icons-material/AssignmentLate';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import EventBusyIcon from '@mui/icons-material/EventBusy';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import ClassIcon from '@mui/icons-material/Class';
+import UpdateIcon from '@mui/icons-material/Update';
+
+const mergeData = (...arrays) => {
+  const map = new Map();
+  arrays.flat().forEach(item => {
+    map.set(`${item.exam.exam_id}_${item.session_id}`, item);
+  });
+  return Array.from(map.values());
+};
 
 const filterAssignments = (sessionsData) => {
   const now = new Date();
-  const todo = [];
-  const overdue = [];
-  const completed = [];
+  const upcoming = [], todo = [], overdue = [], completed = [];
 
   sessionsData.forEach((session) => {
-    const history = session.examTakens && session.examTakens.length > 0 ? session.examTakens[0] : null;
+    const start = new Date(session.startAt);
+    const expire = new Date(session.expireAt);
+    const examTakens = session.examTakens || [];
+    const limit = session.limit_taken || 1;
+    
+    const pendingHistory = examTakens.find(et => !et.isDone);
+    const completedHistories = examTakens.filter(et => et.isDone);
+    
+    if (pendingHistory) session.pending_et_id = pendingHistory.et_id;
 
-    if (history && history.isDone) {
-      // Đã nộp bài
-      session.exam_taken = history;
-      completed.push(session);
-    } else if (history && !history.isDone) {
-      // Đang làm dở
-      session.pending_et_id = history.et_id;
-      todo.push(session);
+    if (start > now) upcoming.push(session);
+    else if (completedHistories.length > 0 && examTakens.length >= limit) completed.push(session);
+    else if (expire < now) {
+      if (completedHistories.length > 0) completed.push(session);
+      else overdue.push(session);
     } else {
-      // Chưa đụng tới
-      const dueDate = new Date(session.expireAt);
-      if (dueDate < now) {
-        overdue.push(session);
-      } else {
-        todo.push(session);
-      }
+      if (completedHistories.length > 0 && !pendingHistory) completed.push(session);
+      else todo.push(session);
     }
   });
 
-  return { todo, overdue, completed };
+  upcoming.sort((a, b) => new Date(a.startAt) - new Date(b.startAt)); 
+  todo.sort((a, b) => {
+    if (a.pending_et_id && !b.pending_et_id) return -1;
+    if (!a.pending_et_id && b.pending_et_id) return 1;
+    return new Date(a.expireAt) - new Date(b.expireAt);
+  });
+  overdue.sort((a, b) => new Date(b.expireAt) - new Date(a.expireAt));
+  completed.sort((a, b) => {
+      const timeA = a.examTakens?.length > 0 ? new Date(a.examTakens[a.examTakens.length - 1].doneAt) : 0;
+      const timeB = b.examTakens?.length > 0 ? new Date(b.examTakens[b.examTakens.length - 1].doneAt) : 0;
+      return timeB - timeA;
+  });
+
+  return { upcoming, todo, overdue, completed };
 };
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
   return (
-    <div role="tabpanel" hidden={value !== index} id={`tabpanel-${index}`} {...other}>
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    <div role="tabpanel" hidden={value !== index} {...other}>
+      {value === index && (
+        <Box sx={{ pt: 4, pb: 8, backgroundColor: '#fafafa', minHeight: '50vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <Box sx={{ width: '100%', maxWidth: 1100, px: { xs: 2, md: 4 } }}>
+            {children}
+          </Box>
+        </Box>
+      )}
     </div>
   );
 }
 
-const GlobalAssignmentCard = ({ session, status, onStart, onContinue, onView }) => {
-  const { exam, exam_taken, expireAt, pending_et_id, exam_open_in } = session;
-  
-  // Lấy thông tin lớp học từ dữ liệu trả về
-  const classNames = exam_open_in && exam_open_in.length > 0 
-    ? exam_open_in.map(item => item.class.classname).join(', ') 
-    : 'Lớp học không xác định';
-
-  const cardBorderColor = status === 'todo' ? (pending_et_id ? 'warning.main' : 'primary.main') : status === 'overdue' ? 'error.main' : 'divider';
-
-  const formatShortDate = (dateString) => {
-    return new Date(dateString).toLocaleString('vi-VN', {
-      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
-  };
-
-  return (
-    <Card sx={{ mb: 2, border: '1px solid', borderColor: cardBorderColor, opacity: status === 'overdue' ? 0.7 : 1 }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Box>
-            <Typography variant="h5" component="div" gutterBottom sx={{ fontWeight: 600 }}>
-              {exam.title}
-              {pending_et_id && <Chip label="Đang làm dở" size="small" color="warning" sx={{ ml: 2 }} />}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, color: 'text.secondary' }}>
-              <ClassIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
-              <Typography variant="body1" sx={{ color: 'primary.main', fontWeight: 500 }}>
-                Lớp: {classNames}
-              </Typography>
-            </Box>
-          </Box>
-          {status === 'completed' && exam_taken && (
-            <Chip
-              label={`Điểm: ${exam_taken.final_score} / ${exam.total_ques}`}
-              color={exam_taken.final_score / exam.total_ques >= 0.5 ? "success" : "error"}
-              sx={{ fontWeight: 600, fontSize: '1rem', ml: 2 }}
-            />
-          )}
-        </Box>
-
-        <Grid container spacing={1} sx={{ mt: 2, color: 'text.secondary' }}>
-          <Grid item xs={12} md={4}>
-            {status === 'completed' ? (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <EventAvailableIcon fontSize="small" sx={{ mr: 1, color: 'success.main' }} />
-                <Typography variant="body2">Đã nộp: {formatShortDate(exam_taken?.doneAt)}</Typography>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <EventBusyIcon fontSize="small" sx={{ mr: 1, color: status === 'overdue' ? 'error.main' : 'warning.main' }} />
-                <Typography variant="body2" sx={{ color: status === 'overdue' ? 'error.main' : 'inherit' }}>
-                  Hạn nộp: {formatShortDate(expireAt)}
-                </Typography>
-              </Box>
-            )}
-          </Grid>
-          <Grid item xs={6} md={4}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <AccessTimeIcon fontSize="small" sx={{ mr: 1 }} />
-              <Typography variant="body2">Thời gian: {exam.duration} phút</Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6} md={4}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <QuestionMarkIcon fontSize="small" sx={{ mr: 1 }} />
-              <Typography variant="body2">Số câu: {exam.total_ques} câu</Typography>
-            </Box>
-          </Grid>
-        </Grid>
-      </CardContent>
-
-      <CardActions sx={{ justifyContent: 'flex-end', p: 2, backgroundColor: 'grey.50' }}>
-        {status === 'todo' && !pending_et_id && (
-          <Button variant="contained" color="primary" onClick={() => onStart(session)}>
-            Làm bài mới
-          </Button>
-        )}
-        {status === 'todo' && pending_et_id && (
-          <Button variant="contained" color="warning" onClick={() => onContinue(pending_et_id)}>
-            Tiếp tục làm
-          </Button>
-        )}
-        {status === 'overdue' && (
-          <Button variant="contained" color="error" disabled>Đã quá hạn</Button>
-        )}
-        {status === 'completed' && (
-          <Button variant="outlined" color="secondary" onClick={() => onView(session)}>
-            Xem kết quả
-          </Button>
-        )}
-      </CardActions>
-    </Card>
-  );
-};
-
 export default function StudentGlobalAssignmentPage() {
-  const [tabValue, setTabValue] = useState(0);
-  const [assignments, setAssignments] = useState({ todo: [], overdue: [], completed: [] });
+  const [tabValue, setTabValue] = useState(1); 
+  const [assignments, setAssignments] = useState({ upcoming: [], todo: [], overdue: [], completed: [] });
   const [loading, setLoading] = useState(true);
+  
+  // STATE CHO PHÂN TRANG
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 5; 
   
   const navigate = useNavigate();
   const token = localStorage.getItem('token'); 
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+      if (!token) { setLoading(false); return; }
       try {
         setLoading(true);
-        const allData = await getAllAssignmentsForStudent(token);
-        const { todo, overdue, completed } = filterAssignments(allData);
-        setAssignments({ todo, overdue, completed });
+        const [open, upcoming, expired] = await Promise.all([
+          getAllAssignmentsForStudent(token, { status: 'open', limit: 100 }),
+          getAllAssignmentsForStudent(token, { status: 'upcoming', limit: 100 }),
+          getAllAssignmentsForStudent(token, { status: 'expired', limit: 100 })
+        ]);
+        
+        const allData = mergeData(open, upcoming, expired);
+        setAssignments(filterAssignments(allData));
       } catch (error) {
-        console.error("Lỗi khi tải dữ liệu bài tập tổng hợp:", error);
+        console.error("Lỗi khi tải dữ liệu bài tập:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [token]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
+    setPage(1);
   };
 
   const handleStartAssignment = (session) => {
-    // Trích xuất classId từ session để truyền đi
     const classId = session.exam_open_in[0]?.class_id;
-    if (classId) {
-      navigate(`/student/assignment/class/${classId}/exam/${session.exam.exam_id}/session/${session.session_id}`);
-    } else {
-      console.error("Không tìm thấy classId cho bài tập này!");
-    }
+    if (classId) navigate(`/student/assignment/class/${classId}/exam/${session.exam.exam_id}/session/${session.session_id}`);
   };
 
-  const handleContinueAssignment = (et_id) => {
-    navigate(`/student/assignment/continue/${et_id}`);
-  };
+  const handleContinueAssignment = (et_id) => navigate(`/student/assignment/continue/${et_id}`);
+  const handleViewResult = (session) => navigate(`/student/assignment/session/${session.session_id}/result`);
 
-  const handleViewResult = (session) => {
-    navigate(`/student/assignment/session/${session.session_id}/result`);
-  };
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress size={50} thickness={4}/></Box>;
 
-  if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
-  }
+  const tabsConfig = [
+    { key: 'upcoming', label: `Sắp tới (${assignments.upcoming.length})`, icon: <UpdateIcon />, data: assignments.upcoming, emptyMsg: 'Chưa có bài tập nào sắp diễn ra.' },
+    { key: 'todo', label: `Cần làm (${assignments.todo.length})`, icon: <AssignmentIcon />, data: assignments.todo, emptyMsg: 'Tuyệt vời! Bạn không có bài tập nào đang tồn đọng.' },
+    { key: 'overdue', label: `Quá hạn (${assignments.overdue.length})`, icon: <AssignmentLateIcon />, data: assignments.overdue, emptyMsg: 'Không có bài tập nào quá hạn.' },
+    { key: 'completed', label: `Hoàn thành (${assignments.completed.length})`, icon: <AssignmentTurnedInIcon />, data: assignments.completed, emptyMsg: 'Bạn chưa hoàn thành bài tập nào.' }
+  ];
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
-        Tổng hợp Bài tập
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Tất cả bài tập từ các lớp bạn đang tham gia đều được tổng hợp tại đây.
-      </Typography>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
+      <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.5px' }}>
+          Tổng hợp Bài tập
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
+          Theo dõi tiến độ học tập và quản lý mọi bài tập được giao từ các lớp học của bạn.
+        </Typography>
+      </Box>
 
-      <Paper elevation={0} variant="outlined" sx={{ border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
-            <Tab icon={<AssignmentIcon />} iconPosition="start" label={`Cần làm (${assignments.todo.length})`} />
-            <Tab icon={<AssignmentLateIcon />} iconPosition="start" label={`Quá hạn (${assignments.overdue.length})`} />
-            <Tab icon={<AssignmentTurnedInIcon />} iconPosition="start" label={`Đã hoàn thành (${assignments.completed.length})`} />
+      <Paper elevation={0} sx={{ borderRadius: 4, overflow: 'hidden', border: '1px solid', borderColor: 'grey.200', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.02)' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#fff' }}>
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange} 
+            centered
+            textColor="primary"
+            indicatorColor="primary"
+            sx={{
+              '& .MuiTabs-flexContainer': { justifyContent: 'center', flexWrap: 'wrap' },
+              '& .MuiTab-root': { py: 2.5, px: 3, fontWeight: 600, fontSize: '0.95rem', textTransform: 'none' }
+            }}
+          >
+            {tabsConfig.map((tab) => (
+              <Tab key={tab.key} icon={tab.icon} iconPosition="start" label={tab.label} />
+            ))}
           </Tabs>
         </Box>
 
-        <TabPanel value={tabValue} index={0}>
-          {assignments.todo.length > 0 ? (
-            assignments.todo.map((session) => (
-              <GlobalAssignmentCard 
-                key={`${session.exam.exam_id}_${session.session_id}`} 
-                session={session} 
-                status="todo" 
-                onStart={handleStartAssignment} 
-                onContinue={handleContinueAssignment}
-              />
-            ))
-          ) : <Typography sx={{ p: 2, textAlign: 'center' }}>Tuyệt vời! Bạn không có bài tập nào đang tồn đọng.</Typography>}
-        </TabPanel>
+        {tabsConfig.map((tab, index) => {
+  
+          const totalPages = Math.ceil(tab.data.length / ITEMS_PER_PAGE);
+          const currentData = tab.data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-        <TabPanel value={tabValue} index={1}>
-          {assignments.overdue.length > 0 ? (
-            assignments.overdue.map((session) => (
-              <GlobalAssignmentCard key={`${session.exam.exam_id}_${session.session_id}`} session={session} status="overdue" />
-            ))
-          ) : <Typography sx={{ p: 2, textAlign: 'center' }}>Không có bài tập nào quá hạn.</Typography>}
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={2}>
-          {assignments.completed.length > 0 ? (
-            assignments.completed.map((session) => (
-              <GlobalAssignmentCard key={`${session.exam.exam_id}_${session.session_id}`} session={session} status="completed" onView={handleViewResult} />
-            ))
-          ) : <Typography sx={{ p: 2, textAlign: 'center' }}>Bạn chưa hoàn thành bài tập nào.</Typography>}
-        </TabPanel>
+          return (
+            <TabPanel key={tab.key} value={tabValue} index={index}>
+              {currentData.length > 0 ? (
+                <>
+                  {/* Hiển thị danh sách thẻ bài tập của TRANG HIỆN TẠI */}
+                  {currentData.map(session => (
+                    <AssignmentCard 
+                      key={`${session.exam.exam_id}_${session.session_id}`} 
+                      session={session} status={tab.key} isGlobal={true}
+                      onStart={handleStartAssignment} onContinue={handleContinueAssignment} onView={handleViewResult}
+                    />
+                  ))}
+                  
+                  {/* THANH PHÂN TRANG (Chỉ hiện khi có nhiều hơn 1 trang) */}
+                  {totalPages > 1 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                      <Pagination 
+                        count={totalPages} 
+                        page={page} 
+                        onChange={(event, value) => setPage(value)} 
+                        color="primary" 
+                        size="large"
+                      />
+                    </Box>
+                  )}
+                </>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 8 }}>
+                  <Box component="img" src="https://cdn-icons-png.flaticon.com/512/7486/7486831.png" alt="Empty State" sx={{ width: 120, opacity: 0.3, mb: 3 }} />
+                  <Typography variant="h6" color="text.secondary" fontWeight={500}>{tab.emptyMsg}</Typography>
+                </Box>
+              )}
+            </TabPanel>
+          );
+        })}
       </Paper>
     </Container>
   );

@@ -1,839 +1,402 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Container,
-  Typography,
-  Box,
-  Button,
-  RadioGroup,
-  Radio,
-  Checkbox,
-  FormGroup,
-  FormControlLabel,
-  LinearProgress,
-  Stepper,
-  Step,
-  StepButton,
-  Alert,
-  Paper,
-  Card,
-  CardContent,
+  Container, Typography, Box, Button, RadioGroup, Radio, Checkbox,
+  FormGroup, FormControlLabel, CircularProgress, Paper, Divider, 
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Chip
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CloseIcon from '@mui/icons-material/Close';
-import ReplayIcon from '@mui/icons-material/Replay';
+import SendIcon from '@mui/icons-material/Send';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 
-// Import Katex
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
+import DOMPurify from 'dompurify'; 
 
 import AppSnackbar from '../../components/SnackBar';
+import { takeExam, continueTakeExam, submitExam } from '../../services/ExamService';
 
-const PRACTICE_ID_1 = 'cd-c1-s1';
-const ASSIGNMENT_ID_1 = 'session_1';
-const ASSIGNMENT_ID_4 = 'session_4';
+const HtmlContentRenderer = ({ htmlContent }) => {
+  const containerRef = useRef(null);
+  const cleanHtml = DOMPurify.sanitize(htmlContent || '', { ADD_TAGS: ['span'], ADD_ATTR: ['class', 'data-value'] });
 
-const mockQuestionDatabase = [
-  {
-    questionId: 'q1',
-    content: 'Phương trình $(x - 5)(3x + 9) = 0$ có tập nghiệm là:',
-    explanation:
-      'Để giải phương trình tích $(ax+b)(cx+d)=0$, ta giải $ax+b=0$ và $cx+d=0$. Nghiệm là tập hợp các giá trị tìm được.',
-    level: 'EASY',
-    type: 'SINGLE_CHOICE',
-    assignTo: [PRACTICE_ID_1, ASSIGNMENT_ID_1],
-    answers: [
-      { answerId: 'q1a1', content: '$S = \\{5\\}$', is_correct: false, explanation: 'Chỉ có nghiệm $x=5$, thiếu $x=-3$.' },
-      { answerId: 'q1a2', content: '$S = \\{-3\\}$', is_correct: false, explanation: 'Chỉ có nghiệm $x=-3$, thiếu $x=5$.' },
-      {
-        answerId: 'q1a3',
-        content: '$S = \\{5; -3\\}$',
-        is_correct: true,
-        explanation:
-          'Giải $x-5=0 \\implies x=5$. Giải $3x+9=0 \\implies 3x=-9 \\implies x=-3$.',
-      },
-      { answerId: 'q1a4', content: '$S = \\{-5; 3\\}$', is_correct: false, explanation: 'Sai dấu các nghiệm.' },
-    ],
-  },
-  {
-    questionId: 'q2',
-    content:
-      'Điều kiện xác định của phương trình $\\frac{2}{5x-3} = 1 + \\frac{1}{x+2}$ là gì?',
-    explanation:
-      'Điều kiện xác định của phương trình chứa ẩn ở mẫu là điều kiện để tất cả các mẫu thức khác 0.',
-    level: 'EASY',
-    type: 'SINGLE_CHOICE',
-    assignTo: [PRACTICE_ID_1, ASSIGNMENT_ID_1],
-    answers: [
-      {
-        answerId: 'q2a1',
-        content: '$x \\ne \\frac{3}{5}$',
-        is_correct: false,
-        explanation: 'Thiếu điều kiện cho mẫu $x+2$.',
-      },
-      {
-        answerId: 'q2a2',
-        content: '$x \\ne -2$',
-        is_correct: false,
-        explanation: 'Thiếu điều kiện cho mẫu $5x-3$.',
-      },
-      {
-        answerId: 'q2a3',
-        content: '$x \\ne \\frac{3}{5}$ và $x \\ne -2$',
-        is_correct: true,
-        explanation:
-          'Mẫu $5x-3 \\ne 0 \\implies x \\ne 3/5$. Mẫu $x+2 \\ne 0 \\implies x \\ne -2$.',
-      },
-      {
-        answerId: 'q2a4',
-        content: '$x \\ne 0$',
-        is_correct: false,
-        explanation: 'Mẫu số không phải là x. Cần kiểm tra tất cả các mẫu số.',
-      },
-    ],
-  },
-  {
-    questionId: 'q3',
-    content: 'Phương trình nào sau đây có thể quy về phương trình bậc nhất một ẩn?',
-    explanation:
-      'Phương trình bậc nhất một ẩn có dạng $ax+b=0$ ($a \\ne 0$). Một số phương trình có thể biến đổi về dạng này.',
-    level: 'EASY',
-    type: 'SINGLE_CHOICE',
-    assignTo: [PRACTICE_ID_1, ASSIGNMENT_ID_1],
-    answers: [
-      {
-        answerId: 'q3a1',
-        content: '$x^2 - 1 = 0$',
-        is_correct: false,
-        explanation: 'Đây là phương trình bậc hai, không thể quy về bậc nhất.',
-      },
-      {
-        answerId: 'q3a2',
-        content: '$\\frac{1}{x} = 5$',
-        is_correct: true,
-        explanation:
-          'ĐKXĐ $x \\ne 0$. Quy đồng: $1 = 5x \\implies 5x - 1 = 0$, là phương trình bậc nhất.',
-      },
-      {
-        answerId: 'q3a3',
-        content: '$x^3 = 8$',
-        is_correct: false,
-        explanation: 'Đây là phương trình bậc ba.',
-      },
-      {
-        answerId: 'q3a4',
-        content: '$0x = 0$',
-        is_correct: false,
-        explanation: 'Đây là phương trình có vô số nghiệm, không phải bậc nhất ($a=0$).',
-      },
-    ],
-  },
-  {
-    questionId: 'q4',
-    content: 'Tìm tập nghiệm của phương trình $4x^2 - 16 = 5(x + 2)$.',
-    explanation:
-      'Phân tích vế trái thành $4(x-2)(x+2)$, chuyển vế và đặt nhân tử chung $(x+2)$ để đưa về phương trình tích.',
-    level: 'MEDIUM',
-    type: 'SINGLE_CHOICE',
-    assignTo: [PRACTICE_ID_1, ASSIGNMENT_ID_1],
-    answers: [
-      {
-        answerId: 'q4a1',
-        content: '$S = \\{2; -\\frac{13}{4}\\}$',
-        is_correct: false,
-        explanation: 'Nghiệm $x=2$ sai. Kết quả $4x-13=0$.',
-      },
-      {
-        answerId: 'q4a2',
-        content: '$S = \\{-2; \\frac{13}{4}\\}$',
-        is_correct: true,
-        explanation:
-          '$4(x-2)(x+2) - 5(x+2) = 0 \\implies (x+2)[4(x-2)-5] = 0 \\implies (x+2)(4x-8-5)=0 \\implies (x+2)(4x-13)=0$. Vậy $x=-2$ hoặc $x=13/4$.',
-      },
-      {
-        answerId: 'q4a3',
-        content: '$S = \\{-2\\}$',
-        is_correct: false,
-        explanation: 'Thiếu nghiệm $x=13/4$.',
-      },
-      {
-        answerId: 'q4a4',
-        content: '$S = \\{\\frac{13}{4}\\}$',
-        is_correct: false,
-        explanation: 'Thiếu nghiệm $x=-2$.',
-      },
-    ],
-  },
-  {
-    questionId: 'q5',
-    content: 'Giải phương trình $\\frac{x^2 - 6}{x} = x + \\frac{3}{2}$.',
-    explanation:
-      'Tìm ĐKXĐ, quy đồng khử mẫu, giải phương trình hệ quả, sau đó kiểm tra nghiệm với ĐKXĐ.',
-    level: 'MEDIUM',
-    type: 'SINGLE_CHOICE',
-    assignTo: [PRACTICE_ID_1, ASSIGNMENT_ID_1],
-    answers: [
-      {
-        answerId: 'q5a1',
-        content: '$x = 4$',
-        is_correct: false,
-        explanation: 'Kết quả tính toán sai. $3x=-12$ chứ không phải $3x=12$.',
-      },
-      {
-        answerId: 'q5a2',
-        content: '$x = -4$',
-        is_correct: true,
-        explanation:
-          'ĐKXĐ: $x \\ne 0$. Quy đồng mẫu chung là $2x$. Khử mẫu: $2(x^2 - 6) = 2x(x) + x(3) \\implies 2x^2 - 12 = 2x^2 + 3x \\implies -12 = 3x \\implies x = -4$. Nghiệm $x=-4$ thỏa mãn ĐKXĐ.',
-      },
-      {
-        answerId: 'q5a3',
-        content: 'Phương trình vô nghiệm',
-        is_correct: false,
-        explanation: 'Phương trình có nghiệm $x=-4$ thỏa mãn ĐKXĐ.',
-      },
-      {
-        answerId: 'q5a4',
-        content: '$x = 0$',
-        is_correct: false,
-        explanation: 'Nghiệm này vi phạm ĐKXĐ.',
-      },
-    ],
-  },
-  {
-    questionId: 'q6',
-    content: 'Giải phương trình $\\frac{4}{x(x-1)} + \\frac{3}{x} = \\frac{4}{x-1}$.',
-    explanation:
-      'Tìm ĐKXĐ, quy đồng mẫu thức rồi khử mẫu, giải phương trình hệ quả và đối chiếu với ĐKXĐ.',
-    level: 'MEDIUM',
-    type: 'SINGLE_CHOICE',
-    assignTo: [PRACTICE_ID_1, ASSIGNMENT_ID_1],
-    answers: [
-      {
-        answerId: 'q6a1',
-        content: '$x = 1$',
-        is_correct: false,
-        explanation: 'Nghiệm này vi phạm điều kiện xác định ($x \\ne 1$).',
-      },
-      {
-        answerId: 'q6a2',
-        content: '$x = 0$',
-        is_correct: false,
-        explanation: 'Nghiệm này vi phạm điều kiện xác định ($x \\ne 0$).',
-      },
-      {
-        answerId: 'q6a3',
-        content: 'Phương trình có nghiệm $x=1$',
-        is_correct: false,
-        explanation: 'Nghiệm $x=1$ không thỏa mãn ĐKXĐ.',
-      },
-      {
-        answerId: 'q6a4',
-        content: 'Phương trình vô nghiệm',
-        is_correct: true,
-        explanation:
-          'ĐKXĐ: $x \\ne 0$ và $x \\ne 1$. Quy đồng và khử mẫu: $4 + 3(x-1) = 4x \\implies 4 + 3x - 3 = 4x \\implies 3x + 1 = 4x \\implies x = 1$. Tuy nhiên, $x=1$ không thỏa mãn ĐKXĐ nên phương trình vô nghiệm.',
-      },
-    ],
-  },
-  {
-    questionId: 'q7_multi',
-    content:
-      'Phương trình $x^2 - 4 + (x+2)(2x-1) = 0$ tương đương với phương trình nào sau đây? (Chọn các đáp án đúng)',
-    explanation:
-      'Phân tích $x^2-4$ thành $(x-2)(x+2)$, sau đó đặt nhân tử chung $(x+2)$ để đưa về phương trình tích.',
-    level: 'MEDIUM',
-    type: 'MULTIPLE_CHOICE',
-    assignTo: [PRACTICE_ID_1, ASSIGNMENT_ID_1],
-    answers: [
-      {
-        answerId: 'q7a1',
-        content: '$(x+2)(3x-3) = 0$',
-        is_correct: true,
-        explanation:
-          'PT $\\iff (x-2)(x+2) + (x+2)(2x-1) = 0 \\iff (x+2)[(x-2)+(2x-1)]=0 \\iff (x+2)(3x-3)=0$. Đây là dạng tương đương.',
-      },
-      {
-        answerId: 'q7a2',
-        content: '$3(x+2)(x-1) = 0$',
-        is_correct: true,
-        explanation:
-          'Từ $(x+2)(3x-3)=0$, đặt nhân tử chung 3: $3(x+2)(x-1)=0$. Đây cũng là dạng tương đương.',
-      },
-      {
-        answerId: 'q7a3',
-        content: '$3x^2 + 3x - 6 = 0$',
-        is_correct: true,
-        explanation:
-          'Khai triển $(x+2)(3x-3) = 3x^2 - 3x + 6x - 6 = 3x^2 + 3x - 6$. Đây cũng là dạng tương đương.',
-      },
-      {
-        answerId: 'q7a4',
-        content: '$(x+2)(x-3) = 0$',
-        is_correct: false,
-        explanation: 'Sai khi cộng các hạng tử trong ngoặc vuông: $(x-2) + (2x-1) = 3x - 3$.',
-      },
-    ],
-  },
-  {
-    questionId: 'q8',
-    content:
-      'Một mảnh đất hình chữ nhật có chu vi 52m. Làm vườn rau hình chữ nhật bên trong, diện tích 112 $m^2$, lối đi xung quanh rộng 1m. Tính chiều dài mảnh đất ban đầu.',
-    explanation:
-      'Gọi chiều dài và chiều rộng mảnh đất là $L, W$. Ta có $2(L+W)=52$. Kích thước vườn rau là $(L-2), (W-2)$. Lập phương trình diện tích vườn rau $(L-2)(W-2)=112$. Giải hệ phương trình này.',
-    level: 'HARD',
-    type: 'SINGLE_CHOICE',
-    assignTo: [PRACTICE_ID_1, ASSIGNMENT_ID_1],
-    answers: [
-      {
-        answerId: 'q8a1',
-        content: '16 m',
-        is_correct: true,
-        explanation:
-          'Từ chu vi, $L+W=26 \\implies W=26-L$. Thay vào PT diện tích vườn: $(L-2)( (26-L)-2 ) = 112 \\implies (L-2)(24-L) = 112 \\implies 24L - L^2 - 48 + 2L = 112 \\implies -L^2 + 26L - 160 = 0 \\implies L^2 - 26L + 160 = 0$. Nghiệm $L=16$ hoặc $L=10$. Chiều dài phải lớn hơn chiều rộng, nên $L=16$m.',
-      },
-      {
-        answerId: 'q8a2',
-        content: '10 m',
-        is_correct: false,
-        explanation: 'Đây là chiều rộng mảnh đất ($W$). Yêu cầu tính chiều dài ($L$).',
-      },
-      {
-        answerId: 'q8a3',
-        content: '14 m',
-        is_correct: false,
-        explanation: 'Chiều dài vườn rau là $16-2=14$m. Không phải chiều dài mảnh đất ban đầu.',
-      },
-      {
-        answerId: 'q8a4',
-        content: '8 m',
-        is_correct: false,
-        explanation: 'Chiều rộng vườn rau là $10-2=8$m. Không phải chiều dài mảnh đất ban đầu.',
-      },
-    ],
-  },
-  {
-    questionId: 'q9',
-    content:
-      'Hoa dự định mua một số áo đồng giá hết 600 nghìn. Cửa hàng giảm 30 nghìn/chiếc nên Hoa mua được gấp 1.25 lần số lượng dự định. Tính giá tiền mỗi chiếc áo Hoa đã mua (giá sau giảm).',
-    explanation:
-      'Gọi giá dự định là $x$ (nghìn đồng/chiếc), $x>30$. Lập phương trình dựa trên mối quan hệ về số lượng mua được trước và sau khi giảm giá.',
-    level: 'HARD',
-    type: 'SINGLE_CHOICE',
-    assignTo: [PRACTICE_ID_1, ASSIGNMENT_ID_1],
-    answers: [
-      {
-        answerId: 'q9a1',
-        content: '150 nghìn đồng',
-        is_correct: false,
-        explanation: 'Đây là giá dự định ($x$). Giá đã mua là $x-30$.',
-      },
-      {
-        answerId: 'q9a2',
-        content: '120 nghìn đồng',
-        is_correct: true,
-        explanation:
-          'Giá dự định ($x$) là 150 nghìn. Giá đã mua (sau giảm) là $150 - 30 = 120$ nghìn.',
-      },
-      {
-        answerId: 'q9a3',
-        content: '100 nghìn đồng',
-        is_correct: false,
-        explanation: 'Tính toán sai.',
-      },
-      {
-        answerId: 'q9a4',
-        content: '180 nghìn đồng',
-        is_correct: false,
-        explanation: 'Tính toán sai.',
-      },
-    ],
-  },
-  // --- 3 CÂU HỎI (Dùng cho Assignment 'session_4') ---
-  {
-    questionId: 'q10',
-    content: 'Câu hỏi 1 (cho Bài tập 2): $1+1 = ?$ (ID: session_4)',
-    level: 'EASY',
-    type: 'SINGLE_CHOICE',
-    assignTo: [ASSIGNMENT_ID_4],
-    explanation: 'Đây là phép cộng cơ bản.',
-    answers: [
-      { answerId: 'q10a1', content: '$2$', is_correct: true, explanation: '1 + 1 = 2.' },
-      { answerId: 'q10a2', content: '$3$', is_correct: false, explanation: 'Sai, 1 + 1 phải bằng 2.' },
-    ],
-  },
-  {
-    questionId: 'q11',
-    content: 'Câu hỏi 2 (cho Bài tập 2): $10-5 = ?$ (ID: session_4)',
-    level: 'EASY',
-    type: 'SINGLE_CHOICE',
-    assignTo: [ASSIGNMENT_ID_4],
-    explanation: 'Đây là phép trừ cơ bản.',
-    answers: [
-      { answerId: 'q11a1', content: '$5$', is_correct: true, explanation: '10 - 5 = 5.' },
-      { answerId: 'q11a2', content: '$4$', is_correct: false, explanation: 'Sai, 10 - 5 phải bằng 5.' },
-    ],
-  },
-  {
-    questionId: 'q12',
-    content: 'Câu hỏi 3 (cho Bài tập 2): $2 \\times 3 = ?$ (ID: session_4)',
-    level: 'EASY',
-    type: 'SINGLE_CHOICE',
-    assignTo: [ASSIGNMENT_ID_4],
-    explanation: 'Đây là phép nhân cơ bản.',
-    answers: [
-      { answerId: 'q12a1', content: '$6$', is_correct: true, explanation: '2 x 3 = 6.' },
-      { answerId: 'q12a2', content: '$5$', is_correct: false, explanation: 'Sai, 2 x 3 phải bằng 6.' },
-    ],
-  },
-];
+  useEffect(() => {
+      if (containerRef.current) {
+          const formulaElements = containerRef.current.querySelectorAll(".ql-formula");
+          formulaElements.forEach(element => {
+              const latex = element.getAttribute('data-value') || element.textContent; 
+              if (latex) {
+                  try { katex.render(latex, element, { throwOnError: false, displayMode: false }); } 
+                  catch (e) { element.textContent = `[Lỗi LaTeX: ${latex}]`; }
+              }
+          });
+      }
+  }, [cleanHtml]); 
 
-// Component để hiển thị công thức LaTeX
-const LatexRenderer = ({ content }) => {
-  const renderMath = (text) => {
-    if (!text) return null;
-    try {
-      const parts = text.split(/(\$.*?\S\$)/g);
-      return parts.map((part, index) => {
-        if (part.startsWith('$') && part.endsWith('$')) {
-          const latex = part.substring(1, part.length - 1);
-          try {
-            const html = katex.renderToString(latex, {
-              throwOnError: false,
-              displayMode: false,
-            });
-            return <span key={index} dangerouslySetInnerHTML={{ __html: html }} />;
-          } catch (e) {
-            return <span key={index}>{part}</span>;
-          }
-        }
-        return <span key={index}>{part}</span>;
-      });
-    } catch (e) {
-      return <span>{text}</span>;
-    }
-  };
-
-  return <>{renderMath(content)}</>;
+  return <Box ref={containerRef} dangerouslySetInnerHTML={{ __html: cleanHtml }} sx={{ '& p': { m: 0, p: 0 }, width: '100%', overflowX: 'auto', wordBreak: 'break-word' }} />;
 };
 
-// Helper để tạo tiền tố A, B, C, D...
 const getAnswerPrefix = (index) => String.fromCharCode(65 + index); 
 
-// Hàm kiểm tra đúng/sai (dùng cho Stepper và hiển thị lời giải)
-const isQuestionCorrect = (q, selectedAnswers) => {
-  const correctAnswers = q.answers
-    .filter((a) => a.is_correct)
-    .map((a) => a.answerId);
-  const userAnswers = selectedAnswers[q.questionId];
-
-  if (q.type === 'SINGLE_CHOICE') {
-    return userAnswers === correctAnswers[0];
-  } else if (q.type === 'MULTIPLE_CHOICE') {
-    // Nếu không chọn gì (bỏ qua) thì không tính đúng
-    if (!userAnswers || userAnswers.length === 0) return false; 
-      
-    return (
-      userAnswers.length === correctAnswers.length &&
-      userAnswers.every((id) => correctAnswers.includes(id))
-    );
-  }
-  return false;
-};
-
-
 export default function StudentAssignmentSessionPage() {
-  const { sessionId } = useParams();
+  const { classId, examId, sessionId, etId } = useParams(); 
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
-  const [questions, setQuestions] = useState([]);
-  const [activeStep, setActiveStep] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
   const [isLoading, setIsLoading] = useState(true);
-  const [isFinished, setIsFinished] = useState(false);
-  const [score, setScore] = useState(null);
-
-  // Ở trang này, isPracticeMode luôn là false
-  const isPracticeMode = false;
-
-  const [snackbarState, setSnackbarState] = useState({
-    open: false,
-    message: '',
-    severity: 'info',
-  });
-
-  // 1. Tải câu hỏi khi trang được mở
-  useEffect(() => {
-    setIsLoading(true);
-
-    setTimeout(() => {
-      // Lọc câu hỏi CHỈ dành cho Assignment 
-      const fetchedQuestions = mockQuestionDatabase.filter(
-        (q) => q.assignTo && q.assignTo.includes(sessionId) && (q.assignTo.includes(ASSIGNMENT_ID_1) || q.assignTo.includes(ASSIGNMENT_ID_4))
-      );
-
-      setQuestions(fetchedQuestions);
-      setIsLoading(false);
-      setIsFinished(false);
-      setScore(null);
-      setActiveStep(0);
-      setSelectedAnswers({});
-    }, 500);
-  }, [sessionId]);
-
-  const currentQuestion = questions[activeStep];
-  const currentQId = currentQuestion?.questionId;
-
-
-  // 2. Xử lý khi chọn đáp án
-  const handleAnswerChange = (questionId, answerId, isMultiChoice) => {
-    // Chỉ cho phép thay đổi khi chưa nộp bài
-    if (isFinished) {
-      return;
-    }
-
-    setSelectedAnswers((prev) => {
-      const newAnswers = { ...prev };
-
-      if (isMultiChoice) {
-        const currentSelections = prev[questionId] || [];
-        if (currentSelections.includes(answerId)) {
-          newAnswers[questionId] = currentSelections.filter((id) => id !== answerId);
-        } else {
-          newAnswers[questionId] = [...currentSelections, answerId];
-        }
-      } else {
-        newAnswers[questionId] = answerId;
-      }
-      return newAnswers;
-    });
-  };
-
-  // 3. Điều hướng
-  const handleStepClick = (step) => {
-    // Cho phép chuyển step bất cứ lúc nào trong Bài tập
-    setActiveStep(step);
-  };
-
-  const handleNext = () => {
-    setActiveStep((prev) => Math.min(prev + 1, questions.length - 1));
-  };
-
-  const handleBack = () => {
-    setActiveStep((prev) => Math.max(prev - 1, 0));
-  };
-
-  // 4. Các hàm SnackBar
-  const showSnackBar = (message, severity) => {
-    setSnackbarState({ open: true, message, severity });
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [examData, setExamData] = useState(null);
+  const [examTakenId, setExamTakenId] = useState(etId || null);
+  const [questions, setQuestions] = useState([]);
   
-  const handleCloseSnackbar = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
+  const [activeStep, setActiveStep] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState({}); 
+  
+  const [timeTracker, setTimeTracker] = useState({}); 
+  const currentStartTime = useRef(Date.now());
+
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [openSubmitConfirm, setOpenSubmitConfirm] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
+  const getActualClassId = () => {
+    if (classId) return classId;
+    if (examTakenId) {
+      const savedClassId = localStorage.getItem(`exam_class_${examTakenId}`);
+      if (savedClassId) return savedClassId;
     }
-    setSnackbarState((prev) => ({ ...prev, open: false }));
+    return examData?.class_id || examData?.exam_open_in?.[0]?.class_id || null;
   };
 
-  // 5. Xử lý Nộp bài và CHUYỂN HƯỚNG (ĐÃ SỬA)
-  const handleSubmit = () => {
-    let correctCount = 0;
-    const totalQuestions = questions.length;
-    let totalSkipped = 0;
-    
-    // Tạo mảng chi tiết kết quả cho từng câu hỏi
-    const detailedResults = questions.map((q) => {
-      const isCorrect = isQuestionCorrect(q, selectedAnswers);
-      const userAnswers = selectedAnswers[q.questionId] || [];
-      const hasAnswered = userAnswers.length > 0;
-      
-      if (isCorrect) {
-        correctCount++;
-      } else if (!hasAnswered) {
-        totalSkipped++;
+  // FETCH DỮ LIỆU ĐỈNH CAO: Tự động Redirect để chống lỗi F5
+  useEffect(() => {
+    const fetchExamData = async () => {
+      try {
+        setIsLoading(true);
+
+        // LUỒNG 1: Bắt đầu làm bài mới
+        if (classId && examId && sessionId && !etId) {
+            const res = await takeExam(classId, examId, sessionId, token);
+            const newEtId = res.info?.et_id || res.et_id;
+            
+            if (newEtId) {
+                localStorage.setItem(`exam_class_${newEtId}`, classId);
+                // BẮT BUỘC ĐỔI URL VÀ RERENDER NGAY LẬP TỨC
+                navigate(`/student/assignment/continue/${newEtId}`, { replace: true });
+                return; // Dừng lại ở đây để React tự load lại component theo luồng 2
+            }
+        }
+
+        // LUỒNG 2: Tiếp tục làm bài / F5
+        if (etId) {
+            const responseData = await continueTakeExam(etId, token);
+            const coreData = responseData.data || responseData;
+            
+            setExamTakenId(etId);
+            setExamData(coreData);
+            
+            // Xử lý cấu trúc lồng nhau của Backend
+            const rawQuestions = coreData.questions || [];
+            const questionsList = rawQuestions.map(item => {
+                if (item.question) return { ...item.question, answer_set: item.answer_set };
+                return item;
+            });
+            setQuestions(questionsList);
+
+            // Phục hồi đáp án
+            if (questionsList.length > 0) {
+                const restoredAnswers = {};
+                const restoredTime = {};
+                const localDraft = JSON.parse(localStorage.getItem(`exam_draft_${etId}`)) || {};
+
+                questionsList.forEach((q, index) => {
+                    if (!q.ques_id) return;
+                    let savedAnswers = [];
+                    if (q.answer_set && Array.isArray(q.answer_set) && q.answer_set.length > 0) {
+                        savedAnswers = q.answer_set;
+                    } else if (typeof q.answer_set === 'string') {
+                        try { savedAnswers = JSON.parse(q.answer_set); } catch(e){}
+                    } else if (localDraft[q.ques_id]) {
+                        savedAnswers = localDraft[q.ques_id];
+                    }
+
+                    if (savedAnswers.length > 0) restoredAnswers[q.ques_id] = savedAnswers;
+                    restoredTime[q.ques_id] = { firstResponse: 0, totalSpent: 0, index: index };
+                });
+                setSelectedAnswers(restoredAnswers);
+                setTimeTracker(restoredTime);
+            }
+
+            // Đồng bộ thời gian cực chuẩn từ Backend
+            let expireTime;
+            const dbExpire = coreData.exam_session?.expireAt || coreData.expireAt; 
+            if (dbExpire) {
+                expireTime = new Date(dbExpire).getTime();
+            } else {
+                const savedExpire = localStorage.getItem(`exam_expire_${etId}`);
+                if (savedExpire) {
+                    expireTime = parseInt(savedExpire, 10);
+                } else {
+                    const duration = coreData.exam_session?.exam?.duration || 60;
+                    expireTime = Date.now() + duration * 60000;
+                    localStorage.setItem(`exam_expire_${etId}`, expireTime.toString());
+                }
+            }
+            setTimeLeft(Math.max(0, Math.floor((expireTime - Date.now()) / 1000)));
+        }
+
+      } catch (error) {
+        console.error("Lỗi lấy đề thi:", error);
+        setSnackbar({ open: true, message: 'Lỗi tải đề thi. Vui lòng thử lại!', severity: 'error' });
+      } finally {
+        setIsLoading(false);
       }
-      
+    };
+    if (token) fetchExamData();
+  }, [classId, examId, sessionId, etId, token, navigate]);
+
+  useEffect(() => {
+    if (timeLeft === null || isSubmitting) return;
+    if (timeLeft <= 0) {
+      handleFinalSubmit(true); 
+      return;
+    }
+    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft, isSubmitting]);
+
+  const formatTime = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
+  };
+
+  const buildPayload = (currentAnswers, tracker) => {
+    return questions.map((q, index) => {
+      const t = tracker[q.ques_id] || { firstResponse: 0, totalSpent: 0 };
       return {
-        questionId: q.questionId,
-        is_correct: isCorrect,
-        selected: userAnswers,
-        is_skipped: !hasAnswered,
+        ques_id: q.ques_id,
+        answers: currentAnswers[q.ques_id] || [], 
+        ms_first_response: t.firstResponse || t.totalSpent || 500, 
+        ms_total_response: t.totalSpent || 1000, 
+        index: index
       };
     });
+  };
 
-    const finalScore = { 
-        correct: correctCount, 
-        total: totalQuestions,
-        skipped: totalSkipped,
-        incorrect: totalQuestions - correctCount - totalSkipped
-    };
+  const handleAnswerChange = (questionId, answerAid, isMultiChoice) => {
+    let newAnswersObj = {};
+    setSelectedAnswers((prev) => {
+      const newAnswers = { ...prev };
+      if (isMultiChoice) {
+        const currentSelections = prev[questionId] || [];
+        if (currentSelections.includes(answerAid)) {
+          newAnswers[questionId] = currentSelections.filter((id) => id !== answerAid);
+        } else {
+          newAnswers[questionId] = [...currentSelections, answerAid];
+        }
+      } else {
+        newAnswers[questionId] = [answerAid]; 
+      }
+      newAnswersObj = newAnswers;
+      localStorage.setItem(`exam_draft_${examTakenId}`, JSON.stringify(newAnswersObj));
+      return newAnswers;
+    });
 
-    setScore(finalScore);
-    setIsFinished(true); 
-    
-    // Đảm bảo có thể hiển thị kết quả tổng quan ngay trên session page 
-    showSnackBar(`Hoàn thành! Bạn đúng ${finalScore.correct} / ${finalScore.total} câu.`, 'success');
-
-    // CHUYỂN HƯỚNG TỚI TRANG KẾT QUẢ CHI TIẾT
-    navigate(`/student/assignment/session/${sessionId}/result`, { 
-        state: { 
-            score: finalScore,
-            questions: questions, // Dữ liệu câu hỏi gốc
-            answers_taken: detailedResults, // Kết quả chi tiết của học sinh
-        } 
+    setTimeTracker(prev => {
+      const current = prev[questionId] || { totalSpent: 0 };
+      const newTracker = { ...prev };
+      if (!current.firstResponse) {
+        newTracker[questionId] = { ...current, firstResponse: Date.now() - currentStartTime.current };
+      }
+      
+      const actClassId = getActualClassId();
+      if (actClassId && examTakenId) {
+         const payload = buildPayload(newAnswersObj, newTracker);
+         submitExam(examTakenId, actClassId, payload, false, token).catch(() => {});
+      }
+      return newTracker;
     });
   };
-  
-  // 6. Làm lại (Chuyển hướng về trang danh sách Assignment)
-  const handleRetry = () => {
-    navigate('/student/assignment'); 
-  }
 
-  // --- Render ---
+  const updateTimeSpent = (questionId) => {
+    const timeSpent = Date.now() - currentStartTime.current;
+    setTimeTracker(prev => {
+      const current = prev[questionId] || { firstResponse: 0, totalSpent: 0 };
+      return { ...prev, [questionId]: { ...current, totalSpent: current.totalSpent + timeSpent }};
+    });
+    currentStartTime.current = Date.now(); 
+  };
 
-  if (isLoading) {
-    return <Container><LinearProgress sx={{ mt: 4 }} /></Container>;
-  }
+  const handleStepClick = (stepIndex) => {
+    if (questions[activeStep]) updateTimeSpent(questions[activeStep].ques_id);
+    setActiveStep(stepIndex);
+  };
 
-  if (questions.length === 0) {
-    return (
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4, textAlign: 'center' }}>
-        <Typography variant="h5" color="error" gutterBottom>
-          Không tìm thấy Bài tập
-        </Typography>
-        <Typography color="text.secondary">
-          Không tìm thấy bài tập cho ID: {sessionId}.
-        </Typography>
-        <Button
-          variant="outlined"
-          sx={{ mt: 3 }}
-          onClick={() => navigate('/student/assignment')}
-        >
-          Quay lại Trang Bài tập
-        </Button>
-          <AppSnackbar
-            open={snackbarState.open}
-            message={snackbarState.message}
-            severity={snackbarState.severity}
-            onClose={handleCloseSnackbar}
-          />
-      </Container>
-    );
-  }
+  const handleNext = () => handleStepClick(Math.min(activeStep + 1, questions.length - 1));
+  const handleBack = () => handleStepClick(Math.max(activeStep - 1, 0));
 
-  const isDisabled = isFinished;
+  const handleFinalSubmit = async (isAutoSubmit = false) => {
+    if (questions[activeStep]) updateTimeSpent(questions[activeStep].ques_id); 
+    setIsSubmitting(true);
+    setOpenSubmitConfirm(false);
+
+    try {
+      const actClassId = getActualClassId();
+      const payload = buildPayload(selectedAnswers, timeTracker);
+      
+      await submitExam(examTakenId, actClassId || 'no-class-id', payload, true, token); 
+      
+      localStorage.removeItem(`exam_draft_${examTakenId}`);
+      localStorage.removeItem(`exam_expire_${examTakenId}`);
+      localStorage.removeItem(`exam_class_${examTakenId}`);
+
+      setSnackbar({ open: true, message: isAutoSubmit ? 'Hết giờ! Đã nộp bài tự động.' : 'Nộp bài thành công!', severity: 'success' });
+      
+      const finalSessionId = sessionId || examData?.session_id || examData?.exam_session?.session_id || 'result';
+      setTimeout(() => navigate(`/student/assignment/session/${finalSessionId}/result`), 1000);
+
+    } catch (error) {
+      console.error("Lỗi nộp bài:", error);
+      setSnackbar({ open: true, message: 'Lỗi nộp bài. Vui lòng thử lại!', severity: 'error' });
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f6f8' }}><CircularProgress size={60} thickness={4} /></Box>;
+  if (!questions.length) return <Container><Typography variant="h5" color="error" align="center" mt={5}>Không tải được dữ liệu đề thi.</Typography></Container>;
+
+  const currentQuestion = questions[activeStep];
+  const isMultiChoice = currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'MULTIPLE_CHOICE';
+
+  const displayTitle = examData?.exam_session?.exam?.title || examData?.exam?.title || examData?.title || 'Bài tập';
+  const displaySubject = examData?.exam_session?.exam?.category?.subject || examData?.exam?.category?.subject || examData?.category?.subject || 'Môn học';
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-        Bài tập về nhà: {sessionId}
-      </Typography>
-
-      {/* 1. Thanh Stepper */}
-      <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, overflowX: 'auto' }}>
-        <Stepper nonLinear activeStep={activeStep} sx={{ minWidth: '600px' }}>
-          {questions.map((q, index) => {
-            const isCorrect = isQuestionCorrect(q, selectedAnswers);
-            const hasAnswered = (selectedAnswers[q.questionId] || []).length > 0;
-            
-            return (
-              <Step key={q.questionId} completed={hasAnswered}>
-                <StepButton 
-                  color="inherit" 
-                  onClick={() => handleStepClick(index)}
-                  // Chỉ hiển thị đúng/sai sau khi nộp
-                  icon={
-                    isFinished 
-                    ? (isCorrect ? <CheckCircleIcon color="success" /> : <CloseIcon color="error" />)
-                    : (index + 1)
-                  }
-                />
-              </Step>
-            )
-          })}
-        </Stepper>
-      </Paper>
+    <Container maxWidth={false} sx={{ pt: 3, pb: 4, px: { xs: 2, sm: 4, md: 8, lg: 12 }, backgroundColor: '#f4f6f8', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* 2. Khung hiển thị kết quả (sau khi nộp) - Tùy chọn */}
-      {isFinished && score && (
-        <Alert 
-          severity={score.correct / score.total > 0.5 ? "success" : "warning"}
-          sx={{ mb: 3, '.MuiAlert-message': { width: '100%' } }}
-          action={
-            <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-              <Button color="inherit" size="small" onClick={() => navigate(`/student/assignment/session/${sessionId}/result`)}>
-                Xem kết quả chi tiết
-              </Button>
-                <Button color="inherit" size="small" onClick={handleRetry} startIcon={<ReplayIcon />}>
-                Về trang Bài tập
-              </Button>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" fontWeight={800} color="text.primary" gutterBottom>{displayTitle}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
+          <MenuBookIcon fontSize="small" sx={{ mr: 1 }} />
+          <Typography variant="body1" fontWeight={500}>{displaySubject}</Typography>
+        </Box>
+      </Box>
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px', lg: '1fr 380px' }, gap: 4, height: 'calc(100vh - 160px)' }}>
+        
+        <Box sx={{ minWidth: 0, height: '100%' }}>
+          <Paper elevation={0} sx={{ height: '100%', borderRadius: 4, border: '1px solid', borderColor: 'grey.200', display: 'flex', flexDirection: 'column', backgroundColor: '#fff', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.03)' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 2, md: 3 }, borderBottom: '1px solid #eee' }}>
+              <Box>
+                <Typography variant="h5" fontWeight={800} color="primary.main" component="span">Câu {activeStep + 1} </Typography>
+                <Typography component="span" color="text.secondary" variant="h6" fontWeight={600}> / {questions.length}</Typography>
+                <Chip label={isMultiChoice ? "Nhiều đáp án" : "Một đáp án"} variant="outlined" size="small" sx={{ ml: 2, fontWeight: 600 }} />
+              </Box>
+              <Chip icon={<AccessTimeIcon sx={{ fontSize: 20 }}/>} label={timeLeft !== null ? formatTime(timeLeft) : '00:00'} color={timeLeft < 300 ? "error" : "primary"} sx={{ fontWeight: 800, fontSize: '1.1rem', py: 2.5, px: 1, borderRadius: 2 }} />
             </Box>
-          }
-        >
-          <Typography variant="h6">
-            Kết quả: {score.correct} / {score.total} (Đúng/Tổng)
-          </Typography>
-        </Alert>
-      )}
-
-      {/* 3. Thẻ câu hỏi và đáp án (Giữ nguyên logic render) */}
-      <Card>
-        <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
-            <Typography variant="h6" gutterBottom component="h2" sx={{ mb: 0, mr: 2 }}>
-              Câu {activeStep + 1}:
-            </Typography>
-             {/* KHÔNG HIỂN THỊ ĐỘ KHÓ */}
-          </Box>
-          
-          <Box sx={{ my: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, minHeight: 100, fontSize: '1.1rem' }}>
-            <LatexRenderer content={currentQuestion.content} />
-          </Box>
-
-          <Box sx={{ my: 2 }}>
-            <Typography variant="h6" gutterBottom>Chọn đáp án:</Typography>
             
-            {/* --- Single Choice & Multiple Choice Logic --- */}
-            {(currentQuestion.type === 'SINGLE_CHOICE' || currentQuestion.type === 'MULTIPLE_CHOICE') && (
-              <FormGroup>
-                {currentQuestion.answers.map((answer, index) => { 
-                  const isSelected = currentQuestion.type === 'SINGLE_CHOICE' 
-                    ? selectedAnswers[currentQId] === answer.answerId
-                    : (selectedAnswers[currentQId] || []).includes(answer.answerId);
-
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', overflowX: 'hidden', p: { xs: 2, md: 4 } }}>
+              <Box sx={{ fontSize: '1.2rem', lineHeight: 1.8, mb: 4, color: 'text.primary', fontWeight: 500, width: '100%' }}>
+                <HtmlContentRenderer htmlContent={currentQuestion.content} />
+              </Box>
+              <FormGroup sx={{ width: '100%' }}>
+                {currentQuestion.answers?.map((answer, index) => {
+                  const isSelected = (selectedAnswers[currentQuestion.ques_id] || []).includes(answer.aid);
                   return (
                     <FormControlLabel
-                      key={answer.answerId}
-                      value={answer.answerId}
-                      disabled={isDisabled}
-                      control={currentQuestion.type === 'SINGLE_CHOICE' ? <Radio /> : <Checkbox checked={isSelected} />}
+                      key={answer.aid} value={answer.aid}
+                      control={isMultiChoice ? <Checkbox checked={isSelected} size="large" /> : <Radio checked={isSelected} size="large" />}
                       label={
-                        <Box sx={{ display: 'flex' }}>
-                            <Typography sx={{ mr: 1, fontWeight: 'bold' }}>{getAnswerPrefix(index)}.</Typography>
-                            <LatexRenderer content={answer.content} />
+                        <Box sx={{ display: 'flex', width: '100%', alignItems: 'flex-start', py: 1 }}>
+                            <Typography sx={{ mr: 2, fontWeight: 800, fontSize: '1.1rem', color: isSelected ? 'primary.main' : 'text.secondary', mt: '2px' }}>{getAnswerPrefix(index)}.</Typography>
+                            <Box sx={{ flexGrow: 1, fontSize: '1.1rem', lineHeight: 1.6, width: '100%' }}><HtmlContentRenderer htmlContent={answer.content} /></Box>
                         </Box>
                       }
-                      onChange={currentQuestion.type === 'SINGLE_CHOICE' 
-                        ? (e) => handleAnswerChange(currentQId, e.target.value, false) 
-                        : () => handleAnswerChange(currentQId, answer.answerId, true)
-                      }
+                      onChange={() => handleAnswerChange(currentQuestion.ques_id, answer.aid, isMultiChoice)}
                       sx={{
-                        p: 1.5,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        mb: 1,
-                        ml: 0,
-                        // Highlight chỉ sau khi nộp
-                        ...(isFinished &&
-                          answer.is_correct && {
-                            borderColor: 'success.main',
-                            backgroundColor: 'success.lighter',
-                          }),
-                        ...(isFinished &&
-                          !answer.is_correct &&
-                          isSelected && {
-                            borderColor: 'error.main',
-                            backgroundColor: 'error.lighter',
-                          }),
+                        m: 0, mb: 2, pr: 3, pl: 1, py: 1, width: '100%', borderRadius: 3, border: '2px solid',
+                        borderColor: isSelected ? 'primary.main' : 'grey.200', backgroundColor: isSelected ? 'primary.50' : 'transparent',
+                        alignItems: 'flex-start', '&:hover': { borderColor: isSelected ? 'primary.main' : 'grey.300', backgroundColor: isSelected ? 'primary.50' : 'grey.50' }
                       }}
                     />
                   );
                 })}
               </FormGroup>
-            )}
+            </Box>
 
-          </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: { xs: 2, md: 3 }, borderTop: '1px solid #eee' }}>
+              <Button variant="outlined" size="large" onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowBackIcon />} sx={{ borderRadius: 2, px: 4, fontWeight: 700 }}>Câu trước</Button>
+              <Button variant="contained" size="large" onClick={handleNext} disabled={activeStep === questions.length - 1} endIcon={<ArrowForwardIcon />} disableElevation sx={{ borderRadius: 2, px: 4, fontWeight: 700 }}>Câu tiếp</Button>
+            </Box>
+          </Paper>
+        </Box>
 
-          {/* HIỂN THỊ LỜI GIẢI (CHỈ SAU KHI NỘP) */}
-          {isFinished && currentQuestion.explanation && (
-            <Alert severity="success" icon={false} sx={{ mt: 3, '.MuiAlert-icon': { display: 'none' } }}>
-              <Typography variant="h6" gutterBottom sx={{ color: 'success.darker', fontWeight: 700 }}>
-                🎉 Lời giải
-              </Typography>
-
-              {/* 1. Lời giải chung của Câu hỏi */}
-              <Box sx={{ mb: 2, color: 'success.darker' }}>
-                <LatexRenderer content={currentQuestion.explanation} />
-              </Box>
-
-              {/* 2. Lời giải chi tiết cho TẤT CẢ đáp án có explanation (CÓ A/B/C/D) */}
-              {currentQuestion.answers
-                .map((ans, index) => {
-                  if (!ans.explanation) return null; // Chỉ hiển thị nếu có explanation
+        <Box sx={{ height: '100%' }}>
+          <Paper elevation={0} sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, borderRadius: 4, border: '1px solid', borderColor: 'grey.200', backgroundColor: '#fff', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.03)' }}>
+            <Typography variant="h6" fontWeight={800} mb={2}>Tiến độ làm bài</Typography>
+            
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1.5 }}>
+                {questions.map((q, index) => {
+                  const isAnswered = (selectedAnswers[q.ques_id] || []).length > 0;
+                  const isActive = index === activeStep;
 
                   return (
-                    <Box
-                      key={index}
+                    <Button
+                      key={q.ques_id} variant={isAnswered ? "contained" : "outlined"} onClick={() => handleStepClick(index)}
                       sx={{
-                        borderTop: '1px dashed',
-                        borderColor: 'success.main',
-                        pt: 1,
-                        mt: 1,
-                        color: 'success.darker',
+                        minWidth: 0, height: 48, borderRadius: 2, fontWeight: 800, fontSize: '1.1rem', p: 0,
+                        bgcolor: isAnswered ? 'primary.main' : (isActive ? 'secondary.light' : 'grey.100'),
+                        color: isAnswered ? '#fff' : (isActive ? '#fff' : 'text.primary'),
+                        border: '2px solid', borderColor: isActive ? 'secondary.main' : (isAnswered ? 'primary.main' : 'grey.300'),
+                        '&:hover': { bgcolor: isAnswered ? 'primary.dark' : 'grey.200' }
                       }}
                     >
-                      <Typography variant="body2" component="div" sx={{ fontWeight: 700, mb: 0.5 }}>
-                        {getAnswerPrefix(index)}. {ans.is_correct ? 'Đáp án ĐÚNG (Chi tiết):' : 'Đáp án SAI (Phân tích):'}
-                      </Typography>
-                      <LatexRenderer content={ans.explanation} />
-                    </Box>
+                      {index + 1}
+                    </Button>
                   );
                 })}
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+              </Box>
+            </Box>
 
-      {/* 4. Thanh điều hướng */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mt: 2,
-          p: 2,
-        }}
-      >
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          disabled={activeStep === 0}
-        >
-          Câu trước
-        </Button>
+            <Box sx={{ pt: 2, borderTop: '1px solid #eee', mt: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}><Box sx={{ width: 16, height: 16, borderRadius: 1, bgcolor: 'primary.main', mr: 1.5 }} /> <Typography variant="body2" fontWeight={600}>Đã chọn</Typography></Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}><Box sx={{ width: 16, height: 16, borderRadius: 1, bgcolor: 'grey.100', border: '2px solid', borderColor: 'grey.300', mr: 1.5 }} /> <Typography variant="body2" fontWeight={600} color="text.secondary">Chưa làm</Typography></Box>
+              </Box>
 
-        {/* Nút Nộp bài */}
-        {activeStep === questions.length - 1 && !isFinished && (
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            endIcon={<CheckCircleIcon />}
-            onClick={handleSubmit}
-          >
-            Nộp bài
-          </Button>
-        )}
+              <Button
+                fullWidth variant="contained" color="success" size="large" startIcon={<SendIcon />}
+                onClick={() => setOpenSubmitConfirm(true)} disabled={isSubmitting} disableElevation
+                sx={{ borderRadius: 3, py: 1.5, fontWeight: 800, fontSize: '1.2rem' }}
+              >
+                NỘP BÀI THI
+              </Button>
+            </Box>
 
-        {/* Nút Câu sau */}
-        {activeStep < questions.length - 1 && (
-          <Button variant="contained" endIcon={<ArrowForwardIcon />} onClick={handleNext}>
-            Câu sau
-          </Button>
-        )}
+          </Paper>
+        </Box>
       </Box>
 
-      {/* 5. SnackBar */}
-      <AppSnackbar
-        open={snackbarState.open}
-        message={snackbarState.message}
-        severity={snackbarState.severity}
-        onClose={handleCloseSnackbar}
-      />
+      <Dialog open={openSubmitConfirm} onClose={() => setOpenSubmitConfirm(false)} PaperProps={{ sx: { borderRadius: 4, p: 1, minWidth: 400 } }}>
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.5rem', textAlign: 'center', pb: 1 }}>Xác nhận nộp bài</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ fontSize: '1.1rem', textAlign: 'center', color: 'text.primary' }}>
+            Bạn đã trả lời <Typography component="span" fontWeight={800} color="primary" fontSize="1.3rem">{Object.values(selectedAnswers).filter(a => a && a.length > 0).length}</Typography> / {questions.length} câu hỏi. <br/><br/>
+            Bạn có chắc chắn muốn nộp ngay?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0, justifyContent: 'center', gap: 2 }}>
+          <Button onClick={() => setOpenSubmitConfirm(false)} variant="outlined" color="inherit" size="large" sx={{ borderRadius: 2, fontWeight: 700 }}>Kiểm tra lại</Button>
+          <Button onClick={() => handleFinalSubmit(false)} variant="contained" color="success" size="large" disableElevation sx={{ borderRadius: 2, fontWeight: 700 }}>Nộp bài ngay</Button>
+        </DialogActions>
+      </Dialog>
+
+      <AppSnackbar open={snackbar.open} message={snackbar.message} severity={snackbar.severity} onClose={() => setSnackbar({...snackbar, open: false})} />
     </Container>
   );
 }
