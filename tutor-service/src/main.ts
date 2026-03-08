@@ -35,10 +35,7 @@ async function bootstrap() {
     app.enableCors();
     
     app.useWebSocketAdapter(new IoAdapter(app));
-    await app.listen(
-      process.env.PORT,
-      (process.env.NODE_ENV !== 'development' ? '0.0.0.0' : 'localhost')
-    );
+    await app.listen(process.env.PORT);
   } catch (error) {
     console.error('Error starting the application:', error);
   }
