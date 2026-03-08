@@ -4,7 +4,7 @@ import { Outlet } from "react-router-dom";
 import { Box, CssBaseline } from "@mui/material";
 import Sidebar from "../components/SideBar";
 import Header from "../components/Header"; 
-import { Background } from "../components/BackGround";
+import { Background } from "../components/Background";
 
 const SIDEBAR_WIDTH_DEFAULT = 260; 
 const SIDEBAR_WIDTH_COLLAPSED = 88;
