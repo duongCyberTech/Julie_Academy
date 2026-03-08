@@ -82,7 +82,7 @@ workflows:
       - deploy-to-render:
           # Điều kiện 1: Bắt buộc job build-and-test phải Xanh (Pass) mới được chạy
           requires:
-            - build-and-test
+            - build-and-test-backend:
           # Điều kiện 2: CHỈ kích hoạt deploy khi code nằm trên nhánh main
           filters:
             branches:
