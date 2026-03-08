@@ -73,7 +73,7 @@ workflows:
   nest-ci-cd-workflow:
     when: << pipeline.parameters.run-tutor-service >>
     jobs:
-      - build-and-test:
+      - build-and-test-backend:
           filters:
             branches:
               # CI sẽ chạy trên mọi nhánh để test code
