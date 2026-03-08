@@ -372,7 +372,8 @@ export class ExamTakenService {
                         isDone: (item.answers.length > 0),
                         answer_set: item.answers
                     }
-                })
+                }),
+                skipDuplicates: true
             })
 
             const {score, cnt} = await this.calculateScore(tx, answers)

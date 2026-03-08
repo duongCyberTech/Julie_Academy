@@ -1,42 +1,21 @@
 version: 2.1
 
-# Sử dụng Node orb của CircleCI để quản lý cache và cài đặt nhanh hơn
-orbs:
-  node: circleci/node@5.0.0
+# Khai báo đây là file setup (chạy đầu tiên)
+setup: true
 
-jobs:
-  build-and-test:
-    docker:
-      # Chọn phiên bản Node tương ứng với dự án NestJS của bạn
-      - image: cimg/node:22.14.0
-    working_directory: ~/project/tutor-service
-    steps:
-      - checkout:
-          path: ~/project
-      # Lệnh này tự động cài đặt npm và quản lý cache cho thư mục node_modules
-      - node/install-packages:
-          pkg-manager: npm
-          app-dir: ~/project/tutor-service
-      - run:
-          name: Generate Prisma Client
-          command: npx prisma generate
-      # - run:
-      #     name: Chạy Linter
-      #     command: npm run lint
-      - run:
-          name: Chạy Unit Tests
-          command: npm run test
-      - run:
-          name: Build ứng dụng NestJS
-          command: npm run build
+orbs:
+  path-filtering: circleci/path-filtering@3.0.0
 
 workflows:
-  nest-ci-workflow:
+  setup-workflow:
     jobs:
-      - build-and-test:
-          filters:
-            # CI sẽ chạy trên mọi nhánh
-            branches:
-              only:
-                - main
-                - staging
+      - path-filtering/filter:
+          name: check-updated-files
+          # So sánh sự thay đổi với nhánh main
+          base-revision: main
+          # File cấu hình chứa pipeline thực sự sẽ chạy tiếp theo
+          config-path: .circleci/tutor-service-config.yml
+          # Quy tắc mapping: Nếu file trong tutor-service thay đổi -> Bật biến run-tutor-service thành true
+          mapping: |
+            tutor-service/.* run-tutor-service true
+            frontend/.* run-frontend true

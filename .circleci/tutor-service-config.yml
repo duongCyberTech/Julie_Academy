@@ -1,0 +1,100 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.0.0
+
+parameters:
+  run-tutor-service:
+    type: boolean
+    default: false
+  run-frontend: # KHAI BÁO THÊM BIẾN CHO FRONTEND
+    type: boolean
+    default: false
+
+jobs:
+  # --- JOB 1: CHẠY CI ---
+  build-and-test-backend:
+    docker:
+      - image: cimg/node:22.14.0
+    working_directory: ~/project/tutor-service
+    steps:
+      - checkout:
+          path: ~/project
+      - node/install-packages:
+          pkg-manager: npm
+          app-dir: ~/project/tutor-service
+      - run:
+          name: Generate Prisma Client
+          command: npx prisma generate
+      # - run:
+      #     name: Chạy Linter
+      #     command: npm run lint
+      - run:
+          name: Chạy Unit Tests
+          command: npm run test
+      - run:
+          name: Build ứng dụng NestJS
+          command: npm run build
+
+  # --- JOB 2: CHẠY CD (DEPLOY) ---
+  deploy-to-render:
+    docker:
+      - image: cimg/base:current # Dùng image base cực nhẹ chỉ để chạy curl
+    steps:
+      - run:
+          name: Trigger Render Deploy
+          # Trong CircleCI, gọi biến môi trường bằng $TÊN_BIẾN thay vì ${{ secrets... }}
+          command: curl -X POST $RENDER_DEPLOY_HOOK
+
+  # --- JOB MỚI CHO FRONTEND (REACT) ---
+  build-and-test-frontend:
+      docker:
+        # React cũng có thể dùng chung môi trường Node 22
+        - image: cimg/node:22.14.0 
+      working_directory: ~/project/frontend
+      steps:
+        - checkout:
+            path: ~/project
+        - node/install-packages:
+            pkg-manager: npm
+            app-dir: ~/project/frontend
+        - run:
+            name: Chạy Linter (React)
+            command: npm run lint
+        # Bỏ comment nếu dự án React của bạn có cấu hình Jest/Vitest
+        # - run:
+        #     name: Chạy Unit Tests
+        #     command: npm run test
+        - run:
+            name: Build ứng dụng React
+            command: npm run build
+
+workflows:
+  nest-ci-cd-workflow:
+    when: << pipeline.parameters.run-tutor-service >>
+    jobs:
+      - build-and-test-backend:
+          filters:
+            branches:
+              # CI sẽ chạy trên mọi nhánh để test code
+              only: /.*/ 
+              
+      - deploy-to-render:
+          # Điều kiện 1: Bắt buộc job build-and-test phải Xanh (Pass) mới được chạy
+          requires:
+            - build-and-test-backend
+          # Điều kiện 2: CHỈ kích hoạt deploy khi code nằm trên nhánh main
+          filters:
+            branches:
+              only: 
+                - main
+
+  # --- WORKFLOW FRONTEND (MỚI) ---
+  react-ci-workflow:
+    # CHỈ chạy workflow này nếu thư mục frontend có thay đổi
+    when: << pipeline.parameters.run-frontend >> 
+    jobs:
+      - build-and-test-frontend:
+          filters:
+            branches:
+              only: /.*/
