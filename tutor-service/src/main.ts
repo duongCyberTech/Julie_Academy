@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
+import { hostname } from 'os';
 require('dotenv').config()
 
 async function bootstrap() {
@@ -34,7 +35,10 @@ async function bootstrap() {
     app.enableCors();
     
     app.useWebSocketAdapter(new IoAdapter(app));
-    await app.listen(process.env.PORT);
+    await app.listen(
+      process.env.PORT,
+      (process.env.NODE_ENV !== 'development' ? '0.0.0.0' : 'localhost')
+    );
   } catch (error) {
     console.error('Error starting the application:', error);
   }
