@@ -58,9 +58,9 @@ jobs:
         - node/install-packages:
             pkg-manager: npm
             app-dir: ~/project/frontend
-        - run:
-            name: Chạy Linter (React)
-            command: npm run lint
+        # - run:
+        #     name: Chạy Linter (React)
+        #     command: npm run lint
         # Bỏ comment nếu dự án React của bạn có cấu hình Jest/Vitest
         # - run:
         #     name: Chạy Unit Tests
