@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { QuestionService } from '../question/question.service';
 import { ExamDto, ExamSessionDto, ExamSessionStatus, ExamTakenDto, SubmitAnswerDto } from './dto/exam.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ExamService {
@@ -191,57 +192,114 @@ export class ExamService {
         }
     }
 
-    async getAllExamSessionByClass(class_id: string, page: number = 1, limit: number = 10, status: ExamSessionStatus = ExamSessionStatus.OPEN) {
+    async getAllExamSessionByClass(user: any, class_id: string, page: number = 1, limit: number = 10, status: ExamSessionStatus = ExamSessionStatus.OPEN) {
         try {
-            const currentDate = new Date();
-            const timeCondition = status === ExamSessionStatus.UPCOMING
-                ? { startAt: { gt: currentDate } }
-                : status === ExamSessionStatus.OPEN
-                    ? { startAt: { lte: currentDate }, expireAt: { gt: currentDate } }
-                    : status === ExamSessionStatus.EXPIRED
-                        ? { expireAt: { lte: currentDate } }
+            console.log("[USER GET]: ", user)
+            if (user.role != "student") {
+                const currentDate = new Date();
+                const timeCondition = status === ExamSessionStatus.UPCOMING
+                    ? { startAt: { gt: currentDate } }
+                    : status === ExamSessionStatus.OPEN
+                        ? { startAt: { lte: currentDate }, expireAt: { gt: currentDate } }
+                        : status === ExamSessionStatus.EXPIRED
+                            ? { expireAt: { lte: currentDate } }
+                            : {};
+
+                const etStatusCondition = status === ExamSessionStatus.PENDING
+                    ? { examTakens: { some: { isDone: false } } }
+                    : status === ExamSessionStatus.COMPLETED
+                        ? { examTakens: { some: { isDone: true } } }
                         : {};
 
-            const etStatusCondition = status === ExamSessionStatus.PENDING
-                ? { examTakens: { some: { isDone: false } } }
-                : status === ExamSessionStatus.COMPLETED
-                    ? { examTakens: { some: { isDone: true } } }
-                    : {};
-
-            const examSessions = await this.prisma.exam_session.findMany({
-                take: limit,
-                skip: (page - 1) * limit,
-                where: {
-                    exam_open_in: {some: {class: {class_id}}},
-                    ...timeCondition,
-                    ...etStatusCondition
-                },
-                select: {
-                    session_id: true,
-                    limit_taken: true,
-                    startAt: true,
-                    expireAt: true,
-                    exam_type: true,
-                    total_student_done: true,
-                    exam: {
-                        select: {
-                            exam_id: true,
-                            title: true,
-                            duration: true,
-                            total_ques: true,
-                            total_score: true,
-                            level: true,
-                            description: true
+                const examSessions = await this.prisma.exam_session.findMany({
+                    take: limit,
+                    skip: (page - 1) * limit,
+                    where: {
+                        exam_open_in: {some: {class: {class_id}}},
+                        ...timeCondition,
+                        ...etStatusCondition
+                    },
+                    select: {
+                        session_id: true,
+                        limit_taken: true,
+                        startAt: true,
+                        expireAt: true,
+                        exam_type: true,
+                        total_student_done: true,
+                        exam: {
+                            select: {
+                                exam_id: true,
+                                title: true,
+                                duration: true,
+                                total_ques: true,
+                                total_score: true,
+                                level: true,
+                                description: true
+                            }
                         }
-                    }
-                },
-                orderBy: [
-                    { startAt: "asc" },
-                    { expireAt: "asc" }
-                ]
-            })
+                    },
+                    orderBy: [
+                        { startAt: "asc" },
+                        { expireAt: "asc" }
+                    ]
+                })
 
-            return examSessions
+                console.log(examSessions.length)
+
+                return examSessions
+            } else {
+                const currentDate = new Date();
+                const offset = (page - 1) * limit;
+
+                // 1. Time Conditions - Added double quotes to column names for safety
+                const timeCondition = status === ExamSessionStatus.UPCOMING
+                    ? Prisma.sql` AND es."startAt" > ${currentDate}`
+                    : status === ExamSessionStatus.OPEN
+                        ? Prisma.sql` AND es."startAt" <= ${currentDate} AND es."expireAt" > ${currentDate}`
+                        : status === ExamSessionStatus.EXPIRED
+                            ? Prisma.sql` AND es."expireAt" <= ${currentDate}`
+                            : Prisma.empty;
+
+                // 2. Exam Taken Status Conditions
+                const etStatusCondition = status === ExamSessionStatus.PENDING
+                    ? Prisma.sql` AND EXISTS (SELECT 1 FROM "Exam_taken" et WHERE et."session_id" = es."session_id" AND et."exam_id" = es."exam_id" AND et."student_uid" = ${user.userId} AND et."isDone" = false)`
+                    : status === ExamSessionStatus.COMPLETED
+                        ? Prisma.sql` AND EXISTS (SELECT 1 FROM "Exam_taken" et WHERE et."session_id" = es."session_id" AND et."exam_id" = es."exam_id" AND et."student_uid" = ${user.userId} AND et."isDone" = true)`
+                        : Prisma.empty;
+
+                // 3. The Final Query
+                const examSessions = await this.prisma.$queryRaw`
+                    SELECT 
+                    es.session_id, es.exam_id, es.limit_taken, es."startAt", es."expireAt", es.exam_type,
+                    json_build_object(
+                        'exam_id', e.exam_id,
+                        'title', e.title,
+                        'duration', e.duration,
+                        'total_ques', e.total_ques
+                    ) AS exam,
+                    FROM "Exam_session" es
+                    JOIN "Exams" e ON es."exam_id" = e."exam_id"
+                    WHERE EXISTS (
+                        SELECT 1 FROM "Exam_open_in" eoi 
+                        WHERE eoi."session_id" = es."session_id" 
+                        AND eoi."exam_id" = es."exam_id"
+                        AND eoi."class_id" = ${class_id}
+                    )
+                    -- Logic: check if specific student's attempt count < limit_taken
+                    AND (
+                        SELECT COUNT(*) FROM "Exam_taken" et 
+                        WHERE et."session_id" = es."session_id" 
+                        AND et."exam_id" = es."exam_id"
+                        AND et."student_uid" = ${user.userId}
+                    ) < es."limit_taken"
+                    ${timeCondition}
+                    ${etStatusCondition}
+                    ORDER BY es."startAt" ASC, es."expireAt" ASC
+                    LIMIT ${limit} OFFSET ${offset}
+                `;
+
+                return examSessions;
+            }
         } catch (error) {
         }
     }
@@ -393,77 +451,79 @@ export class ExamService {
     async getAllExamSessionsForStudent(student_id: string, page: number = 1, limit: number = 10, status: ExamSessionStatus = ExamSessionStatus.OPEN) {
         try {
             const currentDate = new Date();
+            const offset = (page - 1) * limit;
+
+            // 1. Time Conditions (Ensure columns with capital letters are double-quoted)
             const timeCondition = status === ExamSessionStatus.UPCOMING
-                ? { startAt: { gt: currentDate } }
+                ? Prisma.sql`AND es."startAt" > ${currentDate}`
                 : status === ExamSessionStatus.OPEN
-                    ? { startAt: { lte: currentDate }, expireAt: { gt: currentDate } }
+                    ? Prisma.sql`AND es."startAt" <= ${currentDate} AND es."expireAt" > ${currentDate}`
                     : status === ExamSessionStatus.EXPIRED
-                        ? { expireAt: { lte: currentDate } }
-                        : {};
+                        ? Prisma.sql`AND es."expireAt" <= ${currentDate}`
+                        : Prisma.empty;
 
+            // 2. Status Conditions (Using EXISTS for performance)
             const etStatusCondition = status === ExamSessionStatus.PENDING
-                ? { examTakens: { some: { isDone: false } } }
+                ? Prisma.sql`AND EXISTS (SELECT 1 FROM "Exam_taken" et WHERE et."session_id" = es."session_id" AND et."exam_id" = es."exam_id" AND et."student_uid" = ${student_id} AND et."isDone" = false)`
                 : status === ExamSessionStatus.COMPLETED
-                    ? { examTakens: { some: { isDone: true } } }
-                    : {};
+                    ? Prisma.sql`AND EXISTS (SELECT 1 FROM "Exam_taken" et WHERE et."session_id" = es."session_id" AND et."exam_id" = es."exam_id" AND et."student_uid" = ${student_id} AND et."isDone" = true)`
+                    : Prisma.empty;
 
-            const sessions = await this.prisma.exam_session.findMany({
-                take: limit,
-                skip: (page - 1) * limit,
-                where: {
-                    ...timeCondition,
-                    ...etStatusCondition,
-                    exam_open_in: {
-                        some: {
-                            class: {
-                                learning: {
-                                    some: { student_uid: student_id }
-                                }
-                            }
-                        }
-                    }
-                },
-                select: {
-                    session_id: true,
-                    limit_taken: true,
-                    startAt: true,
-                    expireAt: true,
-                    exam_type: true,
-                    exam: {
-                        select: {
-                            exam_id: true,
-                            title: true,
-                            duration: true,
-                            total_ques: true,
-                        }
-                    },
-                    exam_open_in: {
-                        select: {
-                            class_id: true,
-                            class: {
-                                select: { classname: true }
-                            }
-                        }
-                    },
-                    ...(status === ExamSessionStatus.PENDING || status === ExamSessionStatus.COMPLETED ?
-                        {examTakens: {
-                            where: { student_uid: student_id },
-                            select: {
-                                et_id: true,
-                                isDone: true,
-                                ...(status === ExamSessionStatus.COMPLETED ? {
-                                    final_score: true,
-                                } : {}),
-                                doneAt: true
-                            }
-                        }} : {}
+            // 3. The Main Query
+            const sessions = await this.prisma.$queryRaw`
+                SELECT 
+                    es.session_id, es.exam_id, es.limit_taken, es."startAt", es."expireAt", es.exam_type,
+                    json_build_object(
+                        'exam_id', e.exam_id,
+                        'title', e.title,
+                        'duration', e.duration,
+                        'total_ques', e.total_ques
+                    ) AS exam,
+                    -- Nesting JSON for the many-to-many relationship (class names)
+                    (
+                        SELECT json_agg(json_build_object('class_id', eoi.class_id, 'classname', c.classname))
+                        FROM "Exam_open_in" eoi
+                        JOIN "Class" c ON eoi.class_id = c.class_id
+                        WHERE eoi.session_id = es.session_id AND eoi.exam_id = es.exam_id
+                    ) AS exam_open_in,
+                    -- Nesting JSON for the specific student's attempts
+                    (
+                        SELECT json_agg(json_build_object(
+                            'et_id', et.et_id, 
+                            'isDone', et."isDone", 
+                            'final_score', et.final_score, 
+                            'doneAt', et."doneAt"
+                        ))
+                        FROM "Exam_taken" et
+                        WHERE et.session_id = es.session_id AND et.exam_id = es.exam_id AND et.student_uid = ${student_id}
+                    ) AS exam_takens
+                FROM "Exam_session" es
+                JOIN "Exams" e ON es.exam_id = e.exam_id
+                WHERE 
+                    -- Enrollment check: Session must be open in a class the student is in
+                    EXISTS (
+                        SELECT 1 FROM "Exam_open_in" eoi
+                        JOIN "Learning" l ON eoi.class_id = l.class_id
+                        WHERE eoi.session_id = es.session_id 
+                        AND eoi.exam_id = es.exam_id 
+                        AND l.student_uid = ${student_id}
                     )
+                    -- Limit check: Current student's total attempts < session limit
+                    AND (
+                        SELECT COUNT(*) FROM "Exam_taken" et 
+                        WHERE et.session_id = es.session_id 
+                        AND et.exam_id = es.exam_id 
+                        AND et.student_uid = ${student_id}
+                    ) < es.limit_taken
+                    ${timeCondition}
+                    ${etStatusCondition}
+                ORDER BY es."startAt" ASC, es."expireAt" ASC
+                LIMIT ${limit} OFFSET ${offset}
+            `;
 
-                },
-                orderBy: [{ startAt: "asc" }, { expireAt: "asc" }]
-            });
             return sessions;
         } catch (error) {
+            console.error("Raw Query Error:", error);
             throw new InternalServerErrorException(error.message);
         }
     }
