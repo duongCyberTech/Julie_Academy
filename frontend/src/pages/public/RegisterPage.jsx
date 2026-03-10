@@ -26,7 +26,7 @@ import {
     VisibilityOff,
     Person,
 } from "@mui/icons-material";
-import AppSnackbar from '../../components/Snackbar'; 
+import AppSnackbar from '../../components/SnackBar'; 
 import logobk from '../../assets/images/logobk.png';
 
 const PageWrapper = styled(Box)(({ theme }) => ({
