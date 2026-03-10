@@ -8,7 +8,8 @@ import {
     ParseDatePipe,
     ParseBoolPipe,
     DefaultValuePipe,
-    ParseEnumPipe
+    ParseEnumPipe,
+    UnauthorizedException
 } from "@nestjs/common";
 import { Request as Reqst } from "express";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
@@ -98,7 +99,6 @@ export class ExamController {
     }
 }
 
-
 @Controller('exam/session')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ExamSessionController {
@@ -142,9 +142,12 @@ export class ExamSessionController {
         @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
         @Query('status', new DefaultValuePipe(ExamSessionStatus.OPEN), new ParseEnumPipe(ExamSessionStatus))
         status: ExamSessionStatus,
+        @Request() req
     ){
         try {
-            return this.examService.getAllExamSessionByClass(class_id, page, limit, status)
+            const user = req.user
+            if (!user) return new UnauthorizedException("Unauthorized")
+            return this.examService.getAllExamSessionByClass(user, class_id, page, limit, status)
         } catch (error) {
             throw new InternalServerErrorException(error.message)
         }

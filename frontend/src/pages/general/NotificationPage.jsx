@@ -57,7 +57,7 @@ const NotificationPage = React.memo(() => {
         if (noti.link_wrapper_id && noti.link_primary_id) {
           if (noti.link_partial_id) {
             navigate(
-              `/${decodedData.role}/classes/${noti.link_wrapper_id}/${noti.link_primary_id}#${noti.link_partial_id}`, 
+              `/${decodedData.role}/classes/${noti.link_wrapper_id}/${noti.link_primary_id}#msg_${noti.link_partial_id}`, 
               {state: {
                 thread_id: noti.link_primary_id,
                 comment_id: noti.link_partial_id,
@@ -78,7 +78,7 @@ const NotificationPage = React.memo(() => {
   }
 
   const handleNotiClick = async(noti) => {
-    markAsRead(noti.notice_id)
+    await markAsRead(noti.notice_id)
     handleNavigateNoti(noti)
   };
 

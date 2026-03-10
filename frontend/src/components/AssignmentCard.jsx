@@ -14,7 +14,7 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
   const { exam, expireAt, startAt, limit_taken, pending_et_id, examTakens } = session;
 
   const classNames = session.exam_open_in && session.exam_open_in.length > 0
-    ? session.exam_open_in.map(item => item.class.classname).join(', ')
+    ? session.exam_open_in.map(item => item.classname).join(', ')
     : 'Chưa xếp lớp';
 
   const attempts = examTakens ? examTakens.length : 0;
