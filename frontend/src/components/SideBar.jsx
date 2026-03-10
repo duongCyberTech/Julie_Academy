@@ -27,7 +27,7 @@ import GroupOutlined from "@mui/icons-material/GroupOutlined";
 import AutoStoriesOutlined from "@mui/icons-material/AutoStoriesOutlined";
 import ArticleOutlined from "@mui/icons-material/ArticleOutlined";
 import AssignmentTurnedInOutlined from "@mui/icons-material/AssignmentTurnedInOutlined";
-import HomeworkOutlined from "@mui/icons-material/HomeworkOutlined";
+import HomeWorkOutlined from "@mui/icons-material/HomeWorkOutlined";
 
 import Logo from "../assets/images/logo.png";
 
@@ -50,7 +50,7 @@ const menuConfigByRole = {
     { label: "Góc học tập", to: "/student/dashboard", Icon: DashboardIcon },
     { label: "Lớp học của tôi", to: "/student/classes", Icon: GroupOutlined },
     { label: "Luyện tập", to: "/student/practice", Icon: LibraryIcon },
-    { label: "Bài tập", to: "/student/assignment", Icon: HomeworkOutlined },
+    { label: "Bài tập", to: "/student/assignment", Icon: HomeWorkOutlined },
     { label: "Đăng ký lớp học", to: "/student/enroll", Icon: AccountBoxIcon },
   ],
   parent: [
