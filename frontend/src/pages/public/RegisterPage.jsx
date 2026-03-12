@@ -132,7 +132,7 @@ const RegisterPage = () => {
         try {
             const { confirmPassword, ...registerData } = formData;
             const response = await axios.post(
-                "http://localhost:4000/auth/register",
+                `${import.meta.env.VITE_API_URL || "http://localhost:4000"}/auth/register`,
                 registerData
             );
             if (response.data) {
