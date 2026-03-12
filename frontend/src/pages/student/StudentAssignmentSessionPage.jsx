@@ -257,7 +257,7 @@ export default function StudentAssignmentSessionPage() {
       setSnackbar({ open: true, message: isAutoSubmit ? 'Hết giờ! Đã nộp bài tự động.' : 'Nộp bài thành công!', severity: 'success' });
       
       const finalSessionId = sessionId || examData?.session_id || examData?.exam_session?.session_id || 'result';
-      setTimeout(() => navigate(`/student/assignment/session/${finalSessionId}/result`), 1000);
+      setTimeout(() => navigate(`/student/assignment/result/${examTakenId}`), 1000);
 
     } catch (error) {
       console.error("Lỗi nộp bài:", error);

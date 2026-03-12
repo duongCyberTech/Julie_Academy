@@ -1,270 +1,193 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Container,
-  Typography,
-  Box,
-  Button,
-  Grid,
-  Chip,
-  Paper,
-  Stepper,
-  Step,
-  StepButton,
-  Divider,
-  Card, 
-  CardContent, 
-  Alert,
+  Container, Typography, Box, CircularProgress, Paper, Divider, 
+  Grid, Button, Chip
 } from '@mui/material';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { red } from '@mui/material/colors';
-
-// Icons
+import { useParams, useNavigate } from 'react-router-dom';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CloseIcon from '@mui/icons-material/Close';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import SchoolIcon from '@mui/icons-material/School';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import SkipNextIcon from '@mui/icons-material/SkipNext';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
+import DOMPurify from 'dompurify'; 
 
+import { continueTakeExam } from '../../services/ExamService';
 
-const LatexRenderer = ({ content }) => {
-  const renderMath = (text) => {
-    if (!text) return null;
-    try {
-      const parts = text.split(/(\$.*?\S\$)/g);
-      return parts.map((part, index) => {
-        if (part.startsWith('$') && part.endsWith('$')) {
-          const latex = part.substring(1, part.length - 1);
-          try {
-            const html = katex.renderToString(latex, { throwOnError: false, displayMode: false });
-            return <span key={index} dangerouslySetInnerHTML={{ __html: html }} />;
-          } catch (e) {
-            return <span key={index}>{part}</span>;
-          }
-        }
-        return <span key={index}>{part}</span>;
-      });
-    } catch (e) {
-      return <span>{text}</span>;
-    }
-  };
-  return <>{renderMath(content)}</>;
+// Component Render HTML & Toán học (Dùng chung với trang Session)
+const HtmlContentRenderer = ({ htmlContent }) => {
+  const containerRef = useRef(null);
+  const cleanHtml = DOMPurify.sanitize(htmlContent || '', { ADD_TAGS: ['span'], ADD_ATTR: ['class', 'data-value'] });
+
+  useEffect(() => {
+      if (containerRef.current) {
+          const formulaElements = containerRef.current.querySelectorAll(".ql-formula");
+          formulaElements.forEach(element => {
+              const latex = element.getAttribute('data-value') || element.textContent; 
+              if (latex) {
+                  try { katex.render(latex, element, { throwOnError: false, displayMode: false }); } 
+                  catch (e) { element.textContent = `[Lỗi LaTeX: ${latex}]`; }
+              }
+          });
+      }
+  }, [cleanHtml]); 
+
+  return <Box ref={containerRef} dangerouslySetInnerHTML={{ __html: cleanHtml }} sx={{ '& p': { m: 0, p: 0 }, width: '100%', overflowX: 'auto', wordBreak: 'break-word' }} />;
 };
 
 const getAnswerPrefix = (index) => String.fromCharCode(65 + index);
 
-// Hàm giả định thông tin Session
-const MOCK_ASSIGNMENT_INFO = {
-  title: "Bài tập về nhà",
-  class: { classname: 'Lớp 9A' },
-  category: { subject: 'Toán' },
-  duration: 45,
-  done_time: new Date().toISOString(),
-  start_time: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-};
-
-const calculateDuration = (start, end) => {
-  const startTime = new Date(start);
-  const endTime = new Date(end);
-  const diff = Math.abs(endTime - startTime);
-  const minutes = Math.floor(diff / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  return `${minutes} phút ${seconds} giây`;
-};
-
-
-// Main Component
 export default function StudentAssignmentResultPage() {
-  // Lấy sessionId từ URL
-  const { sessionId } = useParams();
-  const location = useLocation();
+  const { etId } = useParams();
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
-  // Đọc dữ liệu truyền từ trang làm bài
-  const passedState = location.state || {};
-  
-  // Dữ liệu mặc định 
-  const sessionScore = passedState.score || { correct: 0, total: 0, skipped: 0, incorrect: 0 };
-  const sessionQuestions = passedState.questions || [];
-  const sessionAnswersTaken = passedState.answers_taken || [];
-  
-  const [activeStep, setActiveStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [examData, setExamData] = useState(null);
+  const [questions, setQuestions] = useState([]);
 
-  // Nếu không có dữ liệu câu hỏi, hiển thị thông báo
-  if (sessionQuestions.length === 0) {
-    return (
-      <Container maxWidth="md" sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography variant="h5" color="error" gutterBottom>
-          Không tìm thấy dữ liệu kết quả bài làm.
-        </Typography>
-        <Typography color="text.secondary" paragraph>
-          Dữ liệu kết quả chi tiết được truyền từ phiên làm bài. Nếu bạn tải lại trang, dữ liệu này sẽ mất.
-        </Typography>
-        <Button variant="contained" onClick={() => navigate('/student/assignment')}>
-          Quay lại Trang Bài tập
-        </Button>
-      </Container>
-    );
-  }
-  
-  const currentQuestion = sessionQuestions[activeStep];
-  const currentResult = sessionAnswersTaken[activeStep];
-  
-  // Kiểm tra trạng thái câu hỏi hiện tại
-  const isCorrect = currentResult?.is_correct === true;
-  const isSkipped = currentResult?.is_skipped === true; 
-  
-  const handleStepClick = (step) => setActiveStep(step);
+  useEffect(() => {
+    const fetchResultData = async () => {
+      try {
+        setIsLoading(true);
+        if (etId) {
+          const responseData = await continueTakeExam(etId, token);
+          const coreData = responseData.data || responseData;
+          setExamData(coreData);
+          
+          const rawQuestions = coreData.questions || [];
+          const questionsList = rawQuestions.map(item => {
+              if (item.question) return { ...item.question, answer_set: item.answer_set };
+              return item;
+          });
+          setQuestions(questionsList);
+        }
+      } catch (error) {
+        console.error("Lỗi lấy dữ liệu kết quả:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (token) fetchResultData();
+  }, [etId, token]);
 
-  const getStatusInfo = (result) => {
-    if (result?.is_correct === true) return { color: 'success', icon: <CheckCircleIcon /> };
-    if (result?.is_correct === false && !result.is_skipped) return { color: 'error', icon: <CloseIcon /> };
-    return { color: 'warning', icon: <SkipNextIcon /> }; // Bỏ qua
-  };
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f6f8' }}><CircularProgress size={60} thickness={4} /></Box>;
+  console.log("DỮ LIỆU BÀI THI:", examData);
+
+  if (!examData) return <Container><Typography variant="h5" color="error" 
+  align="center" mt={5}>Không tìm thấy dữ liệu bài thi.</Typography></Container>;
+
+  const displayTitle = examData?.exam_session?.exam?.title || 'Bài thi';
+  const totalScore = examData?.final_score !== undefined ? examData.final_score : 'Đang chấm...'; // Dành cho khi Backend chưa trả về điểm
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Chi tiết kết quả bài làm
-      </Typography>
+    <Container maxWidth="lg" sx={{ pt: 4, pb: 8, backgroundColor: '#f4f6f8', minHeight: '100vh' }}>
+      
+      {/* Nút quay lại */}
+      <Button 
+        startIcon={<ArrowBackIcon />} 
+        onClick={() => navigate('/student/assignment')} 
+        sx={{ mb: 3, fontWeight: 700, color: 'text.secondary' }}
+      >
+        Quay lại danh sách bài tập
+      </Button>
 
-      {/* 1. KHUNG TỔNG QUAN */}
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md={4} sx={{ textAlign: 'center', borderRight: { md: '1px solid #eee' } }}>
-            <Typography variant="h3" sx={{ fontWeight: 700, color: sessionScore.correct / sessionScore.total >= 0.5 ? 'success.main' : red[600] }}>
-              {sessionScore.correct} / {sessionScore.total}
-            </Typography>
-            <Typography variant="h6" color="text.secondary">Số câu đúng</Typography>
+      {/* CARD TỔNG QUAN KẾT QUẢ */}
+      <Paper elevation={0} sx={{ p: { xs: 3, md: 5 }, borderRadius: 4, mb: 4, textAlign: 'center', backgroundColor: '#fff', border: '1px solid', borderColor: 'grey.200', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.03)' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <Box sx={{ p: 2, borderRadius: '50%', backgroundColor: 'success.50' }}>
+            <AssignmentTurnedInIcon sx={{ fontSize: 50, color: 'success.main' }} />
+          </Box>
+        </Box>
+        <Typography variant="h4" fontWeight={800} color="text.primary" gutterBottom>
+          Nộp bài thành công!
+        </Typography>
+        <Typography variant="h6" color="text.secondary" fontWeight={500} mb={4}>
+          {displayTitle}
+        </Typography>
+
+        <Divider sx={{ mb: 4 }} />
+
+        <Grid container spacing={4} justifyContent="center">
+          <Grid item xs={6} md={3}>
+            <Typography variant="body1" color="text.secondary" fontWeight={600} gutterBottom>Điểm số của bạn</Typography>
+            <Typography variant="h3" fontWeight={800} color="primary.main">{totalScore}</Typography>
           </Grid>
-
-          <Grid item xs={12} md={8}>
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
-              {passedState.title || MOCK_ASSIGNMENT_INFO.title}
+          <Grid item xs={6} md={3}>
+            <Typography variant="body1" color="text.secondary" fontWeight={600} gutterBottom>Số câu đã làm</Typography>
+            <Typography variant="h3" fontWeight={800} color="success.main">
+              {questions.filter(q => q.answer_set && q.answer_set.length > 0).length} <Typography component="span" variant="h5" color="text.secondary">/ {questions.length}</Typography>
             </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}><Chip icon={<SchoolIcon />} label={`Môn: ${passedState.subject || MOCK_ASSIGNMENT_INFO.category.subject}`} variant="outlined"/></Grid>
-              <Grid item xs={6}><Chip icon={<EventAvailableIcon />} label={`Ngày nộp: ${new Date().toLocaleDateString('vi-VN')}`} variant="outlined"/></Grid>
-              <Grid item xs={12} sx={{ mt: 1 }}>
-                <Chip label={`Đúng: ${sessionScore.correct}`} color="success" sx={{ mr: 1 }} />
-                <Chip label={`Sai: ${sessionScore.incorrect}`} color="error" sx={{ mr: 1 }} />
-                <Chip label={`Bỏ qua: ${sessionScore.skipped}`} color="warning" />
-              </Grid>
-            </Grid>
           </Grid>
         </Grid>
       </Paper>
-      
-      {/* 2. STEPPER */}
-      <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, overflowX: 'auto' }}>
-        <Stepper nonLinear activeStep={activeStep} sx={{ minWidth: `${sessionQuestions.length * 60}px` }}>
-          {sessionQuestions.map((q, index) => {
-            const statusInfo = getStatusInfo(sessionAnswersTaken[index]);
-            return (
-              <Step key={q.questionId}>
-                <StepButton color="inherit" onClick={() => handleStepClick(index)} icon={statusInfo.icon}>
-                  {index + 1}
-                </StepButton>
-              </Step>
-            );
-          })}
-        </Stepper>
-      </Paper>
 
-      {/* 3. CHI TIẾT CÂU HỎI */}
-      {currentQuestion && (
-        <Card variant="outlined">
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" component="h3" sx={{ mr: 2 }}>
-                Câu {activeStep + 1}
+      <Typography variant="h5" fontWeight={800} color="text.primary" mb={3} px={1}>
+        Chi tiết bài làm
+      </Typography>
+
+      {/* DANH SÁCH CÂU HỎI ĐÃ LÀM (REVIEW) */}
+      {questions.map((q, index) => {
+        // Parse answer_set an toàn
+        let selectedAnswers = [];
+        if (Array.isArray(q.answer_set)) selectedAnswers = q.answer_set;
+        else if (typeof q.answer_set === 'string') {
+            try { selectedAnswers = JSON.parse(q.answer_set); } catch(e){}
+        }
+
+        const isMultiChoice = q.type === 'multiple_choice' || q.type === 'MULTIPLE_CHOICE';
+
+        return (
+          <Paper key={q.ques_id} elevation={0} sx={{ p: { xs: 3, md: 4 }, mb: 3, borderRadius: 4, border: '1px solid', borderColor: 'grey.200', backgroundColor: '#fff' }}>
+            
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" fontWeight={700} color="primary.main">
+                Câu {index + 1}
               </Typography>
-              <Chip 
-                label={isSkipped ? 'Bỏ qua' : (isCorrect ? 'Chính xác' : 'Chưa đúng')} 
-                color={isSkipped ? 'warning' : (isCorrect ? 'success' : 'error')}
-                sx={{ fontWeight: 600 }}
-              />
+              {selectedAnswers.length === 0 && (
+                <Chip label="Bỏ trống" color="warning" size="small" sx={{ fontWeight: 600 }} />
+              )}
             </Box>
 
-            <Box sx={{ my: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, minHeight: 100, fontSize: '1.1rem' }}>
-              <LatexRenderer content={currentQuestion.content} />
+            <Box sx={{ fontSize: '1.1rem', lineHeight: 1.8, mb: 3, color: 'text.primary', fontWeight: 500 }}>
+              <HtmlContentRenderer htmlContent={q.content} />
             </Box>
 
-            <Typography variant="h6" gutterBottom>Chi tiết Đáp án</Typography>
-
-            <Box>
-              {currentQuestion.answers.map((answer, index) => {
-                const prefix = getAnswerPrefix(index);
-                // Kiểm tra đáp án này có được user chọn không
-                // currentResult.selected là mảng các answerId
-                const isSelected = currentResult?.selected?.includes(answer.answerId);
+            <Box sx={{ pl: 1 }}>
+              {q.answers?.map((answer, aIndex) => {
+                const isSelected = selectedAnswers.includes(answer.aid);
                 
-                let borderColor = 'divider';
-                let bgColor = 'transparent';
-                
-                if (answer.is_correct) {
-                  borderColor = 'success.main';
-                  bgColor = 'rgba(46, 125, 50, 0.08)';
-                } else if (isSelected) {
-                  borderColor = 'error.main';
-                  bgColor = 'rgba(211, 47, 47, 0.08)';
-                }
-
                 return (
-                  <Box
-                    key={answer.answerId}
+                  <Box 
+                    key={answer.aid}
                     sx={{
-                      p: 1.5,
-                      border: '1px solid',
-                      borderColor: borderColor,
-                      borderRadius: 1,
-                      mb: 1,
-                      backgroundColor: bgColor,
-                      display: 'flex',
-                      alignItems: 'flex-start',
+                      display: 'flex', alignItems: 'flex-start', p: 2, mb: 1.5, borderRadius: 2,
+                      border: '2px solid',
+                      borderColor: isSelected ? 'primary.main' : 'grey.100',
+                      backgroundColor: isSelected ? 'primary.50' : 'transparent',
                     }}
                   >
-                    <Typography sx={{ mr: 1, fontWeight: 'bold' }}>{prefix}.</Typography>
-                    <Box sx={{ flexGrow: 1 }}>
-                      <LatexRenderer content={answer.content} />
+                    <Box sx={{ mr: 2, color: isSelected ? 'primary.main' : 'grey.400', mt: '2px' }}>
+                      {isSelected ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />}
                     </Box>
-                    {isSelected && <Chip size="small" label="Bạn chọn" color={answer.is_correct ? 'success' : 'error'} sx={{ ml: 2 }} />}
-                    {!isSelected && answer.is_correct && <Chip size="small" label="Đáp án đúng" variant="outlined" color="success" sx={{ ml: 2 }} />}
+                    <Box sx={{ display: 'flex', width: '100%', alignItems: 'flex-start' }}>
+                        <Typography sx={{ mr: 1.5, fontWeight: 700, color: isSelected ? 'primary.main' : 'text.secondary' }}>
+                          {getAnswerPrefix(aIndex)}.
+                        </Typography>
+                        <Box sx={{ flexGrow: 1, fontSize: '1.05rem', lineHeight: 1.6, color: isSelected ? 'text.primary' : 'text.secondary' }}>
+                          <HtmlContentRenderer htmlContent={answer.content} />
+                        </Box>
+                    </Box>
                   </Box>
                 );
               })}
             </Box>
 
-            {/* Lời giải */}
-            {currentQuestion.explanation && (
-              <Alert severity="success" icon={false} sx={{ mt: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>🎉 Lời giải</Typography>
-                <Box sx={{ mb: 2 }}>
-                  <LatexRenderer content={currentQuestion.explanation} />
-                </Box>
-              </Alert>
-            )}
-          </CardContent>
-          
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2, borderTop: '1px solid #eee' }}>
-            <Button variant="outlined" onClick={() => navigate('/student/assignment')}>
-              Quay lại Trang Bài tập
-            </Button>
-            <Box>
-              <Button onClick={() => handleStepClick(activeStep - 1)} disabled={activeStep === 0}>
-                Câu trước
-              </Button>
-              <Button onClick={() => handleStepClick(activeStep + 1)} disabled={activeStep === sessionQuestions.length - 1} sx={{ ml: 1 }}>
-                Câu sau
-              </Button>
-            </Box>
-          </Box>
-        </Card>
-      )}
+          </Paper>
+        );
+      })}
+
     </Container>
   );
 }
