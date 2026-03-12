@@ -69,6 +69,14 @@ jobs:
             name: Build ứng dụng React
             command: npm run build
 
+  deploy-frontend-to-vercel:
+      docker:
+        - image: cimg/base:current
+      steps:
+        - run:
+            name: Trigger Vercel Deploy
+            command: curl -X POST $REACT_VERCEL_DEPLOY
+
 workflows:
   nest-ci-cd-workflow:
     when: << pipeline.parameters.run-tutor-service >>
@@ -98,3 +106,11 @@ workflows:
           filters:
             branches:
               only: /.*/
+
+      - deploy-frontend-to-vercel:
+          requires:
+            - build-and-test-frontend
+          filters:
+            branches:
+              only: 
+                - main
