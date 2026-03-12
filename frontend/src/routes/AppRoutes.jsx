@@ -164,10 +164,7 @@ function AppRoutes(props) {
               element={<StudentAssignmentSessionPage />}
             />
             
-            <Route
-              path="assignment/session/:sessionId/result"
-              element={<StudentAssignmentResultPage />}
-            />
+            <Route path="/student/assignment/result/:etId" element={<StudentAssignmentResultPage />} />
 
 
           </Route>
