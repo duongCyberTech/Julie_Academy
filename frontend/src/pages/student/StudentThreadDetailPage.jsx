@@ -148,13 +148,14 @@ const ThreadDetailPage = React.memo(() => {
 
       try {
         const response = await getCommentsByThread(threadId, curParent, page);
-        if (response.status === 200)
+        if (response.status === 200) {
           setComments(prev => {
             const newComments = response.data && response.data.length ? response.data.filter(
               incoming => !prev.some(existing => existing.comment_id === incoming.comment_id)
             ) : [];
             return [...prev, ...newComments];
           });
+        }
       } catch (error) {
         if (error.status === 401) {
           toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
@@ -165,6 +166,21 @@ const ThreadDetailPage = React.memo(() => {
 
     loadData();
   }, [page, threadId]);
+
+  useEffect(() => {
+    const targetId = location.hash ? location.hash.substring(1) : null;
+
+    if (targetId) {
+      // Đợi một chút để đảm bảo DOM đã được vẽ xong (rất quan trọng nếu có call API)
+      setTimeout(() => {
+        const element = document.getElementById(targetId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('highlight-animation'); 
+        }
+      }, 300); // Tăng thời gian delay nếu API của bạn load chậm hơn
+    }
+  }, [location, comments]);
 
   useEffect(() => {
     const targetId = threadId;
