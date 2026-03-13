@@ -5,6 +5,7 @@ import { google } from 'googleapis';
 import { addDays, isBefore, setDate, setHours, setMinutes } from 'date-fns';
 import { ClassStatus, EnrollStatus, Prisma, ResourceStatus } from '@prisma/client';
 import { DuplicatingObject } from 'src/mode/control.mode';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 require('dotenv').config()
 
 
@@ -282,7 +283,8 @@ export class ScheduleService {
 export class ClassService {
   constructor(
     private prisma: PrismaService,
-    private readonly schedule: ScheduleService
+    private readonly schedule: ScheduleService,
+    private eventEmitter: EventEmitter2
   ) {}
 
   async createClass(tutor_uid: string, data: ClassDto) {
@@ -509,7 +511,7 @@ export class ClassService {
         }
       }
     });
-    return classDetails;
+   return classDetails;
   }
 
   async vadidateClassRequest(tx: Prisma.TransactionClient, class_id: string, student_id: string) {
@@ -598,6 +600,10 @@ export class ClassService {
         successCount++;
       }
 
+      addedStudents.forEach((student) => {
+        this.eventEmitter.emit('class.enroll', {class_id, student_id: student.uid})
+      })
+
       return {
         message: `Successfully request ${successCount} students.`,
         data: addedStudents,
@@ -606,26 +612,28 @@ export class ClassService {
     });
   }
 
-async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string) {
-  return this.prisma.$transaction(async (tx) => {
-    const checkPosess = await tx.class.findFirst({
-      where: { tutor: { uid: tutor_id }, class_id }
-    });
-    if (!checkPosess) throw new ForbiddenException("Tutor doesn't have permission!");
-    const updated = await tx.learning.update({
-      where: { class_id_student_uid: { class_id, student_uid: student_id } },
-      data: { status: EnrollStatus.accepted }
-    });
-    if (updated.status === EnrollStatus.accepted) { 
-       await tx.class.update({
-         where: { class_id },
-         data: { nb_of_student: { increment: 1 } }
-       });
-    }
+  async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const checkPosess = await tx.class.findFirst({
+        where: { tutor: { uid: tutor_id }, class_id }
+      });
+      if (!checkPosess) throw new ForbiddenException("Tutor doesn't have permission!");
+      const updated = await tx.learning.update({
+        where: { class_id_student_uid: { class_id, student_uid: student_id } },
+        data: { status: EnrollStatus.accepted }
+      });
+      if (updated.status === EnrollStatus.accepted) { 
+        await tx.class.update({
+          where: { class_id },
+          data: { nb_of_student: { increment: 1 } }
+        });
+      }
 
-    return { message: "Enrollment Accepted" };
-  });
-}
+      this.eventEmitter.emit('class.accept', {class_id, student_id})
+
+      return { message: "Enrollment Accepted" };
+    });
+  }
 
   async acceptAllEnrollReq(tutor_id: string, class_id: string){
     return this.prisma.$transaction(async(tx) => {
@@ -634,14 +642,29 @@ async acceptEnrollRequest(tutor_id: string, class_id: string, student_id: string
       })
 
       if (!checkPosess) throw new ForbiddenException("Tutor doesn't have permission to access class!")
+      const students = await tx.learning.findMany({
+        where: {class_id, status: EnrollStatus.pending},
+        select: {student_uid: true}
+      })
 
-      await tx.learning.updateMany({
+      const updated = await tx.learning.updateMany({
         where: {class: {class_id}, status: EnrollStatus.pending},
         data: {
           status: EnrollStatus.accepted
         }
       })
 
+      updated.count && await tx.class.update({
+        where: {class_id},
+        data: {
+          nb_of_student: {increment: updated.count}
+        }
+      })
+
+      students.forEach((student) => {
+        this.eventEmitter.emit('class.accept', {class_id, student_id: student.student_uid})
+      })
+      
       return { message: "Enrollment Accepted" }
     })
   }
