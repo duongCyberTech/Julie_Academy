@@ -16,30 +16,36 @@ const mentionsInputStyle = {
     fontSize: 16,
     fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
     borderRadius: '8px',
-    color: '#1976d2'
+    lineHeight: '1.5',
   },
 
   '&multiLine': {
     control: {
       minHeight: 63,
     },
+
     highlighter: {
       padding: 16,
       border: '1px solid transparent',
       borderRadius: '8px',
       boxSizing: 'border-box',
+      color: 'transparent',
+      overflow: 'hidden'
     },
+
     input: {
       padding: 16,
+      margin: 0,
       border: '1px solid rgba(0, 0, 0, 0.23)',
       borderRadius: '8px',
       boxSizing: 'border-box',
       outline: 'none',
-      '&:focus': {
-        outline: '2px solid #1976d2',
-        outlineOffset: '-1px',
-      },
-    },
+
+      //color: 'transparent',   // text thật bị ẩn
+      caretColor: '#000',     // vẫn thấy con trỏ
+
+      background: 'transparent'
+    }
   },
 
   suggestions: {
@@ -56,13 +62,15 @@ const mentionsInputStyle = {
         color: '#1976d2',
       },
     },
-  },
+  }
 };
 
 const mentionStyle = {
-  backgroundColor: 'rgba(24, 119, 242, 0.15)',
-  color: '#1877F2',
-  fontWeight: 'bold'
+  backgroundColor: 'rgba(7, 83, 182, 0.15)',
+  color: 'transparent',
+  // fontWeight: 'bold', // Bây giờ bạn có thể in đậm thoải mái
+  borderRadius: '4px',
+  
 };
 
 /**
@@ -151,6 +159,7 @@ export default function CommentInput({ class_id, value, setValue }) {
         style={mentionsInputStyle}
         placeholder="Nhập nội dung, dùng @ để nhắc tên..."
         a11ySuggestionsListLabel={"Gợi ý nhắc tên"}
+        allowSuggestionsAboveCursor={true}
       >
         <Mention
           trigger="@"
