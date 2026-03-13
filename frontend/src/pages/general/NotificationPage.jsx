@@ -74,6 +74,10 @@ const NotificationPage = React.memo(() => {
         navigate(`/student/assignment`)
         return
       }
+      case "class": {
+        navigate(`/${decodedData.role}/classes/${noti.link_primary_id}`)
+        return
+      }
     }
   }
 
