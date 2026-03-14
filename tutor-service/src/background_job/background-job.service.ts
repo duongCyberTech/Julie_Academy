@@ -106,6 +106,63 @@ export class BackgroundService {
     })
   }
 
+  @OnEvent('class.enroll')
+  async handleNotifyNewEnrollment(data: {class_id: string, student_id: string}) {
+    const {class_id, student_id} = data;
+    try {
+      const student = await this.prisma.student.findUnique({
+        where: {uid: student_id},
+        select: {
+          user: {
+            select: {
+              email: true,
+              fname: true,
+              lname: true,
+              mname: true
+            }
+          }
+        }
+      })
+
+      const klass = await this.prisma.class.findUnique({
+        where: {class_id},
+        select: {
+          classname: true,
+          tutor_uid: true
+        }
+      })
+
+      await this.notify.createNotification(klass.tutor_uid, {
+        message: `${student.user.fname} ${student.user.mname ? student.user.mname + ' ' : ''}${student.user.lname} đã đăng ký vào lớp ${klass.classname}.`,
+        type: NotificationType.class,
+        link_primary_id: class_id
+      })
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+  @OnEvent('class.accept')
+  async handleNotifyAcceptEnrollment(data: {class_id: string, student_id: string}) {
+    const {class_id, student_id} = data;
+    try {
+      const klass = await this.prisma.class.findUnique({
+        where: {class_id},
+        select: {
+          classname: true,
+        }
+      })
+
+      await this.notify.createNotification(student_id, {
+        message: `Bạn đã được chấp nhận vào lớp ${klass.classname}.`,
+        type: NotificationType.class,
+        link_primary_id: class_id
+      })
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
   @OnEvent('exam.new')
   async handleSetupDeadlineNotify(data: {newSession: any, openList: string[]}){
     const { newSession, openList } = data;
