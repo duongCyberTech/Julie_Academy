@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Container, Typography, Box, Button, RadioGroup, Radio, Checkbox,
-  FormGroup, FormControlLabel, CircularProgress, Paper, Divider, 
-  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Chip
+  FormGroup, FormControlLabel, CircularProgress, Paper, Chip,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -18,6 +18,7 @@ import DOMPurify from 'dompurify';
 import AppSnackbar from '../../components/SnackBar';
 import { takeExam, continueTakeExam, submitExam } from '../../services/ExamService';
 
+// --- Component render HTML & Công thức Toán học ---
 const HtmlContentRenderer = ({ htmlContent }) => {
   const containerRef = useRef(null);
   const cleanHtml = DOMPurify.sanitize(htmlContent || '', { ADD_TAGS: ['span'], ADD_ATTR: ['class', 'data-value'] });
@@ -40,11 +41,13 @@ const HtmlContentRenderer = ({ htmlContent }) => {
 
 const getAnswerPrefix = (index) => String.fromCharCode(65 + index); 
 
+// --- MAIN COMPONENT ---
 export default function StudentAssignmentSessionPage() {
   const { classId, examId, sessionId, etId } = useParams(); 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
+  // States
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [examData, setExamData] = useState(null);
@@ -54,6 +57,7 @@ export default function StudentAssignmentSessionPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({}); 
   
+  // Tracking thời gian làm bài từng câu
   const [timeTracker, setTimeTracker] = useState({}); 
   const currentStartTime = useRef(Date.now());
 
@@ -61,6 +65,7 @@ export default function StudentAssignmentSessionPage() {
   const [openSubmitConfirm, setOpenSubmitConfirm] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
+  // Lấy classId chính xác để gọi API Submit
   const getActualClassId = () => {
     if (classId) return classId;
     if (examTakenId) {
@@ -70,26 +75,27 @@ export default function StudentAssignmentSessionPage() {
     return examData?.class_id || examData?.exam_open_in?.[0]?.class_id || null;
   };
 
-  // FETCH DỮ LIỆU ĐỈNH CAO: Tự động Redirect để chống lỗi F5
+  // FETCH DATA & SETUP LUỒNG LÀM BÀI
   useEffect(() => {
     const fetchExamData = async () => {
       try {
         setIsLoading(true);
 
-        // LUỒNG 1: Bắt đầu làm bài mới
+        // LUỒNG 1: Bắt đầu làm bài MỚI
         if (classId && examId && sessionId && !etId) {
             const res = await takeExam(classId, examId, sessionId, token);
             const newEtId = res.info?.et_id || res.et_id;
             
             if (newEtId) {
+                // Lưu classId để sau này F5 vẫn nhớ lớp nào
                 localStorage.setItem(`exam_class_${newEtId}`, classId);
-                // BẮT BUỘC ĐỔI URL VÀ RERENDER NGAY LẬP TỨC
-                navigate(`/student/assignment/continue/${newEtId}`, { replace: true });
-                return; // Dừng lại ở đây để React tự load lại component theo luồng 2
+                // BẮT BUỘC ĐỔI URL ĐỂ CHỐNG F5 (Chuyển sang dạng /continue/:etId)
+                navigate(`/student/assignment/session/${newEtId}`, { replace: true });
+                return; 
             }
         }
 
-        // LUỒNG 2: Tiếp tục làm bài / F5
+        // LUỒNG 2: Tiếp tục làm bài dở dang (Có etId trên URL)
         if (etId) {
             const responseData = await continueTakeExam(etId, token);
             const coreData = responseData.data || responseData;
@@ -97,7 +103,7 @@ export default function StudentAssignmentSessionPage() {
             setExamTakenId(etId);
             setExamData(coreData);
             
-            // Xử lý cấu trúc lồng nhau của Backend
+            // Format lại cấu trúc câu hỏi từ Backend trả về
             const rawQuestions = coreData.questions || [];
             const questionsList = rawQuestions.map(item => {
                 if (item.question) return { ...item.question, answer_set: item.answer_set };
@@ -105,7 +111,7 @@ export default function StudentAssignmentSessionPage() {
             });
             setQuestions(questionsList);
 
-            // Phục hồi đáp án
+            // Phục hồi đáp án đã chọn & setup bộ đếm thời gian
             if (questionsList.length > 0) {
                 const restoredAnswers = {};
                 const restoredTime = {};
@@ -114,11 +120,11 @@ export default function StudentAssignmentSessionPage() {
                 questionsList.forEach((q, index) => {
                     if (!q.ques_id) return;
                     let savedAnswers = [];
+                    // Ưu tiên dữ liệu từ DB (nếu có auto-save trước đó)
                     if (q.answer_set && Array.isArray(q.answer_set) && q.answer_set.length > 0) {
                         savedAnswers = q.answer_set;
-                    } else if (typeof q.answer_set === 'string') {
-                        try { savedAnswers = JSON.parse(q.answer_set); } catch(e){}
                     } else if (localDraft[q.ques_id]) {
+                        // Trái lại dùng LocalStorage
                         savedAnswers = localDraft[q.ques_id];
                     }
 
@@ -129,7 +135,7 @@ export default function StudentAssignmentSessionPage() {
                 setTimeTracker(restoredTime);
             }
 
-            // Đồng bộ thời gian cực chuẩn từ Backend
+            // Đồng bộ thời gian đếm ngược với Backend
             let expireTime;
             const dbExpire = coreData.exam_session?.expireAt || coreData.expireAt; 
             if (dbExpire) {
@@ -154,13 +160,15 @@ export default function StudentAssignmentSessionPage() {
         setIsLoading(false);
       }
     };
+    
     if (token) fetchExamData();
   }, [classId, examId, sessionId, etId, token, navigate]);
 
+  // TICK TOCK: Đếm ngược thời gian
   useEffect(() => {
     if (timeLeft === null || isSubmitting) return;
     if (timeLeft <= 0) {
-      handleFinalSubmit(true); 
+      handleFinalSubmit(true); // Hết giờ -> Tự động nộp
       return;
     }
     const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
@@ -174,12 +182,23 @@ export default function StudentAssignmentSessionPage() {
     return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
   };
 
+  // Cập nhật tổng thời gian đã dành cho 1 câu hỏi
+  const updateTimeSpent = (questionId) => {
+    const timeSpent = Date.now() - currentStartTime.current;
+    setTimeTracker(prev => {
+      const current = prev[questionId] || { firstResponse: 0, totalSpent: 0 };
+      return { ...prev, [questionId]: { ...current, totalSpent: current.totalSpent + timeSpent }};
+    });
+    currentStartTime.current = Date.now(); // Reset bộ đếm cho câu tiếp theo
+  };
+
+  // Xây dựng Payload gửi lên Server
   const buildPayload = (currentAnswers, tracker) => {
     return questions.map((q, index) => {
       const t = tracker[q.ques_id] || { firstResponse: 0, totalSpent: 0 };
       return {
         ques_id: q.ques_id,
-        answers: currentAnswers[q.ques_id] || [], 
+        answers: currentAnswers[q.ques_id] || [], // Luôn gửi mảng (VD: [1] hoặc [2,3])
         ms_first_response: t.firstResponse || t.totalSpent || 500, 
         ms_total_response: t.totalSpent || 1000, 
         index: index
@@ -187,25 +206,30 @@ export default function StudentAssignmentSessionPage() {
     });
   };
 
+  // Xử lý khi click vào Đáp án
   const handleAnswerChange = (questionId, answerAid, isMultiChoice) => {
     let newAnswersObj = {};
+    
     setSelectedAnswers((prev) => {
       const newAnswers = { ...prev };
       if (isMultiChoice) {
         const currentSelections = prev[questionId] || [];
         if (currentSelections.includes(answerAid)) {
-          newAnswers[questionId] = currentSelections.filter((id) => id !== answerAid);
+          newAnswers[questionId] = currentSelections.filter((id) => id !== answerAid); // Bỏ chọn
         } else {
-          newAnswers[questionId] = [...currentSelections, answerAid];
+          newAnswers[questionId] = [...currentSelections, answerAid]; // Chọn thêm
         }
       } else {
-        newAnswers[questionId] = [answerAid]; 
+        newAnswers[questionId] = [answerAid]; // Chọn 1 (Bọc trong mảng theo chuẩn DB)
       }
       newAnswersObj = newAnswers;
+      
+      // Lưu nháp xuống LocalStorage
       localStorage.setItem(`exam_draft_${examTakenId}`, JSON.stringify(newAnswersObj));
       return newAnswers;
     });
 
+    // Cập nhật ms_first_response (lần click đầu tiên)
     setTimeTracker(prev => {
       const current = prev[questionId] || { totalSpent: 0 };
       const newTracker = { ...prev };
@@ -213,32 +237,26 @@ export default function StudentAssignmentSessionPage() {
         newTracker[questionId] = { ...current, firstResponse: Date.now() - currentStartTime.current };
       }
       
+      // TÙY CHỌN: Gọi API lưu nháp ngầm (Auto-save)
       const actClassId = getActualClassId();
       if (actClassId && examTakenId) {
          const payload = buildPayload(newAnswersObj, newTracker);
+         // Gửi isDone: false để báo server đây chỉ là lưu nháp
          submitExam(examTakenId, actClassId, payload, false, token).catch(() => {});
       }
       return newTracker;
     });
   };
 
-  const updateTimeSpent = (questionId) => {
-    const timeSpent = Date.now() - currentStartTime.current;
-    setTimeTracker(prev => {
-      const current = prev[questionId] || { firstResponse: 0, totalSpent: 0 };
-      return { ...prev, [questionId]: { ...current, totalSpent: current.totalSpent + timeSpent }};
-    });
-    currentStartTime.current = Date.now(); 
-  };
-
+  // Điều hướng câu hỏi
   const handleStepClick = (stepIndex) => {
     if (questions[activeStep]) updateTimeSpent(questions[activeStep].ques_id);
     setActiveStep(stepIndex);
   };
-
   const handleNext = () => handleStepClick(Math.min(activeStep + 1, questions.length - 1));
   const handleBack = () => handleStepClick(Math.max(activeStep - 1, 0));
 
+  // HÀM NỘP BÀI CHÍNH THỨC
   const handleFinalSubmit = async (isAutoSubmit = false) => {
     if (questions[activeStep]) updateTimeSpent(questions[activeStep].ques_id); 
     setIsSubmitting(true);
@@ -248,16 +266,20 @@ export default function StudentAssignmentSessionPage() {
       const actClassId = getActualClassId();
       const payload = buildPayload(selectedAnswers, timeTracker);
       
-      await submitExam(examTakenId, actClassId || 'no-class-id', payload, true, token); 
+      // Gọi API Nộp bài (isDone: true)
+      const res = await submitExam(examTakenId, actClassId || 'no-class-id', payload, true, token); 
       
+      // Xóa nháp
       localStorage.removeItem(`exam_draft_${examTakenId}`);
       localStorage.removeItem(`exam_expire_${examTakenId}`);
       localStorage.removeItem(`exam_class_${examTakenId}`);
 
       setSnackbar({ open: true, message: isAutoSubmit ? 'Hết giờ! Đã nộp bài tự động.' : 'Nộp bài thành công!', severity: 'success' });
       
-      const finalSessionId = sessionId || examData?.session_id || examData?.exam_session?.session_id || 'result';
-      setTimeout(() => navigate(`/student/assignment/result/${examTakenId}`), 1000);
+      // Chuyển hướng sang trang Kết Quả, đính kèm kết quả trả về
+      setTimeout(() => {
+        navigate(`/student/assignment/result/${examTakenId}`, { state: { resultData: res.data } });
+      }, 1000);
 
     } catch (error) {
       console.error("Lỗi nộp bài:", error);
@@ -266,18 +288,20 @@ export default function StudentAssignmentSessionPage() {
     }
   };
 
+  // Render Loading & Lỗi
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f6f8' }}><CircularProgress size={60} thickness={4} /></Box>;
   if (!questions.length) return <Container><Typography variant="h5" color="error" align="center" mt={5}>Không tải được dữ liệu đề thi.</Typography></Container>;
 
+  // Variables cho UI
   const currentQuestion = questions[activeStep];
   const isMultiChoice = currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'MULTIPLE_CHOICE';
-
-  const displayTitle = examData?.exam_session?.exam?.title || examData?.exam?.title || examData?.title || 'Bài tập';
-  const displaySubject = examData?.exam_session?.exam?.category?.subject || examData?.exam?.category?.subject || examData?.category?.subject || 'Môn học';
+  const displayTitle = examData?.exam_session?.exam?.title || examData?.exam?.title || examData?.title || 'Bài thi';
+  const displaySubject = examData?.exam_session?.exam?.category?.subject || examData?.exam?.category?.subject || examData?.category?.subject || 'Bài tập';
 
   return (
     <Container maxWidth={false} sx={{ pt: 3, pb: 4, px: { xs: 2, sm: 4, md: 8, lg: 12 }, backgroundColor: '#f4f6f8', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
+      {/* HEADER BÀI THI */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" fontWeight={800} color="text.primary" gutterBottom>{displayTitle}</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
@@ -286,10 +310,13 @@ export default function StudentAssignmentSessionPage() {
         </Box>
       </Box>
 
+      {/* BODY CHÍNH */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px', lg: '1fr 380px' }, gap: 4, height: 'calc(100vh - 160px)' }}>
         
+        {/* Cột trái: Vùng câu hỏi */}
         <Box sx={{ minWidth: 0, height: '100%' }}>
-          <Paper elevation={0} sx={{ height: '100%', borderRadius: 4, border: '1px solid', borderColor: 'grey.200', display: 'flex', flexDirection: 'column', backgroundColor: '#fff', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.03)' }}>
+          <Paper elevation={0} sx={{ height: '100%', borderRadius: 4, border: '1px solid', borderColor: 'grey.200', display: 'flex', flexDirection: 'column', backgroundColor: '#fff' }}>
+            {/* Header Câu hỏi & Timer */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 2, md: 3 }, borderBottom: '1px solid #eee' }}>
               <Box>
                 <Typography variant="h5" fontWeight={800} color="primary.main" component="span">Câu {activeStep + 1} </Typography>
@@ -299,10 +326,12 @@ export default function StudentAssignmentSessionPage() {
               <Chip icon={<AccessTimeIcon sx={{ fontSize: 20 }}/>} label={timeLeft !== null ? formatTime(timeLeft) : '00:00'} color={timeLeft < 300 ? "error" : "primary"} sx={{ fontWeight: 800, fontSize: '1.1rem', py: 2.5, px: 1, borderRadius: 2 }} />
             </Box>
             
+            {/* Nội dung câu hỏi */}
             <Box sx={{ flexGrow: 1, overflowY: 'auto', overflowX: 'hidden', p: { xs: 2, md: 4 } }}>
               <Box sx={{ fontSize: '1.2rem', lineHeight: 1.8, mb: 4, color: 'text.primary', fontWeight: 500, width: '100%' }}>
                 <HtmlContentRenderer htmlContent={currentQuestion.content} />
               </Box>
+              
               <FormGroup sx={{ width: '100%' }}>
                 {currentQuestion.answers?.map((answer, index) => {
                   const isSelected = (selectedAnswers[currentQuestion.ques_id] || []).includes(answer.aid);
@@ -328,6 +357,7 @@ export default function StudentAssignmentSessionPage() {
               </FormGroup>
             </Box>
 
+            {/* Nút Điều hướng */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', p: { xs: 2, md: 3 }, borderTop: '1px solid #eee' }}>
               <Button variant="outlined" size="large" onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowBackIcon />} sx={{ borderRadius: 2, px: 4, fontWeight: 700 }}>Câu trước</Button>
               <Button variant="contained" size="large" onClick={handleNext} disabled={activeStep === questions.length - 1} endIcon={<ArrowForwardIcon />} disableElevation sx={{ borderRadius: 2, px: 4, fontWeight: 700 }}>Câu tiếp</Button>
@@ -335,8 +365,9 @@ export default function StudentAssignmentSessionPage() {
           </Paper>
         </Box>
 
+        {/* Cột phải: Bảng tiến độ */}
         <Box sx={{ height: '100%' }}>
-          <Paper elevation={0} sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, borderRadius: 4, border: '1px solid', borderColor: 'grey.200', backgroundColor: '#fff', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.03)' }}>
+          <Paper elevation={0} sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, borderRadius: 4, border: '1px solid', borderColor: 'grey.200', backgroundColor: '#fff' }}>
             <Typography variant="h6" fontWeight={800} mb={2}>Tiến độ làm bài</Typography>
             
             <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
@@ -364,11 +395,6 @@ export default function StudentAssignmentSessionPage() {
             </Box>
 
             <Box sx={{ pt: 2, borderTop: '1px solid #eee', mt: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}><Box sx={{ width: 16, height: 16, borderRadius: 1, bgcolor: 'primary.main', mr: 1.5 }} /> <Typography variant="body2" fontWeight={600}>Đã chọn</Typography></Box>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}><Box sx={{ width: 16, height: 16, borderRadius: 1, bgcolor: 'grey.100', border: '2px solid', borderColor: 'grey.300', mr: 1.5 }} /> <Typography variant="body2" fontWeight={600} color="text.secondary">Chưa làm</Typography></Box>
-              </Box>
-
               <Button
                 fullWidth variant="contained" color="success" size="large" startIcon={<SendIcon />}
                 onClick={() => setOpenSubmitConfirm(true)} disabled={isSubmitting} disableElevation
@@ -377,11 +403,11 @@ export default function StudentAssignmentSessionPage() {
                 NỘP BÀI THI
               </Button>
             </Box>
-
           </Paper>
         </Box>
       </Box>
 
+      {/* DIALOG XÁC NHẬN NỘP BÀI */}
       <Dialog open={openSubmitConfirm} onClose={() => setOpenSubmitConfirm(false)} PaperProps={{ sx: { borderRadius: 4, p: 1, minWidth: 400 } }}>
         <DialogTitle sx={{ fontWeight: 800, fontSize: '1.5rem', textAlign: 'center', pb: 1 }}>Xác nhận nộp bài</DialogTitle>
         <DialogContent>
