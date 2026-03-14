@@ -39,7 +39,7 @@ export class ExamTakenService {
             }
 
             const timeTaken = await this.prisma.exam_taken.count({
-                where: {exam_id, session_id}
+                where: {exam_id, session_id, student_uid: student_id}
             })
 
             const takenLimit = await this.prisma.exam_session.findUnique({
