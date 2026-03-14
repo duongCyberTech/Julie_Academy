@@ -196,11 +196,10 @@ export const continueTakeExam = async (etId, token) => {
 };
 
 // 5. Nộp bài
-// 5. Nộp bài
 export const submitExam = async (etId, classId, submitAns, isDone, token) => {
     try {
         const body = {
-            submitAns: submitAns, // ĐÂY LÀ CHÌA KHÓA: Tên biến phải khớp 100% với @Body("submitAns") ở Backend
+            submitAns: submitAns, 
             isDone: isDone
         };
         const response = await apiClient.post(`/exam_taken/${etId}/class/${classId}`, body, getAuthHeaders(token));

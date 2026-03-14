@@ -336,7 +336,7 @@ export class ExamTakenService {
         var cnt = 0
         for (const ans of trueAnswers) {
             if (ans.type === QuestionType.single_choice){
-                const checkAns = (ans.answers[0] == answers.find(i => i.ques_id).answers[0])
+                const checkAns = (ans.answers[0] === answers.find(i => i.ques_id).answers[0])
                 if (checkAns) {
                     score = score + 1.0
                     cnt++
