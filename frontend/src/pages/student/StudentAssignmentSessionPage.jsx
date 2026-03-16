@@ -41,7 +41,6 @@ const HtmlContentRenderer = ({ htmlContent }) => {
 
 const getAnswerPrefix = (index) => String.fromCharCode(65 + index); 
 
-// --- MAIN COMPONENT ---
 export default function StudentAssignmentSessionPage() {
   const { classId, examId, sessionId, etId } = useParams(); 
   const navigate = useNavigate();
@@ -75,13 +74,13 @@ export default function StudentAssignmentSessionPage() {
     return examData?.class_id || examData?.exam_open_in?.[0]?.class_id || null;
   };
 
-  // FETCH DATA & SETUP LUỒNG LÀM BÀI
+  // Fetch data và set up luồng làm bài
   useEffect(() => {
     const fetchExamData = async () => {
       try {
         setIsLoading(true);
 
-        // LUỒNG 1: Bắt đầu làm bài MỚI
+        // LUỒNG 1: Bắt đầu làm bài mới
         if (classId && examId && sessionId && !etId) {
             const res = await takeExam(classId, examId, sessionId, token);
             const newEtId = res.info?.et_id || res.et_id;
@@ -89,8 +88,7 @@ export default function StudentAssignmentSessionPage() {
             if (newEtId) {
                 // Lưu classId để sau này F5 vẫn nhớ lớp nào
                 localStorage.setItem(`exam_class_${newEtId}`, classId);
-                // BẮT BUỘC ĐỔI URL ĐỂ CHỐNG F5 (Chuyển sang dạng /continue/:etId)
-                navigate(`/student/assignment/session/${newEtId}`, { replace: true });
+                navigate(`/student/assignment/continue/${newEtId}`, { replace: true });
                 return; 
             }
         }
@@ -120,7 +118,6 @@ export default function StudentAssignmentSessionPage() {
                 questionsList.forEach((q, index) => {
                     if (!q.ques_id) return;
                     let savedAnswers = [];
-                    // Ưu tiên dữ liệu từ DB (nếu có auto-save trước đó)
                     if (q.answer_set && Array.isArray(q.answer_set) && q.answer_set.length > 0) {
                         savedAnswers = q.answer_set;
                     } else if (localDraft[q.ques_id]) {
@@ -164,7 +161,7 @@ export default function StudentAssignmentSessionPage() {
     if (token) fetchExamData();
   }, [classId, examId, sessionId, etId, token, navigate]);
 
-  // TICK TOCK: Đếm ngược thời gian
+  // Đếm ngược thời gian
   useEffect(() => {
     if (timeLeft === null || isSubmitting) return;
     if (timeLeft <= 0) {
@@ -189,7 +186,7 @@ export default function StudentAssignmentSessionPage() {
       const current = prev[questionId] || { firstResponse: 0, totalSpent: 0 };
       return { ...prev, [questionId]: { ...current, totalSpent: current.totalSpent + timeSpent }};
     });
-    currentStartTime.current = Date.now(); // Reset bộ đếm cho câu tiếp theo
+    currentStartTime.current = Date.now(); 
   };
 
   // Xây dựng Payload gửi lên Server
@@ -198,7 +195,7 @@ export default function StudentAssignmentSessionPage() {
       const t = tracker[q.ques_id] || { firstResponse: 0, totalSpent: 0 };
       return {
         ques_id: q.ques_id,
-        answers: currentAnswers[q.ques_id] || [], // Luôn gửi mảng (VD: [1] hoặc [2,3])
+        answers: currentAnswers[q.ques_id] || [],
         ms_first_response: t.firstResponse || t.totalSpent || 500, 
         ms_total_response: t.totalSpent || 1000, 
         index: index
@@ -220,7 +217,7 @@ export default function StudentAssignmentSessionPage() {
           newAnswers[questionId] = [...currentSelections, answerAid]; // Chọn thêm
         }
       } else {
-        newAnswers[questionId] = [answerAid]; // Chọn 1 (Bọc trong mảng theo chuẩn DB)
+        newAnswers[questionId] = [answerAid]; 
       }
       newAnswersObj = newAnswers;
       
@@ -236,8 +233,7 @@ export default function StudentAssignmentSessionPage() {
       if (!current.firstResponse) {
         newTracker[questionId] = { ...current, firstResponse: Date.now() - currentStartTime.current };
       }
-      
-      // TÙY CHỌN: Gọi API lưu nháp ngầm (Auto-save)
+
       const actClassId = getActualClassId();
       if (actClassId && examTakenId) {
          const payload = buildPayload(newAnswersObj, newTracker);
@@ -256,7 +252,7 @@ export default function StudentAssignmentSessionPage() {
   const handleNext = () => handleStepClick(Math.min(activeStep + 1, questions.length - 1));
   const handleBack = () => handleStepClick(Math.max(activeStep - 1, 0));
 
-  // HÀM NỘP BÀI CHÍNH THỨC
+  // Hàm nộp bài chính thức
   const handleFinalSubmit = async (isAutoSubmit = false) => {
     if (questions[activeStep]) updateTimeSpent(questions[activeStep].ques_id); 
     setIsSubmitting(true);
@@ -407,7 +403,7 @@ export default function StudentAssignmentSessionPage() {
         </Box>
       </Box>
 
-      {/* DIALOG XÁC NHẬN NỘP BÀI */}
+      {/* Dialog xác nhận nộp bài */}
       <Dialog open={openSubmitConfirm} onClose={() => setOpenSubmitConfirm(false)} PaperProps={{ sx: { borderRadius: 4, p: 1, minWidth: 400 } }}>
         <DialogTitle sx={{ fontWeight: 800, fontSize: '1.5rem', textAlign: 'center', pb: 1 }}>Xác nhận nộp bài</DialogTitle>
         <DialogContent>
