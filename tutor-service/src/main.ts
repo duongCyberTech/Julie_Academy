@@ -2,9 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { IoAdapter } from '@nestjs/platform-socket.io';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
-import { hostname } from 'os';
 require('dotenv').config()
 
 async function bootstrap() {
@@ -14,9 +12,6 @@ async function bootstrap() {
       whitelist: true, // Loại bỏ các field không được định nghĩa trong DTO
       forbidNonWhitelisted: false, // Quăng lỗi nếu có field lạ
       transform: true,       // ✅ BẮT BUỘC ĐỂ ÉP KIỂU DỮ LIỆU
-      transformOptions: {
-        enableImplicitConversion: true, // (Tùy chọn) Tự động ép kiểu theo type khai báo
-      },
     }));
 
     const config = new DocumentBuilder()

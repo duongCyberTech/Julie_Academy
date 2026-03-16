@@ -16,15 +16,14 @@ export class ThreadService {
     ){}
 
     async createThread(uid: string, data: CreateThreadDto, images: Array<Express.Multer.File>) {
-        const now = DateTime.now().setZone('Asia/Ho_Chi_Minh').toJSDate()
         return this.prisma.$transaction(async(tx) => {
             const thread = await tx.thread.create({
                 data: {
                     class: {connect: {class_id: data.class_id}},
                     title: data.title,
                     content: data.content,
-                    createAt: now,
-                    updateAt: now,
+                    createAt: new Date(),
+                    updateAt: new Date(),
                     sender: {connect: {uid}},
                     open_list: data.open_list,
                     is_restricted: data.is_restricted
