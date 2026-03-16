@@ -194,16 +194,15 @@ export class ExamService {
 
     async getAllExamSessionByClass(user: any, class_id: string, page: number = 1, limit: number = 10, status: ExamSessionStatus = ExamSessionStatus.OPEN) {
         try {
-            console.log("[USER GET]: ", user)
             if (user.role != "student") {
                 const currentDate = new Date();
                 const timeCondition = status === ExamSessionStatus.UPCOMING
                     ? { startAt: { gt: currentDate } }
-                    : status === ExamSessionStatus.OPEN
+                    : (status === ExamSessionStatus.OPEN
                         ? { startAt: { lte: currentDate }, expireAt: { gt: currentDate } }
-                        : status === ExamSessionStatus.EXPIRED
+                        : (status === ExamSessionStatus.EXPIRED
                             ? { expireAt: { lte: currentDate } }
-                            : {};
+                            : {}));
 
                 const etStatusCondition = status === ExamSessionStatus.PENDING
                     ? { examTakens: { some: { isDone: false } } }
@@ -267,33 +266,34 @@ export class ExamService {
                         ? Prisma.sql` AND EXISTS (SELECT 1 FROM "Exam_taken" et WHERE et."session_id" = es."session_id" AND et."exam_id" = es."exam_id" AND et."student_uid" = ${user.userId} AND et."isDone" = true)`
                         : Prisma.empty;
 
+                const countCondition = status === ExamSessionStatus.COMPLETED ? 
+                                        Prisma.empty : 
+                                        Prisma.sql` AND (
+                                            SELECT COUNT(*) FROM "Exam_taken" et 
+                                            WHERE et."session_id" = es."session_id" 
+                                            AND et."exam_id" = es."exam_id" 
+                                            AND et."student_uid" = ${user.userId}
+                                        ) < es."limit_taken"`
+
                 // 3. The Final Query
                 const examSessions = await this.prisma.$queryRaw`
                     SELECT 
-                    es.session_id, es.exam_id, es.limit_taken, es."startAt", es."expireAt", es.exam_type,
-                    json_build_object(
-                        'exam_id', e.exam_id,
-                        'title', e.title,
-                        'duration', e.duration,
-                        'total_ques', e.total_ques
-                    ) AS exam,
+                        es.session_id, es.exam_id, es.limit_taken, es."startAt", es."expireAt", es.exam_type,
+                        json_build_object(
+                            'exam_id', e.exam_id,
+                            'title', e.title,
+                            'duration', e.duration,
+                            'total_ques', e.total_ques
+                        ) AS exam
                     FROM "Exam_session" es
                     JOIN "Exams" e ON es."exam_id" = e."exam_id"
-                    WHERE EXISTS (
-                        SELECT 1 FROM "Exam_open_in" eoi 
-                        WHERE eoi."session_id" = es."session_id" 
-                        AND eoi."exam_id" = es."exam_id"
-                        AND eoi."class_id" = ${class_id}
-                    )
+                    JOIN "Exam_open_in" eoi ON es."session_id" = eoi."session_id" AND es."exam_id" = eoi."exam_id"
+                    WHERE 
+                        eoi."class_id" = ${class_id}
                     -- Logic: check if specific student's attempt count < limit_taken
-                    AND (
-                        SELECT COUNT(*) FROM "Exam_taken" et 
-                        WHERE et."session_id" = es."session_id" 
-                        AND et."exam_id" = es."exam_id"
-                        AND et."student_uid" = ${user.userId}
-                    ) < es."limit_taken"
-                    ${timeCondition}
-                    ${etStatusCondition}
+                    ${countCondition} 
+                    ${timeCondition} 
+                    ${etStatusCondition} 
                     ORDER BY es."startAt" ASC, es."expireAt" ASC
                     LIMIT ${limit} OFFSET ${offset}
                 `;
@@ -453,14 +453,16 @@ export class ExamService {
             const currentDate = new Date();
             const offset = (page - 1) * limit;
 
+            console.log("[STUDENT GET]: ", student_id, " | Status: ", status, " | Time: ", currentDate)
+
             // 1. Time Conditions (Ensure columns with capital letters are double-quoted)
-            const timeCondition = status === ExamSessionStatus.UPCOMING
+            const timeCondition = (status === ExamSessionStatus.UPCOMING
                 ? Prisma.sql`AND es."startAt" > ${currentDate}`
-                : status === ExamSessionStatus.OPEN
+                : (status === ExamSessionStatus.OPEN
                     ? Prisma.sql`AND es."startAt" <= ${currentDate} AND es."expireAt" > ${currentDate}`
-                    : status === ExamSessionStatus.EXPIRED
+                    : (status === ExamSessionStatus.EXPIRED
                         ? Prisma.sql`AND es."expireAt" <= ${currentDate}`
-                        : Prisma.empty;
+                        : Prisma.empty)));
 
             // 2. Status Conditions (Using EXISTS for performance)
             const etStatusCondition = status === ExamSessionStatus.PENDING
