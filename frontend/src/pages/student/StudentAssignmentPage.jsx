@@ -151,7 +151,20 @@ export default function StudentAssignmentPage() {
 
   const handleStartAssignment = (session) => navigate(`/student/assignment/class/${classId}/exam/${session.exam.exam_id}/session/${session.session_id}`);
   const handleContinueAssignment = (et_id) => navigate(`/student/assignment/continue/${et_id}`);
-  const handleViewResult = (session) => navigate(`/student/assignment/session/${session.session_id}/result`);
+const handleViewResult = (session) => {
+    // Lấy ra danh sách các lần làm bài đã hoàn thành (isDone: true)
+    const completedAttempts = session.examTakens?.filter(et => et.isDone) || [];
+    
+    if (completedAttempts.length > 0) {
+      // Lấy mã et_id của lần làm bài MỚI NHẤT (nằm ở cuối mảng)
+      const latestAttemptEtId = completedAttempts[completedAttempts.length - 1].et_id;
+      
+      // Chuyển hướng sang trang kết quả với đúng et_id
+      navigate(`/student/assignment/result/${latestAttemptEtId}`);
+    } else {
+      alert("Không tìm thấy dữ liệu kết quả của bài thi này!");
+    }
+  };
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress size={50} thickness={4}/></Box>;
 

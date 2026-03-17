@@ -74,10 +74,18 @@ export default function StudentAssignmentSessionPage() {
     return examData?.class_id || examData?.exam_open_in?.[0]?.class_id || null;
   };
 
+
+  const isFetchingExam = useRef(false);
+  
   // Fetch data và set up luồng làm bài
   useEffect(() => {
     const fetchExamData = async () => {
+      // Nếu đang gọi API rồi thì chặn lại
+      if (isFetchingExam.current) return;
+      let isRedirecting = false;
+      
       try {
+        isFetchingExam.current = true; // Bật cờ khóa chốt ở đây
         setIsLoading(true);
 
         // LUỒNG 1: Bắt đầu làm bài mới
@@ -88,8 +96,9 @@ export default function StudentAssignmentSessionPage() {
             if (newEtId) {
                 // Lưu classId để sau này F5 vẫn nhớ lớp nào
                 localStorage.setItem(`exam_class_${newEtId}`, classId);
+                isRedirecting = true;
                 navigate(`/student/assignment/continue/${newEtId}`, { replace: true });
-                return; 
+                return; // Thoát try block, sẽ chạy thẳng xuống finally
             }
         }
 
@@ -154,7 +163,11 @@ export default function StudentAssignmentSessionPage() {
         console.error("Lỗi lấy đề thi:", error);
         setSnackbar({ open: true, message: 'Lỗi tải đề thi. Vui lòng thử lại!', severity: 'error' });
       } finally {
-        setIsLoading(false);
+        if (!isRedirecting) {
+          setIsLoading(false);
+        }
+        // QUAN TRỌNG: Giải phóng cờ hiệu ở đây để lần render sau (chuyển URL) API vẫn chạy được
+        isFetchingExam.current = false; 
       }
     };
     
