@@ -253,12 +253,15 @@ export class ExamTakenService {
                                     ques_id: true,
                                     title: true,
                                     content: true,
+                                    explaination: true,
                                     type: true,
                                     level: true,
                                     answers: {
                                         select: {
                                             aid: true,
                                             content: true,
+                                            explaination: true,
+                                            is_correct: true
                                         }
                                     }
                                 }

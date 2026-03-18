@@ -37,7 +37,6 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
     });
   };
 
-  // Hàm tính toán thời gian đếm ngược cho bài tập "Sắp tới"
   const getCountdownText = (dateStr) => {
     const diff = new Date(dateStr) - new Date();
     if (diff <= 0) return "";
@@ -51,7 +50,7 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
   };
 
   const getOverdueText = (dateStr) => {
-    const diff = new Date() - new Date(dateStr); // Lấy giờ hiện tại trừ đi hạn chót
+    const diff = new Date() - new Date(dateStr); 
     if (diff <= 0) return ""; 
 
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -66,6 +65,13 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
     return `(${text.trim()})`;
   };
 
+  const maxPossible = exam.total_score || exam.total_ques || 1;
+  // Quy đổi số câu đúng sang thang điểm 10 (làm tròn 2 chữ số, xóa số 0 thừa)
+  const displayScore = highestScore !== null 
+    ? ((highestScore / maxPossible) * 10).toFixed(2).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1')
+    : null;
+  const isPassed = highestScore !== null && (highestScore / maxPossible) >= 0.5;
+
   return (
     <Card 
       elevation={0}
@@ -79,7 +85,6 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
         overflow: 'hidden', 
         transition: 'all 0.3s ease', 
         
-        // 2. Dải màu bên trái ẩn đi, chỉ hiện khi Hover
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -153,12 +158,19 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
             {highestScore !== null ? (
               <Box sx={{ textAlign: 'left', mb: 1 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>Điểm cao nhất</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-start', color: highestScore / (exam.total_score || exam.total_ques) >= 0.5 ? 'success.main' : 'error.main' }}>
+                
+                {/* Đã sửa alignItems thành center và lineHeight 1 để chống lệch */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', color: isPassed ? 'success.main' : 'error.main' }}>
                   <EmojiEventsIcon sx={{ mr: 0.5, fontSize: 28 }} />
-                  <Typography variant="h4" fontWeight={800}>{highestScore}</Typography>
-                  <Typography variant="body1" fontWeight={500} sx={{ ml: 0.5 }}>/ {exam.total_score || exam.total_ques}</Typography>
+                  <Typography variant="h5" fontWeight={600} sx={{ lineHeight: 1 }}>
+                    {displayScore}
+                  </Typography>
+                  <Typography variant="h5" fontWeight={600} sx={{ ml: 0.5, lineHeight: 1 }}>
+                    / 10
+                  </Typography>
                 </Box>
-              </Box>
+
+              </Box>    
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
                 {status === 'upcoming' ? (
