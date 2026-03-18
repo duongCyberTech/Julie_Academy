@@ -79,7 +79,7 @@ export default function StudentGlobalAssignmentPage() {
   const [assignments, setAssignments] = useState({ upcoming: [], todo: [], overdue: [], completed: [] });
   const [loading, setLoading] = useState(true);
   
-  // STATE CHO PHÂN TRANG
+// State phân trang
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5; 
   
@@ -91,13 +91,14 @@ export default function StudentGlobalAssignmentPage() {
       if (!token) { setLoading(false); return; }
       try {
         setLoading(true);
-        const [open, upcoming, expired] = await Promise.all([
+        const [openData, upcomingData, expiredData, completedData] = await Promise.all([
           getAllAssignmentsForStudent(token, { status: 'open', limit: 100 }),
           getAllAssignmentsForStudent(token, { status: 'upcoming', limit: 100 }),
-          getAllAssignmentsForStudent(token, { status: 'expired', limit: 100 })
+          getAllAssignmentsForStudent(token, { status: 'expired', limit: 100 }),
+          getAllAssignmentsForStudent(token, { status: 'completed', limit: 100 })
         ]);
         
-        const allData = mergeData(open, upcoming, expired);
+        const allData = mergeData(openData, upcomingData, expiredData, completedData);
         setAssignments(filterAssignments(allData));
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu bài tập:", error);
@@ -119,7 +120,17 @@ export default function StudentGlobalAssignmentPage() {
   };
 
   const handleContinueAssignment = (et_id) => navigate(`/student/assignment/continue/${et_id}`);
-  const handleViewResult = (session) => navigate(`/student/assignment/session/${session.session_id}/result`);
+  
+  const handleViewResult = (session) => {
+    const completedAttempts = session.examTakens?.filter(et => et.isDone) || [];
+    
+    if (completedAttempts.length > 0) {
+      const latestAttemptEtId = completedAttempts[completedAttempts.length - 1].et_id;
+      navigate(`/student/assignment/result/${latestAttemptEtId}`);
+    } else {
+      alert("Không tìm thấy dữ liệu kết quả của bài thi này!");
+    }
+  };
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress size={50} thickness={4}/></Box>;
 
@@ -161,7 +172,6 @@ export default function StudentGlobalAssignmentPage() {
         </Box>
 
         {tabsConfig.map((tab, index) => {
-  
           const totalPages = Math.ceil(tab.data.length / ITEMS_PER_PAGE);
           const currentData = tab.data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
@@ -169,7 +179,7 @@ export default function StudentGlobalAssignmentPage() {
             <TabPanel key={tab.key} value={tabValue} index={index}>
               {currentData.length > 0 ? (
                 <>
-                  {/* Hiển thị danh sách thẻ bài tập của TRANG HIỆN TẠI */}
+                  {/* Hiển thị danh sách thẻ bài tập */}
                   {currentData.map(session => (
                     <AssignmentCard 
                       key={`${session.exam.exam_id}_${session.session_id}`} 
@@ -178,7 +188,7 @@ export default function StudentGlobalAssignmentPage() {
                     />
                   ))}
                   
-                  {/* THANH PHÂN TRANG (Chỉ hiện khi có nhiều hơn 1 trang) */}
+                  {/* Thanh phân trang */}
                   {totalPages > 1 && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                       <Pagination 

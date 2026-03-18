@@ -17,7 +17,6 @@ const mergeData = (...arrays) => {
   return Array.from(map.values());
 };
 
-// Thuật toán gộp 3 luồng API data và Phân loại
 const mergeAndFilterAssignments = (sessionsData, pendingData, completedData) => {
   const pendingMap = {};
   pendingData.forEach(p => pendingMap[`${p.exam_id}_${p.session_id}`] = p);
@@ -64,7 +63,7 @@ const mergeAndFilterAssignments = (sessionsData, pendingData, completedData) => 
     }
   });
 
-  // Thuật toán Sắp xếp tối ưu
+ // Sort
   upcoming.sort((a, b) => new Date(a.startAt) - new Date(b.startAt));
   todo.sort((a, b) => {
     if (a.pending_et_id && !b.pending_et_id) return -1;
@@ -110,7 +109,7 @@ export default function StudentAssignmentPage() {
   const [assignments, setAssignments] = useState({ upcoming: [], todo: [], overdue: [], completed: [] });
   const [loading, setLoading] = useState(true);
   
-  // STATE CHO PHÂN TRANG
+  // State phân trang
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5; 
 
@@ -143,7 +142,7 @@ export default function StudentAssignmentPage() {
     fetchData();
   }, [classId, token]);
 
-  // Xử lý khi chuyển Tab: Phải reset page về 1
+  // Xử lý khi chuyển Tab: Reset page về 1
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
     setPage(1); 
@@ -152,11 +151,10 @@ export default function StudentAssignmentPage() {
   const handleStartAssignment = (session) => navigate(`/student/assignment/class/${classId}/exam/${session.exam.exam_id}/session/${session.session_id}`);
   const handleContinueAssignment = (et_id) => navigate(`/student/assignment/continue/${et_id}`);
 const handleViewResult = (session) => {
-    // Lấy ra danh sách các lần làm bài đã hoàn thành (isDone: true)
+    // Lấy ra danh sách các lần làm bài đã hoàn thành 
     const completedAttempts = session.examTakens?.filter(et => et.isDone) || [];
     
     if (completedAttempts.length > 0) {
-      // Lấy mã et_id của lần làm bài MỚI NHẤT (nằm ở cuối mảng)
       const latestAttemptEtId = completedAttempts[completedAttempts.length - 1].et_id;
       
       // Chuyển hướng sang trang kết quả với đúng et_id
@@ -218,7 +216,6 @@ const handleViewResult = (session) => {
         </Box>
 
         {tabsConfig.map((tab, index) => {
-          // LOGIC PHÂN TRANG: Cắt mảng data theo trang hiện tại
           const totalPages = Math.ceil(tab.data.length / ITEMS_PER_PAGE);
           const currentData = tab.data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
@@ -238,7 +235,6 @@ const handleViewResult = (session) => {
                     />
                   ))}
 
-                  {/* THANH PHÂN TRANG */}
                   {totalPages > 1 && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                       <Pagination 
