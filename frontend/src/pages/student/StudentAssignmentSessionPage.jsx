@@ -80,12 +80,11 @@ export default function StudentAssignmentSessionPage() {
   // Fetch data và set up luồng làm bài
   useEffect(() => {
     const fetchExamData = async () => {
-      // Nếu đang gọi API rồi thì chặn lại
       if (isFetchingExam.current) return;
       let isRedirecting = false;
       
       try {
-        isFetchingExam.current = true; // Bật cờ khóa chốt ở đây
+        isFetchingExam.current = true; 
         setIsLoading(true);
 
         // LUỒNG 1: Bắt đầu làm bài mới
@@ -98,7 +97,7 @@ export default function StudentAssignmentSessionPage() {
                 localStorage.setItem(`exam_class_${newEtId}`, classId);
                 isRedirecting = true;
                 navigate(`/student/assignment/continue/${newEtId}`, { replace: true });
-                return; // Thoát try block, sẽ chạy thẳng xuống finally
+                return; 
             }
         }
 
@@ -110,7 +109,6 @@ export default function StudentAssignmentSessionPage() {
             setExamTakenId(etId);
             setExamData(coreData);
             
-            // Format lại cấu trúc câu hỏi từ Backend trả về
             const rawQuestions = coreData.questions || [];
             const questionsList = rawQuestions.map(item => {
                 if (item.question) return { ...item.question, answer_set: item.answer_set };
@@ -130,7 +128,6 @@ export default function StudentAssignmentSessionPage() {
                     if (q.answer_set && Array.isArray(q.answer_set) && q.answer_set.length > 0) {
                         savedAnswers = q.answer_set;
                     } else if (localDraft[q.ques_id]) {
-                        // Trái lại dùng LocalStorage
                         savedAnswers = localDraft[q.ques_id];
                     }
 
@@ -141,7 +138,7 @@ export default function StudentAssignmentSessionPage() {
                 setTimeTracker(restoredTime);
             }
 
-            // Đồng bộ thời gian đếm ngược với Backend
+            // Đồng bộ thời gian đếm ngược
             let expireTime;
             const dbExpire = coreData.exam_session?.expireAt || coreData.expireAt; 
             if (dbExpire) {
@@ -166,7 +163,7 @@ export default function StudentAssignmentSessionPage() {
         if (!isRedirecting) {
           setIsLoading(false);
         }
-        // QUAN TRỌNG: Giải phóng cờ hiệu ở đây để lần render sau (chuyển URL) API vẫn chạy được
+
         isFetchingExam.current = false; 
       }
     };
@@ -225,9 +222,9 @@ export default function StudentAssignmentSessionPage() {
       if (isMultiChoice) {
         const currentSelections = prev[questionId] || [];
         if (currentSelections.includes(answerAid)) {
-          newAnswers[questionId] = currentSelections.filter((id) => id !== answerAid); // Bỏ chọn
+          newAnswers[questionId] = currentSelections.filter((id) => id !== answerAid); 
         } else {
-          newAnswers[questionId] = [...currentSelections, answerAid]; // Chọn thêm
+          newAnswers[questionId] = [...currentSelections, answerAid]; 
         }
       } else {
         newAnswers[questionId] = [answerAid]; 
@@ -239,7 +236,7 @@ export default function StudentAssignmentSessionPage() {
       return newAnswers;
     });
 
-    // Cập nhật ms_first_response (lần click đầu tiên)
+    // Cập nhật ms_first_response
     setTimeTracker(prev => {
       const current = prev[questionId] || { totalSpent: 0 };
       const newTracker = { ...prev };
@@ -301,7 +298,6 @@ export default function StudentAssignmentSessionPage() {
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f6f8' }}><CircularProgress size={60} thickness={4} /></Box>;
   if (!questions.length) return <Container><Typography variant="h5" color="error" align="center" mt={5}>Không tải được dữ liệu đề thi.</Typography></Container>;
 
-  // Variables cho UI
   const currentQuestion = questions[activeStep];
   const isMultiChoice = currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'MULTIPLE_CHOICE';
   const displayTitle = examData?.exam_session?.exam?.title || examData?.exam?.title || examData?.title || 'Bài thi';
@@ -310,7 +306,7 @@ export default function StudentAssignmentSessionPage() {
   return (
     <Container maxWidth={false} sx={{ pt: 3, pb: 4, px: { xs: 2, sm: 4, md: 8, lg: 12 }, backgroundColor: '#f4f6f8', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* HEADER BÀI THI */}
+      {/* Header bài thi */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" fontWeight={800} color="text.primary" gutterBottom>{displayTitle}</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
@@ -319,7 +315,6 @@ export default function StudentAssignmentSessionPage() {
         </Box>
       </Box>
 
-      {/* BODY CHÍNH */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px', lg: '1fr 380px' }, gap: 4, height: 'calc(100vh - 160px)' }}>
         
         {/* Cột trái: Vùng câu hỏi */}

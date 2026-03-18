@@ -8,7 +8,7 @@ import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import CancelIcon from '@mui/icons-material/Cancel'; // Icon cho đáp án sai
+import CancelIcon from '@mui/icons-material/Cancel';
 
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
@@ -39,11 +39,10 @@ const HtmlContentRenderer = ({ htmlContent }) => {
 
 const getAnswerPrefix = (index) => String.fromCharCode(65 + index);
 
-// --- MAIN COMPONENT ---
 export default function StudentAssignmentResultPage() {
   const { etId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation(); // Dùng để lấy State truyền từ trang Session sang
+  const location = useLocation(); 
   const token = localStorage.getItem('token');
 
   const [isLoading, setIsLoading] = useState(true);
@@ -81,9 +80,8 @@ export default function StudentAssignmentResultPage() {
 
   const displayTitle = examData?.exam_session?.exam?.title || 'Bài thi';
   
-  // TÍNH TOÁN ĐIỂM SỐ: Lấy từ location.state (nếu vừa nộp) hoặc từ examData (nếu xem lại)
+  // Tính toán điểm: Lấy từ location.state (nếu vừa nộp) hoặc từ examData (nếu xem lại)
   const rawScore = location.state?.resultData?.final_score ?? examData?.final_score;
-  // Làm tròn 2 chữ số thập phân
   const totalScore = rawScore !== undefined && rawScore !== null ? Number(rawScore).toFixed(2) : 'Đang chấm...';
 
   // Tính số câu đã làm
@@ -99,7 +97,7 @@ export default function StudentAssignmentResultPage() {
   return (
     <Container maxWidth="lg" sx={{ pt: 4, pb: 8, backgroundColor: '#f4f6f8', minHeight: '100vh' }}>
       
-      {/* CÁC NÚT ĐIỀU HƯỚNG */}
+      {/* Các nút điều hướng */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Button 
           startIcon={<ArrowBackIcon />} 
@@ -131,7 +129,7 @@ export default function StudentAssignmentResultPage() {
         )}
       </Box>
 
-      {/* CARD TỔNG QUAN KẾT QUẢ */}
+      {/* Card tổng quan kết quả*/}
       <Paper elevation={0} sx={{ p: { xs: 3, md: 5 }, borderRadius: 4, mb: 4, textAlign: 'center', backgroundColor: '#fff', border: '1px solid', borderColor: 'grey.200', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.03)' }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
           <Box sx={{ p: 2, borderRadius: '50%', backgroundColor: 'success.50' }}>
@@ -165,9 +163,8 @@ export default function StudentAssignmentResultPage() {
         Chi tiết bài làm
       </Typography>
 
-      {/* DANH SÁCH CÂU HỎI ĐÃ LÀM (REVIEW) */}
+      {/* Danh sách câu hỏi đã làm */}
       {questions.map((q, index) => {
-        // Parse answer_set an toàn
         let selectedAnswers = [];
         if (Array.isArray(q.answer_set)) selectedAnswers = q.answer_set;
         else if (typeof q.answer_set === 'string') {
@@ -193,26 +190,23 @@ export default function StudentAssignmentResultPage() {
               <HtmlContentRenderer htmlContent={q.content} />
             </Box>
 
-            {/* DANH SÁCH ĐÁP ÁN */}
+            {/* Danh sách đáp án */}
             <Box sx={{ pl: 1 }}>
               {q.answers?.map((answer, aIndex) => {
                 const isSelected = selectedAnswers.includes(answer.aid);
-                const isCorrect = answer.is_correct; // Lấy cờ đúng/sai từ Database
+                const isCorrect = answer.is_correct; 
                 
-                // Logic tô màu
                 let borderColor = 'grey.200';
                 let bgColor = 'transparent';
                 let textColor = 'text.secondary';
                 let IconComponent = RadioButtonUncheckedIcon;
 
                 if (isCorrect) {
-                  // Đáp án đúng của hệ thống luôn tô xanh
                   borderColor = 'success.main';
                   bgColor = 'success.50';
                   textColor = 'success.dark';
                   IconComponent = CheckCircleIcon;
                 } else if (isSelected && !isCorrect) {
-                  // Sinh viên chọn sai tô đỏ
                   borderColor = 'error.main';
                   bgColor = 'error.50';
                   textColor = 'error.main';
@@ -240,7 +234,6 @@ export default function StudentAssignmentResultPage() {
                             </Box>
                           </Box>
                           
-                          {/* GIẢI THÍCH CHO TỪNG ĐÁP ÁN (Chỉ hiện cho đáp án đúng hoặc đáp án học sinh đã chọn) */}
                           {(isSelected || isCorrect) && answer.explaination && answer.explaination !== "<p><br></p>" && (
                             <Box sx={{ mt: 1.5, p: 2, bgcolor: '#fff', borderRadius: 1, width: '100%', border: '1px dashed', borderColor: isCorrect ? 'success.main' : 'error.main' }}>
                                <Typography variant="body2" fontWeight={800} color={textColor} mb={0.5}>Giải thích đáp án này:</Typography>
@@ -255,8 +248,7 @@ export default function StudentAssignmentResultPage() {
                 );
               })}
             </Box>
-
-            {/* GIẢI THÍCH CHUNG CHO TOÀN BỘ CÂU HỎI */}
+            
             {q.explaination && q.explaination !== "<p><br></p>" && (
               <Box sx={{ mt: 3, p: 2.5, bgcolor: 'info.50', borderRadius: 2, borderLeft: '4px solid', borderColor: 'info.main' }}>
                 <Typography variant="subtitle1" fontWeight={800} color="info.dark" mb={1}>💡 Hướng dẫn giải chi tiết:</Typography>
