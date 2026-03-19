@@ -335,23 +335,43 @@ export class ExamTakenService {
             })
         })
         
-        var score = 0.0
-        var cnt = 0
+        let score: number = 0;
+        let cnt: number = 0;
+
         for (const ans of trueAnswers) {
-            if (ans.type === QuestionType.single_choice){
-                const checkAns = (ans.answers[0] == answers.find(i => i.ques_id === ans.ques_id)?.answers[0])
-                if (checkAns) {
-                    score = score + 1.0
-                    cnt++
+            let currentQuesScore: number = 0.0;
+
+            if (ans.type === QuestionType.single_choice) {
+                const userAnswer = answers.find(i => i.ques_id === ans.ques_id)?.answers[0];
+                if (ans.answers[0] === userAnswer) {
+                    currentQuesScore = 1.0;
+                    cnt++;
+                    console.log(`Question ID: ${ans.ques_id}, Score: ${currentQuesScore}`);
                 }
             } else if (ans.type === QuestionType.multiple_choice) {
-                const sysAns = ans.answers
-                const subAns = answers.find(i => i.ques_id === ans.ques_id)?.answers
-                const subscore = + 1.0 * Math.max((subAns.filter(i => sysAns.includes(i)).length - subAns.filter(i => !sysAns.includes(i)).length), 0) / sysAns.length
-                if (subscore > 0) cnt++
-                score += Math.max(subscore, 0)
+                const sysAns = ans.answers;
+                const subAns = answers.find(i => i.ques_id === ans.ques_id)?.answers || [];
+                
+                if (subAns.length > 0) {
+                    const correctCount = subAns.filter(i => sysAns.includes(i)).length;
+                    const wrongCount = subAns.filter(i => !sysAns.includes(i)).length;
+                    
+                    let subscore: number = (correctCount - wrongCount) * 1.0 / sysAns.length;
+                    currentQuesScore = Math.max(subscore, 0.0);
+
+                    if (currentQuesScore > 0.0) cnt++;
+                }
+
+                console.log(`Question ID: ${ans.ques_id}, Correct Answers: ${sysAns}, User Answers: ${subAns}, Score: ${currentQuesScore}`);
             }
+
+            score += currentQuesScore;
+            console.log(`Current Total Score: ${score}`);
         }
+
+        // nếu cần fix sai số
+        score = Number(score.toFixed(6));
+        console.log(`Final Score after fixing precision: ${score}`);
 
         return {score, cnt}
     }
@@ -379,7 +399,7 @@ export class ExamTakenService {
                 skipDuplicates: true
             })
 
-            const {score, cnt} = await this.calculateScore(tx, answers)
+            const {score, cnt}: {score: number, cnt: number} = await this.calculateScore(tx, answers)
 
             const examData = await tx.exam_session.findFirst({
                 where: {examTakens: {some: {et_id}}},
@@ -400,16 +420,23 @@ export class ExamTakenService {
                     isDone,
                     doneAt: new Date(),
                     total_ques_completed: cnt,
-                    final_score: score * examData.exam.total_score / examData.exam.total_ques,
+                    final_score: new Prisma.Decimal((score * examData.exam.total_score / examData.exam.total_ques).toFixed(2)),
                 }
             })
+
+            console.log("LOGGING SCORE CALCULATION: ",
+                score + " | ",
+                examData.exam.total_score + " | ",
+                examData.exam.total_ques + " | ",
+                score * examData.exam.total_score / examData.exam.total_ques
+            );
 
             const staticsData = {
                 uid: student_id,
                 sum_exam: 1,
                 total_questions: examData.exam.total_ques,
                 total_correct_questions: cnt,
-                final_score: score * examData.exam.total_score / examData.exam.total_ques,
+                final_score: Number((score * examData.exam.total_score / examData.exam.total_ques).toFixed(2)),
                 exam_type: examData.exam_type
             }
 

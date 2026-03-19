@@ -421,7 +421,7 @@ model Exam_open_in {
 
 model Exam_taken {
   et_id                String            @id @default(uuid())
-  final_score          Float
+  final_score          Decimal           @default(0.00) @db.Decimal(4, 2)
   total_ques_completed Int
   startAt              DateTime          @default(now())
   doneAt               DateTime          @default(now())
