@@ -235,10 +235,11 @@ export class ExamService {
                                 level: true,
                                 description: true
                             }
-                        }
+                        },
+                        examTakens: true
                     },
                     orderBy: [
-                        { startAt: "asc" },
+                        { startAt: "desc" },
                         { expireAt: "asc" }
                     ]
                 })
@@ -284,7 +285,23 @@ export class ExamService {
                             'title', e.title,
                             'duration', e.duration,
                             'total_ques', e.total_ques
-                        ) AS exam
+                        ) AS exam,
+                        (
+                            SELECT COUNT(*) FROM "Exam_taken" et 
+                            WHERE et."session_id" = es."session_id" 
+                            AND et."exam_id" = es."exam_id" 
+                            AND et."student_uid" = ${user.userId}
+                        ) AS attempt_count,
+                        (
+                            SELECT json_agg(json_build_object(
+                                'et_id', et.et_id, 
+                                'isDone', et."isDone", 
+                                'final_score', et.final_score, 
+                                'doneAt', et."doneAt"
+                            ))
+                            FROM "Exam_taken" et
+                            WHERE et.session_id = es.session_id AND et.exam_id = es.exam_id AND et.student_uid = ${user.userId}
+                        ) AS exam_takens,
                     FROM "Exam_session" es
                     JOIN "Exams" e ON es."exam_id" = e."exam_id"
                     JOIN "Exam_open_in" eoi ON es."session_id" = eoi."session_id" AND es."exam_id" = eoi."exam_id"
@@ -498,7 +515,13 @@ export class ExamService {
                         ))
                         FROM "Exam_taken" et
                         WHERE et.session_id = es.session_id AND et.exam_id = es.exam_id AND et.student_uid = ${student_id}
-                    ) AS exam_takens
+                    ) AS exam_takens,
+                    (
+                        SELECT COUNT(*) FROM "Exam_taken" et 
+                        WHERE et."session_id" = es."session_id" 
+                        AND et."exam_id" = es."exam_id" 
+                        AND et."student_uid" = ${student_id}
+                    ) AS attempt_count
                 FROM "Exam_session" es
                 JOIN "Exams" e ON es.exam_id = e.exam_id
                 WHERE 
