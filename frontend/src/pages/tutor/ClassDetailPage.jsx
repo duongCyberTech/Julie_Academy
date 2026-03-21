@@ -4,7 +4,7 @@ import { getClassDetails } from '../../services/ClassService';
 
 import {
     Box, Typography, Paper, Alert, Tabs, Tab,
-    Stack, Chip, Skeleton, Avatar, Button
+    Stack, Chip, Skeleton, Avatar, Button, useTheme
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 
@@ -20,7 +20,7 @@ import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined'; 
 import TimelapseOutlinedIcon from '@mui/icons-material/TimelapseOutlined'; 
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'; // Icon quay lại mới
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
@@ -35,75 +35,96 @@ import AssignmentTab from './AssignmentTab';
 import ThreadForum from '../../components/thread/ThreadForum';
 
 // ==========================================
-// 1. PAGE WRAPPER CHUẨN SOFT UI
+// 1. PAGE WRAPPER CHUẨN SOFT UI (Dịu mắt)
 // ==========================================
-const PageWrapper = styled(Paper)(({ theme }) => ({
-    margin: theme.spacing(2), 
-    padding: theme.spacing(4), 
-    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
-    borderRadius: '24px',
-    border: `1px solid ${theme.palette.divider}`,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
-    minHeight: 'calc(100vh - 120px)', 
-    display: 'flex',
-    flexDirection: 'column',
-}));
+const PageWrapper = styled(Paper)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        margin: theme.spacing(3), 
+        padding: theme.spacing(5), 
+        backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB',
+        backgroundImage: 'none',
+        borderRadius: '24px',
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
+        boxShadow: isDark 
+            ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` 
+            : '0 8px 48px rgba(0,0,0,0.03)',
+        minHeight: 'calc(100vh - 120px)', 
+        display: 'flex',
+        flexDirection: 'column',
+    };
+});
 
 // ==========================================
 // STYLED COMPONENTS KHÁC
 // ==========================================
-const HeaderCard = styled(Paper)(({ theme }) => ({
-    padding: theme.spacing(3),
-    borderRadius: theme.shape.borderRadius * 2,
-    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-    backgroundColor: alpha(theme.palette.primary.main, 0.02),
-    boxShadow: 'none', 
-    marginBottom: theme.spacing(3),
-    flexShrink: 0, // Không bị bóp nhỏ khi cuộn
-}));
+const HeaderCard = styled(Paper)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        padding: theme.spacing(3),
+        borderRadius: theme.shape.borderRadius * 2,
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.primary.main, 0.1)}`,
+        backgroundColor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.02),
+        backgroundImage: 'none',
+        boxShadow: 'none', 
+        marginBottom: theme.spacing(4),
+        flexShrink: 0,
+    };
+});
 
-const StatBox = styled(Box)(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing(1.5),
-    padding: theme.spacing(1.5, 2),
-    borderRadius: theme.shape.borderRadius * 1.5,
-    backgroundColor: theme.palette.background.paper,
-    border: `1px solid ${theme.palette.divider}`,
-    minWidth: 160,
-    flex: '1 1 auto',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-}));
+const StatBox = styled(Box)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        display: 'flex',
+        alignItems: 'center',
+        gap: theme.spacing(1.5),
+        padding: theme.spacing(1.5, 2),
+        borderRadius: theme.shape.borderRadius * 1.5,
+        backgroundColor: theme.palette.background.paper,
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : theme.palette.divider}`,
+        minWidth: 160,
+        flex: '1 1 auto',
+        boxShadow: isDark ? 'none' : '0 2px 8px rgba(0,0,0,0.02)'
+    };
+});
 
-const StyledTab = styled(Tab)(({ theme }) => ({
-    textTransform: 'none',
-    fontWeight: 600,
-    fontSize: '0.95rem',
-    minHeight: 48,
-    marginRight: theme.spacing(1),
-    borderRadius: theme.shape.borderRadius,
-    '&.Mui-selected': {
-        color: theme.palette.primary.main,
-        backgroundColor: alpha(theme.palette.primary.main, 0.08),
-    },
-    '&:hover': {
-        backgroundColor: alpha(theme.palette.primary.main, 0.04),
-    }
-}));
+const StyledTab = styled(Tab)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        textTransform: 'none',
+        fontWeight: 600,
+        fontSize: '0.95rem',
+        minHeight: 48,
+        marginRight: theme.spacing(1),
+        borderRadius: theme.shape.borderRadius,
+        color: theme.palette.text.secondary,
+        '&.Mui-selected': {
+            color: isDark ? theme.palette.primary.light : theme.palette.primary.main,
+            backgroundColor: alpha(theme.palette.primary.main, 0.08),
+        },
+        '&:hover': {
+            backgroundColor: alpha(theme.palette.primary.main, 0.04),
+            color: isDark ? theme.palette.primary.light : theme.palette.primary.main,
+        }
+    };
+});
 
-const ScrollableContent = styled(Box)(({ theme }) => ({
-    flexGrow: 1,
-    overflowY: 'auto',
-    backgroundColor: theme.palette.mode === 'light' ? '#fafafa' : theme.palette.background.default,
-    padding: theme.spacing(3),
-    "&::-webkit-scrollbar": { width: "6px" },
-    "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
-    "&::-webkit-scrollbar-thumb": {
-        backgroundColor: alpha(theme.palette.grey[400], 0.5),
-        borderRadius: "10px",
-        "&:hover": { backgroundColor: theme.palette.grey[500] },
-    },
-}));
+const ScrollableContent = styled(Box)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        flexGrow: 1,
+        overflowY: 'auto',
+        backgroundColor: isDark ? alpha(theme.palette.background.default, 0.4) : '#F9FAFB',
+        padding: theme.spacing(3),
+        "&::-webkit-scrollbar": { width: "6px" },
+        "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
+        "&::-webkit-scrollbar-thumb": {
+            backgroundColor: alpha(theme.palette.text.secondary, 0.2),
+            borderRadius: "10px",
+            "&:hover": { backgroundColor: alpha(theme.palette.text.secondary, 0.4) },
+        },
+    };
+});
 
 const StatusChip = memo(({ status }) => {
     const config = {
@@ -124,7 +145,8 @@ const StatusChip = memo(({ status }) => {
                 fontWeight: 600, 
                 border: '1px solid', 
                 borderColor: `${color}.main`,
-                bgcolor: alpha(color === 'default' ? '#000' : '#fff', 0.1) 
+                bgcolor: (theme) => alpha(theme.palette[color].main, 0.1),
+                color: (theme) => theme.palette.mode === 'dark' ? `${color}.light` : `${color}.dark` 
             }} 
         />
     );
@@ -132,13 +154,19 @@ const StatusChip = memo(({ status }) => {
 
 function ClassDetailPage() {
     const { classId } = useParams();
-    const navigate = useNavigate(); // Dùng để xử lý nút quay lại
+    const navigate = useNavigate(); 
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const [token] = useState(() => localStorage.getItem('token'));
 
     const [classData, setClassData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [currentTab, setCurrentTab] = useState('students'); 
+
+    // FEATURE: Lưu và lấy Tab hiện tại từ Session Storage để không bị mất khi F5
+    const [currentTab, setCurrentTab] = useState(() => {
+        return sessionStorage.getItem(`classDetailTab_${classId}`) || 'students';
+    }); 
 
     const fetchClassDetails = useCallback(async () => {
         if (!token || !classId) {
@@ -164,6 +192,8 @@ function ClassDetailPage() {
 
     const handleChangeTab = (event, newValue) => {
         setCurrentTab(newValue);
+        // Lưu tab vào Session Storage mỗi khi chuyển tab
+        sessionStorage.setItem(`classDetailTab_${classId}`, newValue);
     };
 
     if (loading) {
@@ -203,7 +233,7 @@ function ClassDetailPage() {
                         color: 'text.secondary',
                         borderRadius: '10px',
                         px: 2,
-                        '&:hover': { color: 'primary.main', bgcolor: alpha('#1976d2', 0.08) }
+                        '&:hover': { color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.08) }
                     }}
                 >
                     Quay lại danh sách lớp
@@ -215,7 +245,7 @@ function ClassDetailPage() {
                 <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="flex-start" spacing={2}>
                     <Box sx={{ flex: 1, width: '100%' }}>
                         <Stack direction="row" alignItems="center" spacing={2} mb={1}>
-                            <Typography variant="h3" fontWeight="800" color="text.primary">
+                            <Typography variant="h3" fontWeight="700" color="text.primary">
                                 {classData.classname}
                             </Typography>
                             <StatusChip status={classData.status} />
@@ -228,55 +258,55 @@ function ClassDetailPage() {
                         {/* Quick Stats Row */}
                         <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
                             <StatBox>
-                                <Avatar sx={{ bgcolor: 'primary.lighter', color: 'primary.main', width: 36, height: 36 }}>
+                                <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', width: 36, height: 36 }}>
                                     <SchoolOutlinedIcon fontSize="small"/>
                                 </Avatar>
                                 <Box>
                                     <Typography variant="caption" color="text.secondary" fontWeight={700}>KHỐI</Typography>
-                                    <Typography variant="subtitle2" fontWeight={700}>Lớp {classData.grade}</Typography>
+                                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">Lớp {classData.grade}</Typography>
                                 </Box>
                             </StatBox>
 
                             <StatBox>
-                                <Avatar sx={{ bgcolor: 'info.lighter', color: 'info.main', width: 36, height: 36 }}>
+                                <Avatar sx={{ bgcolor: alpha(theme.palette.info.main, 0.1), color: 'info.main', width: 36, height: 36 }}>
                                     <MenuBookOutlinedIcon fontSize="small"/>
                                 </Avatar>
                                 <Box>
                                     <Typography variant="caption" color="text.secondary" fontWeight={700}>MÔN HỌC</Typography>
-                                    <Typography variant="subtitle2" fontWeight={700}>{classData.subject}</Typography>
+                                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">{classData.subject}</Typography>
                                 </Box>
                             </StatBox>
 
                             <StatBox>
-                                <Avatar sx={{ bgcolor: 'success.lighter', color: 'success.main', width: 36, height: 36 }}>
+                                <Avatar sx={{ bgcolor: alpha(theme.palette.success.main, 0.1), color: 'success.main', width: 36, height: 36 }}>
                                     <GroupOutlinedIcon fontSize="small"/>
                                 </Avatar>
                                 <Box>
                                     <Typography variant="caption" color="text.secondary" fontWeight={700}>SĨ SỐ</Typography>
-                                    <Typography variant="subtitle2" fontWeight={700}>
+                                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">
                                         {classData.nb_of_student} học viên
                                     </Typography>
                                 </Box>
                             </StatBox>
                             <StatBox>
-                                <Avatar sx={{ bgcolor: 'error.lighter', color: 'error.main', width: 36, height: 36 }}>
+                                <Avatar sx={{ bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main', width: 36, height: 36 }}>
                                     <TimelapseOutlinedIcon fontSize="small"/>
                                 </Avatar>
                                 <Box>
                                     <Typography variant="caption" color="text.secondary" fontWeight={700}>THỜI LƯỢNG</Typography>
-                                    <Typography variant="subtitle2" fontWeight={700}>
+                                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">
                                         {classData.duration_time || 0} tuần
                                     </Typography>
                                 </Box>
                             </StatBox>
 
                             <StatBox>
-                                <Avatar sx={{ bgcolor: 'warning.lighter', color: 'warning.main', width: 36, height: 36 }}>
+                                <Avatar sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1), color: 'warning.main', width: 36, height: 36 }}>
                                     <AccessTimeOutlinedIcon fontSize="small"/>
                                 </Avatar>
                                 <Box>
                                     <Typography variant="caption" color="text.secondary" fontWeight={700}>BẮT ĐẦU TỪ</Typography>
-                                    <Typography variant="subtitle2" fontWeight={700}>
+                                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">
                                         {dayjs(classData.startat).format('DD/MM/YYYY')}
                                     </Typography>
                                 </Box>
@@ -294,13 +324,14 @@ function ClassDetailPage() {
                     display: 'flex', 
                     flexDirection: 'column', 
                     flexGrow: 1, 
-                    minHeight: 0, // Cho phép ScrollableContent hoạt động
+                    minHeight: 0, 
                     overflow: 'hidden', 
-                    bgcolor: '#fff' 
+                    bgcolor: 'background.paper',
+                    borderColor: isDark ? theme.palette.midnight?.border : 'divider'
                 }}
             >
                 {/* Thanh Tabs (Cố định) */}
-                <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1.5, bgcolor: '#fff', flexShrink: 0 }}>
+                <Box sx={{ borderBottom: 1, borderColor: isDark ? theme.palette.midnight?.border : 'divider', px: 2, pt: 1.5, bgcolor: 'background.paper', flexShrink: 0 }}>
                     <Tabs 
                         value={currentTab} 
                         onChange={handleChangeTab} 

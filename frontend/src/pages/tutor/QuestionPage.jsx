@@ -29,6 +29,7 @@ import {
   Stack,
   InputAdornment,
   TableSortLabel,
+  useTheme
 } from "@mui/material";
 import { styled, alpha } from "@mui/material/styles";
 import { visuallyHidden } from "@mui/utils";
@@ -49,19 +50,25 @@ import {
 } from "../../services/CategoryService";
 
 // ==========================================
-// 1. PAGE WRAPPER CHUẨN SOFT UI
+// 1. PAGE WRAPPER CHUẨN SOFT UI (DỊU MẮT)
 // ==========================================
-const PageWrapper = styled(Paper)(({ theme }) => ({
-    margin: theme.spacing(2), 
-    padding: theme.spacing(4), 
-    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
+const PageWrapper = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    margin: theme.spacing(3), // Cho nội dung khoảng trống để "thở"
+    padding: theme.spacing(5), 
+    backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB', // Tránh pure white chống chói
+    backgroundImage: 'none',
     borderRadius: '24px',
-    border: `1px solid ${theme.palette.divider}`,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
+    border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
+    boxShadow: isDark 
+      ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` // Hào quang mờ nổi nhẹ
+      : '0 8px 48px rgba(0,0,0,0.03)',
     minHeight: 'calc(100vh - 120px)', 
     display: 'flex',
     flexDirection: 'column',
-}));
+  };
+});
 
 
 // Header fix để không bị ép nhỏ
@@ -69,7 +76,7 @@ const Header = styled(Box)(({ theme }) => ({
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: theme.spacing(3),
+  marginBottom: theme.spacing(4), // Tăng margin đáy một chút cho thoáng
   flexShrink: 0,
 }));
 
@@ -101,17 +108,30 @@ const TYPE_MAP = {
   true_false: "Đúng/Sai",
 };
 
+// Đã cập nhật lại UI của Chip để đồng bộ với ExamDetailPage (Có viền màu, nền mờ alpha)
 const DifficultyChip = ({ difficulty }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const mapping = DIFFICULTY_MAP[String(difficulty || "").toUpperCase()] || {
     text: difficulty || "N/A",
     color: "default",
   };
+
+  if (mapping.color === "default") {
+    return <Chip label={mapping.text} size="small" sx={{ fontWeight: 600, bgcolor: 'action.hover', color: 'text.secondary' }} />;
+  }
+
   return (
     <Chip
       label={mapping.text}
-      color={mapping.color}
       size="small"
-      variant="outlined"
+      sx={{
+        fontWeight: 700,
+        border: '1.5px solid',
+        borderColor: `${mapping.color}.main`,
+        bgcolor: alpha(theme.palette[mapping.color].main, 0.08),
+        color: isDark ? `${mapping.color}.light` : `${mapping.color}.dark`
+      }}
     />
   );
 };
@@ -135,6 +155,9 @@ const QuestionFilters = memo(
     loadingBooks,
     loadingCategories,
   }) => {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+
     const categoryTreeData = useMemo(() => {
       if (!categories || categories.length === 0) return [];
 
@@ -196,8 +219,15 @@ const QuestionFilters = memo(
     };
 
     return (
-      <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 3, flexShrink: 0, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) }}>
-        <Stack direction="column" spacing={2}>
+      <Paper 
+        variant="outlined" 
+        sx={{ 
+          p: 2.5, mb: 3, borderRadius: 3, flexShrink: 0, 
+          bgcolor: isDark ? alpha(theme.palette.background.default, 0.4) : alpha(theme.palette.primary.main, 0.02),
+          borderColor: isDark ? theme.palette.midnight?.border : 'divider'
+        }}
+      >
+        <Stack direction="column" spacing={2.5}>
           <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={2}
@@ -225,7 +255,7 @@ const QuestionFilters = memo(
                 color="inherit"
                 onClick={onReset}
                 startIcon={<RestartAltIcon />}
-                sx={{ bgcolor: 'background.paper' }}
+                sx={{ bgcolor: 'background.paper', borderRadius: 2, py: 1, color: 'text.secondary' }}
               >
                 Xóa lọc
               </Button>
@@ -305,17 +335,18 @@ const QuestionFilters = memo(
               mt={1}
               p={2}
               border="1px solid"
-              borderColor="divider"
-              borderRadius={1}
+              borderColor={isDark ? theme.palette.midnight?.border : "divider"}
+              borderRadius={2}
               bgcolor="background.paper"
             >
               <Typography
                 variant="subtitle2"
                 fontWeight={600}
+                color="text.secondary"
                 gutterBottom
                 sx={{ display: "flex", alignItems: "center" }}
               >
-                <FilterListIcon fontSize="small" sx={{ mr: 1 }} /> Chọn Chuyên
+                <FilterListIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} /> Chọn Chuyên
                 đề:
               </Typography>
 
@@ -338,13 +369,16 @@ const QuestionFilters = memo(
                     sx={{
                       "& .MuiTreeItem-content": {
                         py: 0.5,
+                        borderRadius: 1,
                         "&:hover": {
                           backgroundColor: "action.hover",
                         },
                         "&.Mui-selected": {
-                          backgroundColor: "primary.light",
+                          backgroundColor: alpha(theme.palette.primary.main, 0.15),
+                          color: "primary.main",
+                          fontWeight: "bold",
                           "&:hover": {
-                            backgroundColor: "primary.light",
+                            backgroundColor: alpha(theme.palette.primary.main, 0.2),
                           },
                         },
                       },
@@ -370,6 +404,9 @@ const QuestionFilters = memo(
 
 export default function QuestionPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  
   const [token] = useState(() => localStorage.getItem("token"));
 
   const [questions, setQuestions] = useState([]);
@@ -545,7 +582,7 @@ export default function QuestionPage() {
   return (
     <PageWrapper>
       <Header>
-        <Typography variant="h4" component="h1" fontWeight="bold">
+        <Typography variant="h4" component="h1" fontWeight="bold" color="text.primary">
           Thư viện câu hỏi
         </Typography>
 
@@ -569,9 +606,10 @@ export default function QuestionPage() {
 
           <Button
             variant="contained"
+            color="primary"
             onClick={() => navigate("/tutor/new")}
             startIcon={<AddCircleOutlineIcon />}
-            sx={{ fontWeight: "bold", borderRadius: "10px" }}
+            sx={{ fontWeight: "bold", borderRadius: "12px" }}
           >
             Tạo mới
           </Button>
@@ -603,7 +641,8 @@ export default function QuestionPage() {
             display: 'flex', 
             flexDirection: 'column', 
             flexGrow: 1, 
-            minHeight: 0 // Cho phép tự động cuộn bên trong mà không bung layout
+            minHeight: 0, 
+            borderColor: isDark ? theme.palette.midnight?.border : 'divider'
           }}
         >
           <TableContainer 
@@ -613,8 +652,9 @@ export default function QuestionPage() {
               "&::-webkit-scrollbar": { width: "6px", height: "6px" },
               "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
               "&::-webkit-scrollbar-thumb": {
-                backgroundColor: (theme) => alpha(theme.palette.grey[400], 0.5),
+                backgroundColor: alpha(theme.palette.text.secondary, 0.2),
                 borderRadius: "10px",
+                "&:hover": { backgroundColor: alpha(theme.palette.text.secondary, 0.4) },
               }
             }}
           >
@@ -626,8 +666,9 @@ export default function QuestionPage() {
                       key={cell.id}
                       align={cell.align || "left"}
                       sx={{
-                        fontWeight: "bold",
-                        bgcolor: (theme) => alpha(theme.palette.grey[100], 0.8),
+                        fontWeight: 700,
+                        color: 'text.secondary',
+                        bgcolor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.03),
                         backdropFilter: 'blur(8px)',
                         minWidth: cell.minWidth,
                       }}
@@ -660,10 +701,11 @@ export default function QuestionPage() {
                 {Array.isArray(questions) && questions.length > 0 ? (
                   questions.map((q) => (
                     <TableRow key={q.ques_id ?? q.id ?? Math.random()} hover>
-                      <TableCell sx={{ py: 1.5 }}>
+                      <TableCell sx={{ py: 2 }}>
                         <Typography
                           variant="subtitle2"
                           fontWeight={600}
+                          color="text.primary"
                           sx={{
                             maxWidth: 400,
                             overflow: "hidden",
@@ -671,25 +713,34 @@ export default function QuestionPage() {
                             display: "-webkit-box",
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: "vertical",
+                            lineHeight: 1.5
                           }}
                         >
                           {q.title || "(Không có tiêu đề)"}
                         </Typography>
                       </TableCell>
 
-                      <TableCell sx={{ py: 1.5 }}>
-                        <Typography variant="body2">
-                          {TYPE_MAP[q.type] || q.type}
-                        </Typography>
+                      <TableCell sx={{ py: 2 }}>
+                        <Chip 
+                          label={TYPE_MAP[q.type] || q.type} 
+                          size="small" 
+                          sx={{ 
+                            borderRadius: 1.5, fontWeight: 600,
+                            bgcolor: alpha(theme.palette.primary.main, 0.08), 
+                            color: isDark ? 'primary.light' : 'primary.dark',
+                            border: '1px dashed', borderColor: 'primary.main'
+                          }} 
+                        />
                       </TableCell>
 
-                      <TableCell sx={{ py: 1.5 }}>
+                      <TableCell sx={{ py: 2 }}>
                         <DifficultyChip difficulty={q.level} />
                       </TableCell>
 
-                      <TableCell sx={{ py: 1.5 }}>
+                      <TableCell sx={{ py: 2 }}>
                         <Typography
                           variant="body2"
+                          color="text.secondary"
                           noWrap
                           sx={{ maxWidth: 150 }}
                           title={q.category?.category_name ?? q.category?.name}
@@ -700,9 +751,10 @@ export default function QuestionPage() {
                         </Typography>
                       </TableCell>
 
-                      <TableCell sx={{ py: 1.5 }}>
+                      <TableCell sx={{ py: 2 }}>
                         <Typography
                           variant="body2"
+                          color="text.secondary"
                           noWrap
                           sx={{ maxWidth: 150 }}
                           title={
@@ -720,13 +772,17 @@ export default function QuestionPage() {
                       <TableCell align="center" sx={{ py: 1 }}>
                         <Tooltip title="Xem chi tiết">
                           <IconButton
-                            color="primary"
                             size="small"
                             onClick={() =>
                               navigate(`/tutor/question/${q.ques_id}`)
                             }
+                            sx={{ 
+                              color: 'primary.main',
+                              bgcolor: alpha(theme.palette.primary.main, 0.08),
+                              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) }
+                            }}
                           >
-                            <SearchIcon />
+                            <SearchIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       </TableCell>
@@ -748,7 +804,7 @@ export default function QuestionPage() {
           </TableContainer>
 
           <TablePagination
-            sx={{ flexShrink: 0, borderTop: '1px solid', borderColor: 'divider' }}
+            sx={{ flexShrink: 0, borderTop: '1px solid', borderColor: isDark ? theme.palette.midnight?.border : 'divider' }}
             rowsPerPageOptions={[10, 25, 50]}
             component="div"
             count={Number(totalQuestions ?? 0)}

@@ -1,146 +1,125 @@
 import { createTheme, alpha } from "@mui/material/styles";
 
 const PALETTE = {
-  primary: { light: "#93C5FD", main: "#3B82F6", dark: "#1E40AF", contrastText: "#FFFFFF" },
-  secondary: { light: "#FED7AA", main: "#e17319", dark: "#d34811", contrastText: "#FFFFFF" },
-  accent: { light: "#E9D5FF", main: "#C084FC", dark: "#7E22CE", contrastText: "#1E293B" },
-  success: { light: "#A7F3D0", main: "#10B981", dark: "#047857", contrastText: "#FFFFFF" },
-  warning: { light: "#FDE68A", main: "#FBBF24", dark: "#B45309", contrastText: "#1E293B" },
-  error: { light: "#FECACA", main: "#F87171", dark: "#B91C1C", contrastText: "#FFFFFF" },
+  primary: { 
+    main: "#38BDF8", 
+    dark: "#0EA5E9", 
+    light: "#7DD3FC", 
+    contrastText: "#020617" 
+  },
+  secondary: { main: "#818CF8", light: "#C7D2FE", dark: "#4F46E5" }, 
   neutral: {
     50: "#F8FAFC", 100: "#F1F5F9", 200: "#E2E8F0", 300: "#CBD5E1", 400: "#94A3B8",
     500: "#64748B", 600: "#475569", 700: "#334155", 800: "#1E293B", 900: "#0F172A",
   },
-  navy: { background: "#0B1426", paper: "#132038", divider: "#1E3050" },
+  midnight: {
+    main: "#020617",
+    paper: "#0B1426",
+    border: "rgba(56, 189, 248, 0.12)", 
+  }
 };
 
 const TYPOGRAPHY = {
-  fontFamily: '"Nunito", "Quicksand", "Inter", sans-serif',
-  fontWeightRegular: 500,
-  fontWeightMedium: 600,
-  fontWeightBold: 700,
-  h1: { fontSize: "2.5rem", fontWeight: 800 },
-  h2: { fontSize: "2rem", fontWeight: 800 },
-  h3: { fontSize: "1.75rem", fontWeight: 700 },
-  h4: { fontSize: "1.25rem", fontWeight: 700 },
-  h5: { fontSize: "1.1rem", fontWeight: 700 },
-  h6: { fontSize: "1rem", fontWeight: 700 },
-  button: { textTransform: "none", fontWeight: 700, letterSpacing: "0.5px" },
+  fontFamily: '"Inter", "Nunito", sans-serif', 
+  h1: { fontSize: "3.5rem", fontWeight: 900, letterSpacing: "-0.04em" },
+  h2: { fontSize: "2.5rem", fontWeight: 800, letterSpacing: "-0.02em" },
+  h4: { fontWeight: 700 },
+  button: { textTransform: "none", fontWeight: 700 },
 };
 
 export const createAppTheme = (mode = "light") => {
   const isDark = mode === "dark";
 
-  const themePalette = {
-    mode,
-    ...PALETTE,
-    background: {
-      default: isDark ? PALETTE.navy.background : "#F4F7FC",
-      paper: isDark ? PALETTE.navy.paper : "#FFFFFF",
+  return createTheme({
+    palette: {
+      mode,
+      primary: PALETTE.primary,
+      secondary: PALETTE.secondary,
+      neutral: PALETTE.neutral,
+      background: {
+        default: isDark ? PALETTE.midnight.main : "#FDF2F4", 
+        paper: isDark ? PALETTE.midnight.paper : "#FFFFFF",
+      },
+      text: {
+        primary: isDark ? "#F8FAFC" : PALETTE.neutral[900],
+        secondary: isDark ? PALETTE.neutral[300] : PALETTE.neutral[600],
+      },
+      midnight: PALETTE.midnight, 
     },
-    text: {
-      primary: isDark ? "#E2E8F0" : PALETTE.neutral[800],
-      secondary: isDark ? "#94A3B8" : PALETTE.neutral[500],
-    },
-    divider: isDark ? PALETTE.navy.divider : alpha(PALETTE.neutral[300], 0.5),
-  };
-
-  const baseTheme = createTheme({
-    palette: themePalette,
     typography: TYPOGRAPHY,
-    shape: { borderRadius: 16 },
-  });
-
-  return createTheme(baseTheme, {
+    shape: { borderRadius: 12 },
     components: {
-      MuiCard: {
+      MuiTypography: {
         styleOverrides: {
-          root: {
-            borderRadius: 24,
-            border: "none",
-            backgroundImage: "none",
-            boxShadow: isDark
-              ? "0 8px 32px rgba(0, 0, 0, 0.25)"
-              : "0 8px 24px rgba(149, 157, 165, 0.12)",
-            transition: "transform 0.2s ease, box-shadow 0.2s ease",
-            "&:hover": {
-              transform: "translateY(-4px)",
-              boxShadow: isDark
-                ? "0 12px 40px rgba(0, 0, 0, 0.4)"
-                : "0 12px 28px rgba(149, 157, 165, 0.2)",
-            },
+          h1: {
+            color: isDark ? PALETTE.primary.main : PALETTE.neutral[900],
+            textShadow: isDark ? `0 0 40px ${alpha(PALETTE.primary.main, 0.2)}` : 'none',
           },
-        },
+        }
       },
       MuiButton: {
-        defaultProps: { 
-          disableElevation: true, // Giữ nguyên để tắt bóng xám mặc định xấu xí của MUI
-        },
         styleOverrides: {
           root: {
-            borderRadius: 14, // Bo cong mềm mại hơn (chuẩn Soft UI)
-            padding: "10px 24px",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", // Hiệu ứng chuyển động cực mượt
-            "&:active": {
-              transform: "scale(0.96)", 
-            },
+            borderRadius: 12,
+            padding: "12px 28px",
           },
           containedPrimary: {
-            backgroundColor: baseTheme.palette.primary.main,
-            color: "#ffffff",
-            boxShadow: `0 6px 16px ${alpha(baseTheme.palette.primary.main, 0.25)}`,
+            backgroundColor: isDark ? PALETTE.primary.main : PALETTE.neutral[900],
+            color: isDark ? PALETTE.primary.contrastText : "#FFFFFF",
             "&:hover": {
-              backgroundColor: baseTheme.palette.primary.dark,
-              boxShadow: `0 8px 24px ${alpha(baseTheme.palette.primary.main, 0.4)}`,
-              transform: "translateY(-2px)", 
+              backgroundColor: isDark ? PALETTE.primary.light : "#000000",
+              transform: "translateY(-2px)",
+              boxShadow: isDark ? `0 0 20px ${alpha(PALETTE.primary.main, 0.4)}` : "0 8px 20px rgba(0,0,0,0.1)",
             },
           },
           outlinedPrimary: {
-            border: `2px solid ${alpha(baseTheme.palette.primary.main, 0.2)}`, 
-            color: baseTheme.palette.primary.main,
+            borderColor: isDark ? alpha(PALETTE.primary.main, 0.5) : PALETTE.primary.main,
+            color: isDark ? PALETTE.primary.light : PALETTE.primary.dark,
             "&:hover": {
-              border: `2px solid ${baseTheme.palette.primary.main}`,
-              backgroundColor: alpha(baseTheme.palette.primary.main, 0.05),
-              transform: "translateY(-2px)",
-            },
-          },
-          textPrimary: {
-            "&:hover": {
-              backgroundColor: alpha(baseTheme.palette.primary.main, 0.08),
-            },
-          },
-          sizeLarge: {
-            padding: "14px 32px",
-            fontSize: "1.1rem",
-            borderRadius: 16, 
-          },
-          sizeSmall: {
-            padding: "6px 16px",
-            fontSize: "0.875rem",
-            borderRadius: 10,
+              backgroundColor: alpha(PALETTE.primary.main, 0.08),
+              borderColor: PALETTE.primary.main,
+            }
           }
         },
       },
-      MuiDrawer: {
-        styleOverrides: {
-          paper: {
-            borderRight: "none",
-            boxShadow: isDark 
-              ? "4px 0 24px rgba(0,0,0,0.2)" 
-              : "4px 0 24px rgba(149, 157, 165, 0.08)",
-          },
-        },
-      },
-      MuiAppBar: {
+      MuiOutlinedInput: {
         styleOverrides: {
           root: {
-            borderBottom: "none",
-            boxShadow: isDark 
-              ? "0 4px 24px rgba(0,0,0,0.2)" 
-              : "0 4px 24px rgba(149, 157, 165, 0.08)",
+            backgroundColor: isDark ? alpha("#FFFFFF", 0.04) : "#FFFFFF",
+            borderRadius: "8px",
+            transition: "all 0.2s ease-in-out",
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: isDark ? alpha(PALETTE.primary.main, 0.6) : PALETTE.neutral[400],
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: PALETTE.primary.main,
+              borderWidth: "1px",
+              boxShadow: isDark 
+                ? `0 0 0 3px ${alpha(PALETTE.primary.main, 0.15)}` 
+                : `0 0 0 3px ${alpha(PALETTE.primary.main, 0.1)}`,
+            },
+          },
+          notchedOutline: {
+            borderColor: isDark ? PALETTE.midnight.border : PALETTE.neutral[200],
           },
         },
       },
+      MuiMenuItem: {
+        styleOverrides: {
+          root: {
+            borderRadius: "6px",
+            margin: "4px 8px",
+            "&.Mui-selected": {
+              backgroundColor: alpha(PALETTE.primary.main, 0.15),
+              color: isDark ? PALETTE.primary.main : PALETTE.primary.dark,
+              fontWeight: 600,
+              "&:hover": {
+                backgroundColor: alpha(PALETTE.primary.main, 0.25),
+              }
+            }
+          }
+        }
+      }
     },
   });
 };
