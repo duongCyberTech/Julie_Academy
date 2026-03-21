@@ -248,7 +248,6 @@ export class ExamService {
 
                 return examSessions
             } else {
-                console.log("CALL STACK 1")
                 const currentDate = new Date();
                 const offset = (page - 1) * limit;
 
@@ -321,8 +320,6 @@ export class ExamService {
                     ORDER BY es."startAt" ASC, es."expireAt" ASC
                     LIMIT ${limit} OFFSET ${offset}
                 `;
-
-                console.log("[RETURN] -> ", examSessions)
 
                 return examSessions;
             }
