@@ -3,7 +3,12 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { ValidationPipe } from '@nestjs/common';
-require('dotenv').config()
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 
 async function bootstrap() {
   try {
