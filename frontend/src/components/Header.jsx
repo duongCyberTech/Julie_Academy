@@ -8,13 +8,14 @@ import {
   Badge, styled, alpha
 } from "@mui/material";
 
-import {
-  Menu as MenuIcon, ExitToApp as ExitToAppIcon,
-  Notifications as NotificationsIcon, PersonOutline as PersonOutlineIcon,
-  SettingsOutlined as SettingsOutlinedIcon, Language as LanguageIcon,
-  DarkModeRounded as DarkModeRoundedIcon,
-  LightModeRounded as LightModeRoundedIcon 
-} from "@mui/icons-material";
+import MenuIcon from "@mui/icons-material/Menu";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import LanguageIcon from "@mui/icons-material/Language";
+import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
+import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 
 import { socket } from "../services/ApiClient";
 import { countNotifications } from "../services/NotificationService";

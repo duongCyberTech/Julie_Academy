@@ -6,8 +6,10 @@ import {
     InputLabel, Select, MenuItem, InputAdornment,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     TablePagination, Checkbox, Chip, Stack, CircularProgress,
-    IconButton, Paper, Divider, ToggleButtonGroup, ToggleButton, Collapse, Tooltip
+    IconButton, Paper, Divider, ToggleButtonGroup, ToggleButton, Tooltip,
+    useTheme
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 
 import CloseIcon from '@mui/icons-material/Close';
@@ -46,6 +48,9 @@ function useDebounce(value, delay) {
 }
 
 export default function AddQuestionDialog({ open = false, onClose, onRefresh, examId, existingQuestionIds = [] }) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+    
     const [token] = useState(() => localStorage.getItem('token'));
     const userInfo = useMemo(() => (token ? jwtDecode(token) : null), [token]);
 
@@ -232,32 +237,51 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
             onClose={onClose} 
             maxWidth="xl" 
             fullWidth 
-            PaperProps={{ sx: { height: '90vh', display: 'flex', flexDirection: 'column' } }}
+            PaperProps={{ 
+                sx: { 
+                    height: '90vh', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    borderRadius: '24px', // Soft UI border radius
+                    backgroundImage: 'none',
+                    bgcolor: 'background.paper'
+                } 
+            }}
         >
             {/* 1. HEADER */}
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: 'divider', py: 1.5, px: 3, flexShrink: 0 }}>
+            <DialogTitle sx={{ 
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                borderBottom: 1, borderColor: isDark ? theme.palette.midnight?.border : 'divider', 
+                py: 2, px: 3, flexShrink: 0 
+            }}>
                 <Box>
                     <Typography variant="h6" fontWeight="bold">Thêm câu hỏi vào đề thi</Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Đã chọn: <span style={{ color: '#1976d2', fontWeight: 'bold' }}>{selectedIds.length}</span> câu
+                        Đã chọn: <Typography component="span" sx={{ color: 'primary.main', fontWeight: 'bold' }}>{selectedIds.length}</Typography> câu
                     </Typography>
                 </Box>
-                <IconButton onClick={onClose}><CloseIcon /></IconButton>
+                <IconButton onClick={onClose} sx={{ bgcolor: alpha(theme.palette.text.primary, 0.05) }}><CloseIcon /></IconButton>
             </DialogTitle>
 
             {/* 2. BODY */}
             <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
                 
                 {/* --- SIDEBAR --- */}
-                <Box sx={{ width: 320, borderRight: 1, borderColor: 'divider', bgcolor: '#fcfcfc', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-                    <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
-                        <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-                            <FilterListIcon fontSize="small" sx={{ mr: 1 }} /> Bộ lọc
+                <Box sx={{ 
+                    width: 320, 
+                    borderRight: 1, 
+                    borderColor: isDark ? theme.palette.midnight?.border : 'divider', 
+                    bgcolor: isDark ? alpha(theme.palette.background.default, 0.4) : alpha(theme.palette.primary.main, 0.02), 
+                    display: 'flex', flexDirection: 'column', flexShrink: 0 
+                }}>
+                    <Box sx={{ p: 3, overflowY: 'auto', flex: 1 }}>
+                        <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2.5, display: 'flex', alignItems: 'center', color: 'text.primary' }}>
+                            <FilterListIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} /> Bộ lọc tìm kiếm
                         </Typography>
 
-                        <Stack spacing={2.5}>
+                        <Stack spacing={3}>
                             <FormControl fullWidth size="small">
-                                <Typography variant="caption" color="text.secondary" gutterBottom>Nguồn dữ liệu</Typography>
+                                <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom>Nguồn dữ liệu</Typography>
                                 <ToggleButtonGroup
                                     color="primary"
                                     value={viewMode}
@@ -265,13 +289,14 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                                     onChange={(e, newMode) => { if(newMode) { setViewMode(newMode); setPage(0); } }}
                                     size="small"
                                     fullWidth
+                                    sx={{ bgcolor: 'background.paper' }}
                                 >
-                                    <ToggleButton value="my_questions">Của tôi</ToggleButton>
-                                    <ToggleButton value="public">Công khai</ToggleButton>
+                                    <ToggleButton value="my_questions" sx={{ fontWeight: 600 }}>Của tôi</ToggleButton>
+                                    <ToggleButton value="public" sx={{ fontWeight: 600 }}>Công khai</ToggleButton>
                                 </ToggleButtonGroup>
                             </FormControl>
 
-                            <FormControl fullWidth size="small">
+                            <FormControl fullWidth size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                                 <InputLabel>Giáo án</InputLabel>
                                 <Select name="bookId" value={filters.bookId} label="Giáo án" onChange={handleFilterChange}>
                                     <MenuItem value=""><em>Tất cả giáo án</em></MenuItem>
@@ -280,9 +305,13 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                             </FormControl>
 
                             {filters.bookId && (
-                                <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 1, p: 1, bgcolor: '#fff' }}>
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                        <FolderIcon fontSize="small" sx={{ mr: 0.5, fontSize: 16 }} /> Chọn chuyên đề:
+                                <Box sx={{ 
+                                    border: '1px solid', 
+                                    borderColor: isDark ? theme.palette.midnight?.border : 'divider', 
+                                    borderRadius: 2, p: 1.5, bgcolor: 'background.paper' 
+                                }}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <FolderIcon fontSize="small" sx={{ mr: 0.5, fontSize: 16, color: 'primary.main' }} /> Chọn chuyên đề:
                                     </Typography>
                                     
                                     {loadingCategories ? (
@@ -294,7 +323,15 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                                                 slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
                                                 onSelectedItemsChange={handleTreeSelection}
                                                 selectedItems={filters.categoryId ? [String(filters.categoryId)] : []}
-                                                sx={{ '& .MuiTreeItem-content': { py: 0.5, borderRadius: 1, '&.Mui-selected': { bgcolor: 'primary.lighter', color: 'primary.main', fontWeight: 'bold' } } }}
+                                                sx={{ 
+                                                    '& .MuiTreeItem-content': { 
+                                                        py: 0.5, borderRadius: 1, 
+                                                        '&.Mui-selected': { 
+                                                            bgcolor: alpha(theme.palette.primary.main, 0.15), 
+                                                            color: 'primary.main', fontWeight: 'bold' 
+                                                        } 
+                                                    } 
+                                                }}
                                             />
                                         </Box>
                                     ) : (
@@ -305,8 +342,8 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                                 </Box>
                             )}
 
-                            <Stack direction="row" spacing={1}>
-                                <FormControl fullWidth size="small">
+                            <Stack direction="row" spacing={1.5}>
+                                <FormControl fullWidth size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                                     <InputLabel>Độ khó</InputLabel>
                                     <Select name="level" value={filters.level} label="Độ khó" onChange={handleFilterChange}>
                                         <MenuItem value=""><em>Tất cả</em></MenuItem>
@@ -316,7 +353,7 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                                     </Select>
                                 </FormControl>
 
-                                <FormControl fullWidth size="small">
+                                <FormControl fullWidth size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                                     <InputLabel>Loại</InputLabel>
                                     <Select name="type" value={filters.type} label="Loại" onChange={handleFilterChange}>
                                         <MenuItem value=""><em>Tất cả</em></MenuItem>
@@ -334,6 +371,7 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                                 size="small" 
                                 startIcon={<RestartAltIcon />} 
                                 onClick={() => { setFilters({ search: "", level: "", type: "", bookId: "", categoryId: "" }); setPage(0); }}
+                                sx={{ borderRadius: 2, py: 1, fontWeight: 600, color: 'text.secondary' }}
                             >
                                 Xóa bộ lọc
                             </Button>
@@ -342,46 +380,60 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                 </Box>
 
                 {/* --- MAIN (Bảng câu hỏi) --- */}
-                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5', p: 2, overflow: 'hidden' }}>
+                <Box sx={{ 
+                    flex: 1, display: 'flex', flexDirection: 'column', 
+                    bgcolor: isDark ? theme.palette.background.default : '#F9FAFB', 
+                    p: 3, overflow: 'hidden' 
+                }}>
                     
-                    <Box sx={{ mb: 2, bgcolor: '#fff', p: 1, borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                    <Box sx={{ mb: 3 }}>
                         <TextField
-                            placeholder="Nhập từ khóa tiêu đề..."
+                            placeholder="Nhập từ khóa tiêu đề để tìm kiếm nhanh..."
                             size="small"
                             name="search"
                             value={filters.search}
                             onChange={handleFilterChange}
                             fullWidth
                             InputProps={{ 
-                                startAdornment: <InputAdornment position="start"><SearchIcon color="action" /></InputAdornment>,
-                                sx: { bgcolor: '#f9f9f9' }
+                                startAdornment: <InputAdornment position="start"><SearchIcon color="primary" /></InputAdornment>,
+                                sx: { 
+                                    bgcolor: 'background.paper', 
+                                    borderRadius: 2,
+                                    '& fieldset': { borderColor: isDark ? theme.palette.midnight?.border : 'divider' }
+                                }
                             }}
                         />
                     </Box>
 
-                    <Paper sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 1 }}>
+                    <Paper 
+                        variant="outlined"
+                        sx={{ 
+                            flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', 
+                            borderRadius: 3, borderColor: isDark ? theme.palette.midnight?.border : 'divider' 
+                        }}
+                    >
                         <TableContainer sx={{ flex: 1, overflowY: 'auto' }}>
-                            <Table stickyHeader size="small">
+                            <Table stickyHeader size="medium">
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell padding="checkbox" sx={{ bgcolor: '#eee', width: 50 }}>
+                                        <TableCell padding="checkbox" sx={{ bgcolor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.03), width: 50 }}>
                                             <Checkbox 
                                                 onChange={handleSelectAll}
                                                 checked={isAllSelected}
                                                 indeterminate={isIndeterminate}
                                             />
                                         </TableCell>
-                                        <TableCell sx={{ bgcolor: '#eee', fontWeight: 'bold' }}>Tiêu đề câu hỏi</TableCell>
-                                        <TableCell sx={{ bgcolor: '#eee', fontWeight: 'bold', width: 100 }}>Loại</TableCell>
-                                        <TableCell sx={{ bgcolor: '#eee', fontWeight: 'bold', width: 100 }}>Độ khó</TableCell>
-                                        <TableCell sx={{ bgcolor: '#eee', fontWeight: 'bold', width: 60, textAlign: 'center' }}>Xem</TableCell>
+                                        <TableCell sx={{ bgcolor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.03), fontWeight: 700, color: 'text.secondary' }}>Tiêu đề câu hỏi</TableCell>
+                                        <TableCell sx={{ bgcolor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.03), fontWeight: 700, color: 'text.secondary', width: 120 }}>Loại</TableCell>
+                                        <TableCell sx={{ bgcolor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.03), fontWeight: 700, color: 'text.secondary', width: 120 }}>Độ khó</TableCell>
+                                        <TableCell sx={{ bgcolor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.03), fontWeight: 700, color: 'text.secondary', width: 80, textAlign: 'center' }}>Xem</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {loading ? (
-                                        <TableRow><TableCell colSpan={5} align="center"><CircularProgress size={30} sx={{ my: 4 }} /></TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={5} align="center"><CircularProgress size={30} sx={{ my: 8 }} /></TableCell></TableRow>
                                     ) : questions.length === 0 ? (
-                                        <TableRow><TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>Không tìm thấy câu hỏi nào.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={5} align="center" sx={{ py: 8, color: 'text.secondary' }}>Không tìm thấy câu hỏi nào phù hợp với bộ lọc.</TableCell></TableRow>
                                     ) : (
                                         questions.map((q) => {
                                             const isExists = existingQuestionIds.includes(q.ques_id);
@@ -393,8 +445,10 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                                                     selected={isSelected}
                                                     sx={{ 
                                                         opacity: isExists ? 0.6 : 1, 
-                                                        bgcolor: isExists ? '#f0f0f0' : 'inherit',
-                                                        cursor: isExists ? 'default' : 'pointer'
+                                                        bgcolor: isExists ? alpha(theme.palette.action.disabledBackground, 0.3) : 'inherit',
+                                                        cursor: isExists ? 'default' : 'pointer',
+                                                        '&.Mui-selected': { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                                                        '&.Mui-selected:hover': { bgcolor: alpha(theme.palette.primary.main, 0.12) }
                                                     }}
                                                     onClick={() => !isExists && handleToggleSelect(q.ques_id)}
                                                 >
@@ -404,32 +458,51 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                                                             disabled={isExists}
                                                             onClick={(e) => e.stopPropagation()} 
                                                             onChange={() => handleToggleSelect(q.ques_id)}
+                                                            color="primary"
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
-                                                        {/* CHỈ HIỆN TIÊU ĐỀ */}
-                                                        <Typography variant="body2" fontWeight={500} sx={{ lineHeight: 1.5 }}>
+                                                    <TableCell sx={{ py: 2 }}>
+                                                        <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.6, color: 'text.primary' }}>
                                                             {q.title || "(Câu hỏi chưa có tiêu đề)"}
                                                         </Typography>
                                                         
-                                                        {isExists && <Chip label="Đã có trong đề" size="small" color="default" sx={{ mt: 0.5, height: 20, fontSize: 10 }} />}
+                                                        {isExists && <Chip label="Đã có trong đề" size="small" sx={{ mt: 1, height: 22, fontSize: 11, fontWeight: 600, bgcolor: 'action.disabledBackground' }} />}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Chip label={TYPE_MAP[q.type] || q.type} size="small" variant="outlined" sx={{borderRadius: 1}} />
+                                                        <Chip 
+                                                            label={TYPE_MAP[q.type] || q.type} 
+                                                            size="small" 
+                                                            sx={{ 
+                                                                borderRadius: 1.5, fontWeight: 600,
+                                                                bgcolor: alpha(theme.palette.primary.main, 0.08), 
+                                                                color: isDark ? 'primary.light' : 'primary.dark',
+                                                                border: '1px dashed', borderColor: 'primary.main'
+                                                            }} 
+                                                        />
                                                     </TableCell>
                                                     <TableCell>
                                                         <Chip 
                                                             label={DIFFICULTY_MAP[q.level]?.text || q.level} 
-                                                            color={DIFFICULTY_MAP[q.level]?.color || "default"} 
-                                                            size="small" variant="filled" sx={{ width: '100%' }}
+                                                            size="small" 
+                                                            sx={{ 
+                                                                width: '100%', fontWeight: 700,
+                                                                border: '1.5px solid', 
+                                                                borderColor: DIFFICULTY_MAP[q.level] ? `${DIFFICULTY_MAP[q.level].color}.main` : 'divider',
+                                                                bgcolor: DIFFICULTY_MAP[q.level] ? alpha(theme.palette[DIFFICULTY_MAP[q.level].color].main, 0.1) : 'background.paper',
+                                                                color: DIFFICULTY_MAP[q.level] ? (isDark ? `${DIFFICULTY_MAP[q.level].color}.light` : `${DIFFICULTY_MAP[q.level].color}.dark`) : 'text.secondary'
+                                                            }}
                                                         />
                                                     </TableCell>
                                                     <TableCell align="center">
                                                         <Tooltip title="Xem chi tiết">
                                                             <IconButton 
                                                                 size="small" 
-                                                                color="primary" 
                                                                 onClick={(e) => { e.stopPropagation(); handleViewDetail(q.ques_id); }}
+                                                                sx={{ 
+                                                                    color: 'primary.main',
+                                                                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                                                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) }
+                                                                }}
                                                             >
                                                                 <VisibilityIcon fontSize="small" />
                                                             </IconButton>
@@ -442,7 +515,7 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                                 </TableBody>
                             </Table>
                         </TableContainer>
-                        <Divider />
+                        <Divider sx={{ borderColor: isDark ? theme.palette.midnight?.border : 'divider' }} />
                         <TablePagination
                             component="div"
                             count={totalQuestions}
@@ -451,21 +524,23 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                             rowsPerPage={rowsPerPage}
                             onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                             rowsPerPageOptions={[10, 25, 50]}
-                            labelRowsPerPage="Dòng:"
+                            labelRowsPerPage="Số dòng:"
+                            sx={{ color: 'text.secondary', fontWeight: 500 }}
                         />
                     </Paper>
                 </Box>
             </DialogContent>
 
             {/* 3. FOOTER */}
-            <DialogActions sx={{ p: 2, borderTop: 1, borderColor: 'divider', flexShrink: 0 }}>
-                <Button onClick={onClose} color="inherit" size="large">Hủy bỏ</Button>
+            <DialogActions sx={{ p: 3, borderTop: 1, borderColor: isDark ? theme.palette.midnight?.border : 'divider', flexShrink: 0, bgcolor: 'background.paper' }}>
+                <Button onClick={onClose} color="inherit" size="large" sx={{ fontWeight: 600, borderRadius: 2 }}>Hủy bỏ</Button>
                 <Button 
                     variant="contained" 
+                    color="primary"
                     onClick={handleSubmit} 
                     disabled={submitting || selectedIds.length === 0}
                     size="large"
-                    sx={{ px: 4 }}
+                    sx={{ px: 4, borderRadius: 2, fontWeight: 700 }}
                 >
                     {submitting ? "Đang xử lý..." : `Thêm ${selectedIds.length} câu hỏi`}
                 </Button>
