@@ -22,26 +22,33 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 // ==========================================
 // 1. PAGE WRAPPER CHUẨN SOFT UI
 // ==========================================
-const PageWrapper = styled(Paper)(({ theme }) => ({
-    margin: theme.spacing(2),
-    padding: theme.spacing(4),
-    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
-    borderRadius: '24px',
-    border: `1px solid ${theme.palette.divider}`,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
-    minHeight: 'calc(100vh - 120px)',
-    display: 'flex',
-    flexDirection: 'column',
-}));
+const PageWrapper = styled(Paper)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        margin: theme.spacing(2),
+        padding: theme.spacing(4),
+        backgroundColor: theme.palette.background.paper,
+        backgroundImage: 'none',
+        borderRadius: '24px',
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : theme.palette.divider}`,
+        boxShadow: isDark ? 'none' : '0 8px 32px rgba(0,0,0,0.04)',
+        minHeight: 'calc(100vh - 120px)',
+        display: 'flex',
+        flexDirection: 'column',
+    };
+});
 
-const HeaderCard = styled(Paper)(({ theme }) => ({
-    padding: theme.spacing(3),
-    borderRadius: theme.shape.borderRadius * 2,
-    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-    backgroundColor: alpha(theme.palette.primary.main, 0.02),
-    boxShadow: 'none', 
-    marginBottom: theme.spacing(4),
-}));
+const HeaderCard = styled(Paper)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        padding: theme.spacing(3),
+        borderRadius: theme.shape.borderRadius * 2,
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.primary.main, 0.1)}`,
+        backgroundColor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.02),
+        boxShadow: 'none', 
+        marginBottom: theme.spacing(4),
+    };
+});
 
 // ==========================================
 // CHIPS UI 
@@ -66,7 +73,7 @@ const DifficultyChip = ({ level }) => {
                     border: '1.5px solid', 
                     borderColor: `${conf.color}.main`,
                     bgcolor: (theme) => alpha(theme.palette[conf.color].main, 0.08),
-                    color: `${conf.color}.dark` 
+                    color: (theme) => theme.palette.mode === 'dark' ? `${conf.color}.light` : `${conf.color}.dark` 
                 }} 
             />
         );
@@ -99,7 +106,7 @@ const TypeChip = ({ type }) => {
             sx={{ 
                 fontWeight: 700, 
                 bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08), 
-                color: 'primary.dark',
+                color: (theme) => theme.palette.mode === 'dark' ? 'primary.light' : 'primary.dark',
                 border: '1.5px dashed',
                 borderColor: 'primary.main'
             }}
@@ -194,7 +201,10 @@ function ExamDetailPage() {
                         color: 'text.secondary',
                         borderRadius: '10px',
                         px: 2,
-                        '&:hover': { color: 'primary.main', bgcolor: alpha('#1976d2', 0.08) }
+                        '&:hover': { 
+                            color: 'primary.main', 
+                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08) 
+                        }
                     }}
                 >
                     Quay lại danh sách đề thi
@@ -218,19 +228,30 @@ function ExamDetailPage() {
                                 icon={<AccessTimeRoundedIcon fontSize="small" />} 
                                 label={`${exam.duration} phút`} 
                                 size="small" 
-                                sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', fontWeight: 600 }} 
+                                sx={{ 
+                                    bgcolor: 'background.paper', 
+                                    border: '1px solid', 
+                                    borderColor: (theme) => theme.palette.mode === 'dark' ? theme.palette.midnight?.border : 'divider', 
+                                    fontWeight: 600 
+                                }} 
                             />
                             <Chip 
                                 icon={<FormatListNumberedRoundedIcon fontSize="small" />} 
                                 label={`${questions.length} câu hỏi`} 
                                 size="small" 
-                                sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', fontWeight: 600 }} 
+                                sx={{ 
+                                    bgcolor: 'background.paper', 
+                                    border: '1px solid', 
+                                    borderColor: (theme) => theme.palette.mode === 'dark' ? theme.palette.midnight?.border : 'divider', 
+                                    fontWeight: 600 
+                                }} 
                             />
                         </Stack>
                     </Box>
 
                     <Button 
                         variant="contained" 
+                        color="primary"
                         startIcon={<AddCircleOutlineIcon />} 
                         onClick={() => setOpenAddDialog(true)}
                         sx={{ minWidth: 160, borderRadius: '12px', py: 1.5, fontWeight: 700 }}
@@ -251,8 +272,8 @@ function ExamDetailPage() {
                     borderRadius: 4, 
                     overflow: 'hidden', 
                     flexGrow: 1, 
-                    borderColor: 'divider',
-                    bgcolor: '#fff' 
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? theme.palette.midnight?.border : 'divider',
+                    backgroundColor: 'background.paper'
                 }}
             >
                 <TableContainer>
@@ -301,9 +322,12 @@ function ExamDetailPage() {
                                                 onClick={() => setQToDelete(q)}
                                                 sx={{ 
                                                     color: 'error.main',
-                                                    bgcolor: alpha('#d32f2f', 0.08),
+                                                    bgcolor: (theme) => alpha(theme.palette.error.main, 0.08),
                                                     borderRadius: '10px',
-                                                    '&:hover': { bgcolor: alpha('#d32f2f', 0.2), transform: 'translateY(-2px)' },
+                                                    '&:hover': { 
+                                                        bgcolor: (theme) => alpha(theme.palette.error.main, 0.2), 
+                                                        transform: 'translateY(-2px)' 
+                                                    },
                                                     transition: 'all 0.2s'
                                                 }}
                                             >
@@ -339,7 +363,14 @@ function ExamDetailPage() {
             <Dialog 
                 open={!!qToDelete} 
                 onClose={() => setQToDelete(null)}
-                PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+                PaperProps={{ 
+                    sx: { 
+                        borderRadius: 3, 
+                        p: 1,
+                        backgroundColor: 'background.paper',
+                        backgroundImage: 'none'
+                    } 
+                }}
             >
                 <DialogTitle sx={{ fontWeight: 700 }}>Xác nhận xóa câu hỏi</DialogTitle>
                 <DialogContent>
