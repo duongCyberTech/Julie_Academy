@@ -54,7 +54,7 @@ require('dotenv').config()
         host: process.env.UPSTASH_REDIS_HOST,
         port: process.env.UPSTASH_REDIS_PORT ? parseInt(process.env.UPSTASH_REDIS_PORT) : 6379,
         password: process.env.UPSTASH_REDIS_PASSWORD,
-        ...(process.env.UPSTASH_REDIS_HOST !== 'redis' && {
+        ...(process.env.UPSTASH_REDIS_HOST !== 'redis' && process.env.UPSTASH_REDIS_HOST !== 'localhost' && {
           username: 'default',
           tls: { rejectUnauthorized: false },
         }),
