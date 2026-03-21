@@ -268,13 +268,19 @@ export class ExamService {
                         : Prisma.empty;
 
                 const countCondition = status === ExamSessionStatus.COMPLETED ? 
-                                        Prisma.empty : 
                                         Prisma.sql` AND (
                                             SELECT COUNT(*) FROM "Exam_taken" et 
                                             WHERE et."session_id" = es."session_id" 
                                             AND et."exam_id" = es."exam_id" 
                                             AND et."student_uid" = ${user.userId}
-                                        ) < es."limit_taken"`
+                                        ) > 0` : (
+                                        status === ExamSessionStatus.PENDING ?
+                                        Prisma.sql` AND (
+                                            SELECT COUNT(*) FROM "Exam_taken" et 
+                                            WHERE et."session_id" = es."session_id" 
+                                            AND et."exam_id" = es."exam_id" 
+                                            AND et."student_uid" = ${user.userId}
+                                        ) = 0` : Prisma.empty)
 
                 // 3. The Final Query
                 const examSessions = await this.prisma.$queryRaw`
@@ -301,7 +307,7 @@ export class ExamService {
                             ))
                             FROM "Exam_taken" et
                             WHERE et.session_id = es.session_id AND et.exam_id = es.exam_id AND et.student_uid = ${user.userId}
-                        ) AS exam_takens,
+                        ) AS exam_takens
                     FROM "Exam_session" es
                     JOIN "Exams" e ON es."exam_id" = e."exam_id"
                     JOIN "Exam_open_in" eoi ON es."session_id" = eoi."session_id" AND es."exam_id" = eoi."exam_id"
@@ -470,8 +476,6 @@ export class ExamService {
             const currentDate = new Date();
             const offset = (page - 1) * limit;
 
-            console.log("[STUDENT GET]: ", student_id, " | Status: ", status, " | Time: ", currentDate)
-
             // 1. Time Conditions (Ensure columns with capital letters are double-quoted)
             const timeCondition = (status === ExamSessionStatus.UPCOMING
                 ? Prisma.sql`AND es."startAt" > ${currentDate}`
@@ -487,6 +491,21 @@ export class ExamService {
                 : status === ExamSessionStatus.COMPLETED
                     ? Prisma.sql`AND EXISTS (SELECT 1 FROM "Exam_taken" et WHERE et."session_id" = es."session_id" AND et."exam_id" = es."exam_id" AND et."student_uid" = ${student_id} AND et."isDone" = true)`
                     : Prisma.empty;
+
+            const countCondition = status === ExamSessionStatus.COMPLETED ? 
+                                    Prisma.sql` AND (
+                                        SELECT COUNT(*) FROM "Exam_taken" et 
+                                        WHERE et."session_id" = es."session_id" 
+                                        AND et."exam_id" = es."exam_id" 
+                                        AND et."student_uid" = ${student_id}
+                                    ) > 0` : (
+                                    status === ExamSessionStatus.OPEN ?
+                                    Prisma.sql` AND (
+                                        SELECT COUNT(*) FROM "Exam_taken" et 
+                                        WHERE et."session_id" = es."session_id" 
+                                        AND et."exam_id" = es."exam_id" 
+                                        AND et."student_uid" = ${student_id}
+                                    ) = 0` : Prisma.empty)
 
             // 3. The Main Query
             const sessions = await this.prisma.$queryRaw`
@@ -534,14 +553,9 @@ export class ExamService {
                         AND l.student_uid = ${student_id}
                     )
                     -- Limit check: Current student's total attempts < session limit
-                    AND (
-                        SELECT COUNT(*) FROM "Exam_taken" et 
-                        WHERE et.session_id = es.session_id 
-                        AND et.exam_id = es.exam_id 
-                        AND et.student_uid = ${student_id}
-                    ) < es.limit_taken
-                    ${timeCondition}
-                    ${etStatusCondition}
+                    ${countCondition} 
+                    ${timeCondition} 
+                    ${etStatusCondition} 
                 ORDER BY es."startAt" ASC, es."expireAt" ASC
                 LIMIT ${limit} OFFSET ${offset}
             `;
