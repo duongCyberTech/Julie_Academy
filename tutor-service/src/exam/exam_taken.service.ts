@@ -346,7 +346,6 @@ export class ExamTakenService {
                 if (ans.answers[0] === userAnswer) {
                     currentQuesScore = 1.0;
                     cnt++;
-                    console.log(`Question ID: ${ans.ques_id}, Score: ${currentQuesScore}`);
                 }
             } else if (ans.type === QuestionType.multiple_choice) {
                 const sysAns = ans.answers;
@@ -361,17 +360,13 @@ export class ExamTakenService {
 
                     if (currentQuesScore > 0.0) cnt++;
                 }
-
-                console.log(`Question ID: ${ans.ques_id}, Correct Answers: ${sysAns}, User Answers: ${subAns}, Score: ${currentQuesScore}`);
             }
 
             score += currentQuesScore;
-            console.log(`Current Total Score: ${score}`);
         }
 
         // nếu cần fix sai số
         score = Number(score.toFixed(6));
-        console.log(`Final Score after fixing precision: ${score}`);
 
         return {score, cnt}
     }
@@ -423,13 +418,6 @@ export class ExamTakenService {
                     final_score: new Prisma.Decimal((score * examData.exam.total_score / examData.exam.total_ques).toFixed(2)),
                 }
             })
-
-            console.log("LOGGING SCORE CALCULATION: ",
-                score + " | ",
-                examData.exam.total_score + " | ",
-                examData.exam.total_ques + " | ",
-                score * examData.exam.total_score / examData.exam.total_ques
-            );
 
             const staticsData = {
                 uid: student_id,
