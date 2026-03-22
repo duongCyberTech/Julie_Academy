@@ -64,13 +64,12 @@ const mergeAndFilterAssignments = (sessionsData, pendingData, completedData) => 
       else overdue.push(session);
     } 
     else {
-      // Chỉ cần có ít nhất 1 lần nộp thành công, LUÔN LUÔN cho vào tab Hoàn thành
+      // Chỉ cần có ít nhất 1 lần nộp thành công, cho vào tab Hoàn thành
       if (completedHistories.length > 0) completed.push(session);
       else todo.push(session);
     }
   });
 
- // Sort
   upcoming.sort((a, b) => new Date(a.startAt) - new Date(b.startAt));
   todo.sort((a, b) => {
     if (a.pending_et_id && !b.pending_et_id) return -1;
@@ -78,10 +77,22 @@ const mergeAndFilterAssignments = (sessionsData, pendingData, completedData) => 
     return new Date(a.expireAt) - new Date(b.expireAt);
   });
   overdue.sort((a, b) => new Date(b.expireAt) - new Date(a.expireAt));
-  completed.sort((a, b) => {
-      const timeA = a.examTakens?.length > 0 ? new Date(a.examTakens[a.examTakens.length - 1].doneAt) : 0;
-      const timeB = b.examTakens?.length > 0 ? new Date(b.examTakens[b.examTakens.length - 1].doneAt) : 0;
-      return timeB - timeA;
+ completed.sort((a, b) => {
+      // Ưu tiên đưa các bài "Đang làm dở" lên trên cùng
+      if (a.pending_et_id && !b.pending_et_id) return -1;
+      if (!a.pending_et_id && b.pending_et_id) return 1;
+
+      // 2. Lấy thời gian nộp bài mới nhất của các lần đã nộp 
+      const getLatestDoneTime = (session) => {
+          const completedAttempts = (session.examTakens || []).filter(et => et && et.isDone);
+          if (completedAttempts.length === 0) return 0;
+          return Math.max(...completedAttempts.map(et => new Date(et.doneAt).getTime()));
+      };
+
+      const timeA = getLatestDoneTime(a);
+      const timeB = getLatestDoneTime(b);
+
+      return timeB - timeA; 
   });
 
   return { upcoming, todo, overdue, completed };
@@ -120,7 +131,6 @@ export default function StudentAssignmentPage() {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5; 
 
-  // State Modal Lịch sử
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedSessionHistory, setSelectedSessionHistory] = useState(null);
 
@@ -161,7 +171,7 @@ export default function StudentAssignmentPage() {
   const handleStartAssignment = (session) => navigate(`/student/assignment/class/${classId}/exam/${session.exam.exam_id}/session/${session.session_id}`);
   const handleContinueAssignment = (et_id) => navigate(`/student/assignment/continue/${et_id}`);
   
-  // Mở Popup thay vì nhảy trang
+
   const handleViewResult = (session) => {
     navigate(`/student/assignment/history/${session.exam.exam_id}/${session.session_id}`, { 
       state: { sessionData: session } 

@@ -4,6 +4,10 @@ import {
   FormGroup, FormControlLabel, CircularProgress, Paper, Chip,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
+
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import CloseIcon from '@mui/icons-material/Close';
+
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -14,6 +18,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
 import DOMPurify from 'dompurify'; 
+
 
 import AppSnackbar from '../../components/SnackBar';
 import { takeExam, continueTakeExam, submitExam } from '../../services/ExamService';
@@ -55,7 +60,9 @@ export default function StudentAssignmentSessionPage() {
   
   const [activeStep, setActiveStep] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({}); 
-  
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [filter, setFilter] = useState('all'); 
+
   // Tracking thời gian làm bài từng câu
   const [timeTracker, setTimeTracker] = useState({}); 
   const currentStartTime = useRef(Date.now());
@@ -64,7 +71,6 @@ export default function StudentAssignmentSessionPage() {
   const [openSubmitConfirm, setOpenSubmitConfirm] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  // Lấy classId chính xác để gọi API Submit
   const getActualClassId = () => {
     if (classId) return classId;
     if (examTakenId) {
@@ -93,7 +99,6 @@ export default function StudentAssignmentSessionPage() {
             const newEtId = res.info?.et_id || res.et_id;
             
             if (newEtId) {
-                // Lưu classId để sau này F5 vẫn nhớ lớp nào
                 localStorage.setItem(`exam_class_${newEtId}`, classId);
                 isRedirecting = true;
                 navigate(`/student/assignment/continue/${newEtId}`, { replace: true });

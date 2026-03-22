@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Container, Typography, Box, Paper, Button, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow 
 } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ReviewRestrictedDialog from '../../components/ReviewRestrictedDialog';
 
 export default function StudentAssignmentHistoryPage() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Lấy dữ liệu bài tập được truyền từ trang trước sang
+  const [restrictionDialogOpen, setRestrictionDialogOpen] = useState(false);
+  const [selectedAttemptScore, setSelectedAttemptScore] = useState(null);
+  
   const sessionData = location.state?.sessionData;
 
   if (!sessionData) {
@@ -29,21 +32,45 @@ export default function StudentAssignmentHistoryPage() {
   const maxScorePossible = sessionData.exam.total_score || sessionData.exam.total_ques || 1;
   const totalQues = sessionData.exam.total_ques || 0;
 
-  // --- CÁC HÀM FORMAT THỜI GIAN VÀ ĐIỂM ---
+  const highestScore = completedAttempts.length > 0 
+    ? Math.max(...completedAttempts.map(et => et.final_score)) 
+    : null;
+    
+  const isOverdueReal = sessionData.expireAt ? new Date() > new Date(sessionData.expireAt) : false;
+  const handleOpenAttemptDetails = (attemptId, attemptScore) => {
+    if (isOverdueReal) {
+      navigate(`/student/assignment/result/${attemptId}`);
+    } else {
+      setSelectedAttemptScore(attemptScore); 
+      setRestrictionDialogOpen(true); 
+    }
+  };
+
+  // Các hàm format thời gian và điểm số
   const formatShortDate = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleString('vi-VN', {
-      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
   };
 
-  const formatDuration = (start, end) => {
+ const formatDuration = (start, end) => {
     if (!start || !end) return '-';
     const diff = new Date(end) - new Date(start);
-    const minutes = Math.floor(diff / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    if (minutes === 0) return `${seconds} giây`;
-    return `${minutes} phút ${seconds} giây`;
+    if (diff <= 0) return '0 giây';
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / 1000 / 60) % 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+
+    let result = [];
+    if (days > 0) result.push(`${days} ngày`);
+    if (hours > 0) result.push(`${hours} giờ`);
+    if (minutes > 0) result.push(`${minutes} phút`);
+    if (seconds > 0 || result.length === 0) result.push(`${seconds} giây`);
+
+    return result.join(' '); 
   };
 
   const formatScore = (rawScore, maxPossible) => {
@@ -63,31 +90,36 @@ export default function StudentAssignmentHistoryPage() {
       </Box>
 
       <Paper elevation={0} sx={{ p: 4, borderRadius: 4, border: '1px solid', borderColor: 'grey.200' }}>
-        <Typography variant="h5" fontWeight={800} color="text.primary" mb={1}>
+        <Typography variant="h5" fontWeight={700} color="text.primary" mb={1}>
           Lịch sử làm bài: {sessionData.exam.title}
         </Typography>
-        <Typography variant="body1" color="text.secondary" mb={4}>
+
+        <Typography variant="body1" color="text.secondary" mb={0.5}>
           Tổng số lần đã nộp: <strong>{completedAttempts.length}</strong> / {sessionData.limit_taken} lần
+        </Typography>
+        
+        <Typography variant="body1" color="error.main" fontWeight={600} mb={4}>
+          Hạn chót nộp bài: {sessionData.expireAt ? formatShortDate(sessionData.expireAt) : 'Không giới hạn'}
         </Typography>
 
         <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 3, overflow: 'hidden', mt: 2 }}>
           <Table>
             <TableHead sx={{ bgcolor: '#f4f6f8', borderBottom: '2px solid #e0e0e0' }}>
               <TableRow>
-                <TableCell align="center" sx={{ fontWeight: 700, color: '#454f5b', fontSize: '0.85rem', py: 2 }}>Lần thi</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700, color: '#454f5b', textTransform: 'uppercase', fontSize: '0.85rem', py: 2 }}>Trạng thái</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, color: '#454f5b', textTransform: 'uppercase', fontSize: '0.85rem', py: 2 }}>Số câu đúng</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, color: '#454f5b', textTransform: 'uppercase', fontSize: '0.85rem', py: 2 }}>Bắt đầu lúc</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, color: '#454f5b', textTransform: 'uppercase', fontSize: '0.85rem', py: 2 }}>Kết thúc lúc</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, color: '#454f5b', textTransform: 'uppercase', fontSize: '0.85rem', py: 2 }}>Thời gian làm</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, color: '#454f5b', textTransform: 'uppercase', fontSize: '0.85rem', py: 2 }}>Điểm số</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, color: '#454f5b', textTransform: 'uppercase', fontSize: '0.85rem', py: 2 }}>Thao tác</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#454f5b', fontSize: '0.9rem', py: 2 }}>Lần thi</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#454f5b',  fontSize: '0.9rem', py: 2 }}>Trạng thái</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#454f5b',  fontSize: '0.9rem', py: 2 }}>Số câu đúng</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#454f5b',  fontSize: '0.9rem', py: 2 }}>Bắt đầu lúc</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#454f5b',  fontSize: '0.9rem', py: 2 }}>Kết thúc lúc</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#454f5b',  fontSize: '0.9rem', py: 2 }}>Thời gian làm</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#454f5b',  fontSize: '0.9rem', py: 2 }}>Điểm số</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#454f5b',  fontSize: '0.9rem', py: 2 }}>Thao tác</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {completedAttempts.map((attempt, index) => {
                 const score = formatScore(attempt.final_score, maxScorePossible);
-                const isPassed = parseFloat(score) >= 5.0; // Điểm qua môn
+                const isPassed = parseFloat(score) >= 5.0; 
                 
                 return (
                   <TableRow 
@@ -133,7 +165,7 @@ export default function StudentAssignmentHistoryPage() {
                     </TableCell>
 
                     <TableCell align="center">
-                      <Typography variant="h6" fontWeight={800} color={isPassed ? 'success.main' : 'error.main'}>
+                      <Typography variant="h6" fontWeight={700} color={isPassed ? 'success.main' : 'error.main'}>
                         {score}
                       </Typography>
                     </TableCell>
@@ -141,7 +173,7 @@ export default function StudentAssignmentHistoryPage() {
                     <TableCell align="center">
                       <Button 
                         variant="contained" size="small" disableElevation
-                        onClick={() => navigate(`/student/assignment/result/${attempt.et_id}`)}
+                        onClick={() => handleOpenAttemptDetails(attempt.et_id, attempt.final_score)}
                         sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none', px: 2, py: 0.5, bgcolor: '#e3f2fd', color: 'primary.main', '&:hover': { bgcolor: 'primary.main', color: '#fff' } }}
                       >
                         Xem chi tiết
@@ -154,6 +186,13 @@ export default function StudentAssignmentHistoryPage() {
           </Table>
         </TableContainer>
       </Paper>
+
+      <ReviewRestrictedDialog 
+        open={restrictionDialogOpen} 
+        onClose={() => setRestrictionDialogOpen(false)} 
+        score={selectedAttemptScore} 
+      />
+
     </Container>
   );
 }
