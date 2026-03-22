@@ -211,6 +211,8 @@ model Comments {
   createAt            DateTime              @default(now())
   updateAt            DateTime              @default(now())
   uid                 String
+  is_pinned           Boolean               @default(false)
+  pinned_at           DateTime?
   parent_cmt_id       Int? 
   parent_cmt          Comments?             @relation("CommentToParent", fields: [thread_id, parent_cmt_id], references: [thread_id, comment_id], onDelete: Cascade, onUpdate: Cascade)
   thread              Thread                @relation(fields: [thread_id], references: [thread_id], onDelete: Cascade, onUpdate: Cascade)

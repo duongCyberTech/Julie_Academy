@@ -46,7 +46,6 @@ const fetchCommentsUntil = async (threadId, commentId) => {
             `/comments/until/${threadId}/${commentId}`,
             getAuthHeaders(token)
         );
-        console.log("Ref response: ", response.data)
         return response.data;
     } catch (error) {
         return error;
@@ -84,6 +83,24 @@ const updateComment = async (threadId, commentId, updateData, images = []) => {
     }
 }
 
+const pinComment = async (threadId, commentId) => {
+    try {
+        const token = localStorage.getItem('token')
+        await apiClient.patch(`comments/pin/${threadId}/${commentId}`, {}, getAuthHeaders(token))
+    } catch (error) {
+        
+    }
+}
+
+const unpinComment = async (threadId, commentId) => {
+    try {
+        const token = localStorage.getItem('token')
+        await apiClient.patch(`comments/unpin/${threadId}/${commentId}`, {}, getAuthHeaders(token))
+    } catch (error) {
+        
+    }
+}
+
 const deleteComment = async(threadId, commentId) => {
     try {
         const token = localStorage.getItem('token');
@@ -102,5 +119,7 @@ export {
     getCommentsByThread,
     fetchCommentsUntil,
     updateComment,
+    pinComment,
+    unpinComment,
     deleteComment
 }

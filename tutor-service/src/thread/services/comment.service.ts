@@ -65,6 +65,7 @@ export class CommentService {
                     content: true,
                     comments: true,
                     createAt: true,
+                    is_pinned: true,
                     Resource_of_Comment: {
                         select: {
                             Resources: {
@@ -157,6 +158,34 @@ export class CommentService {
         })
     }
 
+    async pinComment(uid: string, thread_id: string, comment_id: number) {
+        try {
+            await this.prisma.comments.update({
+                where: {thread_id_comment_id: {thread_id, comment_id}, thread: {sender: {uid}}},
+                data: {
+                    pinned_at: new Date(),
+                    is_pinned: true
+                }
+            })
+        } catch (error) {
+            
+        }
+    }
+
+    async unpinComment(uid: string, thread_id: string, comment_id: number) {
+        try {
+            await this.prisma.comments.update({
+                where: {thread_id_comment_id: {thread_id, comment_id}, thread: {sender: {uid}}},
+                data: {
+                    pinned_at: null,
+                    is_pinned: false
+                }
+            })
+        } catch (error) {
+            
+        }
+    }
+
     async getCommentsByThread(thread_id: string, parent_cmt_id: number = null, page: number = 1) {
         const cmts = await this.prisma.comments.findMany({
             take: 10,
@@ -168,6 +197,7 @@ export class CommentService {
                 content: true,
                 comments: true,
                 createAt: true,
+                is_pinned: true,
                 Resource_of_Comment: {
                     select: {
                         Resources: {
@@ -203,6 +233,7 @@ export class CommentService {
                 parent_cmt_id: res.parent_cmt_id,
                 sender: res.sender,
                 isNested: false,
+                is_pinned: res.is_pinned,
                 replies: [],
                 cnt: res._count.comments
             }
@@ -224,6 +255,7 @@ export class CommentService {
                     content: true,
                     comments: true,
                     createAt: true,
+                    is_pinned: true,
                     Resource_of_Comment: {
                         select: {
                             Resources: {
@@ -258,12 +290,12 @@ export class CommentService {
                     sender: res.sender,
                     cnt: res._count.comments,
                     isNested: true,
+                    is_pinned: res.is_pinned,
                     replies: [...current_replies]
                 }
             })
 
             if (current_comment.parent_cmt_id) return this.fetchCommentUntil(uid, thread_id, current_comment.parent_cmt_id, [current_comment])
-            console.log("$ >> Log: ", current_comment)
             return current_comment  
         } catch (error) {
             return null
@@ -391,7 +423,6 @@ export class CommentService {
             allFiles = [...allFiles, ...branchFiles];
         }
 
-        console.log(`Collected ${allFiles.length} files from branch of comment #${comment_id}`);
         return allFiles;
     }
 
@@ -409,8 +440,6 @@ export class CommentService {
             const deletedFilesOfBranch = await this.collectFilesOfDeleteBranch(tx, thread_id, comment_id)
 
             const deletedFiles = [...deletedFilesOfNode, ...deletedFilesOfBranch]
-
-            console.log("X DELETE: ", deletedFiles)
 
             await tx.comments.delete({where: {thread_id_comment_id: {thread_id, comment_id}}})
 

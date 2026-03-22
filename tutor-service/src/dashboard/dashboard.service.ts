@@ -67,7 +67,6 @@ export class AdminDashboard {
             },
             orderBy: { createdAt: 'asc' },
         });
-        console.log('Classes created in last 7 days:', classes);
         
         stats = stats.map((item) => {
             const classesForDate = classes.filter((cls) => {
