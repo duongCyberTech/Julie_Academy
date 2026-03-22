@@ -303,7 +303,9 @@ export class ExamService {
                                 'et_id', et.et_id, 
                                 'isDone', et."isDone", 
                                 'final_score', et.final_score, 
-                                'doneAt', et."doneAt"
+                                'doneAt', et."doneAt",
+                                'startAt', et."startAt",                   
+                                'total_ques_completed', et.total_ques_completed
                             ))
                             FROM "Exam_taken" et
                             WHERE et.session_id = es.session_id AND et.exam_id = es.exam_id AND et.student_uid = ${user.userId}
@@ -530,7 +532,9 @@ export class ExamService {
                             'et_id', et.et_id, 
                             'isDone', et."isDone", 
                             'final_score', et.final_score, 
-                            'doneAt', et."doneAt"
+                            'doneAt', et."doneAt",
+                            'startAt', et."startAt",                  -- tôi thêm vô
+                            'total_ques_completed', et.total_ques_completed  -- tôi thêm vô
                         ))
                         FROM "Exam_taken" et
                         WHERE et.session_id = es.session_id AND et.exam_id = es.exam_id AND et.student_uid = ${student_id}

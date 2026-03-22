@@ -51,6 +51,7 @@ const StudentAssignmentSessionPage = React.lazy(() => import("../pages/student/S
 const StudentAssignmentResultPage = React.lazy(() => import("../pages/student/StudentAssignmentResultPage"));
 const StudentEnrollPage = React.lazy(() => import("../pages/student/StudentEnrollPage.jsx"));
 const StudentGlobalAssignmentPage = React.lazy(() => import("../pages/student/StudentGlobalAssignmentPage"));
+const StudentAssignmentHistoryPage = React.lazy(() => import("../pages/student/StudentAssignmentHistoryPage.jsx"));
 
 // --- PARENT (Lazy Load) ---
 const ParentDashboard = React.lazy(() => import("../pages/parent/ParentDashboard.jsx"));
@@ -176,7 +177,10 @@ function AppRoutes(props) {
               path="assignment/result/:etId"
               element={<StudentAssignmentResultPage />}
             />
+
+            <Route path="assignment/history/:examId/:sessionId" element={<StudentAssignmentHistoryPage />} />
           </Route>
+
         </Route>
 
         {/* Nhóm các route cho Parent */}

@@ -38,7 +38,7 @@ const filterAssignments = (sessionsData) => {
       if (completedHistories.length > 0) completed.push(session);
       else overdue.push(session);
     } else {
-      if (completedHistories.length > 0 && !pendingHistory) completed.push(session);
+      if (completedHistories.length > 0) completed.push(session);
       else todo.push(session);
     }
   });
@@ -122,14 +122,9 @@ export default function StudentGlobalAssignmentPage() {
   const handleContinueAssignment = (et_id) => navigate(`/student/assignment/continue/${et_id}`);
   
   const handleViewResult = (session) => {
-    const completedAttempts = session.examTakens?.filter(et => et.isDone) || [];
-    
-    if (completedAttempts.length > 0) {
-      const latestAttemptEtId = completedAttempts[completedAttempts.length - 1].et_id;
-      navigate(`/student/assignment/result/${latestAttemptEtId}`);
-    } else {
-      alert("Không tìm thấy dữ liệu kết quả của bài thi này!");
-    }
+    navigate(`/student/assignment/history/${session.exam.exam_id}/${session.session_id}`, { 
+      state: { sessionData: session } 
+    });
   };
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress size={50} thickness={4}/></Box>;
