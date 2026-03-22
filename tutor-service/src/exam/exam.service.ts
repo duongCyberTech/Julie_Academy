@@ -273,6 +273,7 @@ export class ExamService {
                                             WHERE et."session_id" = es."session_id" 
                                             AND et."exam_id" = es."exam_id" 
                                             AND et."student_uid" = ${user.userId}
+                                            AND et."isDone" = true  -- I them 
                                         ) > 0` : (
                                         status === ExamSessionStatus.PENDING ?
                                         Prisma.sql` AND (
@@ -280,6 +281,7 @@ export class ExamService {
                                             WHERE et."session_id" = es."session_id" 
                                             AND et."exam_id" = es."exam_id" 
                                             AND et."student_uid" = ${user.userId}
+                                            AND et."isDone" = true -- I them
                                         ) = 0` : Prisma.empty)
 
                 // 3. The Final Query
@@ -500,6 +502,7 @@ export class ExamService {
                                         WHERE et."session_id" = es."session_id" 
                                         AND et."exam_id" = es."exam_id" 
                                         AND et."student_uid" = ${student_id}
+                                        AND et."isDone" = true -- I them
                                     ) > 0` : (
                                     status === ExamSessionStatus.OPEN ?
                                     Prisma.sql` AND (
@@ -507,6 +510,7 @@ export class ExamService {
                                         WHERE et."session_id" = es."session_id" 
                                         AND et."exam_id" = es."exam_id" 
                                         AND et."student_uid" = ${student_id}
+                                        AND et."isDone" = true -- I them
                                     ) = 0` : Prisma.empty)
 
             // 3. The Main Query

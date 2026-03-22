@@ -28,7 +28,9 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
     todo: pending_et_id ? { color: 'warning', label: 'Đang làm dở', bg: '#fff8e1' } : { color: 'primary', label: 'Cần làm', bg: '#e3f2fd' },
     overdue: { color: 'error', label: 'Quá hạn', bg: '#ffebee' },
     // Nếu tab completed mà có pending -> Hiện mác Đang làm dở
-    completed: pending_et_id ? { color: 'warning', label: 'Đang làm dở', bg: '#fff8e1' } : { color: 'success', label: 'Hoàn thành', bg: '#e8f5e9' }
+    completed: pending_et_id 
+      ? { color: 'secondary', label: `Đang làm lại`, bg: '#f3e5f5' } 
+      : { color: 'success', label: 'Hoàn thành', bg: '#e8f5e9' }
   };
 
   const currentStatus = statusConfig[status];
@@ -66,13 +68,14 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
     
     return `(${text.trim()})`;
   };
-
+  
+  const isOverdueReal = new Date() > new Date(expireAt);
   const maxPossible = exam.total_score || exam.total_ques || 1;
   const displayScore = highestScore !== null 
     ? Number(highestScore).toFixed(2).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1')
     : null;
 
-  // Xét điều kiện qua môn 
+  // Xét điều kiện ghi màu cho điểm (xanh lá nếu >= 5) 
   const isPassed = highestScore !== null && highestScore >= 5;
 
   return (
@@ -162,7 +165,6 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
               <Box sx={{ textAlign: 'left', mb: 1 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>Điểm cao nhất</Typography>
                 
-                {/* Đã sửa alignItems thành center và lineHeight 1 để chống lệch */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', color: isPassed ? 'success.main' : 'error.main' }}>
                   <EmojiEventsIcon sx={{ mr: 0.5, fontSize: 28 }} />
                   <Typography variant="h5" fontWeight={600} sx={{ lineHeight: 1 }}>
@@ -172,7 +174,6 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
                     / 10
                   </Typography>
                 </Box>
-
               </Box>    
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
@@ -184,7 +185,7 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
   
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    {status === 'upcoming' ? 'Thời gian mở' : 'Hạn chót nộp bài'}
+                    {status === 'upcoming' ? 'Thời điểm mở bài' : 'Hạn chót nộp bài'}
                   </Typography>
                   <Typography variant="body2" fontWeight={600} color={status === 'overdue' ? 'error.main' : 'text.primary'}>
                     {formatShortDate(status === 'upcoming' ? startAt : expireAt)}
@@ -208,17 +209,22 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
         <Box sx={{ mt: 3, pt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2, borderTop: '1px solid #f0f0f0' }}>
           {status === 'upcoming' && <Button variant="contained" disabled disableElevation sx={{ borderRadius: 2 }}>Chưa đến giờ mở</Button>}
           
-          {/* Nút Bắt đầu / Làm lại (Chỉ hiện khi KHÔNG có bài đang làm dở và còn lượt) */}
           {(status === 'todo' || status === 'completed') && !pending_et_id && attempts < limit_taken && (
              <Button variant="contained" color="primary" onClick={() => onStart(session)} disableElevation sx={{ borderRadius: 2, px: 3 }}>
                {attempts === 0 ? "Bắt đầu làm bài" : "Làm lại bài"}
              </Button>
           )}
 
-          {/* SỬA Ở ĐÂY: Nút Tiếp tục làm bài hiện ở CẢ 2 TAB nếu có pending_et_id */}
+          {/* Nút Tiếp tục làm bài */}
           {pending_et_id && (
-            <Button variant="contained" color="warning" onClick={() => onContinue(pending_et_id)} disableElevation sx={{ borderRadius: 2, px: 3 }}>
-              Tiếp tục làm bài
+            <Button 
+              variant="contained" 
+              color={status === 'completed' ? 'secondary' : 'warning'} 
+              onClick={() => onContinue(pending_et_id)} 
+              disableElevation 
+              sx={{ borderRadius: 2, px: 3 }}
+            >
+              {status === 'completed' ? `Tiếp tục lần làm lại thứ ${attempts}` : 'Tiếp tục làm bài'}
             </Button>
           )}
 

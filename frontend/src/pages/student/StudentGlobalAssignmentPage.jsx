@@ -23,17 +23,19 @@ const filterAssignments = (sessionsData) => {
 
   sessionsData.forEach((session) => {
     const start = new Date(session.startAt);
-    const expire = new Date(session.expireAt);
-    const examTakens = session.examTakens || [];
+    const expire = new Date(session.expireAt); 
+    const examTakensArray = session.exam_takens || [];
+    session.examTakens = examTakensArray; 
+
     const limit = session.limit_taken || 1;
     
-    const pendingHistory = examTakens.find(et => !et.isDone);
-    const completedHistories = examTakens.filter(et => et.isDone);
+    const pendingHistory = examTakensArray.find(et => et && !et.isDone);
+    const completedHistories = examTakensArray.filter(et => et && et.isDone);
     
     if (pendingHistory) session.pending_et_id = pendingHistory.et_id;
 
     if (start > now) upcoming.push(session);
-    else if (completedHistories.length > 0 && examTakens.length >= limit) completed.push(session);
+    else if (completedHistories.length > 0 && examTakensArray.length >= limit) completed.push(session);
     else if (expire < now) {
       if (completedHistories.length > 0) completed.push(session);
       else overdue.push(session);
@@ -50,10 +52,22 @@ const filterAssignments = (sessionsData) => {
     return new Date(a.expireAt) - new Date(b.expireAt);
   });
   overdue.sort((a, b) => new Date(b.expireAt) - new Date(a.expireAt));
-  completed.sort((a, b) => {
-      const timeA = a.examTakens?.length > 0 ? new Date(a.examTakens[a.examTakens.length - 1].doneAt) : 0;
-      const timeB = b.examTakens?.length > 0 ? new Date(b.examTakens[b.examTakens.length - 1].doneAt) : 0;
-      return timeB - timeA;
+ completed.sort((a, b) => {
+      // 1. Ưu tiên đưa các bài "Đang làm dở" (đang làm lại) lên trên cùng
+      if (a.pending_et_id && !b.pending_et_id) return -1;
+      if (!a.pending_et_id && b.pending_et_id) return 1;
+
+      // 2. Lấy thời gian nộp bài (doneAt) mới nhất của các lần đã nộp (isDone: true)
+      const getLatestDoneTime = (session) => {
+          const completedAttempts = (session.examTakens || []).filter(et => et && et.isDone);
+          if (completedAttempts.length === 0) return 0;
+          return Math.max(...completedAttempts.map(et => new Date(et.doneAt).getTime()));
+      };
+
+      const timeA = getLatestDoneTime(a);
+      const timeB = getLatestDoneTime(b);
+    
+      return timeB - timeA; 
   });
 
   return { upcoming, todo, overdue, completed };
@@ -126,6 +140,7 @@ export default function StudentGlobalAssignmentPage() {
       state: { sessionData: session } 
     });
   };
+
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress size={50} thickness={4}/></Box>;
 

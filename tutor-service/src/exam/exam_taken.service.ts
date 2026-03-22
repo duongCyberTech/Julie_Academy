@@ -178,6 +178,8 @@ export class ExamTakenService {
             },
             select: {
                 et_id: true,
+                exam_id: true,     // I them
+                session_id: true,  // I them
                 exam_session: {
                     select: {
                         exam: {
@@ -236,6 +238,7 @@ export class ExamTakenService {
                                 select: {
                                     exam_id: true,
                                     title: true,
+                                    duration: true, // I them
                                     total_ques: true,
                                     total_score: true,
                                     description: true

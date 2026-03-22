@@ -6,7 +6,6 @@ import {
 } from '@mui/material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
-// Icons
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -44,6 +43,25 @@ const HtmlContentRenderer = ({ htmlContent }) => {
 };
 
 const getAnswerPrefix = (index) => String.fromCharCode(65 + index);
+
+const formatDuration = (start, end) => {
+  if (!start || !end) return '-';
+  const diff = new Date(end) - new Date(start);
+  if (diff <= 0) return '0 giây';
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((diff / 1000 / 60) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+
+  let result = [];
+  if (days > 0) result.push(`${days} ngày`);
+  if (hours > 0) result.push(`${hours} giờ`);
+  if (minutes > 0) result.push(`${minutes} phút`);
+  if (seconds > 0 || result.length === 0) result.push(`${seconds} giây`);
+
+  return result.join(' '); 
+};
 
 export default function StudentAssignmentResultPage() {
   const { etId } = useParams();
@@ -102,6 +120,10 @@ export default function StudentAssignmentResultPage() {
   const rawScore = location.state?.resultData?.final_score ?? examData?.final_score;
   const totalScore = rawScore !== undefined && rawScore !== null ? Number(rawScore).toFixed(2) : 'Đang chấm...';
 
+  // Lấy thời gian học sinh làm và đóng bài
+  const startTime = location.state?.resultData?.startAt || examData?.startAt;
+  const endTime = location.state?.resultData?.doneAt || examData?.doneAt;
+
   const processedQuestions = questions.map((q, originalIndex) => {
     let selectedAnswers = [];
     if (Array.isArray(q.answer_set)) selectedAnswers = q.answer_set;
@@ -130,22 +152,23 @@ export default function StudentAssignmentResultPage() {
     return true;
   });
 
+  const canViewDetails = examData?.exam_session?.expireAt 
+    ? new Date() > new Date(examData.exam_session.expireAt) 
+    : true; // Nếu bài không cài hạn chót thì cho xem 
+    
   return (
     <Container maxWidth="lg" sx={{ pt: 3, pb: 12, backgroundColor: '#f4f6f8', minHeight: '100vh', position: 'relative' }}>
 
-      <Fab 
-        color="primary" 
-        variant="extended"
-        aria-label="open-navigation"
-        onClick={() => setIsDrawerOpen(true)}
-        sx={{ 
-          position: 'fixed', bottom: 32, right: { xs: 16, md: 32 }, zIndex: 1000,
-          fontWeight: 700, px: 3, boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
-        }}
-      >
-        <FormatListBulletedIcon sx={{ mr: 1 }} />
-        Bảng điều hướng
-      </Fab>
+      {canViewDetails && (
+        <Fab 
+          color="primary" variant="extended" aria-label="open-navigation"
+          onClick={() => setIsDrawerOpen(true)}
+          sx={{ position: 'fixed', bottom: 32, right: { xs: 16, md: 32 }, zIndex: 1000, fontWeight: 700, px: 3, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+        >
+          <FormatListBulletedIcon sx={{ mr: 1 }} />
+          Bảng điều hướng
+        </Fab>
+      )}
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Button 
@@ -188,21 +211,39 @@ export default function StudentAssignmentResultPage() {
 
         <Divider sx={{ mb: 4 }} />
 
-        <Grid container spacing={4} justifyContent="center">
-          <Grid item xs={6} md={3}>
+        <Grid container justifyContent="center" alignItems="center" spacing={0}>
+          
+          <Grid item xs={12} sm={3} sx={{ py: 2 }}>
             <Typography variant="body1" color="text.secondary" fontWeight={600} gutterBottom>Điểm số của bạn</Typography>
-            <Typography variant="h3" fontWeight={700} color="primary.main">{totalScore}</Typography>
+            <Typography variant="h4" fontWeight={700} color="primary.main">{totalScore}</Typography>
           </Grid>
-          <Grid item xs={6} md={3}>
+          
+          {/* VẠCH KẺ THỨ NHẤT */}
+          <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' }, borderStyle: 'dashed', mx: { sm: 2, md: 4 } }} />
+
+          <Grid item xs={12} sm={3} sx={{ py: 2 }}>
+            <Typography variant="body1" color="text.secondary" fontWeight={600} gutterBottom>Thời gian làm bài</Typography>
+            <Typography variant="h5" fontWeight={700} color="info.main" sx={{ mt: 1 }}>
+              {formatDuration(startTime, endTime)} 
+            </Typography>
+          </Grid>
+
+          {/* VẠCH KẺ THỨ HAI */}
+          <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' }, borderStyle: 'dashed', mx: { sm: 2, md: 4 } }} />
+
+          <Grid item xs={12} sm={3} sx={{ py: 2 }}>
             <Typography variant="body1" color="text.secondary" fontWeight={600} gutterBottom>Số câu đã làm</Typography>
-            <Typography variant="h3" fontWeight={800} color="success.main">
+            <Typography variant="h4" fontWeight={700} color="success.main">
               {totalCompleted} <Typography component="span" variant="h5" color="text.secondary">/ {questions.length}</Typography>
             </Typography>
           </Grid>
+
         </Grid>
       </Paper>
 
       {/* Danh sách câu hỏi */}
+      {canViewDetails ? (
+        <>
       <Box sx={{ maxWidth: '100%', mx: 'auto' }}>
         <Typography variant="h5" fontWeight={700} color="text.primary" mb={3} px={1}>
           Chi tiết bài làm
@@ -237,52 +278,92 @@ export default function StudentAssignmentResultPage() {
                 <HtmlContentRenderer htmlContent={q.content} />
               </Box>
 
-              <Box sx={{ pl: 1, mb: 3 }}>
-                {q.answers?.map((answer, aIndex) => {
-                  const isSelected = q.selectedAnswers.includes(answer.aid);
-                  const isCorrect = answer.is_correct; 
-                  
-                  let borderColor = 'grey.200';
-                  let bgColor = 'transparent';
-                  let textColor = 'text.secondary';
-                  let IconComponent = RadioButtonUncheckedIcon;
+                <Box sx={{ pl: 1, mb: 3 }}>
+                  {q.answers?.map((answer, aIndex) => {
+                    const isSelected = q.selectedAnswers.includes(answer.aid);
+                    const isCorrect = answer.is_correct; 
+                    
+                    // Không chọn
+                    let borderColor = '#e0e0e0';
+                    let bgColor = 'transparent';
+                    let borderStyle = 'solid';
+                    let labelText = null;
+                    let labelColor = '';
 
-                  if (isCorrect) {
-                    borderColor = 'success.main';
-                    bgColor = 'success.50';
-                    textColor = 'success.dark';
-                    IconComponent = CheckCircleIcon;
-                  } else if (isSelected && !isCorrect) {
-                    borderColor = 'error.main';
-                    bgColor = 'error.50';
-                    textColor = 'error.main';
-                    IconComponent = CancelIcon;
-                  }
+                    if (isSelected && isCorrect) {
+                      // 1. Chọn ĐÚNG
+                      borderColor = '#4caf50'; 
+                      borderStyle = 'solid';
+                      bgColor = 'transparent'; 
+                      labelText = 'Đáp án chính xác';
+                      labelColor = '#4caf50';
+                    } else if (isSelected && !isCorrect) {
+                      // 2. Chọn SAI
+                      borderColor = '#f44336'; 
+                      borderStyle = 'solid';
+                      bgColor = '#fff5f5'; 
+                      labelText = 'Đáp án của bạn sai';
+                      labelColor = '#f44336';
+                    } else if (!isSelected && isCorrect) {
+                      // 3. Không chọn nhưng ĐÚNG 
+                      borderColor = '#2e7d32'; 
+                      borderStyle = 'dashed'; 
+                      bgColor = '#f1f8f1';
+                      labelText = null; 
+                    }
 
-                  return (
-                    <Box key={answer.aid} sx={{ mb: 2 }}>
+                    return (
                       <Box 
-                        sx={{
-                          display: 'flex', alignItems: 'flex-start', p: 1.5, borderRadius: 2,
-                          border: '2px solid', borderColor: borderColor, backgroundColor: bgColor,
+                        key={answer.aid} 
+                        sx={{ 
+                          position: 'relative', 
+                          mb: 2, 
+                          mt: labelText ? 1.5 : 0 
                         }}
                       >
-                        <Box sx={{ mr: 2, color: textColor, mt: '2px' }}>
-                          <IconComponent color="inherit" />
-                        </Box>
-                        <Box sx={{ display: 'flex', width: '100%' }}>
-                          <Typography sx={{ mr: 1.5, fontWeight: 700, color: textColor }}>
-                            {getAnswerPrefix(aIndex)}.
-                          </Typography>
-                          <Box sx={{ flexGrow: 1, fontSize: '1.05rem', lineHeight: 1.6, color: textColor }}>
-                            <HtmlContentRenderer htmlContent={answer.content} />
+                        <Box 
+                          sx={{
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            p: 2, 
+                            borderRadius: 2,
+                            borderWidth: '1.5px', 
+                            borderStyle: borderStyle, 
+                            borderColor: borderColor, 
+                            backgroundColor: bgColor,
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', width: '100%' }}>
+                            <Typography sx={{ mr: 1, fontWeight: 700, color: 'text.primary' }}>
+                              {getAnswerPrefix(aIndex)}.
+                            </Typography>
+                            <Box sx={{ flexGrow: 1, fontSize: '1.05rem', color: 'text.primary' }}>
+                              <HtmlContentRenderer htmlContent={answer.content} />
+                            </Box>
                           </Box>
                         </Box>
+
+                        {labelText && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              position: 'absolute',
+                              top: -10, 
+                              right: 20, 
+                              backgroundColor: '#fff', 
+                              px: 1, 
+                              color: labelColor,
+                              fontWeight: 600,
+                              fontSize: '0.8rem'
+                            }}
+                          >
+                            {labelText}
+                          </Typography>
+                        )}
                       </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
+                    );
+                  })}
+                </Box>
               
               <Accordion 
                 disableGutters 
@@ -378,7 +459,6 @@ export default function StudentAssignmentResultPage() {
 
         <Divider sx={{ mb: 3 }} />
 
-        {/* Lưới Nút Bấm Cuộn (Scrollable Area) */}
         <Box sx={{ overflowY: 'auto', flexGrow: 1, pr: 1, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#e0e0e0', borderRadius: '4px' } }}>
           
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1 }}>
@@ -419,7 +499,18 @@ export default function StudentAssignmentResultPage() {
           
         </Box>
       </Drawer>
-
+</>
+) : (
+        // Giao diện khi chưa đến hạn được xem đáp án
+        <Paper elevation={0} sx={{ p: 4, borderRadius: 4, textAlign: 'center', bgcolor: 'warning.50', border: '1px dashed', borderColor: 'warning.main' }}>
+          <Typography variant="h5" color="warning.dark" fontWeight={700} mb={1}>
+            Chi tiết đáp án...
+          </Typography>
+          <Typography variant="body1" color="warning.dark" fontWeight={500}>
+            Toàn bộ câu hỏi và đáp án chi tiết sẽ được công bố sau khi hết hạn nộp bài. Bạn chú ý theo dõi nhé! 
+          </Typography>
+        </Paper>
+      )}
     </Container>
   );
 }
