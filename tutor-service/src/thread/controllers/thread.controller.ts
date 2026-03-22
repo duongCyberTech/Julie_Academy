@@ -27,6 +27,7 @@ import { RolesGuard } from "src/auth/guard/roles.guard";
 import { Roles } from "src/auth/decorator/roles.decorator";
 import { CreateThreadDto, UpdateThreadDto } from "../dto/ThreadDto.dto";
 import { CustomFileValidator } from "src/validator/file.validator";
+import { FilterDTO } from "../dto/filter.dto";
 
 @Controller('threads')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -59,11 +60,11 @@ export class ThreadController {
     @Get('/class/:class_id')
     getThreadsByClass(
         @Param('class_id', ParseUUIDPipe) class_id: string,
-        @Query('page', ParseIntPipe) page: number,
+        @Query() query: Partial<FilterDTO>,
         @Request() req
     ) {
         const uid = req.user.userId
-        return this.threadService.getThreadsByClass(uid, class_id, page)
+        return this.threadService.getThreadsByClass(uid, class_id, query)
     }
 
     @Get(':thread_id')

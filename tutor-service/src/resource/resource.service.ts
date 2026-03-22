@@ -245,7 +245,6 @@ export class ResourceService {
         try {
             const url = new URL(fileInfo.file_path);
             const key = url.pathname.substring(1);
-            console.log("S3 Key extracted:", key); // Kiểm tra log này
 
             const s3Response = await this.s3.getFileStream(key);
             return { s3Response, fileInfo }; 

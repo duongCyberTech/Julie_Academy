@@ -244,8 +244,6 @@ export class ExamService {
                     ]
                 })
 
-                console.log(examSessions.length)
-
                 return examSessions
             } else {
                 const currentDate = new Date();

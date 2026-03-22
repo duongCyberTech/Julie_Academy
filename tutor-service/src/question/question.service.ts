@@ -60,8 +60,6 @@ export class LessonPlanService {
         include: {structure: true}
       })
 
-      console.log("? EXIST PLAN: ", existedPlan)
-
       if (!existedPlan) return null;
 
       const newPlan = await tx.lesson_Plan.create({

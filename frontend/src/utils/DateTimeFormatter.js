@@ -16,6 +16,11 @@ function getRelativeTime(date) {
   return new Date(date).toLocaleDateString('vi-VN');
 }
 
+const getDaysInMonth = (year, month) => {
+  return new Date(year, month, 0).getDate();
+};
+
 export {
-    getRelativeTime
+  getRelativeTime,
+  getDaysInMonth
 }
