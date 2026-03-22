@@ -140,19 +140,26 @@ export default function StudentAssignmentSessionPage() {
 
             // Đồng bộ thời gian đếm ngược
             let expireTime;
+            const duration = coreData.exam_session?.exam?.duration || coreData.exam?.duration || 60; 
             const dbExpire = coreData.exam_session?.expireAt || coreData.expireAt; 
-            if (dbExpire) {
-                expireTime = new Date(dbExpire).getTime();
+            const startAt = coreData.startAt; 
+
+            if (startAt) {
+                expireTime = new Date(startAt).getTime() + duration * 60000;
             } else {
                 const savedExpire = localStorage.getItem(`exam_expire_${etId}`);
                 if (savedExpire) {
                     expireTime = parseInt(savedExpire, 10);
                 } else {
-                    const duration = coreData.exam_session?.exam?.duration || 60;
                     expireTime = Date.now() + duration * 60000;
                     localStorage.setItem(`exam_expire_${etId}`, expireTime.toString());
                 }
             }
+
+            if (dbExpire && expireTime > new Date(dbExpire).getTime()) {
+                expireTime = new Date(dbExpire).getTime();
+            }
+
             setTimeLeft(Math.max(0, Math.floor((expireTime - Date.now()) / 1000)));
         }
 
@@ -372,7 +379,7 @@ export default function StudentAssignmentSessionPage() {
         {/* Cột phải: Bảng tiến độ */}
         <Box sx={{ height: '100%' }}>
           <Paper elevation={0} sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, borderRadius: 4, border: '1px solid', borderColor: 'grey.200', backgroundColor: '#fff' }}>
-            <Typography variant="h6" fontWeight={800} mb={2}>Tiến độ làm bài</Typography>
+            <Typography variant="h6" fontWeight={700} mb={2}>Tiến độ làm bài</Typography>
             
             <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1.5 }}>
@@ -402,9 +409,9 @@ export default function StudentAssignmentSessionPage() {
               <Button
                 fullWidth variant="contained" color="success" size="large" startIcon={<SendIcon />}
                 onClick={() => setOpenSubmitConfirm(true)} disabled={isSubmitting} disableElevation
-                sx={{ borderRadius: 3, py: 1.5, fontWeight: 800, fontSize: '1.2rem' }}
+                sx={{ borderRadius: 3, py: 1.5, fontWeight: 700, fontSize: '1.2rem' }}
               >
-                NỘP BÀI THI
+                Nộp bài thi
               </Button>
             </Box>
           </Paper>

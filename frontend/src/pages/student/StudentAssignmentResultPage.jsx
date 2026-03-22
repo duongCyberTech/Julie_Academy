@@ -1,14 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Container, Typography, Box, CircularProgress, Paper, Divider, 
-  Grid, Button, Chip
+  Grid, Button, Chip, Accordion, AccordionSummary, AccordionDetails,
+  Drawer, Fab, IconButton
 } from '@mui/material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+
+// Icons
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import CancelIcon from '@mui/icons-material/Cancel';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import CloseIcon from '@mui/icons-material/Close';
 
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
@@ -48,6 +54,10 @@ export default function StudentAssignmentResultPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [examData, setExamData] = useState(null);
   const [questions, setQuestions] = useState([]);
+  const [filter, setFilter] = useState('all'); 
+  
+  // State điều khiển ngăn kéo 
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchResultData = async () => {
@@ -74,30 +84,69 @@ export default function StudentAssignmentResultPage() {
     if (token) fetchResultData();
   }, [etId, token]);
 
+  // Hàm xử lý cuộn mượt đến câu hỏi & đóng Drawer
+  const scrollToQuestion = (index) => {
+    const element = document.getElementById(`question-${index}`);
+    if (element) {
+      const y = element.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+    setIsDrawerOpen(false); 
+  };
+
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f6f8' }}><CircularProgress size={60} thickness={4} /></Box>;
 
   if (!examData) return <Container><Typography variant="h5" color="error" align="center" mt={5}>Không tìm thấy dữ liệu bài thi.</Typography></Container>;
 
   const displayTitle = examData?.exam_session?.exam?.title || 'Bài thi';
-  
-  // Tính toán điểm: Lấy từ location.state (nếu vừa nộp) hoặc từ examData (nếu xem lại)
   const rawScore = location.state?.resultData?.final_score ?? examData?.final_score;
   const totalScore = rawScore !== undefined && rawScore !== null ? Number(rawScore).toFixed(2) : 'Đang chấm...';
 
-  // Tính số câu đã làm
-  const totalCompleted = questions.filter(q => {
-    let ans = [];
-    if (Array.isArray(q.answer_set)) ans = q.answer_set;
+  const processedQuestions = questions.map((q, originalIndex) => {
+    let selectedAnswers = [];
+    if (Array.isArray(q.answer_set)) selectedAnswers = q.answer_set;
     else if (typeof q.answer_set === 'string') {
-        try { ans = JSON.parse(q.answer_set); } catch(e){}
+        try { selectedAnswers = JSON.parse(q.answer_set); } catch(e){}
     }
-    return ans.length > 0;
-  }).length;
+
+    const correctAnswerIds = q.answers?.filter(a => a.is_correct).map(a => a.aid) || [];
+    const isMissed = selectedAnswers.length === 0;
+    const isQuestionCorrect = !isMissed && selectedAnswers.length === correctAnswerIds.length && selectedAnswers.every(id => correctAnswerIds.includes(id));
+    const isQuestionWrong = !isMissed && !isQuestionCorrect;
+
+    return { ...q, selectedAnswers, isQuestionCorrect, isQuestionWrong, isMissed, correctAnswerIds, originalIndex };
+  });
+
+  const correctQuestions = processedQuestions.filter(q => q.isQuestionCorrect);
+  const wrongQuestions = processedQuestions.filter(q => q.isQuestionWrong);
+  const missedQuestions = processedQuestions.filter(q => q.isMissed);
+
+  const totalCompleted = processedQuestions.filter(q => !q.isMissed).length;
+
+  const filteredQuestions = processedQuestions.filter(q => {
+    if (filter === 'correct') return q.isQuestionCorrect;
+    if (filter === 'wrong') return q.isQuestionWrong;
+    if (filter === 'missed') return q.isMissed;
+    return true;
+  });
 
   return (
-    <Container maxWidth="lg" sx={{ pt: 4, pb: 8, backgroundColor: '#f4f6f8', minHeight: '100vh' }}>
-      
-      {/* Các nút điều hướng */}
+    <Container maxWidth="lg" sx={{ pt: 3, pb: 12, backgroundColor: '#f4f6f8', minHeight: '100vh', position: 'relative' }}>
+
+      <Fab 
+        color="primary" 
+        variant="extended"
+        aria-label="open-navigation"
+        onClick={() => setIsDrawerOpen(true)}
+        sx={{ 
+          position: 'fixed', bottom: 32, right: { xs: 16, md: 32 }, zIndex: 1000,
+          fontWeight: 700, px: 3, boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
+        }}
+      >
+        <FormatListBulletedIcon sx={{ mr: 1 }} />
+        Bảng điều hướng
+      </Fab>
+
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Button 
           startIcon={<ArrowBackIcon />} 
@@ -107,20 +156,14 @@ export default function StudentAssignmentResultPage() {
           Danh sách bài tập
         </Button>
 
-        {/* Nút Làm lại: Chỉ hiện nếu giới hạn làm bài > 1 */}
         {examData?.exam_session?.limit_taken > 1 && (
           <Button 
             variant="contained" 
             color="primary"
             onClick={() => {
-               // Lấy class_id từ localStorage hoặc từ data để build link
                const savedClassId = localStorage.getItem(`exam_class_${etId}`) || examData?.exam_session?.exam_open_in?.[0]?.class_id;
-               
-               if (savedClassId) {
-                 navigate(`/student/assignment/class/${savedClassId}/exam/${examData.exam_id}/session/${examData.session_id}`);
-               } else {
-                 navigate('/student/assignment');
-               }
+               if (savedClassId) navigate(`/student/assignment/class/${savedClassId}/exam/${examData.exam_id}/session/${examData.session_id}`);
+               else navigate('/student/assignment');
             }}
             sx={{ fontWeight: 700, borderRadius: 2 }}
           >
@@ -129,14 +172,14 @@ export default function StudentAssignmentResultPage() {
         )}
       </Box>
 
-      {/* Card tổng quan kết quả*/}
+      {/* Card tổng quan */}
       <Paper elevation={0} sx={{ p: { xs: 3, md: 5 }, borderRadius: 4, mb: 4, textAlign: 'center', backgroundColor: '#fff', border: '1px solid', borderColor: 'grey.200', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.03)' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.5 }}>
           <Box sx={{ p: 2, borderRadius: '50%', backgroundColor: 'success.50' }}>
             <AssignmentTurnedInIcon sx={{ fontSize: 50, color: 'success.main' }} />
           </Box>
         </Box>
-        <Typography variant="h4" fontWeight={800} color="text.primary" gutterBottom>
+        <Typography variant="h3" fontWeight={700} color="text.primary" gutterBottom>
           Kết quả làm bài
         </Typography>
         <Typography variant="h6" color="text.secondary" fontWeight={500} mb={4}>
@@ -148,7 +191,7 @@ export default function StudentAssignmentResultPage() {
         <Grid container spacing={4} justifyContent="center">
           <Grid item xs={6} md={3}>
             <Typography variant="body1" color="text.secondary" fontWeight={600} gutterBottom>Điểm số của bạn</Typography>
-            <Typography variant="h3" fontWeight={800} color="primary.main">{totalScore}</Typography>
+            <Typography variant="h3" fontWeight={700} color="primary.main">{totalScore}</Typography>
           </Grid>
           <Grid item xs={6} md={3}>
             <Typography variant="body1" color="text.secondary" fontWeight={600} gutterBottom>Số câu đã làm</Typography>
@@ -159,108 +202,223 @@ export default function StudentAssignmentResultPage() {
         </Grid>
       </Paper>
 
-      <Typography variant="h5" fontWeight={800} color="text.primary" mb={3} px={1}>
-        Chi tiết bài làm
-      </Typography>
+      {/* Danh sách câu hỏi */}
+      <Box sx={{ maxWidth: '100%', mx: 'auto' }}>
+        <Typography variant="h5" fontWeight={700} color="text.primary" mb={3} px={1}>
+          Chi tiết bài làm
+        </Typography>
 
-      {/* Danh sách câu hỏi đã làm */}
-      {questions.map((q, index) => {
-        let selectedAnswers = [];
-        if (Array.isArray(q.answer_set)) selectedAnswers = q.answer_set;
-        else if (typeof q.answer_set === 'string') {
-            try { selectedAnswers = JSON.parse(q.answer_set); } catch(e){}
-        }
+        {filteredQuestions.map((q, index) => {
+          const correctPrefixes = q.answers
+            ?.map((a, idx) => a.is_correct ? getAnswerPrefix(idx) : null)
+            .filter(p => p !== null)
+            .join(', ');
 
-        const isMultiChoice = q.type === 'multiple_choice' || q.type === 'MULTIPLE_CHOICE';
-        const isMissed = selectedAnswers.length === 0;
-
-        return (
-          <Paper key={q.ques_id} elevation={0} sx={{ p: { xs: 3, md: 4 }, mb: 4, borderRadius: 4, border: '1px solid', borderColor: 'grey.200', backgroundColor: '#fff' }}>
-            
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" fontWeight={800} color="text.primary">
-                Câu {index + 1}
-              </Typography>
-              {isMissed && (
-                <Chip label="Bỏ trống" color="warning" size="small" sx={{ fontWeight: 600 }} />
-              )}
-            </Box>
-
-            <Box sx={{ fontSize: '1.1rem', lineHeight: 1.8, mb: 3, color: 'text.primary', fontWeight: 500 }}>
-              <HtmlContentRenderer htmlContent={q.content} />
-            </Box>
-
-            {/* Danh sách đáp án */}
-            <Box sx={{ pl: 1 }}>
-              {q.answers?.map((answer, aIndex) => {
-                const isSelected = selectedAnswers.includes(answer.aid);
-                const isCorrect = answer.is_correct; 
-                
-                let borderColor = 'grey.200';
-                let bgColor = 'transparent';
-                let textColor = 'text.secondary';
-                let IconComponent = RadioButtonUncheckedIcon;
-
-                if (isCorrect) {
-                  borderColor = 'success.main';
-                  bgColor = 'success.50';
-                  textColor = 'success.dark';
-                  IconComponent = CheckCircleIcon;
-                } else if (isSelected && !isCorrect) {
-                  borderColor = 'error.main';
-                  bgColor = 'error.50';
-                  textColor = 'error.main';
-                  IconComponent = CancelIcon;
-                }
-
-                return (
-                  <Box key={answer.aid} sx={{ mb: 2 }}>
-                    <Box 
-                      sx={{
-                        display: 'flex', alignItems: 'flex-start', p: 2, borderRadius: 2,
-                        border: '2px solid', borderColor: borderColor, backgroundColor: bgColor,
-                      }}
-                    >
-                      <Box sx={{ mr: 2, color: textColor, mt: '2px' }}>
-                        <IconComponent color="inherit" />
-                      </Box>
-                      <Box sx={{ display: 'flex', width: '100%', alignItems: 'flex-start', flexDirection: 'column' }}>
-                          <Box sx={{ display: 'flex', width: '100%' }}>
-                            <Typography sx={{ mr: 1.5, fontWeight: 700, color: textColor }}>
-                              {getAnswerPrefix(aIndex)}.
-                            </Typography>
-                            <Box sx={{ flexGrow: 1, fontSize: '1.05rem', lineHeight: 1.6, color: textColor }}>
-                              <HtmlContentRenderer htmlContent={answer.content} />
-                            </Box>
-                          </Box>
-                          
-                          {(isSelected || isCorrect) && answer.explaination && answer.explaination !== "<p><br></p>" && (
-                            <Box sx={{ mt: 1.5, p: 2, bgcolor: '#fff', borderRadius: 1, width: '100%', border: '1px dashed', borderColor: isCorrect ? 'success.main' : 'error.main' }}>
-                               <Typography variant="body2" fontWeight={800} color={textColor} mb={0.5}>Giải thích đáp án này:</Typography>
-                               <Box sx={{ fontSize: '1rem', color: 'text.secondary' }}>
-                                 <HtmlContentRenderer htmlContent={answer.explaination} />
-                               </Box>
-                            </Box>
-                          )}
-                      </Box>
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Box>
-            
-            {q.explaination && q.explaination !== "<p><br></p>" && (
-              <Box sx={{ mt: 3, p: 2.5, bgcolor: 'info.50', borderRadius: 2, borderLeft: '4px solid', borderColor: 'info.main' }}>
-                <Typography variant="subtitle1" fontWeight={800} color="info.dark" mb={1}>💡 Hướng dẫn giải chi tiết:</Typography>
-                <Box sx={{ color: 'info.dark', fontSize: '1.05rem' }}>
-                   <HtmlContentRenderer htmlContent={q.explaination} />
+          return (
+            <Paper 
+              key={q.ques_id} 
+              id={`question-${q.originalIndex}`} 
+              elevation={0} 
+              sx={{ p: { xs: 3, md: 4 }, mb: 4, borderRadius: 4, border: '1px solid', borderColor: 'grey.200', backgroundColor: '#fff', scrollMarginTop: '80px' }}
+            >
+              
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h5" fontWeight={800} color="text.primary">
+                  Câu {q.originalIndex + 1}:
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  {q.isMissed && <Chip label="Bỏ trống" color="warning" size="small" sx={{ fontWeight: 700 }} />}
+                  {q.isQuestionCorrect && <Chip label="Đúng" color="success" size="small" sx={{ fontWeight: 700 }} />}
+                  {q.isQuestionWrong && <Chip label="Sai" color="error" size="small" sx={{ fontWeight: 700 }} />}
                 </Box>
               </Box>
-            )}
 
-          </Paper>
-        );
-      })}
+              <Box sx={{ fontSize: '1.1rem', lineHeight: 1.8, mb: 3, color: 'text.primary', fontWeight: 500 }}>
+                <HtmlContentRenderer htmlContent={q.content} />
+              </Box>
+
+              <Box sx={{ pl: 1, mb: 3 }}>
+                {q.answers?.map((answer, aIndex) => {
+                  const isSelected = q.selectedAnswers.includes(answer.aid);
+                  const isCorrect = answer.is_correct; 
+                  
+                  let borderColor = 'grey.200';
+                  let bgColor = 'transparent';
+                  let textColor = 'text.secondary';
+                  let IconComponent = RadioButtonUncheckedIcon;
+
+                  if (isCorrect) {
+                    borderColor = 'success.main';
+                    bgColor = 'success.50';
+                    textColor = 'success.dark';
+                    IconComponent = CheckCircleIcon;
+                  } else if (isSelected && !isCorrect) {
+                    borderColor = 'error.main';
+                    bgColor = 'error.50';
+                    textColor = 'error.main';
+                    IconComponent = CancelIcon;
+                  }
+
+                  return (
+                    <Box key={answer.aid} sx={{ mb: 2 }}>
+                      <Box 
+                        sx={{
+                          display: 'flex', alignItems: 'flex-start', p: 1.5, borderRadius: 2,
+                          border: '2px solid', borderColor: borderColor, backgroundColor: bgColor,
+                        }}
+                      >
+                        <Box sx={{ mr: 2, color: textColor, mt: '2px' }}>
+                          <IconComponent color="inherit" />
+                        </Box>
+                        <Box sx={{ display: 'flex', width: '100%' }}>
+                          <Typography sx={{ mr: 1.5, fontWeight: 700, color: textColor }}>
+                            {getAnswerPrefix(aIndex)}.
+                          </Typography>
+                          <Box sx={{ flexGrow: 1, fontSize: '1.05rem', lineHeight: 1.6, color: textColor }}>
+                            <HtmlContentRenderer htmlContent={answer.content} />
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+              
+              <Accordion 
+                disableGutters 
+                elevation={0}
+                sx={{ 
+                  border: '1px solid', borderColor: 'info.main', borderRadius: '8px !important',
+                  '&:before': { display: 'none' }, overflow: 'hidden'
+                }}
+              >
+                <AccordionSummary 
+                  expandIcon={<ExpandMoreIcon sx={{ color: 'info.main' }} />}
+                  sx={{ backgroundColor: 'info.50', '& .MuiAccordionSummary-content': { my: 1.5 } }}
+                >
+                  <Typography fontWeight={700} color="info.dark">
+                    Xem đáp án & Hướng dẫn giải
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ backgroundColor: '#fff', borderTop: '1px solid', borderColor: 'info.100', p: 3 }}>
+                  
+                  <Typography variant="subtitle1" fontWeight={800} color="success.main" mb={2}>
+                    Đáp án chính xác: {correctPrefixes}
+                  </Typography>
+
+                  {q.explaination && q.explaination !== "<p><br></p>" && (
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="body2" fontWeight={700} color="text.secondary" mb={1}>Hướng dẫn giải chung:</Typography>
+                      <Box sx={{ color: 'text.primary', fontSize: '1rem', p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
+                        <HtmlContentRenderer htmlContent={q.explaination} />
+                      </Box>
+                    </Box>
+                  )}
+
+                  {q.answers?.map((answer, aIndex) => {
+                     if (answer.explaination && answer.explaination !== "<p><br></p>") {
+                       return (
+                          <Box key={`exp-${answer.aid}`} sx={{ mb: 2 }}>
+                             <Typography variant="body2" fontWeight={700} color="text.secondary" mb={0.5}>
+                               Giải thích phương án {getAnswerPrefix(aIndex)}:
+                             </Typography>
+                             <Box sx={{ fontSize: '0.95rem', color: 'text.primary', p: 1.5, bgcolor: '#fff', border: '1px dashed', borderColor: 'grey.300', borderRadius: 1 }}>
+                               <HtmlContentRenderer htmlContent={answer.explaination} />
+                             </Box>
+                          </Box>
+                       );
+                     }
+                     return null;
+                  })}
+
+                </AccordionDetails>
+              </Accordion>
+
+            </Paper>
+          );
+        })}
+      </Box>
+
+      <Drawer
+        anchor="right"
+        open={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        PaperProps={{
+          sx: { 
+            width: { xs: '85vw', sm: 400 }, 
+            p: 3, 
+            borderTopLeftRadius: 16, 
+            borderBottomLeftRadius: 16,
+            display: 'flex', flexDirection: 'column'
+          }
+        }}
+      >
+        {/* Drawer Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box>
+            <Typography variant="h5" fontWeight={700} color="text.primary">
+              Bảng điều hướng
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Tổng cộng: {processedQuestions.length} câu
+            </Typography>
+          </Box>
+          <IconButton onClick={() => setIsDrawerOpen(false)} color="inherit">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        {/* Chú thích & Bộ lọc */}
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
+          <Chip label={`Tất cả (${processedQuestions.length})`} variant={filter === 'all' ? 'filled' : 'outlined'} color="primary" onClick={() => setFilter('all')} size="small" sx={{ fontWeight: 600 }} />
+          <Chip label={`Đúng (${correctQuestions.length})`} variant={filter === 'correct' ? 'filled' : 'outlined'} color="success" onClick={() => setFilter('correct')} size="small" sx={{ fontWeight: 600 }} />
+          <Chip label={`Sai (${wrongQuestions.length})`} variant={filter === 'wrong' ? 'filled' : 'outlined'} color="error" onClick={() => setFilter('wrong')} size="small" sx={{ fontWeight: 600 }} />
+          <Chip label={`Bỏ qua (${missedQuestions.length})`} variant={filter === 'missed' ? 'filled' : 'outlined'} color="warning" onClick={() => setFilter('missed')} size="small" sx={{ fontWeight: 600 }} />
+        </Box>
+
+        <Divider sx={{ mb: 3 }} />
+
+        {/* Lưới Nút Bấm Cuộn (Scrollable Area) */}
+        <Box sx={{ overflowY: 'auto', flexGrow: 1, pr: 1, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#e0e0e0', borderRadius: '4px' } }}>
+          
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1 }}>
+            {processedQuestions.map((q, index) => {
+              let btnColor = 'grey.100';
+              let btnTextColor = 'text.primary';
+              let borderColor = 'grey.300';
+
+              if (q.isQuestionCorrect) {
+                btnColor = 'success.50';
+                btnTextColor = 'success.dark';
+                borderColor = 'success.main';
+              } else if (q.isQuestionWrong) {
+                btnColor = 'error.50';
+                btnTextColor = 'error.main';
+                borderColor = 'error.main';
+              } else if (q.isMissed) {
+                btnColor = 'warning.50';
+                btnTextColor = 'warning.dark';
+                borderColor = 'warning.main';
+              }
+
+              return (
+                <Button
+                  key={`nav-${index}`}
+                  onClick={() => scrollToQuestion(index)}
+                  sx={{
+                    minWidth: 0, height: 40, p: 0, fontWeight: 700, fontSize: '1rem', borderRadius: 1.5,
+                    bgcolor: btnColor, color: btnTextColor, border: '3px solid', borderColor: borderColor,
+                    '&:hover': { opacity: 0.8, bgcolor: btnColor }
+                  }}
+                >
+                  {index + 1}
+                </Button>
+              );
+            })}
+          </Box>
+          
+        </Box>
+      </Drawer>
 
     </Container>
   );
