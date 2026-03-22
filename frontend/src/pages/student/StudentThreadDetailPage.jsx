@@ -15,13 +15,14 @@ import {
   Divider,
   IconButton,
   CardContent,
-  Chip
+  Chip,
+  Tooltip
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { motion } from "framer-motion";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { getCommentsByThread, createComment, fetchCommentsUntil } from "../../services/CommentService";
+import { getCommentsByThread, createComment, fetchCommentsUntil, pinComment, unpinComment } from "../../services/CommentService";
 import { getThreadById } from "../../services/ThreadService";
 import { socket, decodedData } from "../../services/ApiClient";
 import QuiltedImageList from "../../components/Image/ImageList";
@@ -37,6 +38,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import PhotoCamera from '@mui/icons-material/PhotoCamera'
 import Close from '@mui/icons-material/Close'
 import CloudUpload from "@mui/icons-material/CloudUpload";
+import UnPinIcon from "../../components/Icon/UnPinIcon";
+import PushPinRoundedIcon from '@mui/icons-material/PushPinRounded';
 
 // --- STYLED COMPONENTS ---
 const OriginalPostCard = styled(Paper)(({ theme }) => ({
@@ -289,9 +292,33 @@ const ThreadDetailPage = React.memo(() => {
     });
   };
 
+  const updateNodeInTree = (nodes, targetId, updatePayload) => {
+    if (!nodes || nodes.length === 0) return [];
+
+    return nodes.map(node => {
+      // 1. Nếu tìm thấy đúng node cần update
+      if (node.comment_id === targetId) {
+        return {
+          ...node,
+          ...updatePayload // Ghi đè các field mới (ví dụ: { is_pinned: true })
+        };
+      }
+
+      // 2. Nếu không phải node này, kiểm tra các node con (đệ quy)
+      if (node.replies && node.replies.length > 0) {
+        return {
+          ...node,
+          replies: updateNodeInTree(node.replies, targetId, updatePayload)
+        };
+      }
+
+      // 3. Nếu không tìm thấy và không có con, giữ nguyên node
+      return node;
+    });
+  };
+
   // Gửi bình luận TRẢ LỜI (Nested)
   const handleReplySubmit = (parentCommentId, content, parentAuthorEmails, images) => {
-    console.log(">> [REPLY]: ", parentCommentId)
     const createNewCommentForm = {
       content: content,
       parent_cmt_id: parentCommentId,
@@ -321,6 +348,24 @@ const ThreadDetailPage = React.memo(() => {
       }
     }
   };
+
+  const handlePinComment = async(commentId) => {
+    try {
+      await pinComment(threadId, commentId)
+      setComments(updateNodeInTree(comments, commentId, {is_pinned: true}))
+    } catch (error) {
+      
+    }
+  }
+
+  const handleUnPinComment = async(commentId) => {
+    try {
+      await unpinComment(threadId, commentId)
+      setComments(updateNodeInTree(comments, commentId, {is_pinned: false}))
+    } catch (error) {
+      
+    }
+  }
 
   return thread && (
     <Container maxWidth={false} sx={{ mt: 4, mb: 4 }}>
@@ -498,15 +543,63 @@ const ThreadDetailPage = React.memo(() => {
           
           {/* Danh sách bình luận */}
           <List>
-            {comments.map((comment) => (
-              <CommentItem 
-                key={comment.comment_id} 
-                comment={comment} 
-                onReplySubmit={handleReplySubmit} 
-                class_id={classId}
-                setComments={setComments}
-                addTreeNode={addReplyToTree}
-              />
+            {comments.filter(comment => comment.is_pinned == true).map((comment) => (
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                <CommentItem 
+                  key={comment.comment_id} 
+                  comment={comment} 
+                  onReplySubmit={handleReplySubmit} 
+                  class_id={classId}
+                  setComments={setComments}
+                  addTreeNode={addReplyToTree}
+                />
+                {!comment.parent_cmt_id && thread.sender.uid == decodedData.sub ? (
+                  <Box sx={{ mt: 1 }}> {/* Thêm Box bọc ngoài để căn chỉnh lề trên nếu cần */}
+                    {!comment.is_pinned ? (
+                      <Tooltip title="Ghim" arrow placement="right"> 
+                        <IconButton sx={{ p: 1 }} onClick={() => handlePinComment(comment.comment_id)}>
+                          <PushPinRoundedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title="Bỏ ghim" arrow placement="right">
+                        <IconButton sx={{ p: 1 }} onClick={() => handleUnPinComment(comment.comment_id)}>
+                          <UnPinIcon width="18px" height="18px" /> {/* Tăng size một chút cho dễ bấm */}
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
+                ) : null}
+              </Box>
+            ))}
+            {comments.filter(comment => comment.is_pinned == false).map((comment) => (
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                <CommentItem 
+                  key={comment.comment_id} 
+                  comment={comment} 
+                  onReplySubmit={handleReplySubmit} 
+                  class_id={classId}
+                  setComments={setComments}
+                  addTreeNode={addReplyToTree}
+                />
+                {!comment.parent_cmt_id && thread.sender.uid == decodedData.sub ? (
+                  <Box sx={{ mt: 1 }}> {/* Thêm Box bọc ngoài để căn chỉnh lề trên nếu cần */}
+                    {!comment.is_pinned ? (
+                      <Tooltip title="Ghim" arrow placement="right"> 
+                        <IconButton sx={{ p: 1 }} onClick={() => handlePinComment(comment.comment_id)}> {/* Dùng padding thay vì aspectRatio */}
+                          <PushPinRoundedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title="Bỏ ghim" arrow placement="right">
+                        <IconButton sx={{ p: 1 }} onClick={() => handleUnPinComment(comment.comment_id)}>
+                          <UnPinIcon width="18px" height="18px" /> {/* Tăng size một chút cho dễ bấm */}
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
+                ) : null}
+              </Box>
             ))}
             {thread.cnt_comments > page * 10 ? 
               (<Typography

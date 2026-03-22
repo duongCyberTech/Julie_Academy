@@ -103,7 +103,6 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
     toast.promise(createThread(newPostData), {
       loading: "Đang tạo bài viết...",
       success: (data) => {  
-        console.log(data)
         handleAdd(data.data.data);
         closeModal()
 
@@ -415,7 +414,6 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
   useEffect(() => {
     const token = localStorage.getItem('token')
     const decoded = jwtDecode(token)
-    console.log(decoded)
     if (post.followers?.length > 0 && post.followers.includes(decoded.sub)) setInitState(true)
     setUser(decoded)
   }, [post, class_id])
@@ -423,7 +421,6 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
   const handleClosePostModal = () => setIsPostModalOpen(false);
 
   const handleFollowChange = async(newState) => {
-    console.log(`User status changed to: ${newState ? 'Following' : 'Unfollowed'}`);
     const action = initState ? unfollowThread : followThread;
     toast.promise(action(post.thread_id), {
       loading: initState ? 'Đang bỏ theo dõi...' : 'Đang thực hiện theo dõi...',

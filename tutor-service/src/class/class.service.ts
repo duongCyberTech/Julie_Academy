@@ -84,8 +84,6 @@ export class ScheduleService {
       requestBody: event,
       conferenceDataVersion: 1
     })
-
-    console.log('✅ Created event:', response.data.htmlLink);
   }
 
   parseTimeStrToNum(time: string){
@@ -211,14 +209,12 @@ export class ScheduleService {
       var cnt_d = 0
 
       for (const sched of schedLst){
-        console.log(sched)
         const idx: number = await tx.schedule.delete({
           where: {schedule_id_class_id: {class_id, schedule_id: sched - cnt_d}}
         }).then((schedule) => {return schedule.schedule_id})
         
         cnt_d++;
         
-        console.log(schedLst)
         await tx.schedule.updateMany({
           where: {class_id, schedule_id: {gt: Number(idx)}},
           data: {

@@ -41,10 +41,11 @@ export const createThread = async (threadData) => {
     }
 };
 
-export const getThreadsByClass = async (classId, token, page = 1) => {
+export const getThreadsByClass = async (classId, token, filter) => {
     try {
+        const query = Object.entries(filter)
         const response = await apiClient.get(
-            `/threads/class/${classId}?page=${page}`,
+            `/threads/class/${classId}?${query.map(item => item[0] + "=" + item[1]).join("&")}`,
             getAuthHeaders(token)
         );
         return response.data;

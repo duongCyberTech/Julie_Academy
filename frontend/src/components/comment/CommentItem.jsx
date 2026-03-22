@@ -12,6 +12,7 @@ import {
   IconButton,
   Collapse,
   Chip,
+  Tooltip
 } from "@mui/material";
 
 import PersonIcon from '@mui/icons-material/Person';
@@ -79,7 +80,6 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
   }
 
   const handleSubmitReply = () => {
-    console.log(comment.comment_id)
     if (replyContent.trim() === "") return;
     const taggedEmails = extractEmailsFromComment(replyContent)
     onReplySubmit(comment.comment_id, replyContent, taggedEmails, selectedImages);

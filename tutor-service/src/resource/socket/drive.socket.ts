@@ -48,7 +48,6 @@ export class DriveGateway {
     }
     @SubscribeMessage('HELLO')
     handleTest(@ConnectedSocket() client: Socket): string {
-      console.log("Hello from", client.id)
       client.emit('HI', {
         message: "Nice to meet u"
       })
@@ -60,7 +59,6 @@ export class DriveGateway {
         @MessageBody() payload: { docsId: string, startByte: number },
         @ConnectedSocket() client: Socket,
     ) {
-      console.log("Message payload: ", payload)
       const { docsId, startByte = 0 } = payload;
       const fileToDownload = await this.prisma.resources.findUnique({where: {did: docsId}})
       if (!fileToDownload) {
@@ -70,7 +68,6 @@ export class DriveGateway {
         console.log("Failure")
         return
       }
-      console.log("prepare: ", fileToDownload)
       const fileParsing = fileToDownload.file_path.split("/")
 
       const fileId = fileParsing[fileParsing.indexOf("d") + 1]
