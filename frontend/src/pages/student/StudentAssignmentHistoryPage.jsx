@@ -37,9 +37,9 @@ export default function StudentAssignmentHistoryPage() {
     : null;
     
   const isOverdueReal = sessionData.expireAt ? new Date() > new Date(sessionData.expireAt) : false;
-  const handleOpenAttemptDetails = (attemptId, attemptScore) => {
+  const handleOpenAttemptDetails = (attemptId, attemptScore, attemptData) => {
     if (isOverdueReal) {
-      navigate(`/student/assignment/result/${attemptId}`);
+      navigate(`/student/assignment/result/${attemptId}`, { state: { resultData: attemptData } });
     } else {
       setSelectedAttemptScore(attemptScore); 
       setRestrictionDialogOpen(true); 
@@ -142,7 +142,7 @@ export default function StudentAssignmentHistoryPage() {
 
                     <TableCell align="center">
                       <Typography variant="body1" fontWeight={700} color="text.primary">
-                        {attempt.total_ques_completed ?? 0} <Typography component="span" variant="caption" color="text.secondary" fontWeight={600}>/ {totalQues}</Typography>
+                        {attempt.total_ques_completed ?? 0} <Typography component="span" variant="caption" color="text.secondary" fontWeight={500}>/ {totalQues}</Typography>
                       </Typography>
                     </TableCell>
 
@@ -173,7 +173,7 @@ export default function StudentAssignmentHistoryPage() {
                     <TableCell align="center">
                       <Button 
                         variant="contained" size="small" disableElevation
-                        onClick={() => handleOpenAttemptDetails(attempt.et_id, attempt.final_score)}
+                        onClick={() => handleOpenAttemptDetails(attempt.et_id, attempt.final_score, attempt)}
                         sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none', px: 2, py: 0.5, bgcolor: '#e3f2fd', color: 'primary.main', '&:hover': { bgcolor: 'primary.main', color: '#fff' } }}
                       >
                         Xem chi tiết
