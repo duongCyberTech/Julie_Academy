@@ -17,6 +17,52 @@ import PendingIcon from '@mui/icons-material/Pending';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
+const HeaderBar = styled(Box)(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing(3), // Gọn hơn so với 4
+    flexShrink: 0,
+}));
+
+const SessionCardStyled = styled(Card)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: '12px', // Đồng bộ 12px
+        backgroundColor: theme.palette.background.paper,
+        backgroundImage: 'none',
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6)}`,
+        boxShadow: isDark ? 'none' : '0px 2px 8px rgba(0,0,0,0.02)', // Nhẹ nhàng hơn
+        transition: 'all 0.2s',
+        '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: isDark
+                ? `0 0 16px ${alpha(theme.palette.primary.main, 0.1)}`
+                : '0px 8px 16px rgba(0,0,0,0.04)',
+            border: `1px solid ${theme.palette.primary.main}`, 
+        }
+    };
+});
+
+const EmptyStatePaper = styled(Paper)(({ theme }) => ({
+    flexGrow: 1,
+    minHeight: '200px', // Gọn hơn
+    padding: theme.spacing(4), // Gọn hơn
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '2px dashed',
+    borderColor: alpha(theme.palette.divider, 0.6),
+    backgroundColor: 'transparent',
+    borderRadius: '12px',
+    marginTop: theme.spacing(1),
+}));
+
 const SessionCard = memo(({ session }) => {
     const now = dayjs();
     const start = dayjs(session.startAt);
@@ -26,74 +72,90 @@ const SessionCard = memo(({ session }) => {
     if (now.isBefore(start)) {
         status = "Chưa mở";
         statusColor = "warning";
-        statusIcon = <PendingIcon />;
+        statusIcon = <PendingIcon fontSize="small" sx={{ fontSize: 16 }} />;
     } else if (now.isAfter(end)) {
         status = "Đã kết thúc";
         statusColor = "default";
-        statusIcon = <CheckCircleIcon />;
+        statusIcon = <CheckCircleIcon fontSize="small" sx={{ fontSize: 16 }} />;
     } else {
         status = "Đang diễn ra";
         statusColor = "success";
-        statusIcon = <PlayCircleOutlineIcon />;
+        statusIcon = <PlayCircleOutlineIcon fontSize="small" sx={{ fontSize: 16 }} />;
     }
 
     return (
-        <Grid item xs={12} sm={6} md={4}> 
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                        <Chip
-                            icon={statusIcon}
-                            label={status}
-                            color={statusColor}
-                            size="small"
-                            variant="outlined"
-                        />
-                        <Typography variant="caption" color="text.disabled">#{session.session_id}</Typography>
-                    </Stack>
-                    
-                    <Typography variant="h6" fontWeight={600} gutterBottom title={session.exam?.title}>
-                        {session.exam?.title || "Bài tập không tên"}
+        <SessionCardStyled>
+            <CardContent sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
+                    <Chip
+                        icon={statusIcon}
+                        label={status}
+                        color={statusColor}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontWeight: 600, height: 24, fontSize: '0.75rem' }}
+                    />
+                    <Typography variant="caption" color="text.disabled" fontWeight={600}>
+                        #{session.session_id}
                     </Typography>
-                    
-                    <Stack spacing={0.5} mt={1}>
-                        <Typography variant="body2" color="text.secondary">
-                            Loại: <strong>{session.exam_type === 'practice' ? 'Luyện tập' : 'Kiểm tra'}</strong>
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Số câu: {session.exam?.total_ques} câu
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Làm tối đa: {session.limit_taken} lần
-                        </Typography>
-                    </Stack>
-
-                    <Divider sx={{ my: 1.5 }} />
-
-                    <Stack spacing={0.5}>
-                         <Typography variant="caption" color="text.secondary" display="block">
-                            Bắt đầu: {start.format('HH:mm DD/MM/YYYY')}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                            Kết thúc: {end.format('HH:mm DD/MM/YYYY')}
-                        </Typography>
-                    </Stack>
-                </CardContent>
+                </Stack>
                 
-                <CardActions sx={{ justifyContent: 'space-between', p: 2, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>
-                    <Box>
-                        <Tooltip title="Chỉnh sửa phiên (Chưa hỗ trợ)">
-                            <span>
-                                <IconButton size="small" disabled><EditIcon /></IconButton>
-                            </span>
-                        </Tooltip>
-                    </Box>
-                    <Button size="small" variant="contained" color="primary" endIcon={<AssessmentIcon />}>
-                        Xem kết quả
-                    </Button>
-                </CardActions>
-            </Card>
-        </Grid>
+                <Typography variant="subtitle1" fontWeight="700" color="text.primary" gutterBottom title={session.exam?.title} sx={{ mb: 1.5, lineHeight: 1.3 }}>
+                    {session.exam?.title || "Bài tập không tên"}
+                </Typography>
+                
+                <Stack spacing={0.5} mb={2} flexGrow={1}>
+                    <Typography variant="body2" color="text.secondary">
+                        Loại: <Box component="span" fontWeight={600} color="text.primary">{session.exam_type === 'practice' ? 'Luyện tập' : 'Kiểm tra'}</Box>
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Số câu: <Box component="span" fontWeight={600} color="text.primary">{session.exam?.total_ques} câu</Box>
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Làm tối đa: <Box component="span" fontWeight={600} color="text.primary">{session.limit_taken} lần</Box>
+                    </Typography>
+                </Stack>
+
+                <Divider sx={{ my: 1.5, borderStyle: 'dashed', borderColor: (theme) => alpha(theme.palette.divider, 0.6) }} />
+
+                <Stack spacing={0.5}>
+                    <Typography variant="caption" color="text.secondary" display="block" fontWeight={500}>
+                        Bắt đầu: {start.format('HH:mm DD/MM/YYYY')}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block" fontWeight={500}>
+                        Kết thúc: {end.format('HH:mm DD/MM/YYYY')}
+                    </Typography>
+                </Stack>
+            </CardContent>
+            
+            <CardActions sx={{ 
+                justifyContent: 'space-between', 
+                px: 2.5, pb: 2, pt: 1.5, 
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? alpha(theme.palette.background.default, 0.4) : alpha(theme.palette.grey[50], 0.8),
+                borderTop: '1px solid',
+                borderColor: (theme) => alpha(theme.palette.divider, 0.6)
+            }}>
+                <Box>
+                    <Tooltip title="Chỉnh sửa phiên (Chưa hỗ trợ)">
+                        <span>
+                            <IconButton size="small" disabled sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', p: 0.5 }}>
+                                <EditIcon fontSize="small" sx={{ fontSize: 18 }} />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                </Box>
+                <Button 
+                    size="small" 
+                    variant="contained" 
+                    color="primary" 
+                    disableElevation
+                    endIcon={<AssessmentIcon fontSize="small"/>}
+                    sx={{ fontWeight: 600, borderRadius: '8px', textTransform: 'none' }}
+                >
+                    Xem kết quả
+                </Button>
+            </CardActions>
+        </SessionCardStyled>
     );
 });
 
@@ -109,7 +171,6 @@ function AssignmentTab({ classId, token }) {
         setError(null);
         try {
             const data = await getSessionsByClass(classId, token);
-            console.log("Sessions Data:", data);
             setSessions(Array.isArray(data) ? data : []); 
         } catch (err) {
             console.error("Fetch sessions error:", err);
@@ -120,38 +181,68 @@ function AssignmentTab({ classId, token }) {
     }, [classId, token]);
 
     useEffect(() => { fetchAssignedSessions(); }, [fetchAssignedSessions]);
+    
     const handleNavigateAssign = () => {
         navigate('/tutor/assignment');
     };
 
-    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box>;
+    if (loading) return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={30} />
+        </Box>
+    );
 
     return (
         <Box>
-            {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
+            {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }} onClose={() => setError(null)}>{error}</Alert>}
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+            <HeaderBar direction={{ xs: 'column', sm: 'row' }}>
+                <Box>
+                    <Typography variant="h6" fontWeight="700" color="text.primary">
+                        Bài tập & Kiểm tra
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Quản lý các bài luyện tập và kiểm tra đã giao
+                    </Typography>
+                </Box>
                 <Button 
                     variant="contained" 
-                    startIcon={<AddCircleOutlineIcon />} 
-                    onClick={handleNavigateAssign} 
+                    size="small"
+                    startIcon={<AddCircleOutlineIcon fontSize="small"/>} 
+                    onClick={handleNavigateAssign}
+                    sx={{ borderRadius: '8px', fontWeight: 600, px: 2, py: 1, mt: { xs: 2, sm: 0 }, textTransform: 'none' }} 
                 >
                     Giao bài mới
                 </Button>
-            </Box>
+            </HeaderBar>
 
             {sessions.length > 0 ? (
-                <Grid container spacing={3}>
+                <Grid container spacing={2} sx={{ pb: 2 }}>
                     {sessions.map(session => (
-                        <SessionCard key={session.session_id} session={session} />
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={session.session_id}>
+                            <SessionCard session={session} />
+                        </Grid>
                     ))}
                 </Grid>
             ) : (
-                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', backgroundColor: (theme) => theme.palette.mode === 'light' ? 'grey.50' : 'grey.900' }}>
-                    <AssessmentIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.5, mb: 2 }} />
-                    <Typography variant="h6" fontWeight={600}>Chưa giao bài tập nào</Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>Nhấn "Giao bài mới" để bắt đầu.</Typography>
-                </Paper>
+                <EmptyStatePaper elevation={0}>
+                    <AssessmentIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1.5 }} />
+                    <Typography variant="subtitle1" color="text.secondary" fontWeight={600}>
+                        Chưa giao bài tập nào
+                    </Typography>
+                    <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5, mb: 2.5, maxWidth: '80%' }}>
+                        Lớp học này hiện tại chưa có bài kiểm tra hay luyện tập nào.
+                    </Typography>
+                    <Button 
+                        variant="contained" 
+                        size="small"
+                        startIcon={<AddCircleOutlineIcon fontSize="small"/>} 
+                        onClick={handleNavigateAssign}
+                        sx={{ borderRadius: '8px', fontWeight: 600, px: 3, py: 1, textTransform: 'none' }}
+                    >
+                        Giao bài mới ngay
+                    </Button>
+                </EmptyStatePaper>
             )}
         </Box>
     );

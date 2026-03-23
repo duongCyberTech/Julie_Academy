@@ -41,8 +41,7 @@ const mentionsInputStyle = {
       boxSizing: 'border-box',
       outline: 'none',
 
-      //color: 'transparent',   // text thật bị ẩn
-      caretColor: '#000',     // vẫn thấy con trỏ
+      caretColor: '#000',    
 
       background: 'transparent'
     }
@@ -68,7 +67,6 @@ const mentionsInputStyle = {
 const mentionStyle = {
   backgroundColor: 'rgba(7, 83, 182, 0.15)',
   color: 'transparent',
-  // fontWeight: 'bold', // Bây giờ bạn có thể in đậm thoải mái
   borderRadius: '4px',
   
 };

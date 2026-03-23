@@ -16,7 +16,6 @@ import {
 } from "@mui/material";
 import { jwtDecode } from "jwt-decode";
 
-// Import Icons
 import DashboardIcon from "@mui/icons-material/DashboardCustomizeOutlined";
 import LibraryIcon from "@mui/icons-material/MenuBookOutlined";
 import AccountBoxIcon from "@mui/icons-material/AccountBoxOutlined";
@@ -31,7 +30,6 @@ import HomeWorkOutlinedIcon from '@mui/icons-material/HomeWorkOutlined';
 
 import Logo from "../assets/images/logo.png";
 
-// Cấu hình Menu
 const menuConfigByRole = {
   tutor: [
     { label: "Tổng quan", to: "/tutor/dashboard", Icon: DashboardIcon },
@@ -59,7 +57,6 @@ const menuConfigByRole = {
   ],
 };
 
-// --- STYLED COMPONENTS ---
 
 const StyledDrawer = styled(Drawer, {
   shouldForwardProp: (prop) => prop !== "width",
@@ -72,7 +69,6 @@ const StyledDrawer = styled(Drawer, {
     "& .MuiDrawer-paper": {
       width: width, 
       overflowX: "hidden",
-      // LÀM MỜ VIỀN TỐI ĐA: Chỉ giữ lại 5% độ đục ở Dark Mode và 8% ở Light Mode
       borderRight: `1px solid ${isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.divider, 0.08)}`, 
       backgroundColor: theme.palette.background.paper,
       backgroundImage: 'none',
@@ -137,7 +133,6 @@ const BrandBox = styled(Box)(({ theme }) => {
     alignItems: "center",
     padding: theme.spacing(0, 3),
     minHeight: "80px", 
-    // Viền phân cách cực mờ
     borderBottom: `1px solid ${isDark ? alpha(theme.palette.primary.main, 0.03) : alpha(theme.palette.divider, 0.06)}`,
     backgroundColor: isDark ? alpha(theme.palette.primary.main, 0.01) : 'transparent',
   };
@@ -150,12 +145,10 @@ const SidebarFooter = styled(Box)(({ theme }) => {
     padding: theme.spacing(2),
     display: "flex",
     justifyContent: "center",
-    // Viền phân cách cực mờ
     borderTop: `1px solid ${isDark ? alpha(theme.palette.primary.main, 0.03) : alpha(theme.palette.divider, 0.06)}`, 
   };
 });
 
-// --- MAIN COMPONENT ---
 
 const Sidebar = ({ width, isCollapsed, onToggleCollapse, isMobileOpen, onMobileClose }) => {
   const location = useLocation();
@@ -237,12 +230,10 @@ const Sidebar = ({ width, isCollapsed, onToggleCollapse, isMobileOpen, onMobileC
         })}
       </List>
 
-      {/* NÚT THU GỌN Ở ĐÁY */}
       <SidebarFooter>
         <IconButton 
           onClick={onToggleCollapse}
           sx={{ 
-            // Đổi từ viền cứng sang đổ bóng mờ ảo
             border: 'none',
             boxShadow: isDark 
                 ? `0 4px 12px ${alpha(theme.palette.common.black, 0.4)}` 
@@ -252,7 +243,7 @@ const Sidebar = ({ width, isCollapsed, onToggleCollapse, isMobileOpen, onMobileC
             '&:hover': { 
               bgcolor: alpha(theme.palette.primary.main, 0.1), 
               color: 'primary.main',
-              transform: 'translateY(-2px)' // Hiệu ứng nhấc nổi lên khi hover
+              transform: 'translateY(-2px)' 
             }
           }}
         >

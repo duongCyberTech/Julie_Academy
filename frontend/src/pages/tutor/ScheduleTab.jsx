@@ -21,7 +21,6 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 
 import { getScheduleByClass, createSchedule, deleteSchedule } from '../../services/ClassService';
 
-// Mở rộng dayjs để kiểm tra thời gian
 dayjs.extend(isSameOrBefore);
 
 const DAY_OPTIONS = [
@@ -89,7 +88,6 @@ const ScheduleTab = ({ classId, token }) => {
         setToast({ open: true, message, severity });
     };
 
-    // LOGIC KIỂM TRA THỜI GIAN ĐƯỢC THÊM VÀO ĐÂY
     const handleAddSchedule = async () => {
         if (!formData.startAt || !formData.endAt) {
             showToast('Vui lòng chọn đầy đủ thời gian bắt đầu và kết thúc', 'warning');
@@ -143,17 +141,17 @@ const ScheduleTab = ({ classId, token }) => {
             <Paper 
                 variant="outlined" 
                 sx={{ 
-                    p: 3, mb: 4, borderRadius: 3, 
+                    p: 2, mb: 3, borderRadius: '12px', 
                     bgcolor: isDark ? alpha(theme.palette.background.default, 0.4) : alpha(theme.palette.primary.main, 0.02),
-                    borderColor: isDark ? theme.palette.midnight?.border : 'divider'
+                    borderColor: isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6)
                 }}
             >
-                <Typography variant="h6" fontWeight={700} color="primary.main" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EventRepeatIcon /> Thiết lập lịch học
+                <Typography variant="subtitle1" fontWeight={700} color="primary.main" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <EventRepeatIcon fontSize="small" /> Thiết lập lịch học
                 </Typography>
                 
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
+                    <Grid container spacing={1.5} alignItems="center" sx={{ mt: 0.5 }}>
                         <Grid size={{ xs: 12, md: 3 }}>
                             <FormControl fullWidth size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                                 <InputLabel>Ngày trong tuần</InputLabel>
@@ -185,7 +183,7 @@ const ScheduleTab = ({ classId, token }) => {
                                 onChange={(val) => handleTimeChange('endAt', val)}
                                 slotProps={{ textField: { size: 'small', fullWidth: true, sx: { bgcolor: 'background.paper', borderRadius: 1 } } }}
                                 ampm={false}
-                                minTime={dayjs(formData.startAt, 'HH:mm').add(1, 'minute')} // Tự động chặn chọn giờ nhỏ hơn trên UI
+                                minTime={dayjs(formData.startAt, 'HH:mm').add(1, 'minute')}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, md: 3 }}>
@@ -194,10 +192,10 @@ const ScheduleTab = ({ classId, token }) => {
                                 variant="contained"
                                 onClick={handleAddSchedule}
                                 disabled={submitting}
-                                startIcon={submitting ? <CircularProgress size={20} color="inherit"/> : <AddCircleOutlineIcon />}
-                                sx={{ height: 40, borderRadius: 2, fontWeight: 700 }}
+                                startIcon={submitting ? <CircularProgress size={16} color="inherit"/> : <AddCircleOutlineIcon fontSize="small"/>}
+                                sx={{ height: 40, borderRadius: '8px', fontWeight: 700 }}
                             >
-                                Thêm lịch
+                                Thêm
                             </Button>
                         </Grid>
                         <Grid size={{ xs: 12 }}>
@@ -211,7 +209,7 @@ const ScheduleTab = ({ classId, token }) => {
                                 placeholder="https://..."
                                 sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                                 InputProps={{
-                                    startAdornment: <LinkIcon color="action" sx={{ mr: 1 }} />
+                                    startAdornment: <LinkIcon color="action" sx={{ mr: 1, fontSize: 20 }} />
                                 }}
                             />
                         </Grid>
@@ -220,17 +218,17 @@ const ScheduleTab = ({ classId, token }) => {
             </Paper>
 
             {/* DANH SÁCH LỊCH HỌC */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" fontWeight={700}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                <Typography variant="h6" fontWeight={700} color="text.primary">
                     Lịch học hiện tại ({schedules.length})
                 </Typography>
                 {schedules.length > 0 && (
                     <Button 
                         color="error" 
                         size="small" 
-                        startIcon={<DeleteSweepIcon />}
+                        startIcon={<DeleteSweepIcon fontSize="small"/>}
                         onClick={() => setDeleteDialog({ open: true, type: 'all' })}
-                        sx={{ fontWeight: 600, borderRadius: 2, bgcolor: alpha(theme.palette.error.main, 0.08) }}
+                        sx={{ fontWeight: 600, borderRadius: '8px', bgcolor: alpha(theme.palette.error.main, 0.08) }}
                     >
                         Xóa tất cả
                     </Button>
@@ -240,32 +238,34 @@ const ScheduleTab = ({ classId, token }) => {
             <Paper 
                 variant="outlined" 
                 sx={{ 
-                    borderRadius: 3, 
-                    borderColor: isDark ? theme.palette.midnight?.border : 'divider',
+                    borderRadius: '12px', 
+                    borderColor: isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6),
                     bgcolor: 'background.paper',
                     overflow: 'hidden'
                 }}
             >
                 <List disablePadding>
                     {loading ? (
-                        <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
-                            <CircularProgress />
+                        <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
+                            <CircularProgress size={30} />
                         </Box>
                     ) : schedules.length === 0 ? (
-                        <Box sx={{ p: 4, textAlign: 'center' }}>
-                            <Typography color="text.secondary">Chưa có lịch học nào.</Typography>
+                        <Box sx={{ p: 3, textAlign: 'center' }}>
+                            <Typography variant="body2" color="text.secondary">Chưa có lịch học nào.</Typography>
                         </Box>
                     ) : (
                         schedules.map((item, index) => (
                             <React.Fragment key={item.schedule_id}>
                                 <ListItem
                                     sx={{ 
+                                        py: 1.5,
                                         transition: 'all 0.2s',
                                         '&:hover': { bgcolor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.02) }
                                     }}
                                     secondaryAction={
                                         <IconButton 
                                             edge="end" 
+                                            size="small"
                                             onClick={() => setDeleteDialog({ open: true, type: 'single', id: item.schedule_id })}
                                             sx={{ color: 'error.main', '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) } }}
                                         >
@@ -280,25 +280,25 @@ const ScheduleTab = ({ classId, token }) => {
                                                     label={getDayLabel(item.meeting_date)} 
                                                     color="primary" 
                                                     size="small" 
-                                                    sx={{ fontWeight: 700, minWidth: 80, borderRadius: 1.5 }}
+                                                    sx={{ fontWeight: 700, minWidth: 70, borderRadius: 1.5, height: 24, fontSize: '0.75rem' }}
                                                 />
-                                                <Typography variant="body1" fontWeight={600} color="text.primary">
+                                                <Typography variant="body2" fontWeight={600} color="text.primary">
                                                     {item.startAt} - {item.endAt}
                                                 </Typography>
                                             </Stack>
                                         }
                                         secondary={
                                             item.link_meet ? (
-                                                <Link href={item.link_meet} target="_blank" underline="hover" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.5, fontWeight: 500 }}>
-                                                    <LinkIcon fontSize="small" /> Vào phòng học
+                                                <Link href={item.link_meet} target="_blank" underline="hover" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.5, fontWeight: 500, fontSize: '0.8rem' }}>
+                                                    <LinkIcon fontSize="small" sx={{ fontSize: 16 }}/> Vào phòng học
                                                 </Link>
                                             ) : (
-                                                <Typography variant="caption" color="text.disabled" sx={{ display: 'inline-block', mt: 0.5 }}>Chưa có link cuộc họp</Typography>
+                                                <Typography variant="caption" color="text.disabled" sx={{ display: 'inline-block', mt: 0.5 }}>Chưa có link</Typography>
                                             )
                                         }
                                     />
                                 </ListItem>
-                                {index < schedules.length - 1 && <Divider sx={{ borderColor: isDark ? theme.palette.midnight?.border : 'divider' }} />}
+                                {index < schedules.length - 1 && <Divider sx={{ borderColor: isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6) }} />}
                             </React.Fragment>
                         ))
                     )}
@@ -309,19 +309,19 @@ const ScheduleTab = ({ classId, token }) => {
             <Dialog 
                 open={deleteDialog.open} 
                 onClose={() => setDeleteDialog({ open: false, type: null, id: null })}
-                PaperProps={{ sx: { borderRadius: 3, p: 1, bgcolor: 'background.paper', backgroundImage: 'none' } }}
+                PaperProps={{ sx: { borderRadius: '12px', p: 1, bgcolor: 'background.paper', backgroundImage: 'none' } }}
             >
-                <DialogTitle sx={{ fontWeight: 700 }}>Xác nhận xóa</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 700, fontSize: '1.1rem' }}>Xác nhận xóa</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>
+                    <DialogContentText variant="body2">
                         {deleteDialog.type === 'all' 
                             ? "Bạn có chắc chắn muốn xóa toàn bộ lịch học không? Hành động này không thể hoàn tác."
                             : "Bạn có chắc chắn muốn xóa khung giờ học này không?"}
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={() => setDeleteDialog({ open: false, type: null, id: null })} color="inherit" sx={{ fontWeight: 600 }}>Hủy</Button>
-                    <Button onClick={confirmDelete} color="error" variant="contained" disableElevation sx={{ borderRadius: 2, fontWeight: 700 }}>Xóa</Button>
+                    <Button onClick={() => setDeleteDialog({ open: false, type: null, id: null })} color="inherit" size="small" sx={{ fontWeight: 600 }}>Hủy</Button>
+                    <Button onClick={confirmDelete} color="error" variant="contained" size="small" disableElevation sx={{ borderRadius: '8px', fontWeight: 700 }}>Xóa</Button>
                 </DialogActions>
             </Dialog>
 
@@ -332,7 +332,7 @@ const ScheduleTab = ({ classId, token }) => {
                 onClose={() => setToast(prev => ({ ...prev, open: false }))}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
-                <Alert severity={toast.severity} variant="filled" onClose={() => setToast(prev => ({ ...prev, open: false }))} sx={{ borderRadius: 2 }}>
+                <Alert severity={toast.severity} variant="filled" onClose={() => setToast(prev => ({ ...prev, open: false }))} sx={{ borderRadius: '8px' }}>
                     {toast.message}
                 </Alert>
             </Snackbar>

@@ -242,7 +242,7 @@ export default function AddQuestionDialog({ open = false, onClose, onRefresh, ex
                     height: '90vh', 
                     display: 'flex', 
                     flexDirection: 'column',
-                    borderRadius: '24px', // Soft UI border radius
+                    borderRadius: '24px',
                     backgroundImage: 'none',
                     bgcolor: 'background.paper'
                 } 

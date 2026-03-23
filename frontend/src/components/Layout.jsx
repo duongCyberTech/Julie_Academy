@@ -1,4 +1,3 @@
-// Layout.jsx
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Box, CssBaseline } from "@mui/material";
@@ -6,8 +5,8 @@ import Sidebar from "../components/SideBar";
 import Header from "../components/Header"; 
 import { Background } from "../components/Background";
 
-const SIDEBAR_WIDTH_DEFAULT = 260; 
-const SIDEBAR_WIDTH_COLLAPSED = 88;
+const SIDEBAR_WIDTH_DEFAULT = 254; 
+const SIDEBAR_WIDTH_COLLAPSED = 80;
 
 const Layout = ({ mode, toggleMode }) => {
   const [isMobileOpen, setMobileOpen] = useState(false);
@@ -46,7 +45,7 @@ const Layout = ({ mode, toggleMode }) => {
             component="main"
             sx={{
               flexGrow: 1,
-              p: { xs: 2, md: 3, lg: 4 },
+              p: { xs: 0.5, md: 0.5, lg: 0.5 },
               backgroundColor: "transparent",
               overflowX: "hidden",
             }}

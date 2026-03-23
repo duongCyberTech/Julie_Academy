@@ -44,42 +44,54 @@ import {
 } from "../../services/QuestionService";
 
 // ==========================================
-// 1. STYLED COMPONENTS (SOFT UI)
+// 1. STYLED COMPONENTS (CHUẨN DESIGN SYSTEM)
 // ==========================================
-const PageWrapper = styled(Paper)(({ theme }) => ({
-  margin: theme.spacing(2),
-  padding: theme.spacing(4),
-  backgroundColor:
-    theme.palette.mode === "light" ? "#ffffff" : theme.palette.background.paper,
-  borderRadius: "24px",
-  border: `1px solid ${theme.palette.divider}`,
-  boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
-  minHeight: "calc(100vh - 120px)",
-  display: "flex",
-  flexDirection: "column",
-}));
+const PageWrapper = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    margin: theme.spacing(3),
+    padding: theme.spacing(5),
+    backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB',
+    backgroundImage: 'none',
+    borderRadius: '24px',
+    border: `1px solid ${isDark ? theme.palette.midnight?.border || alpha(theme.palette.divider, 0.3) : alpha(theme.palette.divider, 0.3)}`,
+    boxShadow: isDark 
+      ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` 
+      : '0 8px 48px rgba(0,0,0,0.03)',
+    minHeight: 'calc(100vh - 120px)',
+    display: 'flex',
+    flexDirection: 'column',
+  };
+});
 
-const Header = styled(Box)(({ theme }) => ({
+const HeaderBar = styled(Box)(({ theme }) => ({
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: theme.spacing(3),
+  marginBottom: theme.spacing(4),
   flexShrink: 0,
 }));
 
-const SectionPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  borderRadius: "16px",
-  border: `1px solid ${theme.palette.divider}`,
-  boxShadow: "none",
-  backgroundColor: alpha(theme.palette.background.default, 0.6),
-  marginBottom: theme.spacing(3),
-  transition: "all 0.3s ease",
-  "&:hover": {
-    boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
-    borderColor: theme.palette.primary.light,
-  },
-}));
+const SectionPaper = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    padding: theme.spacing(3),
+    borderRadius: '16px',
+    border: `1px solid ${isDark ? theme.palette.midnight?.border || alpha(theme.palette.divider, 0.6) : theme.palette.divider}`,
+    backgroundColor: isDark ? alpha(theme.palette.background.default, 0.4) : theme.palette.background.paper,
+    backgroundImage: 'none',
+    marginBottom: theme.spacing(3),
+    transition: "all 0.3s ease",
+    boxShadow: isDark ? 'none' : '0px 2px 8px rgba(0,0,0,0.02)',
+    "&:hover": {
+      transform: 'translateY(-2px)',
+      boxShadow: isDark
+        ? `0 0 20px ${alpha(theme.palette.primary.main, 0.1)}`
+        : '0px 12px 24px rgba(0,0,0,0.06)',
+      borderColor: theme.palette.primary.main,
+    },
+  };
+});
 
 // ==========================================
 // 2. PHỤ TRỢ COMPONENTS
@@ -190,6 +202,7 @@ const typeMap = {
 const QuestionDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
   const [token] = useState(localStorage.getItem("token"));
 
   const [question, setQuestion] = useState(null);
@@ -256,12 +269,7 @@ const QuestionDetailPage = () => {
 
   if (loading)
     return (
-      <Box
-        height="100vh"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-      >
+      <Box height="100vh" display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />
       </Box>
     );
@@ -269,8 +277,8 @@ const QuestionDetailPage = () => {
   if (error)
     return (
       <Box p={4}>
-        <Alert severity="error">{error}</Alert>
-        <Button onClick={() => navigate(-1)} sx={{ mt: 2 }}>
+        <Alert severity="error" sx={{ borderRadius: '12px' }}>{error}</Alert>
+        <Button onClick={() => navigate(-1)} sx={{ mt: 2, fontWeight: 700 }}>
           Quay lại
         </Button>
       </Box>
@@ -286,46 +294,49 @@ const QuestionDetailPage = () => {
   return (
     <PageWrapper>
       {/* HEADER */}
-      <Header>
-        <Box display="flex" alignItems="center" gap={2}>
+      <HeaderBar direction={{ xs: 'column', md: 'row' }}>
+        <Box mb={{ xs: 2, md: 0 }}>
+          <Typography variant="h4" fontWeight="700" color="text.primary">
+            Chi tiết câu hỏi
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.95rem", mt: 0.5, display: "block" }}>
+            Xem lại nội dung và cấu hình của câu hỏi
+          </Typography>
+        </Box>
+
+        <Stack direction="row" spacing={2} alignItems="center">
           <Button
             startIcon={<ArrowBackIcon />}
             onClick={() => navigate(-1)}
             color="inherit"
+            sx={{ borderRadius: "10px", fontWeight: 700 }}
           >
             Quay lại
           </Button>
-          <Typography
-            variant="h5"
-            fontWeight="bold"
-            sx={{ display: { xs: "none", md: "block" } }}
-          >
-            Chi tiết câu hỏi
-          </Typography>
-        </Box>
 
-        {isOwner && (
-          <Stack direction="row" spacing={2}>
-            <Button
-              variant="outlined"
-              startIcon={<EditIcon />}
-              onClick={() => navigate(`/tutor/edit-question/${id}`)}
-              sx={{ borderRadius: "8px", fontWeight: 600 }}
-            >
-              Chỉnh sửa
-            </Button>
-            <Button
-              variant="contained"
-              color="error"
-              startIcon={<DeleteIcon />}
-              onClick={() => setDeleteDialog(true)}
-              sx={{ borderRadius: "8px", fontWeight: 600 }}
-            >
-              Xóa
-            </Button>
-          </Stack>
-        )}
-      </Header>
+          {isOwner && (
+            <>
+              <Button
+                variant="outlined"
+                startIcon={<EditIcon />}
+                onClick={() => navigate(`/tutor/edit-question/${id}`)}
+                sx={{ borderRadius: "12px", fontWeight: 700 }}
+              >
+                Chỉnh sửa
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={() => setDeleteDialog(true)}
+                sx={{ borderRadius: "12px", fontWeight: 700 }}
+              >
+                Xóa
+              </Button>
+            </>
+          )}
+        </Stack>
+      </HeaderBar>
 
       <Grid container spacing={3}>
         {/* CỘT TRÁI: NỘI DUNG CHÍNH */}
@@ -338,7 +349,7 @@ const QuestionDetailPage = () => {
               alignItems="flex-start"
               mb={2}
             >
-              <Typography variant="h5" fontWeight="bold" color="primary.main">
+              <Typography variant="h5" fontWeight="700" color="primary.main">
                 {question.title || "(Không có tiêu đề)"}
               </Typography>
               <Chip
@@ -346,7 +357,7 @@ const QuestionDetailPage = () => {
                 color="primary"
                 variant="outlined"
                 size="small"
-                sx={{ fontWeight: 600 }}
+                sx={{ fontWeight: 600, borderRadius: '8px' }}
               />
             </Box>
             <Divider sx={{ mb: 3 }} />
@@ -357,12 +368,7 @@ const QuestionDetailPage = () => {
 
           {/* ĐÁP ÁN */}
           <SectionPaper>
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              gutterBottom
-              sx={{ mb: 2 }}
-            >
+            <Typography variant="h6" fontWeight="700" gutterBottom sx={{ mb: 2 }}>
               Các lựa chọn đáp án
             </Typography>
             <Stack spacing={2}>
@@ -376,9 +382,9 @@ const QuestionDetailPage = () => {
                     alignItems: "center",
                     borderRadius: "12px",
                     backgroundColor: ans.is_correct
-                      ? alpha("#4caf50", 0.08)
+                      ? alpha(theme.palette.success.main, 0.08)
                       : "background.paper",
-                    borderColor: ans.is_correct ? "#4caf50" : "divider",
+                    borderColor: ans.is_correct ? "success.main" : "divider",
                     borderWidth: ans.is_correct ? 2 : 1,
                   }}
                 >
@@ -402,10 +408,13 @@ const QuestionDetailPage = () => {
 
           {/* GIẢI THÍCH (Nếu có) */}
           {hasExplanation && (
-            <SectionPaper sx={{ bgcolor: "#fffde7", borderColor: "#fff59d" }}>
+            <SectionPaper sx={{ 
+              bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.warning.main, 0.1) : "#fffde7", 
+              borderColor: theme.palette.mode === 'dark' ? alpha(theme.palette.warning.main, 0.3) : "#fff59d" 
+            }}>
               <Typography
                 variant="h6"
-                fontWeight="bold"
+                fontWeight="700"
                 gutterBottom
                 color="text.secondary"
               >
@@ -443,7 +452,7 @@ const QuestionDetailPage = () => {
                   >
                     Giáo án
                   </Typography>
-                  <Typography variant="body1" fontWeight={500}>
+                  <Typography variant="body1" fontWeight={600}>
                     {planInfo?.title || "---"}{" "}
                     {planInfo?.grade ? `(K${planInfo.grade})` : ""}
                   </Typography>
@@ -460,7 +469,7 @@ const QuestionDetailPage = () => {
                   >
                     Chuyên đề / Danh mục
                   </Typography>
-                  <Typography variant="body1" fontWeight={500}>
+                  <Typography variant="body1" fontWeight={600}>
                     {question.category?.category_name ||
                       question.category?.name ||
                       "---"}
@@ -478,7 +487,7 @@ const QuestionDetailPage = () => {
                   >
                     Người tạo
                   </Typography>
-                  <Typography variant="body1" fontWeight={500}>
+                  <Typography variant="body1" fontWeight={600}>
                     {[
                       question.tutor?.user?.lname,
                       question.tutor?.user?.mname,
@@ -564,20 +573,19 @@ const QuestionDetailPage = () => {
       <Dialog
         open={deleteDialog}
         onClose={() => setDeleteDialog(false)}
-        PaperProps={{ sx: { borderRadius: "16px" } }}
+        PaperProps={{ sx: { borderRadius: "16px", p: 1 } }}
       >
         <DialogTitle sx={{ fontWeight: "bold" }}>Xác nhận xóa</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Bạn có chắc chắn muốn xóa câu hỏi này không? Hành động này không thể
-            hoàn tác.
+            Bạn có chắc chắn muốn xóa câu hỏi này không? Hành động này không thể hoàn tác.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button
             onClick={() => setDeleteDialog(false)}
             disabled={isDeleting}
-            sx={{ fontWeight: 600 }}
+            sx={{ fontWeight: 700, borderRadius: '10px' }}
           >
             Hủy
           </Button>
@@ -586,7 +594,7 @@ const QuestionDetailPage = () => {
             color="error"
             variant="contained"
             disabled={isDeleting}
-            sx={{ borderRadius: "8px", fontWeight: 600 }}
+            sx={{ borderRadius: "10px", fontWeight: 700 }}
           >
             {isDeleting ? "Đang xóa..." : "Xóa vĩnh viễn"}
           </Button>
