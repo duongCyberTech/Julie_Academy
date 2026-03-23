@@ -144,8 +144,14 @@ export class LessonPlanService {
 
   async updatePlan(user: any, plan_id: string, data: Partial<LessonPlanDto>) {
     try {
-      
-      return await this.prisma.lesson_Plan.update({ where: { plan_id }, data });
+      if (user.role == "admin"){
+        return this.prisma.lesson_Plan.update({
+          where: {plan_id, type: "book"},
+          data
+        })
+      }
+
+      return await this.prisma.lesson_Plan.update({ where: { plan_id, tutor_id: user.userId }, data });
     } catch (error) {
       return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
     }
