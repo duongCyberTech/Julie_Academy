@@ -61,10 +61,47 @@ export class LessonPlanService {
       })
 
       if (!existedPlan) return null;
+      // 1. Định nghĩa Regex chuẩn hỗ trợ Tiếng Việt (Unicode)
+      const regex = /^([\p{L}\d\s\-_]+?)\s+v(\d+)(?:\s+v\d+)*$/u;
+
+      // 2. Tách Brand từ bản kế hoạch hiện tại
+      const currentMatch = existedPlan.title.match(regex);
+      // Nếu title hiện tại chưa có " v1", ta coi toàn bộ title là Brand
+      const currentBrand = currentMatch ? currentMatch[1].trim() : existedPlan.title.trim();
+
+      // 3. Tìm bản ghi có Version cao nhất của Brand này trong Database
+      const lastEntry = await tx.lesson_Plan.findFirst({
+        where: { 
+          title: { 
+            startsWith: currentBrand // Tìm tất cả các bản bắt đầu bằng tên Brand
+          } 
+        },
+        select: { title: true },
+        orderBy: { title: "desc" } // Sắp xếp giảm dần để lấy version mới nhất
+      });
+
+      let newTitle;
+
+      if (lastEntry) {
+        const match = lastEntry.title.match(regex);
+        if (match) {
+          const brand = match[1].trim();
+          const lastVersion = parseInt(match[2]);
+          newTitle = `${brand} v${lastVersion + 1}`;
+        } else {
+          // Nếu tìm thấy bản ghi nhưng chưa có format " v1"
+          newTitle = `${lastEntry.title} v1`;
+        }
+      } else {
+        // Nếu chưa có bản ghi nào tồn tại
+        newTitle = `${currentBrand} v1`;
+      }
+
+      console.log("New Versioning Title:", newTitle);
 
       const newPlan = await tx.lesson_Plan.create({
         data: {
-          title: existedPlan.title,
+          title: newTitle,
           subject: existedPlan.subject,
           grade: existedPlan.grade,
           description: existedPlan.description,
@@ -92,10 +129,10 @@ export class LessonPlanService {
         where: {
           OR: [{ tutor_id: tutor_id }, { type: 'book' }],
         },
-        orderBy: { title: 'asc' },
+        orderBy: [ {type: "desc"}, {title: 'asc'} ],
       });
     return this.prisma.lesson_Plan.findMany({
-      orderBy: { title: 'asc' },
+      orderBy: [ {type: "desc"}, {title: 'asc'} ],
     });
   }
 
@@ -107,8 +144,9 @@ export class LessonPlanService {
     return plan;
   }
 
-  async updatePlan(plan_id: string, data: Partial<LessonPlanDto>) {
+  async updatePlan(user: any, plan_id: string, data: Partial<LessonPlanDto>) {
     try {
+      
       return await this.prisma.lesson_Plan.update({ where: { plan_id }, data });
     } catch (error) {
       return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
