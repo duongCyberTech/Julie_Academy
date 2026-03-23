@@ -97,8 +97,6 @@ export class LessonPlanService {
         newTitle = `${currentBrand} v1`;
       }
 
-      console.log("New Versioning Title:", newTitle);
-
       const newPlan = await tx.lesson_Plan.create({
         data: {
           title: newTitle,
