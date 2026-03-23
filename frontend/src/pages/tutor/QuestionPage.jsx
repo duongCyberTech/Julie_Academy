@@ -50,19 +50,19 @@ import {
 } from "../../services/CategoryService";
 
 // ==========================================
-// 1. PAGE WRAPPER CHUẨN SOFT UI (DỊU MẮT)
+// 1. PAGE WRAPPER CHUẨN DESIGN SYSTEM
 // ==========================================
 const PageWrapper = styled(Paper)(({ theme }) => {
   const isDark = theme.palette.mode === 'dark';
   return {
-    margin: theme.spacing(3), // Cho nội dung khoảng trống để "thở"
+    margin: theme.spacing(3),
     padding: theme.spacing(5), 
-    backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB', // Tránh pure white chống chói
+    backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB',
     backgroundImage: 'none',
     borderRadius: '24px',
     border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
     boxShadow: isDark 
-      ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` // Hào quang mờ nổi nhẹ
+      ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` 
       : '0 8px 48px rgba(0,0,0,0.03)',
     minHeight: 'calc(100vh - 120px)', 
     display: 'flex',
@@ -70,15 +70,39 @@ const PageWrapper = styled(Paper)(({ theme }) => {
   };
 });
 
-
-// Header fix để không bị ép nhỏ
-const Header = styled(Box)(({ theme }) => ({
+// ==========================================
+// 2. HEADER CHUẨN DESIGN SYSTEM
+// ==========================================
+const HeaderBar = styled(Box)(({ theme }) => ({
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: theme.spacing(4), // Tăng margin đáy một chút cho thoáng
+  marginBottom: theme.spacing(4), 
   flexShrink: 0,
 }));
+
+// ==========================================
+// 3. CARD NỘI DUNG CHUẨN (HOVER EFFECT)
+// ==========================================
+const FilterCard = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    padding: theme.spacing(3),
+    marginBottom: theme.spacing(3),
+    borderRadius: '16px',
+    flexShrink: 0,
+    backgroundColor: isDark ? alpha(theme.palette.background.default, 0.4) : alpha(theme.palette.primary.main, 0.02),
+    border: `1px solid ${isDark ? theme.palette.midnight?.border : theme.palette.divider}`,
+    transition: 'all 0.3s',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: isDark
+          ? `0 0 20px ${alpha(theme.palette.primary.main, 0.1)}`
+          : '0px 12px 24px rgba(0,0,0,0.06)',
+      border: `1px solid ${theme.palette.primary.main}`,
+    }
+  };
+});
 
 const HEAD_CELLS = [
   { id: "title", label: "Tiêu đề câu hỏi", minWidth: 300, sortable: true },
@@ -108,7 +132,6 @@ const TYPE_MAP = {
   true_false: "Đúng/Sai",
 };
 
-// Đã cập nhật lại UI của Chip để đồng bộ với ExamDetailPage (Có viền màu, nền mờ alpha)
 const DifficultyChip = ({ difficulty }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -219,18 +242,11 @@ const QuestionFilters = memo(
     };
 
     return (
-      <Paper 
-        variant="outlined" 
-        sx={{ 
-          p: 2.5, mb: 3, borderRadius: 3, flexShrink: 0, 
-          bgcolor: isDark ? alpha(theme.palette.background.default, 0.4) : alpha(theme.palette.primary.main, 0.02),
-          borderColor: isDark ? theme.palette.midnight?.border : 'divider'
-        }}
-      >
-        <Stack direction="column" spacing={2.5}>
+      <FilterCard elevation={0}>
+        <Stack direction="column" spacing={3}>
           <Stack
             direction={{ xs: "column", md: "row" }}
-            spacing={2}
+            spacing={3}
             alignItems="center"
           >
             <TextField
@@ -255,7 +271,14 @@ const QuestionFilters = memo(
                 color="inherit"
                 onClick={onReset}
                 startIcon={<RestartAltIcon />}
-                sx={{ bgcolor: 'background.paper', borderRadius: 2, py: 1, color: 'text.secondary' }}
+                sx={{ 
+                  bgcolor: 'background.paper', 
+                  borderRadius: '10px', // Chuẩn Design System cho button nhỏ/vừa
+                  fontWeight: 700, 
+                  py: 1, 
+                  px: 3,
+                  color: 'text.secondary' 
+                }}
               >
                 Xóa lọc
               </Button>
@@ -264,12 +287,12 @@ const QuestionFilters = memo(
 
           <Stack
             direction={{ xs: "column", md: "row" }}
-            spacing={2}
+            spacing={3}
             alignItems="center"
           >
             <FormControl
               size="small"
-              sx={{ minWidth: 200, bgcolor: 'background.paper', borderRadius: 1 }}
+              sx={{ minWidth: 200, bgcolor: 'background.paper', borderRadius: 1, flexGrow: 1 }}
               disabled={loadingBooks}
             >
               <InputLabel>Giáo án</InputLabel>
@@ -294,7 +317,7 @@ const QuestionFilters = memo(
               </Select>
             </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 120, bgcolor: 'background.paper', borderRadius: 1 }}>
+            <FormControl size="small" sx={{ minWidth: 150, bgcolor: 'background.paper', borderRadius: 1 }}>
               <InputLabel>Độ khó</InputLabel>
               <Select
                 name="level"
@@ -311,7 +334,7 @@ const QuestionFilters = memo(
               </Select>
             </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 150, bgcolor: 'background.paper', borderRadius: 1 }}>
+            <FormControl size="small" sx={{ minWidth: 180, bgcolor: 'background.paper', borderRadius: 1 }}>
               <InputLabel>Loại câu hỏi</InputLabel>
               <Select
                 name="type"
@@ -333,26 +356,25 @@ const QuestionFilters = memo(
           <Collapse in={!!filters.bookId}>
             <Box
               mt={1}
-              p={2}
+              p={3}
               border="1px solid"
               borderColor={isDark ? theme.palette.midnight?.border : "divider"}
-              borderRadius={2}
+              borderRadius="16px"
               bgcolor="background.paper"
             >
               <Typography
                 variant="subtitle2"
-                fontWeight={600}
+                fontWeight={700}
                 color="text.secondary"
                 gutterBottom
                 sx={{ display: "flex", alignItems: "center" }}
               >
-                <FilterListIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} /> Chọn Chuyên
-                đề:
+                <FilterListIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} /> Chọn Chuyên đề:
               </Typography>
 
               {loadingCategories ? (
                 <Box display="flex" justifyContent="center" p={2}>
-                  <CircularProgress size={20} />
+                  <CircularProgress size={24} />
                 </Box>
               ) : categoryTreeData.length > 0 ? (
                 <Box sx={{ maxHeight: 250, overflowY: "auto", mt: 1 }}>
@@ -389,7 +411,7 @@ const QuestionFilters = memo(
                 <Typography
                   variant="caption"
                   color="text.secondary"
-                  sx={{ display: "block", mt: 1 }}
+                  sx={{ display: "block", mt: 1, fontWeight: 500 }}
                 >
                   Giáo án này chưa có mục lục chuyên đề.
                 </Typography>
@@ -397,7 +419,7 @@ const QuestionFilters = memo(
             </Box>
           </Collapse>
         </Stack>
-      </Paper>
+      </FilterCard>
     );
   }
 );
@@ -581,12 +603,18 @@ export default function QuestionPage() {
 
   return (
     <PageWrapper>
-      <Header>
-        <Typography variant="h4" component="h1" fontWeight="bold" color="text.primary">
-          Thư viện câu hỏi
-        </Typography>
+      {/* Header trang chuẩn Design System */}
+      <HeaderBar direction={{ xs: 'column', sm: 'row' }}>
+        <Box>
+          <Typography variant="h4" fontWeight="700" color="text.primary">
+            Thư viện câu hỏi
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.95rem", mt: 0.5, display: "block" }}>
+            Quản lý và tra cứu kho câu hỏi
+          </Typography>
+        </Box>
 
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: { xs: 2, sm: 0 } }}>
           <ToggleButtonGroup
             color="primary"
             value={viewMode}
@@ -598,10 +626,10 @@ export default function QuestionPage() {
               }
             }}
             size="small"
-            sx={{ bgcolor: 'background.paper' }}
+            sx={{ bgcolor: 'background.paper', borderRadius: '10px' }}
           >
-            <ToggleButton value="my_questions" sx={{ fontWeight: 600 }}>Của tôi</ToggleButton>
-            <ToggleButton value="public" sx={{ fontWeight: 600 }}>Công khai</ToggleButton>
+            <ToggleButton value="my_questions" sx={{ fontWeight: 600, px: 2 }}>Của tôi</ToggleButton>
+            <ToggleButton value="public" sx={{ fontWeight: 600, px: 2 }}>Công khai</ToggleButton>
           </ToggleButtonGroup>
 
           <Button
@@ -609,12 +637,12 @@ export default function QuestionPage() {
             color="primary"
             onClick={() => navigate("/tutor/new")}
             startIcon={<AddCircleOutlineIcon />}
-            sx={{ fontWeight: "bold", borderRadius: "12px" }}
+            sx={{ fontWeight: 700, borderRadius: "12px", px: 3, py: 1 }}
           >
             Tạo mới
           </Button>
         </Stack>
-      </Header>
+      </HeaderBar>
 
       <QuestionFilters
         filters={filters}
@@ -631,18 +659,25 @@ export default function QuestionPage() {
           <CircularProgress />
         </Box>
       ) : error ? (
-        <Alert severity="error" sx={{ flexShrink: 0 }}>{error}</Alert>
+        <Alert severity="error" sx={{ flexShrink: 0, borderRadius: '12px' }}>{error}</Alert>
       ) : (
         <Paper 
           variant="outlined" 
           sx={{ 
-            borderRadius: 3, 
+            borderRadius: '16px', // Chuẩn bo góc cho bảng
             overflow: "hidden", 
             display: 'flex', 
             flexDirection: 'column', 
             flexGrow: 1, 
             minHeight: 0, 
-            borderColor: isDark ? theme.palette.midnight?.border : 'divider'
+            borderColor: isDark ? theme.palette.midnight?.border : 'divider',
+            transition: 'all 0.3s',
+            // Thêm nhẹ hover effect cho bảng nếu muốn đồng bộ cảm giác tương tác
+            '&:hover': {
+              boxShadow: isDark 
+                ? `0 0 16px ${alpha(theme.palette.primary.main, 0.05)}` 
+                : '0px 8px 16px rgba(0,0,0,0.03)',
+            }
           }}
         >
           <TableContainer 

@@ -53,7 +53,6 @@ import { ModalCard } from "../Tab/Tab"
 import VisuallyHiddenInput from '../Input/VisuallyHiddenInput';
 import QuiltedImageList from '../Image/ImageList';
 
-// CSS giả lập hiệu ứng Tag và Editor
 const globalStyles = `
   .mention-node {
     color: #1877F2;
@@ -72,7 +71,6 @@ const globalStyles = `
   }
 `;
 
-// --- 4. CREATE POST COMPONENT ---
 export const PostCreator = ({ class_id = "", closeModal, action = "create", post = null, handleAdd = null, handleUpdate = null }) => {
   const [isUpload, setIsUpload] = useState(action == "update")
   const [title, setTitle] = useState(post?.title || "")
@@ -403,7 +401,6 @@ export const PostCreator = ({ class_id = "", closeModal, action = "create", post
   );
 };
 
-// --- 5. POST ITEM (RENDERER) ---
 export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
   const [user, setUser] = useState(null)
   const [initState, setInitState] = useState(false)
@@ -620,7 +617,6 @@ export const PostItem = ({ post, class_id, handleUpdate, handleDelete }) => {
   );
 };
 
-// --- 6. MAIN APP ---
 export default function FacebookCloneV2() {
   return (
     <Box sx={{ bgcolor: '#f0f2f5', minHeight: '100vh', py: 4 }}>

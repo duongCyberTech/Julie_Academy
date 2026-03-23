@@ -14,15 +14,17 @@ const getAuthHeaders = (token) => {
   };
 };
 
-export const getAllPlans = async (token) => {
+export const getAllPlans = async (token, tutorId) => { 
   try {
-    const response = await apiClient.get("/books", getAuthHeaders(token));
+    const response = await apiClient.get("/books", {
+      params: { tutor_id: tutorId },
+      ...getAuthHeaders(token),
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
   }
 };
-
 export const getPlansByTutor = async (tutorId, token) => {
   try {
     const response = await apiClient.get(

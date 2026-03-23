@@ -363,6 +363,8 @@ export class ExamService {
                 total_score: true,
                 total_ques: true,
                 level: true,
+                createdAt: true,
+                updateAt: true,
                 tutor: {
                     select:{ user:{
                         select:{
@@ -404,6 +406,8 @@ export class ExamService {
                 total_score: true,
                 total_ques: true,
                 level: true,
+                createdAt: true,
+                updateAt: true,
                 tutor: {
                     select:{ user:{
                         select:{

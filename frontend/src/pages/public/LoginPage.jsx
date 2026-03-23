@@ -19,7 +19,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { Email, Lock, Visibility, VisibilityOff } from "@mui/icons-material";
 import AppSnackbar from '../../components/SnackBar'; 
-import logobk from '../../assets/images/logobk.png';
+import logobk from '../../assets/images/logobk.webp';
 
 const PageWrapper = styled(Box)(({ theme }) => ({
     minHeight: "100vh",

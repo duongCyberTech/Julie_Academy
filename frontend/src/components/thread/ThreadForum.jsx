@@ -17,7 +17,6 @@ import {
   Tooltip
 } from "@mui/material";
 
-// Icons
 import AddIcon from '@mui/icons-material/Add';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import FindReplaceRoundedIcon from '@mui/icons-material/FindReplaceRounded';

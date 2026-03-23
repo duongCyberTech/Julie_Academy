@@ -20,7 +20,6 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 
 import { getUserDetailsForTag } from '../../services/UserService';
 
-// Style chuẩn Dark Mode
 const modalStyle = {
   position: 'absolute',
   top: '50%',
@@ -28,8 +27,8 @@ const modalStyle = {
   transform: 'translate(-50%, -50%)',
   width: '100%',
   maxWidth: 500,
-  bgcolor: '#242526', // Nền tối
-  color: '#E4E6EB',   // Chữ sáng
+  bgcolor: '#242526', 
+  color: '#E4E6EB',  
   borderRadius: 2,
   boxShadow: 24,
   display: 'flex',
@@ -44,15 +43,13 @@ export default function ListUserModal({ class_id, open, setOpen, selectedIds, se
 
   const handleClose = () => {
     setOpen(false);
-    if (setOpenList) setOpenList(false); // Nếu bạn cần đóng cả component cha
+    if (setOpenList) setOpenList(false); 
   };
 
-  // Logic gọi API lấy danh sách user
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await getUserDetailsForTag(class_id, search);
-        // Lưu ý: Tùy thuộc cấu hình axios, có thể bạn cần dùng response.data
         if (response.status === 200) {
           setUsers(response.data); 
         }
@@ -64,14 +61,12 @@ export default function ListUserModal({ class_id, open, setOpen, selectedIds, se
     fetchUsers();
   }, [search, class_id]);
 
-  // Xử lý Checkbox
   const toggleSelect = (uid) => {
     setSelectedIds((prev) =>
       prev.includes(uid) ? prev.filter((item) => item !== uid) : [...prev, uid]
     );
   };
 
-  // Hàm xử lý khi nhấn "Xong"
   const handleConfirmSelection = () => {
     handleClose();
   };
@@ -129,7 +124,7 @@ export default function ListUserModal({ class_id, open, setOpen, selectedIds, se
                   </ListItemAvatar>
                   <ListItemText 
                     primary={user.display} 
-                    secondary={user.id} // Hiện thêm email để dễ nhận diện
+                    secondary={user.id}
                     primaryTypographyProps={{ fontWeight: 600 }} 
                     secondaryTypographyProps={{ color: '#B0B3B8', fontSize: '0.75rem' }}
                   />

@@ -27,16 +27,14 @@ import {
   Legend,
 } from "recharts";
 
-// --- Import Service API thật ---
 import {
   getRegisterStats,
   getClassCreatedStats,
   getExamTakenStats,
   getNumberOfActiveClasses,
   getNumberOfQuestions,
-} from "../../services/DashboardAdminService"; // Đảm bảo đường dẫn chính xác
+} from "../../services/DashboardAdminService"; 
 
-// --- CÁC ICON CHO DASHBOARD ADMIN ---
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
@@ -44,7 +42,6 @@ import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 
-// --- DỮ LIỆU GIẢ LẬP (Mock data) ---
 const mockAdminData = {
   actionableStats: [
     {
@@ -76,7 +73,6 @@ const mockAdminData = {
   ]
 };
 
-// --- STYLED COMPONENTS (Giữ nguyên) ---
 const DashboardWidget = styled(Card)(({ theme }) => ({
   height: "100%",
   backgroundColor: theme.palette.background.paper,
@@ -118,7 +114,6 @@ const ChartTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// --- CÁC WIDGET CHO ADMIN ---
 
 function ActionStatCard({ title, count, icon, color = "primary" }) {
   const theme = useTheme();
@@ -329,7 +324,6 @@ function TopStudentsWidget() {
 }
 
 
-// --- MAIN DASHBOARD LAYOUT ---
 export default function AdminDashboard() {
   const [token] = useState(() => localStorage.getItem("token"));
   const [data, setData] = useState(null);

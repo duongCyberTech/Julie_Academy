@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Box,
@@ -33,6 +32,7 @@ import {
   useTheme,
   DialogContentText,
 } from "@mui/material";
+import { styled, alpha } from "@mui/material/styles";
 import {
   Search as SearchIcon,
   Add as AddIcon,
@@ -50,6 +50,56 @@ import {
 import ActionMenu from "../../components/ActionMenu";
 import AppSnackbar from "../../components/SnackBar";
 
+const PageWrapper = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    margin: theme.spacing(3),
+    padding: theme.spacing(5),
+    backgroundColor: isDark ? theme.palette.background.paper : '#ffffff',
+    backgroundImage: 'none',
+    borderRadius: '24px',
+    border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+    boxShadow: isDark 
+      ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` 
+      : '0 8px 48px rgba(0,0,0,0.03)',
+    minHeight: 'calc(100vh - 120px)',
+    display: 'flex',
+    flexDirection: 'column',
+  };
+});
+
+const HeaderBar = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: theme.spacing(4),
+  flexShrink: 0,
+}));
+
+const StyledCard = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    borderRadius: '16px',
+    border: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper,
+    backgroundImage: 'none',
+    padding: theme.spacing(3),
+    marginBottom: theme.spacing(3),
+    transition: 'all 0.3s ease',
+    boxShadow: isDark ? 'none' : '0px 2px 8px rgba(0,0,0,0.02)',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      borderColor: theme.palette.primary.main,
+      boxShadow: isDark
+        ? `0 0 20px ${alpha(theme.palette.primary.main, 0.1)}`
+        : '0px 12px 24px rgba(0,0,0,0.06)',
+    }
+  };
+});
+
+// ==========================================
+// LOGIC UTILS
+// ==========================================
 function descendingComparator(a, b, orderBy) {
   const valA = a[orderBy] ?? "";
   const valB = b[orderBy] ?? "";
@@ -93,7 +143,7 @@ const headCells = [
 
 const RoleChip = ({ role }) => {
   const color =
-    { admin: "error", tutor: "info", parents: "warning", student: "secondary" }[
+    { tutor: "info", parents: "warning", student: "secondary" }[
       role
     ] || "default";
   return (
@@ -101,7 +151,7 @@ const RoleChip = ({ role }) => {
       label={role}
       color={color}
       size="small"
-      sx={{ textTransform: "capitalize" }}
+      sx={{ textTransform: "capitalize", fontWeight: 600, borderRadius: '8px' }}
     />
   );
 };
@@ -115,7 +165,7 @@ const StatusChip = ({ status }) => {
       label={status}
       color={color}
       size="small"
-      sx={{ textTransform: "capitalize" }}
+      sx={{ textTransform: "capitalize", fontWeight: 600, borderRadius: '8px' }}
     />
   );
 };
@@ -192,32 +242,36 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
+      <DialogTitle sx={{ fontWeight: 700 }}>
         {isEditing ? "Cập nhật người dùng" : "Tạo người dùng mới"}
       </DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={4}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 name="fname"
                 label="Họ"
                 value={formData.fname}
                 onChange={handleChange}
                 fullWidth
+                size="small"
+                sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 name="mname"
                 label="Tên đệm"
                 value={formData.mname}
                 onChange={handleChange}
                 fullWidth
+                size="small"
+                sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 name="lname"
                 label="Tên"
@@ -225,9 +279,11 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
                 onChange={handleChange}
                 fullWidth
                 required
+                size="small"
+                sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 name="username"
                 label="Tên đăng nhập"
@@ -235,9 +291,11 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
                 onChange={handleChange}
                 fullWidth
                 required
+                size="small"
+                sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 name="email"
                 label="Email"
@@ -246,9 +304,11 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
                 onChange={handleChange}
                 fullWidth
                 required
+                size="small"
+                sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 name="password"
                 label="Mật khẩu"
@@ -258,10 +318,12 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
                 fullWidth
                 placeholder={isEditing ? "Bỏ trống nếu không đổi" : ""}
                 required={!isEditing}
+                size="small"
+                sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <FormControl fullWidth required size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                 <InputLabel>Vai trò</InputLabel>
                 <Select
                   name="role"
@@ -271,13 +333,12 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
                 >
                   <MenuItem value="student">Student</MenuItem>
                   <MenuItem value="tutor">Tutor</MenuItem>
-                  <MenuItem value="admin">Admin</MenuItem>
                   <MenuItem value="parents">Parents</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <FormControl fullWidth required size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                 <InputLabel>Trạng thái</InputLabel>
                 <Select
                   name="status"
@@ -292,16 +353,18 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
             </Grid>
             {formData.role === "student" && (
               <>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     name="school"
                     label="Trường học"
                     value={formData.school}
                     onChange={handleChange}
                     fullWidth
+                    size="small"
+                    sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     name="dob"
                     label="Ngày sinh"
@@ -309,6 +372,8 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
                     value={formData.dob}
                     onChange={handleChange}
                     fullWidth
+                    size="small"
+                    sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
@@ -316,16 +381,18 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
             )}
             {formData.role === "tutor" && (
               <>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     name="phone_number"
                     label="Số điện thoại"
                     value={formData.phone_number}
                     onChange={handleChange}
                     fullWidth
+                    size="small"
+                    sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     name="experiences"
                     label="Kinh nghiệm"
@@ -334,28 +401,32 @@ const UserFormModal = ({ open, onClose, onSubmit, userToEdit }) => {
                     fullWidth
                     multiline
                     rows={3}
+                    size="small"
+                    sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                   />
                 </Grid>
               </>
             )}
             {formData.role === "parents" && (
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   name="phone_number"
                   label="Số điện thoại"
                   value={formData.phone_number}
                   onChange={handleChange}
                   fullWidth
+                  size="small"
+                  sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                 />
               </Grid>
             )}
           </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button onClick={onClose} color="inherit">
+          <Button onClick={onClose} color="inherit" sx={{ fontWeight: 700, borderRadius: '10px' }}>
             Hủy
           </Button>
-          <Button type="submit" variant="contained">
+          <Button type="submit" variant="contained" sx={{ fontWeight: 700, borderRadius: '10px' }}>
             {isEditing ? "Lưu thay đổi" : "Tạo mới"}
           </Button>
         </DialogActions>
@@ -579,39 +650,40 @@ const UserManagement = () => {
   );
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-        spacing={2}
-      >
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
-          Quản lý người dùng
-        </Typography>
+    <PageWrapper>
+      {/* HEADER CHUẨN DESIGN SYSTEM */}
+      <HeaderBar sx={{ flexDirection: { xs: "column", sm: "row" } }}>
+        <Box mb={{ xs: 2, sm: 0 }}>
+          <Typography variant="h4" fontWeight="700" color="text.primary">
+            Quản lý người dùng
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.95rem", mt: 0.5, display: "block" }}>
+            Quản lý danh sách, phân quyền và trạng thái hoạt động của người dùng
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleOpenCreate}
-          sx={{ flexShrink: 0 }}
+          sx={{ flexShrink: 0, borderRadius: '12px', fontWeight: 700, px: 3, py: 1.5 }}
         >
           Thêm người dùng
         </Button>
-      </Stack>
+      </HeaderBar>
 
-      {/* SỬA BỐ CỤC TẠI ĐÂY */}
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <StyledCard elevation={0}>
         <Grid container spacing={3}>
           {/* Thanh tìm kiếm */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               fullWidth
               variant="outlined"
+              size="small"
               placeholder="Tìm kiếm theo tên, username, email..."
               value={searchTerm}
               onChange={handleSearchChange}
               inputProps={{ maxLength: 50 }} 
+              sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -632,8 +704,8 @@ const UserManagement = () => {
           </Grid>
 
           {/* Select vai trò */}
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <FormControl fullWidth size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
               <InputLabel id="role-filter-label">Vai trò</InputLabel>
               <Select
                 labelId="role-filter-label"
@@ -654,15 +726,14 @@ const UserManagement = () => {
                 <MenuItem value="">Tất cả vai trò</MenuItem>
                 <MenuItem value="student">Học sinh</MenuItem>
                 <MenuItem value="tutor">Gia sư</MenuItem>
-                <MenuItem value="admin">Quản trị viên</MenuItem>
                 <MenuItem value="parents">Phụ huynh</MenuItem>
               </Select>
             </FormControl>
           </Grid>
 
           {/* Select trạng thái */}
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <FormControl fullWidth size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
               <InputLabel id="status-filter-label">Trạng thái</InputLabel>
               <Select
                 labelId="status-filter-label"
@@ -687,16 +758,30 @@ const UserManagement = () => {
             </FormControl>
           </Grid>
         </Grid>
-      </Paper>
-      {/* KẾT THÚC SỬA BỐ CỤC */}
+      </StyledCard>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }}>
           {error}
         </Alert>
       )}
 
-      <Paper sx={{ overflow: "hidden" }}>
+      {/* TABLE CARD */}
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          borderRadius: '16px', 
+          border: '1px solid', 
+          borderColor: 'divider', 
+          overflow: "hidden",
+          transition: 'all 0.3s ease',
+          '&:hover': {
+             boxShadow: (theme) => theme.palette.mode === 'dark' 
+               ? `0 0 16px ${alpha(theme.palette.primary.main, 0.05)}` 
+               : '0px 8px 16px rgba(0,0,0,0.03)',
+          }
+        }}
+      >
         <TableContainer>
           <Table stickyHeader size="small">
             <TableHead>
@@ -707,10 +792,12 @@ const UserManagement = () => {
                     sortDirection={orderBy === headCell.id ? order : false}
                     align={headCell.align || "left"}
                     sx={{
-                      fontWeight: "bold",
-                      bgcolor: "action.hover",
+                      fontWeight: 700,
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.03),
+                      color: 'text.secondary',
                       minWidth: headCell.minWidth || 120,
                       whiteSpace: "nowrap",
+                      py: 1.5
                     }}
                   >
                     {headCell.disableSorting ? (
@@ -745,9 +832,9 @@ const UserManagement = () => {
                   <TableCell
                     colSpan={headCells.length}
                     align="center"
-                    sx={{ py: 5 }}
+                    sx={{ py: 5, color: 'text.secondary' }}
                   >
-                    Không có người dùng nào khớp.
+                    <Typography variant="body1">Không có người dùng nào khớp.</Typography>
                   </TableCell>
                 </TableRow>
               )}
@@ -759,8 +846,8 @@ const UserManagement = () => {
                       hover
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                     >
-                      <TableCell>
-                        <Typography variant="body2" noWrap>
+                      <TableCell sx={{ py: 2 }}>
+                        <Typography variant="body2" fontWeight={600} noWrap>
                           {`${user.fname || ""} ${user.mname || ""} ${
                             user.lname || ""
                           }`
@@ -768,18 +855,18 @@ const UserManagement = () => {
                             .trim() || user.username}
                         </Typography>
                       </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" noWrap>
+                      <TableCell sx={{ py: 2 }}>
+                        <Typography variant="body2" color="text.secondary" noWrap>
                           {user.email}
                         </Typography>
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ py: 2 }}>
                         <RoleChip role={user.role} />
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ py: 2 }}>
                         <StatusChip status={user.status} />
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={{ py: 2 }}>
                         <Tooltip title="Tùy chọn">
                           <IconButton
                             size="small"
@@ -796,6 +883,7 @@ const UserManagement = () => {
           </Table>
         </TableContainer>
         <TablePagination
+          sx={{ borderTop: '1px solid', borderColor: 'divider' }}
           rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
           count={filteredUsers.length}
@@ -834,7 +922,7 @@ const UserManagement = () => {
         severity={toast.severity}
         onClose={handleCloseToast}
       />
-    </Box>
+    </PageWrapper>
   );
 };
 
