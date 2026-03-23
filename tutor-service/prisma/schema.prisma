@@ -443,6 +443,7 @@ model Question_for_exam_taken {
   et_id                 String 
   index                 Int 
   isDone                Boolean    @default(false)
+  isCorrect             Boolean    @default(false)
   chosen_answer_at      DateTime?
   answer_set            Json       @db.JsonB
   exam_taken Exam_taken @relation(fields: [et_id], references: [et_id], onDelete: Cascade, onUpdate: Cascade)
