@@ -14,7 +14,6 @@ export const Background = ({ children }) => {
         bgcolor: 'background.default',
         overflow: 'hidden',
         '&::before': isDark ? {
-          // Lớp lưới (Grid pattern) đặc trưng của LangChain/Linear
           content: '""',
           position: 'absolute',
           inset: 0,
@@ -24,7 +23,6 @@ export const Background = ({ children }) => {
           maskImage: 'radial-gradient(ellipse at center, black, transparent 80%)',
         } : {},
         '&::after': isDark ? {
-          // Điểm sáng (Glow) ở phía trên tỏa xuống
           content: '""',
           position: 'absolute',
           top: '-10%',
@@ -36,7 +34,6 @@ export const Background = ({ children }) => {
           filter: 'blur(80px)',
           zIndex: 0,
         } : {
-          // Ánh sáng nhẹ cho Light mode
           content: '""',
           position: 'absolute',
           inset: 0,

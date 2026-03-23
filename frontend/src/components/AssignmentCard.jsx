@@ -27,7 +27,6 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
     upcoming: { color: 'info', label: 'Sắp mở', bg: '#e3f2fd' },
     todo: pending_et_id ? { color: 'warning', label: 'Đang làm dở', bg: '#fff8e1' } : { color: 'primary', label: 'Cần làm', bg: '#e3f2fd' },
     overdue: { color: 'error', label: 'Quá hạn', bg: '#ffebee' },
-    // Nếu tab completed mà có pending -> Hiện mác Đang làm dở
     completed: pending_et_id 
       ? { color: 'secondary', label: `Đang làm lại`, bg: '#f3e5f5' } 
       : { color: 'success', label: 'Hoàn thành', bg: '#e8f5e9' }
@@ -75,7 +74,6 @@ export default function AssignmentCard({ session, status, onStart, onContinue, o
     ? Number(highestScore).toFixed(2).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1')
     : null;
 
-  // Xét điều kiện ghi màu cho điểm (xanh lá nếu >= 5) 
   const isPassed = highestScore !== null && highestScore >= 5;
 
   return (

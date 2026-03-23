@@ -1,18 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMyExams } from '../../services/ExamService';
 import {
     Box, Typography, Button, Paper, CircularProgress,
-    Card, CardContent, CardActions,
-    IconButton, Stack, Chip, Divider, Grid,
+    Card, CardContent, Stack, Chip, Divider, Grid,
     TextField, InputAdornment, Snackbar, Alert,
     FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import QuizIcon from '@mui/icons-material/Quiz';
 import TimerIcon from '@mui/icons-material/Timer';
 import SearchIcon from '@mui/icons-material/Search';
@@ -20,19 +16,34 @@ import StarBorderIcon from '@mui/icons-material/StarBorder';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SortIcon from '@mui/icons-material/Sort';
 
+import dayjs from 'dayjs';
+import { getMyExams } from '../../services/ExamService';
 import CreateExamDialog from '../../components/CreateExamDialog';
 
-const PageWrapper = styled(Paper)(({ theme }) => ({
-    margin: theme.spacing(2),
-    padding: theme.spacing(4),
-    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
-    borderRadius: '24px',
-    border: `1px solid ${theme.palette.divider}`,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
-    height: 'calc(100vh - 120px)',
+// --- STYLED COMPONENTS (Tuân thủ Design System) ---
+
+const PageWrapper = styled(Paper)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        margin: theme.spacing(3),
+        padding: theme.spacing(5),
+        backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB',
+        backgroundImage: 'none',
+        borderRadius: '24px',
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
+        boxShadow: isDark ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` : '0 8px 48px rgba(0,0,0,0.03)',
+        minHeight: 'calc(100vh - 120px)',
+        display: 'flex',
+        flexDirection: 'column',
+    };
+});
+
+const HeaderBar = styled(Box)(({ theme }) => ({
     display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing(4), // Chuẩn khoảng cách spacing(4) Header
+    flexShrink: 0,
 }));
 
 const ScrollableContent = styled(Box)(({ theme }) => ({
@@ -42,26 +53,34 @@ const ScrollableContent = styled(Box)(({ theme }) => ({
     "&::-webkit-scrollbar": { width: "6px" },
     "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
     "&::-webkit-scrollbar-thumb": {
-        backgroundColor: alpha(theme.palette.grey[400], 0.5),
+        backgroundColor: alpha(theme.palette.text.secondary, 0.2),
         borderRadius: "10px",
-        "&:hover": { backgroundColor: theme.palette.grey[500] },
+        "&:hover": { backgroundColor: alpha(theme.palette.text.secondary, 0.4) },
     },
 }));
 
-const ExamCard = styled(Card)(({ theme }) => ({
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    borderRadius: 16,
-    border: `1px solid ${theme.palette.divider}`,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-    transition: 'all 0.3s',
-    '&:hover': {
-        transform: 'translateY(-4px)',
-        boxShadow: '0 12px 24px rgba(0,0,0,0.08)',
-        borderColor: theme.palette.primary.main
-    }
-}));
+const ExamCard = styled(Card)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: '16px', // Bo góc Card 16px
+        backgroundColor: theme.palette.background.paper,
+        backgroundImage: 'none',
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6)}`,
+        boxShadow: isDark ? 'none' : '0px 4px 12px rgba(0,0,0,0.02)',
+        transition: 'all 0.3s',
+        cursor: 'pointer',
+        '&:hover': {
+            transform: 'translateY(-2px)', // Hiệu ứng nảy nhẹ chuẩn UX
+            boxShadow: isDark
+                ? `0 0 20px ${alpha(theme.palette.primary.main, 0.1)}`
+                : '0px 12px 24px rgba(0,0,0,0.06)',
+            borderColor: theme.palette.primary.main, // Đổi màu viền khi hover
+        }
+    };
+});
 
 const LevelChip = memo(({ level }) => {
     const map = {
@@ -70,8 +89,10 @@ const LevelChip = memo(({ level }) => {
         HARD: { label: "Khó", color: "error" }
     };
     const conf = map[String(level).toUpperCase()] || { label: "N/A", color: "default" };
-    return <Chip icon={<StarBorderIcon />} label={conf.label} color={conf.color} size="small" variant="outlined" />;
+    return <Chip icon={<StarBorderIcon />} label={conf.label} color={conf.color} size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
 });
+
+// --- MAIN COMPONENT ---
 
 function ExamPage() {
     const navigate = useNavigate();
@@ -117,26 +138,31 @@ function ExamPage() {
         }
 
         result.sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0).getTime();
+            const dateB = new Date(b.createdAt || 0).getTime();
+            
             switch (sortBy) {
                 case 'name_asc': return a.title.localeCompare(b.title);
                 case 'name_desc': return b.title.localeCompare(a.title);
-                case 'oldest': return new Date(a.createdAt) - new Date(b.createdAt);
+                case 'oldest': return dateA - dateB;
                 case 'newest':
-                default: return new Date(b.createdAt) - new Date(a.createdAt);
+                default: return dateB - dateA;
             }
         });
 
         return result;
     }, [exams, searchTerm, filterLevel, sortBy]);
 
-    const handleToastClose = () => setToast(prev => ({ ...prev, open: false }));
+    const handleToastClose = useCallback(() => setToast(prev => ({ ...prev, open: false })), []);
 
     return (
         <PageWrapper>
-            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" mb={3} flexShrink={0}>
+            <HeaderBar>
                 <Box>
-                    <Typography variant="h4" fontWeight="700">Quản lý đề thi</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    <Typography variant="h4" fontWeight="700" color="text.primary">
+                        Quản lý đề thi
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.95rem", mt: 0.5, display: "block" }}>
                         Danh sách các bộ đề thi trắc nghiệm của bạn
                     </Typography>
                 </Box>
@@ -144,26 +170,28 @@ function ExamPage() {
                     variant="contained"
                     startIcon={<AddCircleOutlineIcon />}
                     onClick={() => setOpenCreate(true)}
-                    sx={{ borderRadius: "10px", fontWeight: 600 }}
+                    sx={{ borderRadius: "12px", fontWeight: 700, px: 3, py: 1 }} // Button bo góc lớn, in đậm
                 >
                     Tạo đề mới
                 </Button>
-            </Stack>
+            </HeaderBar>
 
             <Paper
                 elevation={0}
-                flexShrink={0}
                 sx={{
-                    p: 2.5, mb: 3,
+                    p: 2.5, mb: 4, // mb={4} chuẩn spacing Bar đến Nội dung
+                    flexShrink: 0,
                     bgcolor: (theme) => alpha(theme.palette.primary.main, 0.03),
                     border: '1px solid', borderColor: 'divider', borderRadius: 3
                 }}
             >
+                {/* Sử dụng chuẩn Grid v2 của MUIv6: spacing={3} (24px) */}
                 <Grid container spacing={3} alignItems="center">
+                    {/* Sử dụng prop size={{ ... }} thay vì xs, md trực tiếp */}
                     <Grid size={{ xs: 12, md: 5 }}>
                         <TextField
                             fullWidth
-                            size="small"
+                            size="small" // Chuẩn size="small" Form
                             placeholder="Tìm kiếm đề thi..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -214,42 +242,59 @@ function ExamPage() {
                         <CircularProgress />
                     </Box>
                 ) : processedExams.length === 0 ? (
+                    // Empty state tuân thủ Card design và bo góc lớn
                     <Paper elevation={0} sx={{
-                        p: 8, textAlign: 'center', bgcolor: 'transparent',
-                        border: '2px dashed', borderColor: 'divider', borderRadius: 3,
-                        mt: 2
+                        flexGrow: 1, minHeight: '400px', p: { xs: 3, md: 6 },
+                        textAlign: 'center', display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center',
+                        border: '2px dashed', borderColor: 'divider',
+                        backgroundColor: 'transparent', borderRadius: 3, mt: 2
                     }}>
                         <QuizIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
-                        <Typography variant="h6" color="text.secondary" fontWeight={600}>
+                        <Typography variant="h6" color="text.secondary" fontWeight={600} mt={2}>
                             Không tìm thấy đề thi nào
                         </Typography>
-                        <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
-                            Hãy thử thay đổi bộ lọc hoặc tạo mới một đề thi
+                        <Typography variant="body2" color="text.disabled" sx={{ mt: 1, mb: 3 }}>
+                            Hãy thử thay đổi bộ lọc hoặc tạo mới một đề thi.
                         </Typography>
+                        <Button
+                            variant="contained"
+                            onClick={() => setOpenCreate(true)}
+                            startIcon={<AddCircleOutlineIcon />}
+                            sx={{ fontWeight: 700, px: 4, py: 1.5, borderRadius: '12px' }}
+                        >
+                            Tạo đề mới ngay
+                        </Button>
                     </Paper>
                 ) : (
-                    <Grid container spacing={3} sx={{ pb: 2, pt: 2 }}>
+                    // SỬA LỖI TẠI ĐÂY: Thêm pt: 1 (khoảng 8px đệm phía trên)
+                    // để khi Card nhô lên (translateY(-2px)), mép trên không chạm vào vạch kẻ của Bar
+                    <Grid container spacing={3} sx={{ pt: 1, pb: 2 }}>
                         {processedExams.map((exam) => (
+                            // Loại bỏ prop 'item' cũ, dùng size={{ ... }} chuẩn MUIv6
                             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={exam.exam_id}>
-                                <ExamCard>
-                                    <CardContent sx={{ flexGrow: 1, pb: 1, p: 2.5 }}>
-                                        <Stack direction="row" justifyContent="space-between" mb={1.5}>
+                                <ExamCard onClick={() => navigate(`/tutor/exam/${exam.exam_id}`)}>
+                                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3 }}> {/* p={3} chuẩn spacing bên trong */}
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                                             <LevelChip level={exam.level} />
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                                {exam.createdAt ? dayjs(exam.createdAt).format('DD/MM/YYYY') : ''}
+                                            </Typography>
                                         </Stack>
 
-                                        <Typography variant="h6" fontWeight="bold" noWrap title={exam.title} sx={{ mb: 1 }}>
+                                        <Typography variant="h6" fontWeight="700" noWrap title={exam.title} sx={{ mb: 1 }} color="text.primary">
                                             {exam.title}
                                         </Typography>
 
                                         <Typography variant="body2" color="text.secondary" sx={{
-                                            mb: 2, height: 40, overflow: 'hidden',
+                                            mb: 2, flexGrow: 1, minHeight: '40px',
                                             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                                            lineHeight: 1.5
+                                            overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.5
                                         }}>
                                             {exam.description || "Chưa có mô tả cho đề thi này."}
                                         </Typography>
 
-                                        <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+                                        <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 
                                         <Stack direction="row" justifyContent="space-between" color="text.secondary">
                                             <Box display="flex" alignItems="center" gap={0.5}>
@@ -262,26 +307,6 @@ function ExamPage() {
                                             </Box>
                                         </Stack>
                                     </CardContent>
-                                    <CardActions sx={{
-                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.03),
-                                        justifyContent: 'space-between',
-                                        px: 2.5, py: 1.5,
-                                        borderTop: '1px solid', borderColor: 'divider'
-                                    }}>
-                                        <IconButton size="small" disabled sx={{ color: 'error.main', opacity: 0.5 }}>
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                        <Button
-                                            size="small"
-                                            variant="contained"
-                                            disableElevation
-                                            endIcon={<ArrowForwardIcon />}
-                                            onClick={() => navigate(`/tutor/exam/${exam.exam_id}`)}
-                                            sx={{ fontWeight: 600, borderRadius: '8px' }}
-                                        >
-                                            Chi tiết
-                                        </Button>
-                                    </CardActions>
                                 </ExamCard>
                             </Grid>
                         ))}
@@ -292,7 +317,9 @@ function ExamPage() {
             <CreateExamDialog open={openCreate} onClose={() => setOpenCreate(false)} onRefresh={fetchExams} />
 
             <Snackbar open={toast.open} autoHideDuration={3000} onClose={handleToastClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-                <Alert onClose={handleToastClose} severity={toast.severity} variant="filled" sx={{ width: '100%' }}>{toast.msg}</Alert>
+                <Alert onClose={handleToastClose} severity={toast.severity} variant="filled" sx={{ width: '100%', borderRadius: 2 }}>
+                    {toast.msg}
+                </Alert>
             </Snackbar>
         </PageWrapper>
     );

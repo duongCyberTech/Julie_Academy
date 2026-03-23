@@ -39,41 +39,54 @@ import RichTextEditor from "../../components/RichTextEditor";
 import AppSnackbar from "../../components/SnackBar";
 
 // ==========================================
-// 1. STYLED COMPONENTS (SOFT UI)
+// 1. STYLED COMPONENTS (CHUẨN DESIGN SYSTEM)
 // ==========================================
-const PageWrapper = styled(Paper)(({ theme }) => ({
-  margin: theme.spacing(2),
-  padding: theme.spacing(4),
-  backgroundColor: theme.palette.mode === "light" ? "#ffffff" : theme.palette.background.paper,
-  borderRadius: "24px",
-  border: `1px solid ${theme.palette.divider}`,
-  boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
-  minHeight: "calc(100vh - 120px)",
-  display: "flex",
-  flexDirection: "column",
-}));
+const PageWrapper = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    margin: theme.spacing(3),
+    padding: theme.spacing(5),
+    backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB',
+    backgroundImage: 'none',
+    borderRadius: '24px',
+    border: `1px solid ${isDark ? theme.palette.midnight?.border || alpha(theme.palette.divider, 0.3) : alpha(theme.palette.divider, 0.3)}`,
+    boxShadow: isDark 
+      ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` 
+      : '0 8px 48px rgba(0,0,0,0.03)',
+    minHeight: 'calc(100vh - 120px)',
+    display: 'flex',
+    flexDirection: 'column',
+  };
+});
 
-const Header = styled(Box)(({ theme }) => ({
+const HeaderBar = styled(Box)(({ theme }) => ({
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: theme.spacing(3),
+  marginBottom: theme.spacing(4),
   flexShrink: 0,
 }));
 
-const SectionPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  borderRadius: "16px",
-  border: `1px solid ${theme.palette.divider}`,
-  boxShadow: "none",
-  backgroundColor: alpha(theme.palette.background.default, 0.6),
-  marginBottom: theme.spacing(3),
-  transition: "all 0.3s ease",
-  "&:hover": {
-    boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
-    borderColor: theme.palette.primary.light,
-  },
-}));
+const SectionPaper = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    padding: theme.spacing(3),
+    borderRadius: '16px',
+    border: `1px solid ${isDark ? theme.palette.midnight?.border || alpha(theme.palette.divider, 0.6) : theme.palette.divider}`,
+    backgroundColor: isDark ? alpha(theme.palette.background.default, 0.4) : theme.palette.background.paper,
+    backgroundImage: 'none',
+    marginBottom: theme.spacing(3),
+    transition: "all 0.3s ease",
+    boxShadow: isDark ? 'none' : '0px 2px 8px rgba(0,0,0,0.02)',
+    "&:hover": {
+      transform: 'translateY(-2px)',
+      boxShadow: isDark
+        ? `0 0 20px ${alpha(theme.palette.primary.main, 0.1)}`
+        : '0px 12px 24px rgba(0,0,0,0.06)',
+      borderColor: theme.palette.primary.main,
+    },
+  };
+});
 
 // ==========================================
 // 2. CÁC COMPONENT PHỤ TRỢ
@@ -109,6 +122,7 @@ const DifficultyRating = ({ value, onChange }) => {
 // ==========================================
 export default function CreateNewQuestionPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
   const [token] = useState(localStorage.getItem("token"));
 
   const userInfo = useMemo(() => {
@@ -322,24 +336,29 @@ export default function CreateNewQuestionPage() {
 
   return (
     <PageWrapper>
-      <Header>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Tạo câu hỏi mới
-        </Typography>
+      <HeaderBar direction={{ xs: 'column', sm: 'row' }}>
+        <Box>
+          <Typography variant="h4" fontWeight="700" color="text.primary">
+            Tạo câu hỏi mới
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.95rem", mt: 0.5, display: "block" }}>
+            Biên soạn và thiết lập cấu hình cho câu hỏi
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           color="primary"
           startIcon={<SaveIcon />}
           onClick={handleSubmit}
           disabled={isSubmitting}
-          sx={{ fontWeight: "bold", borderRadius: "10px", px: 3 }}
+          sx={{ fontWeight: 700, borderRadius: "12px", px: 3, py: 1.5, mt: { xs: 2, sm: 0 } }}
         >
           {isSubmitting ? "Đang lưu..." : "Lưu câu hỏi"}
         </Button>
-      </Header>
+      </HeaderBar>
 
       {apiError && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setApiError(null)}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }} onClose={() => setApiError(null)}>
           {apiError}
         </Alert>
       )}
@@ -348,36 +367,41 @@ export default function CreateNewQuestionPage() {
         {/* CỘT TRÁI: NỘI DUNG CHÍNH */}
         <Grid size={{ xs: 12, md: 8 }}>
           <SectionPaper>
-            <Typography variant="h6" fontWeight={600} mb={3}>
+            <Typography variant="h6" fontWeight={700} color="text.primary" mb={3}>
               Nội dung câu hỏi
             </Typography>
-            <TextField
-              label="Tiêu đề câu hỏi"
-              variant="outlined"
-              fullWidth
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Nhập tiêu đề ngắn gọn..."
-              sx={{ mb: 3, bgcolor: "background.paper", borderRadius: 1 }}
-            />
-            <Typography variant="body2" fontWeight={500} mb={1} color="text.secondary">
-              Nội dung chi tiết:
-            </Typography>
-            <RichTextEditor
-              placeholder="Nhập nội dung câu hỏi tại đây..."
-              value={content}
-              onChange={setContent}
-              toolbarType="full"
-              style={{ minHeight: "200px", display: "flex", flexDirection: "column" }}
-            />
+            <Stack spacing={3}>
+              <TextField
+                label="Tiêu đề câu hỏi"
+                variant="outlined"
+                fullWidth
+                size="small"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Nhập tiêu đề ngắn gọn..."
+                sx={{ bgcolor: "background.paper", borderRadius: 1 }}
+              />
+              <Box>
+                <Typography variant="body2" fontWeight={600} mb={1} color="text.secondary">
+                  Nội dung chi tiết:
+                </Typography>
+                <RichTextEditor
+                  placeholder="Nhập nội dung câu hỏi tại đây..."
+                  value={content}
+                  onChange={setContent}
+                  toolbarType="full"
+                  style={{ minHeight: "200px", display: "flex", flexDirection: "column" }}
+                />
+              </Box>
+            </Stack>
           </SectionPaper>
 
           <SectionPaper>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h6" fontWeight={600}>
+              <Typography variant="h6" fontWeight={700} color="text.primary">
                 Đáp án
               </Typography>
-              <FormControl size="small" sx={{ minWidth: 220, bgcolor: "background.paper" }}>
+              <FormControl size="small" sx={{ minWidth: 220, bgcolor: "background.paper", borderRadius: 1 }}>
                 <Select value={questionType} onChange={(e) => setQuestionType(e.target.value)}>
                   <MenuItem value="single_choice">Nhiều lựa chọn - 1 đáp án</MenuItem>
                   <MenuItem value="multiple_choice">Nhiều lựa chọn - nhiều đáp án</MenuItem>
@@ -393,13 +417,14 @@ export default function CreateNewQuestionPage() {
 
           <SectionPaper>
             <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Typography variant="h6" fontWeight={600}>
+              <Typography variant="h6" fontWeight={700} color="text.primary">
                 Giải thích chi tiết
               </Typography>
               <Button
                 startIcon={<NotesIcon />}
                 onClick={() => setShowExplanation(!showExplanation)}
                 color={showExplanation ? "primary" : "inherit"}
+                sx={{ fontWeight: 600, borderRadius: '8px' }}
               >
                 {showExplanation ? "Ẩn giải thích" : "Thêm giải thích"}
               </Button>
@@ -421,17 +446,16 @@ export default function CreateNewQuestionPage() {
         {/* CỘT PHẢI: PHÂN LOẠI & CÀI ĐẶT */}
         <Grid size={{ xs: 12, md: 4 }}>
           <SectionPaper>
-            <Typography variant="h6" fontWeight={600} mb={3}>
+            <Typography variant="h6" fontWeight={700} color="text.primary" mb={3}>
               Phân loại
             </Typography>
             <Stack spacing={3}>
-              <FormControl fullWidth size="small" disabled={loadingPlans}>
+              <FormControl fullWidth size="small" disabled={loadingPlans} sx={{ bgcolor: "background.paper", borderRadius: 1 }}>
                 <InputLabel>Giáo án</InputLabel>
                 <Select
                   value={selectedPlanId}
                   label="Giáo án"
                   onChange={handlePlanChange}
-                  sx={{ bgcolor: "background.paper" }}
                 >
                   <MenuItem value="">
                     <em>{loadingPlans ? "Đang tải giáo án..." : "Chọn giáo án"}</em>
@@ -445,7 +469,7 @@ export default function CreateNewQuestionPage() {
               </FormControl>
 
               <Collapse in={!!selectedPlanId}>
-                <Typography variant="subtitle2" fontWeight={600} mb={1}>
+                <Typography variant="subtitle2" fontWeight={600} mb={1} color="text.secondary">
                   Chuyên đề / Danh mục
                 </Typography>
                 <Paper
@@ -453,8 +477,9 @@ export default function CreateNewQuestionPage() {
                   sx={{
                     maxHeight: 300,
                     overflowY: "auto",
-                    p: 1,
-                    borderColor: "divider",
+                    p: 1.5,
+                    borderRadius: 2,
+                    borderColor: alpha(theme.palette.divider, 0.6),
                     bgcolor: "background.paper",
                   }}
                 >
@@ -474,8 +499,10 @@ export default function CreateNewQuestionPage() {
                           borderRadius: 1,
                           "&:hover": { backgroundColor: "action.hover" },
                           "&.Mui-selected": {
-                            backgroundColor: "primary.light",
-                            "&:hover": { backgroundColor: "primary.light" },
+                            backgroundColor: alpha(theme.palette.primary.main, 0.15),
+                            color: "primary.main",
+                            fontWeight: "bold",
+                            "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.2) },
                           },
                         },
                       }}
@@ -491,37 +518,35 @@ export default function CreateNewQuestionPage() {
           </SectionPaper>
 
           <SectionPaper>
-            <Typography variant="h6" fontWeight={600} mb={3}>
+            <Typography variant="h6" fontWeight={700} color="text.primary" mb={3}>
               Cài đặt thuộc tính
             </Typography>
             <Stack spacing={3}>
               <Box>
-                <Typography variant="body2" fontWeight={500} color="text.secondary">
+                <Typography variant="body2" fontWeight={600} color="text.secondary">
                   Độ khó
                 </Typography>
                 <DifficultyRating value={difficulty} onChange={setDifficulty} />
               </Box>
 
-              <FormControl fullWidth size="small">
+              <FormControl fullWidth size="small" sx={{ bgcolor: "background.paper", borderRadius: 1 }}>
                 <InputLabel>Quyền xem</InputLabel>
                 <Select
                   value={accessMode}
                   label="Quyền xem"
                   onChange={(e) => setAccessMode(e.target.value)}
-                  sx={{ bgcolor: "background.paper" }}
                 >
                   <MenuItem value="private">Riêng tư (Private)</MenuItem>
                   <MenuItem value="public">Công khai (Public)</MenuItem>
                 </Select>
               </FormControl>
 
-              <FormControl fullWidth size="small">
+              <FormControl fullWidth size="small" sx={{ bgcolor: "background.paper", borderRadius: 1 }}>
                 <InputLabel>Trạng thái</InputLabel>
                 <Select
                   value={status}
                   label="Trạng thái"
                   onChange={(e) => setStatus(e.target.value)}
-                  sx={{ bgcolor: "background.paper" }}
                 >
                   <MenuItem value="draft">Bản nháp (Draft)</MenuItem>
                   <MenuItem value="ready">Sẵn sàng (Ready)</MenuItem>

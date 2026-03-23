@@ -33,8 +33,6 @@ import { getCommentsByThread, updateComment, deleteComment } from "../../service
 
 import ConfirmAction from "../ActionModal/ConfirmModal";
 
-// === COMPONENT BÌNH LUẬN ĐỆ QUY (ĐÃ NÂNG CẤP @MENTION) ===
-// === (YÊU CẦU 2) COMPONENT BÌNH LUẬN ĐỆ QUY (ĐÃ SỬA LỖI VALIDATE DOM) ===
 const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = null, addTreeNode = null }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
@@ -204,9 +202,7 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
             </Typography>
           }
           
-          // === SỬA LỖI VALIDATE DOM BẰNG CÁCH THÊM PROP NÀY ===
           secondaryTypographyProps={{ component: 'div' }} 
-          // ==================================================
 
           secondary={
             <>
@@ -544,6 +540,5 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
     </Box>
   );
 };
-// ======================================
 
 export default CommentItem;

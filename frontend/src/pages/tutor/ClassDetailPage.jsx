@@ -35,7 +35,7 @@ import AssignmentTab from './AssignmentTab';
 import ThreadForum from '../../components/thread/ThreadForum';
 
 // ==========================================
-// 1. PAGE WRAPPER CHUẨN SOFT UI (Dịu mắt)
+// 1. PAGE WRAPPER CHUẨN DESIGN SYSTEM
 // ==========================================
 const PageWrapper = styled(Paper)(({ theme }) => {
     const isDark = theme.palette.mode === 'dark';
@@ -56,19 +56,21 @@ const PageWrapper = styled(Paper)(({ theme }) => {
 });
 
 // ==========================================
-// STYLED COMPONENTS KHÁC
+// 3. CARDS / PANELS CHUẨN DESIGN SYSTEM
 // ==========================================
-const HeaderCard = styled(Paper)(({ theme }) => {
+const PanelCard = styled(Paper)(({ theme }) => {
     const isDark = theme.palette.mode === 'dark';
     return {
-        padding: theme.spacing(3),
-        borderRadius: theme.shape.borderRadius * 2,
-        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.primary.main, 0.1)}`,
-        backgroundColor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.02),
+        borderRadius: '16px',
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : theme.palette.divider}`,
+        backgroundColor: theme.palette.background.paper,
         backgroundImage: 'none',
-        boxShadow: 'none', 
-        marginBottom: theme.spacing(4),
-        flexShrink: 0,
+        boxShadow: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        flexGrow: 1,
+        minHeight: 0,
+        overflow: 'hidden',
     };
 });
 
@@ -77,17 +79,20 @@ const StatBox = styled(Box)(({ theme }) => {
     return {
         display: 'flex',
         alignItems: 'center',
-        gap: theme.spacing(1.5),
-        padding: theme.spacing(1.5, 2),
-        borderRadius: theme.shape.borderRadius * 1.5,
+        gap: theme.spacing(2),
+        padding: theme.spacing(2, 2.5),
+        borderRadius: '16px', // Chuẩn góc bo 16px cho Thẻ nội dung
         backgroundColor: theme.palette.background.paper,
         border: `1px solid ${isDark ? theme.palette.midnight?.border : theme.palette.divider}`,
-        minWidth: 160,
+        minWidth: 180,
         flex: '1 1 auto',
         boxShadow: isDark ? 'none' : '0 2px 8px rgba(0,0,0,0.02)'
     };
 });
 
+// ==========================================
+// STYLED COMPONENTS KHÁC
+// ==========================================
 const StyledTab = styled(Tab)(({ theme }) => {
     const isDark = theme.palette.mode === 'dark';
     return {
@@ -115,7 +120,7 @@ const ScrollableContent = styled(Box)(({ theme }) => {
         flexGrow: 1,
         overflowY: 'auto',
         backgroundColor: isDark ? alpha(theme.palette.background.default, 0.4) : '#F9FAFB',
-        padding: theme.spacing(3),
+        padding: theme.spacing(3), // Chuẩn padding p={3}
         "&::-webkit-scrollbar": { width: "6px" },
         "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
         "&::-webkit-scrollbar-thumb": {
@@ -152,6 +157,9 @@ const StatusChip = memo(({ status }) => {
     );
 });
 
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 function ClassDetailPage() {
     const { classId } = useParams();
     const navigate = useNavigate(); 
@@ -163,14 +171,13 @@ function ClassDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // FEATURE: Lưu và lấy Tab hiện tại từ Session Storage để không bị mất khi F5
     const [currentTab, setCurrentTab] = useState(() => {
         return sessionStorage.getItem(`classDetailTab_${classId}`) || 'students';
     }); 
 
     const fetchClassDetails = useCallback(async () => {
         if (!token || !classId) {
-            setError("Thông tin không hợp lệ.");
+            setError("Thông giải không hợp lệ.");
             setLoading(false);
             return;
         }
@@ -192,7 +199,6 @@ function ClassDetailPage() {
 
     const handleChangeTab = (event, newValue) => {
         setCurrentTab(newValue);
-        // Lưu tab vào Session Storage mỗi khi chuyển tab
         sessionStorage.setItem(`classDetailTab_${classId}`, newValue);
     };
 
@@ -209,8 +215,13 @@ function ClassDetailPage() {
     if (error) {
         return (
             <PageWrapper sx={{ alignItems: 'center', justifyContent: 'center' }}>
-                <Alert severity="error" variant="filled" sx={{ borderRadius: 2, mb: 2 }}>{error}</Alert>
-                <Button onClick={() => navigate('/tutor/classes')} variant="outlined" startIcon={<ArrowBackRoundedIcon />}>
+                <Alert severity="error" variant="filled" sx={{ borderRadius: 2, mb: 3 }}>{error}</Alert>
+                <Button 
+                    onClick={() => navigate('/tutor/classes')} 
+                    variant="outlined" 
+                    startIcon={<ArrowBackRoundedIcon />}
+                    sx={{ fontWeight: 700, borderRadius: '10px' }} // Nút bấm chuẩn bo góc 10px, in đậm
+                >
                     Quay lại danh sách
                 </Button>
             </PageWrapper>
@@ -221,7 +232,7 @@ function ClassDetailPage() {
 
     return (
         <PageWrapper>
-            {/* 1. NÚT QUAY LẠI NỔI BẬT */}
+            {/* NÚT QUAY LẠI NỔI BẬT */}
             <Box sx={{ mb: 2, flexShrink: 0 }}>
                 <Button
                     onClick={() => navigate('/tutor/classes')}
@@ -229,9 +240,9 @@ function ClassDetailPage() {
                     color="inherit"
                     sx={{ 
                         textTransform: 'none', 
-                        fontWeight: 600, 
+                        fontWeight: 700, // Nút in đậm 
                         color: 'text.secondary',
-                        borderRadius: '10px',
+                        borderRadius: '10px', // Nút bo góc lớn
                         px: 2,
                         '&:hover': { color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.08) }
                     }}
@@ -240,96 +251,80 @@ function ClassDetailPage() {
                 </Button>
             </Box>
 
-            {/* 2. HEADER THÔNG TIN LỚP HỌC (Cố định) */}
-            <HeaderCard>
-                <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                    <Box sx={{ flex: 1, width: '100%' }}>
-                        <Stack direction="row" alignItems="center" spacing={2} mb={1}>
-                            <Typography variant="h3" fontWeight="700" color="text.primary">
-                                {classData.classname}
-                            </Typography>
-                            <StatusChip status={classData.status} />
-                        </Stack>
-                        
-                        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '900px', lineHeight: 1.6, mb: 3 }}>
-                            {classData.description || "Chưa có mô tả cho lớp học này."}
-                        </Typography>
-
-                        {/* Quick Stats Row */}
-                        <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-                            <StatBox>
-                                <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', width: 36, height: 36 }}>
-                                    <SchoolOutlinedIcon fontSize="small"/>
-                                </Avatar>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={700}>KHỐI</Typography>
-                                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">Lớp {classData.grade}</Typography>
-                                </Box>
-                            </StatBox>
-
-                            <StatBox>
-                                <Avatar sx={{ bgcolor: alpha(theme.palette.info.main, 0.1), color: 'info.main', width: 36, height: 36 }}>
-                                    <MenuBookOutlinedIcon fontSize="small"/>
-                                </Avatar>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={700}>MÔN HỌC</Typography>
-                                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">{classData.subject}</Typography>
-                                </Box>
-                            </StatBox>
-
-                            <StatBox>
-                                <Avatar sx={{ bgcolor: alpha(theme.palette.success.main, 0.1), color: 'success.main', width: 36, height: 36 }}>
-                                    <GroupOutlinedIcon fontSize="small"/>
-                                </Avatar>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={700}>SĨ SỐ</Typography>
-                                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">
-                                        {classData.nb_of_student} học viên
-                                    </Typography>
-                                </Box>
-                            </StatBox>
-                            <StatBox>
-                                <Avatar sx={{ bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main', width: 36, height: 36 }}>
-                                    <TimelapseOutlinedIcon fontSize="small"/>
-                                </Avatar>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={700}>THỜI LƯỢNG</Typography>
-                                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">
-                                        {classData.duration_time || 0} tuần
-                                    </Typography>
-                                </Box>
-                            </StatBox>
-
-                            <StatBox>
-                                <Avatar sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1), color: 'warning.main', width: 36, height: 36 }}>
-                                    <AccessTimeOutlinedIcon fontSize="small"/>
-                                </Avatar>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={700}>BẮT ĐẦU TỪ</Typography>
-                                    <Typography variant="subtitle2" fontWeight={700} color="text.primary">
-                                        {dayjs(classData.startat).format('DD/MM/YYYY')}
-                                    </Typography>
-                                </Box>
-                            </StatBox>
-                        </Stack>
-                    </Box>
+            {/* 2. HEADER TRANG CHUẨN DESIGN SYSTEM */}
+            <Box sx={{ mb: 4, flexShrink: 0 }}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                    <Typography variant="h4" fontWeight="700" color="text.primary">
+                        {classData.classname}
+                    </Typography>
+                    <StatusChip status={classData.status} />
                 </Stack>
-            </HeaderCard>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.95rem", mt: 0.5, mb: 3, display: "block" }}>
+                    {classData.description || "Chưa có mô tả chi tiết cho lớp học này."}
+                </Typography>
 
-            {/* 3. KHU VỰC TABS & NỘI DUNG CUỘN */}
-            <Paper 
-                variant="outlined" 
-                sx={{ 
-                    borderRadius: 3, 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    flexGrow: 1, 
-                    minHeight: 0, 
-                    overflow: 'hidden', 
-                    bgcolor: 'background.paper',
-                    borderColor: isDark ? theme.palette.midnight?.border : 'divider'
-                }}
-            >
+                {/* Quick Stats Row: Sử dụng chuẩn spacing={3} (24px gap) */}
+                <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+                    <StatBox>
+                        <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', width: 40, height: 40 }}>
+                            <SchoolOutlinedIcon fontSize="small"/>
+                        </Avatar>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" fontWeight={700}>KHỐI</Typography>
+                            <Typography variant="subtitle2" fontWeight={700} color="text.primary">Lớp {classData.grade}</Typography>
+                        </Box>
+                    </StatBox>
+
+                    <StatBox>
+                        <Avatar sx={{ bgcolor: alpha(theme.palette.info.main, 0.1), color: 'info.main', width: 40, height: 40 }}>
+                            <MenuBookOutlinedIcon fontSize="small"/>
+                        </Avatar>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" fontWeight={700}>MÔN HỌC</Typography>
+                            <Typography variant="subtitle2" fontWeight={700} color="text.primary">{classData.subject}</Typography>
+                        </Box>
+                    </StatBox>
+
+                    <StatBox>
+                        <Avatar sx={{ bgcolor: alpha(theme.palette.success.main, 0.1), color: 'success.main', width: 40, height: 40 }}>
+                            <GroupOutlinedIcon fontSize="small"/>
+                        </Avatar>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" fontWeight={700}>SĨ SỐ</Typography>
+                            <Typography variant="subtitle2" fontWeight={700} color="text.primary">
+                                {classData.nb_of_student} học viên
+                            </Typography>
+                        </Box>
+                    </StatBox>
+
+                    <StatBox>
+                        <Avatar sx={{ bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main', width: 40, height: 40 }}>
+                            <TimelapseOutlinedIcon fontSize="small"/>
+                        </Avatar>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" fontWeight={700}>THỜI LƯỢNG</Typography>
+                            <Typography variant="subtitle2" fontWeight={700} color="text.primary">
+                                {classData.duration_time || 0} tuần
+                            </Typography>
+                        </Box>
+                    </StatBox>
+
+                    <StatBox>
+                        <Avatar sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1), color: 'warning.main', width: 40, height: 40 }}>
+                            <AccessTimeOutlinedIcon fontSize="small"/>
+                        </Avatar>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" fontWeight={700}>BẮT ĐẦU TỪ</Typography>
+                            <Typography variant="subtitle2" fontWeight={700} color="text.primary">
+                                {dayjs(classData.startat).format('DD/MM/YYYY')}
+                            </Typography>
+                        </Box>
+                    </StatBox>
+                </Stack>
+            </Box>
+
+            {/* 3. KHU VỰC TABS & NỘI DUNG CUỘN (Bọc trong PanelCard chuẩn) */}
+            <PanelCard>
                 {/* Thanh Tabs (Cố định) */}
                 <Box sx={{ borderBottom: 1, borderColor: isDark ? theme.palette.midnight?.border : 'divider', px: 2, pt: 1.5, bgcolor: 'background.paper', flexShrink: 0 }}>
                     <Tabs 
@@ -347,7 +342,7 @@ function ClassDetailPage() {
                     </Tabs>
                 </Box>
 
-                {/* Nội dung Tab (Cuộn độc lập) */}
+                {/* Nội dung Tab (Cuộn độc lập có Padding 24px - p={3} chuẩn hệ thống) */}
                 <ScrollableContent>
                     {currentTab === 'students' && (
                         <StudentsTab 
@@ -374,7 +369,7 @@ function ClassDetailPage() {
                         <ThreadForum class_id={classId} />  
                     )}
                 </ScrollableContent>
-            </Paper>
+            </PanelCard>
         </PageWrapper>
     );
 }

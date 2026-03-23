@@ -16,10 +16,9 @@ const getUserId = (token) => {
 const ResourceTab = ({ classId, token }) => {
     const [tutorId] = useState(() => getUserId(token));
     const [loading, setLoading] = useState(true);
-    const [planId, setPlanId] = useState(null); // null = SETUP, value = MANAGER
+    const [planId, setPlanId] = useState(null); 
     const [error, setError] = useState(null);
 
-    // Kiểm tra lớp đã có plan chưa
     const checkClassStatus = useCallback(async () => {
         setLoading(true);
         try {
@@ -36,8 +35,17 @@ const ResourceTab = ({ classId, token }) => {
         if (classId && token) checkClassStatus();
     }, [checkClassStatus]);
 
-    if (loading) return <Box p={4} display="flex" justifyContent="center"><CircularProgress /></Box>;
-    if (error) return <Alert severity="error">{error}</Alert>;
+    if (loading) return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={30} />
+        </Box>
+    );
+    
+    if (error) return (
+        <Alert severity="error" sx={{ borderRadius: '12px', mb: 2 }}>
+            {error}
+        </Alert>
+    );
 
     return (
         <Box>
