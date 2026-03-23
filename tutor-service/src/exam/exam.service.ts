@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuestionService } from '../question/question.service';
 import { ExamDto, ExamSessionDto, ExamSessionStatus, ExamTakenDto, SubmitAnswerDto } from './dto/exam.dto';
@@ -271,6 +271,7 @@ export class ExamService {
                                             WHERE et."session_id" = es."session_id" 
                                             AND et."exam_id" = es."exam_id" 
                                             AND et."student_uid" = ${user.userId}
+                                            AND et."isDone" = true  -- I them 
                                         ) > 0` : (
                                         status === ExamSessionStatus.PENDING ?
                                         Prisma.sql` AND (
@@ -278,6 +279,7 @@ export class ExamService {
                                             WHERE et."session_id" = es."session_id" 
                                             AND et."exam_id" = es."exam_id" 
                                             AND et."student_uid" = ${user.userId}
+                                            AND et."isDone" = true -- I them
                                         ) = 0` : Prisma.empty)
 
                 // 3. The Final Query
@@ -301,7 +303,9 @@ export class ExamService {
                                 'et_id', et.et_id, 
                                 'isDone', et."isDone", 
                                 'final_score', et.final_score, 
-                                'doneAt', et."doneAt"
+                                'doneAt', et."doneAt",
+                                'startAt', et."startAt",                   
+                                'total_ques_completed', et.total_ques_completed
                             ))
                             FROM "Exam_taken" et
                             WHERE et.session_id = es.session_id AND et.exam_id = es.exam_id AND et.student_uid = ${user.userId}
@@ -496,6 +500,7 @@ export class ExamService {
                                         WHERE et."session_id" = es."session_id" 
                                         AND et."exam_id" = es."exam_id" 
                                         AND et."student_uid" = ${student_id}
+                                        AND et."isDone" = true -- I them
                                     ) > 0` : (
                                     status === ExamSessionStatus.OPEN ?
                                     Prisma.sql` AND (
@@ -503,6 +508,7 @@ export class ExamService {
                                         WHERE et."session_id" = es."session_id" 
                                         AND et."exam_id" = es."exam_id" 
                                         AND et."student_uid" = ${student_id}
+                                        AND et."isDone" = true -- I them
                                     ) = 0` : Prisma.empty)
 
             // 3. The Main Query
@@ -528,7 +534,9 @@ export class ExamService {
                             'et_id', et.et_id, 
                             'isDone', et."isDone", 
                             'final_score', et.final_score, 
-                            'doneAt', et."doneAt"
+                            'doneAt', et."doneAt",
+                            'startAt', et."startAt",                  -- tôi thêm vô
+                            'total_ques_completed', et.total_ques_completed  -- tôi thêm vô
                         ))
                         FROM "Exam_taken" et
                         WHERE et.session_id = es.session_id AND et.exam_id = es.exam_id AND et.student_uid = ${student_id}

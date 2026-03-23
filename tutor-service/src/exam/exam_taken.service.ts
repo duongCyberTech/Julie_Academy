@@ -178,6 +178,8 @@ export class ExamTakenService {
             },
             select: {
                 et_id: true,
+                exam_id: true,     // I them
+                session_id: true,  // I them
                 exam_session: {
                     select: {
                         exam: {
@@ -229,12 +231,14 @@ export class ExamTakenService {
                 where: {et_id},
                 select: {
                     et_id: true,
+                    final_score: true,
                     exam_session: {
                         select: {
                             exam: {
                                 select: {
                                     exam_id: true,
                                     title: true,
+                                    duration: true, // I them
                                     total_ques: true,
                                     total_score: true,
                                     description: true
@@ -297,7 +301,9 @@ export class ExamTakenService {
                     session_id: true,
                     final_score: true,
                     doneAt: true,
-                    isDone: true
+                    isDone: true, 
+                    startAt: true,              // I thêm
+                    total_ques_completed: true  // I thêm
                 }
             });
         } catch (error) {

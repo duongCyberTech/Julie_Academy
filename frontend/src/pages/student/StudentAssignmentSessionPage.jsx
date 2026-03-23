@@ -2,8 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Container, Typography, Box, Button, RadioGroup, Radio, Checkbox,
   FormGroup, FormControlLabel, CircularProgress, Paper, Chip,
-  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
+  Drawer, Fab, IconButton
 } from '@mui/material';
+
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import CloseIcon from '@mui/icons-material/Close';
+
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -36,7 +41,17 @@ const HtmlContentRenderer = ({ htmlContent }) => {
       }
   }, [cleanHtml]); 
 
-  return <Box ref={containerRef} dangerouslySetInnerHTML={{ __html: cleanHtml }} sx={{ '& p': { m: 0, p: 0 }, width: '100%', overflowX: 'auto', wordBreak: 'break-word' }} />;
+  return <Box 
+    ref={containerRef} 
+    dangerouslySetInnerHTML={{ __html: cleanHtml }} 
+    sx={{ 
+      '& p': { m: 0, p: 0 }, 
+      '& img': { maxWidth: '100%', height: 'auto', display: 'block' }, 
+      width: '100%', 
+      overflowX: 'auto', 
+      wordBreak: 'break-word' 
+    }} 
+  />;
 };
 
 const getAnswerPrefix = (index) => String.fromCharCode(65 + index); 
@@ -55,7 +70,9 @@ export default function StudentAssignmentSessionPage() {
   
   const [activeStep, setActiveStep] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({}); 
-  
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [filter, setFilter] = useState('all'); 
+
   // Tracking thời gian làm bài từng câu
   const [timeTracker, setTimeTracker] = useState({}); 
   const currentStartTime = useRef(Date.now());
@@ -64,7 +81,6 @@ export default function StudentAssignmentSessionPage() {
   const [openSubmitConfirm, setOpenSubmitConfirm] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  // Lấy classId chính xác để gọi API Submit
   const getActualClassId = () => {
     if (classId) return classId;
     if (examTakenId) {
@@ -87,13 +103,12 @@ export default function StudentAssignmentSessionPage() {
         isFetchingExam.current = true; 
         setIsLoading(true);
 
-        // LUỒNG 1: Bắt đầu làm bài mới
+        // Luồng 1: Bắt đầu làm bài mới
         if (classId && examId && sessionId && !etId) {
             const res = await takeExam(classId, examId, sessionId, token);
             const newEtId = res.info?.et_id || res.et_id;
             
             if (newEtId) {
-                // Lưu classId để sau này F5 vẫn nhớ lớp nào
                 localStorage.setItem(`exam_class_${newEtId}`, classId);
                 isRedirecting = true;
                 navigate(`/student/assignment/continue/${newEtId}`, { replace: true });
@@ -101,7 +116,7 @@ export default function StudentAssignmentSessionPage() {
             }
         }
 
-        // LUỒNG 2: Tiếp tục làm bài dở dang (Có etId trên URL)
+        // Luồng 2: Tiếp tục làm bài dở dang (Có etId trên URL)
         if (etId) {
             const responseData = await continueTakeExam(etId, token);
             const coreData = responseData.data || responseData;
@@ -140,19 +155,26 @@ export default function StudentAssignmentSessionPage() {
 
             // Đồng bộ thời gian đếm ngược
             let expireTime;
+            const duration = coreData.exam_session?.exam?.duration || coreData.exam?.duration || 60; 
             const dbExpire = coreData.exam_session?.expireAt || coreData.expireAt; 
-            if (dbExpire) {
-                expireTime = new Date(dbExpire).getTime();
+            const startAt = coreData.startAt; 
+
+            if (startAt) {
+                expireTime = new Date(startAt).getTime() + duration * 60000;
             } else {
                 const savedExpire = localStorage.getItem(`exam_expire_${etId}`);
                 if (savedExpire) {
                     expireTime = parseInt(savedExpire, 10);
                 } else {
-                    const duration = coreData.exam_session?.exam?.duration || 60;
                     expireTime = Date.now() + duration * 60000;
                     localStorage.setItem(`exam_expire_${etId}`, expireTime.toString());
                 }
             }
+
+            if (dbExpire && expireTime > new Date(dbExpire).getTime()) {
+                expireTime = new Date(dbExpire).getTime();
+            }
+
             setTimeLeft(Math.max(0, Math.floor((expireTime - Date.now()) / 1000)));
         }
 
@@ -304,26 +326,54 @@ export default function StudentAssignmentSessionPage() {
   const displaySubject = examData?.exam_session?.exam?.category?.subject || examData?.exam?.category?.subject || examData?.category?.subject || 'Bài tập';
 
   return (
-    <Container maxWidth={false} sx={{ pt: 3, pb: 4, px: { xs: 2, sm: 4, md: 8, lg: 12 }, backgroundColor: '#f4f6f8', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Container 
+      maxWidth="lg" 
+      sx={{ 
+        pt: 3, pb: 2, 
+        px: { xs: 2, sm: 3 }, 
+        backgroundColor: '#f4f6f8', 
+        minHeight: '100vh', 
+        display: 'flex', flexDirection: 'column' 
+      }}
+    >
       
+      {/* Nút bật/tắt Bảng tiến độ */}
+      <Fab 
+        color="primary" variant="extended" aria-label="open-navigation"
+        onClick={() => setIsDrawerOpen(true)}
+        sx={{ position: 'fixed', bottom: 32, right: { xs: 16, md: 32 }, zIndex: 1000, fontWeight: 700, px: 3, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+      >
+        <FormatListBulletedIcon sx={{ mr: 1 }} />
+        Bảng tiến độ
+      </Fab>
+
       {/* Header bài thi */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={800} color="text.primary" gutterBottom>{displayTitle}</Typography>
+        <Typography variant="h4" fontWeight={700} color="text.primary" gutterBottom>{displayTitle}</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
           <MenuBookIcon fontSize="small" sx={{ mr: 1 }} />
           <Typography variant="body1" fontWeight={500}>{displaySubject}</Typography>
         </Box>
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 340px', lg: '1fr 380px' }, gap: 4, height: 'calc(100vh - 160px)' }}>
-        
-        {/* Cột trái: Vùng câu hỏi */}
-        <Box sx={{ minWidth: 0, height: '100%' }}>
-          <Paper elevation={0} sx={{ height: '100%', borderRadius: 4, border: '1px solid', borderColor: 'grey.200', display: 'flex', flexDirection: 'column', backgroundColor: '#fff' }}>
+      {/* Vùng câu hỏi */}
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', pb: 2, width: '100%' }}>
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              flexGrow: 1, 
+              overflow: 'hidden',
+              borderRadius: 4, 
+              border: '1px solid', 
+              borderColor: 'grey.200', 
+              display: 'flex', flexDirection: 'column', 
+              backgroundColor: '#fff' 
+            }}
+          >
             {/* Header Câu hỏi & Timer */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 2, md: 3 }, borderBottom: '1px solid #eee' }}>
               <Box>
-                <Typography variant="h5" fontWeight={800} color="primary.main" component="span">Câu {activeStep + 1} </Typography>
+                <Typography variant="h5" fontWeight={700} color="primary.main" component="span">Câu {activeStep + 1} </Typography>
                 <Typography component="span" color="text.secondary" variant="h6" fontWeight={600}> / {questions.length}</Typography>
                 <Chip label={isMultiChoice ? "Nhiều đáp án" : "Một đáp án"} variant="outlined" size="small" sx={{ ml: 2, fontWeight: 600 }} />
               </Box>
@@ -331,7 +381,7 @@ export default function StudentAssignmentSessionPage() {
             </Box>
             
             {/* Nội dung câu hỏi */}
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', overflowX: 'hidden', p: { xs: 2, md: 4 } }}>
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', overflowX: 'hidden', p: { xs: 2, md: 4, lg: 5 } }}>
               <Box sx={{ fontSize: '1.2rem', lineHeight: 1.8, mb: 4, color: 'text.primary', fontWeight: 500, width: '100%' }}>
                 <HtmlContentRenderer htmlContent={currentQuestion.content} />
               </Box>
@@ -345,7 +395,7 @@ export default function StudentAssignmentSessionPage() {
                       control={isMultiChoice ? <Checkbox checked={isSelected} size="large" /> : <Radio checked={isSelected} size="large" />}
                       label={
                         <Box sx={{ display: 'flex', width: '100%', alignItems: 'flex-start', py: 1 }}>
-                            <Typography sx={{ mr: 2, fontWeight: 800, fontSize: '1.1rem', color: isSelected ? 'primary.main' : 'text.secondary', mt: '2px' }}>{getAnswerPrefix(index)}.</Typography>
+                            <Typography sx={{ mr: 2, fontWeight: 700, fontSize: '1.1rem', color: isSelected ? 'primary.main' : 'text.secondary', mt: '2px' }}>{getAnswerPrefix(index)}.</Typography>
                             <Box sx={{ flexGrow: 1, fontSize: '1.1rem', lineHeight: 1.6, width: '100%' }}><HtmlContentRenderer htmlContent={answer.content} /></Box>
                         </Box>
                       }
@@ -353,7 +403,8 @@ export default function StudentAssignmentSessionPage() {
                       sx={{
                         m: 0, mb: 2, pr: 3, pl: 1, py: 1, width: '100%', borderRadius: 3, border: '2px solid',
                         borderColor: isSelected ? 'primary.main' : 'grey.200', backgroundColor: isSelected ? 'primary.50' : 'transparent',
-                        alignItems: 'flex-start', '&:hover': { borderColor: isSelected ? 'primary.main' : 'grey.300', backgroundColor: isSelected ? 'primary.50' : 'grey.50' }
+                        alignItems: 'flex-start', '&:hover': { borderColor: isSelected ? 'primary.main' : 'grey.300', backgroundColor: isSelected ? 'primary.50' : 'grey.50' },
+                        '& .MuiFormControlLabel-label': { width: '100%' } 
                       }}
                     />
                   );
@@ -367,49 +418,74 @@ export default function StudentAssignmentSessionPage() {
               <Button variant="contained" size="large" onClick={handleNext} disabled={activeStep === questions.length - 1} endIcon={<ArrowForwardIcon />} disableElevation sx={{ borderRadius: 2, px: 4, fontWeight: 700 }}>Câu tiếp</Button>
             </Box>
           </Paper>
-        </Box>
-
-        {/* Cột phải: Bảng tiến độ */}
-        <Box sx={{ height: '100%' }}>
-          <Paper elevation={0} sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, borderRadius: 4, border: '1px solid', borderColor: 'grey.200', backgroundColor: '#fff' }}>
-            <Typography variant="h6" fontWeight={800} mb={2}>Tiến độ làm bài</Typography>
-            
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1.5 }}>
-                {questions.map((q, index) => {
-                  const isAnswered = (selectedAnswers[q.ques_id] || []).length > 0;
-                  const isActive = index === activeStep;
-
-                  return (
-                    <Button
-                      key={q.ques_id} variant={isAnswered ? "contained" : "outlined"} onClick={() => handleStepClick(index)}
-                      sx={{
-                        minWidth: 0, height: 48, borderRadius: 2, fontWeight: 800, fontSize: '1.1rem', p: 0,
-                        bgcolor: isAnswered ? 'primary.main' : (isActive ? 'secondary.light' : 'grey.100'),
-                        color: isAnswered ? '#fff' : (isActive ? '#fff' : 'text.primary'),
-                        border: '2px solid', borderColor: isActive ? 'secondary.main' : (isAnswered ? 'primary.main' : 'grey.300'),
-                        '&:hover': { bgcolor: isAnswered ? 'primary.dark' : 'grey.200' }
-                      }}
-                    >
-                      {index + 1}
-                    </Button>
-                  );
-                })}
-              </Box>
-            </Box>
-
-            <Box sx={{ pt: 2, borderTop: '1px solid #eee', mt: 2 }}>
-              <Button
-                fullWidth variant="contained" color="success" size="large" startIcon={<SendIcon />}
-                onClick={() => setOpenSubmitConfirm(true)} disabled={isSubmitting} disableElevation
-                sx={{ borderRadius: 3, py: 1.5, fontWeight: 800, fontSize: '1.2rem' }}
-              >
-                NỘP BÀI THI
-              </Button>
-            </Box>
-          </Paper>
-        </Box>
       </Box>
+
+      {/* Drawer Bảng tiến độ  */}
+      <Drawer
+        anchor="right"
+        open={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        PaperProps={{
+          sx: { 
+            width: { xs: '85vw', sm: 400 }, 
+            p: 3, 
+            borderTopLeftRadius: 16, 
+            borderBottomLeftRadius: 16,
+            display: 'flex', flexDirection: 'column'
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h5" fontWeight={700} color="text.primary">
+            Tiến độ làm bài
+          </Typography>
+          <IconButton onClick={() => setIsDrawerOpen(false)} color="inherit">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        
+        <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1.5 }}>
+            {questions.map((q, index) => {
+              const isAnswered = (selectedAnswers[q.ques_id] || []).length > 0;
+              const isActive = index === activeStep;
+
+              return (
+                <Button
+                  key={q.ques_id} variant={isAnswered ? "contained" : "outlined"} 
+                  onClick={() => {
+                    handleStepClick(index);
+                    setIsDrawerOpen(false); 
+                  }}
+                  sx={{
+                    minWidth: 0, height: 48, borderRadius: 2, fontWeight: 800, fontSize: '1.1rem', p: 0,
+                    bgcolor: isAnswered ? 'primary.main' : (isActive ? 'secondary.light' : 'grey.100'),
+                    color: isAnswered ? '#fff' : (isActive ? '#fff' : 'text.primary'),
+                    border: '2px solid', borderColor: isActive ? 'secondary.main' : (isAnswered ? 'primary.main' : 'grey.300'),
+                    '&:hover': { bgcolor: isAnswered ? 'primary.dark' : 'grey.200' }
+                  }}
+                >
+                  {index + 1}
+                </Button>
+              );
+            })}
+          </Box>
+        </Box>
+
+        <Box sx={{ pt: 2, borderTop: '1px solid #eee', mt: 2 }}>
+          <Button
+            fullWidth variant="contained" color="success" size="large" startIcon={<SendIcon />}
+            onClick={() => {
+              setIsDrawerOpen(false);
+              setOpenSubmitConfirm(true);
+            }} 
+            disabled={isSubmitting} disableElevation
+            sx={{ borderRadius: 3, py: 1.5, fontWeight: 700, fontSize: '1.2rem' }}
+          >
+            Nộp bài thi
+          </Button>
+        </Box>
+      </Drawer>
 
       {/* Dialog xác nhận nộp bài */}
       <Dialog open={openSubmitConfirm} onClose={() => setOpenSubmitConfirm(false)} PaperProps={{ sx: { borderRadius: 4, p: 1, minWidth: 400 } }}>

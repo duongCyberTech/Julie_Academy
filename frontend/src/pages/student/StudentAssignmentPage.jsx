@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Tabs, Tab, Paper, CircularProgress, Pagination } from '@mui/material';
+import { 
+  Container, Typography, Box, Tabs, Tab, Paper, CircularProgress, Pagination,
+  Dialog, DialogTitle, DialogContent, IconButton, List, ListItem, Divider, Button, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow
+} from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getSessionsByClass, getPendingExamTakens, getCompletedExamTakens } from '../../services/ExamService';
 import AssignmentCard from '../../components/AssignmentCard';
@@ -8,6 +11,9 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import AssignmentLateIcon from '@mui/icons-material/AssignmentLate';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import UpdateIcon from '@mui/icons-material/Update';
+import CloseIcon from '@mui/icons-material/Close';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 const mergeData = (...arrays) => {
   const map = new Map();
@@ -58,12 +64,12 @@ const mergeAndFilterAssignments = (sessionsData, pendingData, completedData) => 
       else overdue.push(session);
     } 
     else {
-      if (completedHistories.length > 0 && !pendingHistory) completed.push(session);
+      // Chỉ cần có ít nhất 1 lần nộp thành công, cho vào tab Hoàn thành
+      if (completedHistories.length > 0) completed.push(session);
       else todo.push(session);
     }
   });
 
- // Sort
   upcoming.sort((a, b) => new Date(a.startAt) - new Date(b.startAt));
   todo.sort((a, b) => {
     if (a.pending_et_id && !b.pending_et_id) return -1;
@@ -71,10 +77,22 @@ const mergeAndFilterAssignments = (sessionsData, pendingData, completedData) => 
     return new Date(a.expireAt) - new Date(b.expireAt);
   });
   overdue.sort((a, b) => new Date(b.expireAt) - new Date(a.expireAt));
-  completed.sort((a, b) => {
-      const timeA = a.examTakens?.length > 0 ? new Date(a.examTakens[a.examTakens.length - 1].doneAt) : 0;
-      const timeB = b.examTakens?.length > 0 ? new Date(b.examTakens[b.examTakens.length - 1].doneAt) : 0;
-      return timeB - timeA;
+ completed.sort((a, b) => {
+      // Ưu tiên đưa các bài "Đang làm dở" lên trên cùng
+      if (a.pending_et_id && !b.pending_et_id) return -1;
+      if (!a.pending_et_id && b.pending_et_id) return 1;
+
+      // 2. Lấy thời gian nộp bài mới nhất của các lần đã nộp 
+      const getLatestDoneTime = (session) => {
+          const completedAttempts = (session.examTakens || []).filter(et => et && et.isDone);
+          if (completedAttempts.length === 0) return 0;
+          return Math.max(...completedAttempts.map(et => new Date(et.doneAt).getTime()));
+      };
+
+      const timeA = getLatestDoneTime(a);
+      const timeB = getLatestDoneTime(b);
+
+      return timeB - timeA; 
   });
 
   return { upcoming, todo, overdue, completed };
@@ -113,6 +131,9 @@ export default function StudentAssignmentPage() {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5; 
 
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedSessionHistory, setSelectedSessionHistory] = useState(null);
+
   const navigate = useNavigate();
   const { classId } = useParams(); 
   const token = localStorage.getItem('token'); 
@@ -142,7 +163,6 @@ export default function StudentAssignmentPage() {
     fetchData();
   }, [classId, token]);
 
-  // Xử lý khi chuyển Tab: Reset page về 1
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
     setPage(1); 
@@ -150,18 +170,31 @@ export default function StudentAssignmentPage() {
 
   const handleStartAssignment = (session) => navigate(`/student/assignment/class/${classId}/exam/${session.exam.exam_id}/session/${session.session_id}`);
   const handleContinueAssignment = (et_id) => navigate(`/student/assignment/continue/${et_id}`);
-const handleViewResult = (session) => {
-    // Lấy ra danh sách các lần làm bài đã hoàn thành 
-    const completedAttempts = session.examTakens?.filter(et => et.isDone) || [];
-    
-    if (completedAttempts.length > 0) {
-      const latestAttemptEtId = completedAttempts[completedAttempts.length - 1].et_id;
-      
-      // Chuyển hướng sang trang kết quả với đúng et_id
-      navigate(`/student/assignment/result/${latestAttemptEtId}`);
-    } else {
-      alert("Không tìm thấy dữ liệu kết quả của bài thi này!");
-    }
+  
+
+  const handleViewResult = (session) => {
+    navigate(`/student/assignment/history/${session.exam.exam_id}/${session.session_id}`, { 
+      state: { sessionData: session } 
+    });
+  };
+  
+  const formatShortDate = (dateString) => {
+    return new Date(dateString).toLocaleString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  };
+
+ const formatScore = (rawScore, maxPossible) => {
+    return Number(rawScore).toFixed(2).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1');
+  };
+
+ const formatDuration = (start, end) => {
+    if (!start || !end) return '-';
+    const diff = new Date(end) - new Date(start);
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    if (minutes === 0) return `${seconds} giây`;
+    return `${minutes} phút ${seconds} giây`;
   };
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress size={50} thickness={4}/></Box>;
@@ -196,17 +229,8 @@ const handleViewResult = (session) => {
             textColor="primary"
             indicatorColor="primary"
             sx={{
-              '& .MuiTabs-flexContainer': {
-                justifyContent: 'center',
-                flexWrap: 'wrap',
-              },
-              '& .MuiTab-root': {
-                py: 2.5,
-                px: 3,
-                fontWeight: 600,
-                fontSize: '0.95rem',
-                textTransform: 'none',
-              }
+              '& .MuiTabs-flexContainer': { justifyContent: 'center', flexWrap: 'wrap' },
+              '& .MuiTab-root': { py: 2.5, px: 3, fontWeight: 600, fontSize: '0.95rem', textTransform: 'none' }
             }}
           >
             {tabsConfig.map((tab) => (

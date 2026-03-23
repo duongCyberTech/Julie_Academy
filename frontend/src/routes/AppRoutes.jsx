@@ -51,6 +51,7 @@ const StudentAssignmentSessionPage = React.lazy(() => import("../pages/student/S
 const StudentAssignmentResultPage = React.lazy(() => import("../pages/student/StudentAssignmentResultPage"));
 const StudentEnrollPage = React.lazy(() => import("../pages/student/StudentEnrollPage.jsx"));
 const StudentGlobalAssignmentPage = React.lazy(() => import("../pages/student/StudentGlobalAssignmentPage"));
+const StudentAssignmentHistoryPage = React.lazy(() => import("../pages/student/StudentAssignmentHistoryPage.jsx"));
 
 // --- PARENT (Lazy Load) ---
 const ParentDashboard = React.lazy(() => import("../pages/parent/ParentDashboard.jsx"));
@@ -123,7 +124,6 @@ function AppRoutes(props) {
           </Route>
         </Route>
 
-
         {/* Nhóm các route cho Student */}
         <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
           {/* ĐÃ THÊM {...props} VÀO LAYOUT */}
@@ -132,7 +132,10 @@ function AppRoutes(props) {
             <Route path="enroll" element={<StudentEnrollPage />} />
             <Route path="profile" element={<StudentProfilePage />} />
             <Route path="classes" element={<StudentMyClassPage />} />
-            <Route path="classes/:classId" element={<StudentClassDetailPage />} />
+            <Route
+              path="classes/:classId"
+              element={<StudentClassDetailPage />}
+            />
             <Route
               path="classes/:classId/:threadId"
               element={<StudentThreadDetailPage />}
@@ -151,10 +154,16 @@ function AppRoutes(props) {
               element={<StudentPracticeReviewPage />}
             />
 
-            <Route path="assignment" element={<StudentGlobalAssignmentPage />} />
-            
-            <Route path="assignment/class/:classId" element={<StudentAssignmentPage />} />
-            
+            <Route
+              path="assignment"
+              element={<StudentGlobalAssignmentPage />}
+            />
+
+            <Route
+              path="assignment/class/:classId"
+              element={<StudentAssignmentPage />}
+            />
+
             <Route
               path="assignment/class/:classId/exam/:examId/session/:sessionId"
               element={<StudentAssignmentSessionPage />}
@@ -163,13 +172,16 @@ function AppRoutes(props) {
               path="assignment/continue/:etId"
               element={<StudentAssignmentSessionPage />}
             />
-            
-           <Route path="assignment/result/:etId" element={<StudentAssignmentResultPage />} />
 
+            <Route
+              path="assignment/result/:etId"
+              element={<StudentAssignmentResultPage />}
+            />
 
+            <Route path="assignment/history/:examId/:sessionId" element={<StudentAssignmentHistoryPage />} />
           </Route>
-        </Route>
 
+        </Route>
 
         {/* Nhóm các route cho Parent */}
         <Route element={<ProtectedRoute allowedRoles={["parents"]} />}>
@@ -182,7 +194,13 @@ function AppRoutes(props) {
         </Route>
 
         {/* Nhóm các route chung cho các role */}
-        <Route element={<ProtectedRoute allowedRoles={["admin", "student", "parents", "tutor"]} />}>
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={["admin", "student", "parents", "tutor"]}
+            />
+          }
+        >
           {/* ĐÃ THÊM {...props} VÀO LAYOUT */}
           <Route path="/settings" element={<Layout {...props} />}>
             <Route path="notifications" element={<NotificationPage />} />
@@ -193,7 +211,7 @@ function AppRoutes(props) {
         <Route
           path="*"
           element={
-            <Typography sx={{ p: 4, textAlign: 'center' }} variant="h5">
+            <Typography sx={{ p: 4, textAlign: "center" }} variant="h5">
               404 - Không Tìm Thấy Trang
             </Typography>
           }
