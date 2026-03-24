@@ -250,9 +250,30 @@ export class TutorDashboard {
 
     async getDangerCategories(tutor_id: string) {
         try {
-            
+            const noticeCategories: {
+                category_id: string,
+                category_name: string,
+                correct_cnt: number,
+                fail_cnt: number
+            }[] = await this.prisma.$queryRaw`
+                SELECT 
+                    c."category_id", 
+                    c."category_name",
+                    COUNT(CASE WHEN qet."isCorrect" = true THEN 1 END) AS correct_cnt,
+                    COUNT(CASE WHEN qet."isCorrect" = false THEN 1 END) AS fail_cnt
+                FROM public."Categories" AS c
+                JOIN public."Structure" AS st ON c."category_id" = st."cate_id"
+                JOIN public."Lesson_Plan" AS lp ON st."plan_id" = lp."plan_id"
+                -- Joining the questions and results into the main flow
+                JOIN public."Questions" AS q ON c."category_id" = q."category_id"
+                JOIN public."Question_for_exam_taken" AS qet ON q."ques_id" = qet."ques_id"
+                WHERE lp."tutor_id" = ${tutor_id}
+                GROUP BY c."category_id", c."category_name";
+            `
+
+            return noticeCategories || []
         } catch (error) {
-            
+            return []
         }
     }
 }
@@ -286,13 +307,15 @@ export class DashboardService {
         const numLessonPlan = await this.tutor.getNumLessonPlan(tutor_id)
         const numQuestions = await this.tutor.getNumMyQuestion(tutor_id)
         const upcomingSchedules = await this.tutor.getTodayUpcomingSchedule(tutor_id)
+        const noticeCategories = await this.tutor.getDangerCategories(tutor_id)
 
         return {
             numStudent,
             numClasses,
             numLessonPlan,
             numQuestions,
-            upcomingSchedules
+            upcomingSchedules,
+            noticeCategories
         }
     }
 }
