@@ -68,8 +68,13 @@ export class BookController {
 
     @Patch(':plan_id')
     @Roles('admin', 'tutor')
-    updateBook( @Param('plan_id') plan_id: string, @Body() dto: Partial<LessonPlanDto> ) {
-        return this.bookService.updatePlan(plan_id, dto);
+    updateBook( 
+        @Param('plan_id') plan_id: string, 
+        @Body() dto: Partial<LessonPlanDto>,
+        @Request() req 
+    ) {
+        const user = req.user
+        return this.bookService.updatePlan(user, plan_id, dto);
     }
 
     @Delete(':plan_id')
