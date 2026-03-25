@@ -7,17 +7,19 @@ import {
     ParseIntPipe,
     Query
 } from "@nestjs/common";
-import { DashboardService, TutorDashboard } from "./dashboard.service";
+import { DashboardService, StudentDashboard, TutorDashboard } from "./dashboard.service";
 import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guard/roles.guard";
 import { Roles } from "src/auth/decorator/roles.decorator";
+import { FilterDTO } from "./dto/filter.dto";
 
 @Controller("dashboard")
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class DashboardController {
     constructor(
         private readonly dashboardService: DashboardService,
-        private readonly tutorDashboard: TutorDashboard
+        private readonly tutorDashboard: TutorDashboard,
+        private readonly studentDashboard: StudentDashboard
     ) {}
 
     @Get('admin-stats')
@@ -41,5 +43,24 @@ export class DashboardController {
         @Param('tutor_id') tutor_id: string
     ){
         return this.dashboardService.getTutorStats(tutor_id)
+    }
+
+    @Get('student-stats')
+    @Roles('student')
+    getStudentStats(
+        @Request() req
+    ) {
+        const uid = req.user.userId
+        return this.dashboardService.getStudentOverallStats(uid)
+    }
+
+    @Get('student/current-test')
+    @Roles('student')
+    getStudentCurrentTest(
+        @Request() req,
+        @Query() query: Partial<FilterDTO>
+    ) {
+        const uid = req.user.userId
+        return this.studentDashboard.currentActivities(uid, query)
     }
 }

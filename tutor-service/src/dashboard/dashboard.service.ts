@@ -3,6 +3,96 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { FilterDTO } from './dto/filter.dto';
+
+@Injectable()
+export class StudentDashboard {
+    constructor(
+        private readonly prisma: PrismaService
+    ) {}
+
+    async scoreOfLatestTest(student_id: string) {
+        return await this.prisma.exam_taken.findFirst({
+            where: {isDone: true, student_uid: student_id},
+            select: {final_score: true},
+            orderBy: {doneAt: "desc"}
+        }).then(res => res.final_score)
+    }
+
+    async currentClasses(student_id: string) {
+        return await this.prisma.class.findMany({
+            where: {
+                learning: {some: {student_uid: student_id}},
+                status: {in: ["pending", "ongoing"]}
+            },
+            select: {
+                subject: true
+            }
+        }).then(res => ({
+            total_classes: res.length,
+            subjects: [...new Set(res.map(klass => klass.subject))] 
+        }))
+    }
+
+    async totalPracticeTime(student_id: string) {
+        return await this.prisma.exam_taken.findMany({
+            where: {
+                isDone: true, 
+                student_uid: student_id,
+                exam_id: null,
+                session_id: null
+            },
+            select: {
+                doneAt: true,
+                startAt: true
+            }
+        }).then(res => res.reduce((acc, cur) => acc + (cur.doneAt.getTime() - cur.startAt.getTime()), 0) / (1000 * 60 * 60))
+    }
+
+    async currentActivities(student_id: string, filter: Partial<FilterDTO>) {
+        return await this.prisma.exam_taken.findMany({
+            where: {
+                student_uid: student_id,
+                isDone: true,
+                ...(filter.startAt ? {startAt: {gte: filter.startAt}} : {}),
+                ...(filter.endAt ? {doneAt: {lte: filter.endAt}} : {})
+            },
+            select: {
+                exam_session: {
+                    select: {
+                        exam: {
+                            select: {
+                                title: true
+                            }
+                        },
+                        exam_open_in: {
+                            select: {
+                                class: {
+                                    select: {
+                                        subject: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                final_score: true,
+                doneAt: true
+            },
+            orderBy: [
+                {doneAt: "desc"},
+                {startAt: "desc"}
+            ],
+            take: (filter.limit ?? 10),
+            skip: ((filter.page ?? 1) - 1) * (filter.limit ?? 10)
+        }).then(res => res.map(ex => ({
+            title: ex.exam_session.exam.title,
+            subject: ex.exam_session.exam_open_in[0].class.subject,
+            score: ex.final_score,
+            doneAt: ex.doneAt
+        }))).catch(err => [])
+    }
+}
 
 @Injectable()
 export class AdminDashboard {
@@ -282,7 +372,8 @@ export class TutorDashboard {
 export class DashboardService {
     constructor(
         private readonly admin: AdminDashboard,
-        private readonly tutor: TutorDashboard
+        private readonly tutor: TutorDashboard,
+        private readonly student: StudentDashboard
     ) {}
 
     async getAdminStats(){
@@ -316,6 +407,18 @@ export class DashboardService {
             numQuestions,
             upcomingSchedules,
             noticeCategories
+        }
+    }
+
+    async getStudentOverallStats(student_id: string) {
+        const latestScore = await this.student.scoreOfLatestTest(student_id)
+        const totalPracticeTime = await this.student.totalPracticeTime(student_id)
+        const numJoinClassess = await this.student.currentClasses(student_id)
+
+        return {
+            latestScore,
+            totalPracticeTime,
+            numJoinClassess
         }
     }
 }
