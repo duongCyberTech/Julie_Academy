@@ -1,5 +1,11 @@
 import { Type } from "class-transformer";
-import { IsDate, IsNumber, IsOptional } from "class-validator";
+import { IsDate, IsEnum, IsNumber, IsOptional } from "class-validator";
+
+export enum TimeRange {
+    week,
+    month,
+    year
+}
 
 export class FilterDTO {
     @IsOptional()
@@ -21,4 +27,8 @@ export class FilterDTO {
     @IsDate()
     @Type(() => Date)
     endAt: Date
+
+    @IsOptional()
+    @IsEnum(TimeRange)
+    group_time: TimeRange = TimeRange.week
 }
