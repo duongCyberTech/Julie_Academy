@@ -1,14 +1,16 @@
 import {
     Injectable,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { PlanType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { FilterDTO } from './dto/filter.dto';
+import { FilterDTO, TimeRange } from './dto/filter.dto';
+import { CategoryService } from 'src/question/question.service';
 
 @Injectable()
 export class StudentDashboard {
     constructor(
-        private readonly prisma: PrismaService
+        private readonly prisma: PrismaService,
+        private readonly category: CategoryService
     ) {}
 
     async scoreOfLatestTest(student_id: string) {
@@ -91,6 +93,138 @@ export class StudentDashboard {
             score: ex.final_score,
             doneAt: ex.doneAt
         }))).catch(err => [])
+    }
+
+    async scoreTrend(student_id: string, filter: Partial<FilterDTO>) {
+        const timeRange: TimeRange = filter?.group_time ?? TimeRange.week
+        const currentDate = new Date()
+        const dateAgo = new Date(currentDate)
+        dateAgo.setDate(
+            timeRange == TimeRange.week ? 
+            currentDate.getDate() - 7 : 
+            (
+                timeRange == TimeRange.month ? 
+                currentDate.getDate() - 30 : 
+                currentDate.getDate() - 365
+            )
+        )
+
+        currentDate.setHours(23, 59, 59, 999)
+        dateAgo.setHours(0, 0, 0, 0)
+
+        const scoreSet = await this.prisma.exam_taken.findMany({
+            where: {
+                student_uid: student_id,
+                isDone: true,
+                doneAt: { gte: dateAgo, lte: currentDate }
+            },
+            select: {
+                final_score: true,
+                doneAt: true,
+            },
+            orderBy: { doneAt: 'asc' }
+        });
+
+        // Helper to get the group key
+        const getGroupKey = (date: Date, range: TimeRange): string => {
+            const d = new Date(date);
+            if (range === TimeRange.week) {
+                return d.toISOString().split('T')[0]; // "2026-03-26" (Daily)
+            } else if (range === TimeRange.month) {
+                // Simple logic for Week of Year
+                const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
+                const pastDaysOfYear = (d.getTime() - firstDayOfYear.getTime()) / 86400000;
+                return `Week ${Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7)}`;
+            } else {
+                return `${d.getFullYear()}-${d.getMonth() + 1}`; // "2026-3" (Monthly)
+            }
+        };
+
+        // Reduce to calculate sums and counts
+        const grouped = scoreSet.reduce((acc, curr) => {
+            const key = getGroupKey(curr.doneAt, timeRange);
+            if (!acc[key]) acc[key] = { sum: 0, count: 0 };
+            
+            // Convert Prisma's Decimal to a standard JS number
+            acc[key].sum += curr.final_score.toNumber(); 
+            acc[key].count += 1;
+            
+            return acc;
+        }, {} as Record<string, { sum: number; count: number }>);
+
+        // Map to final average format
+        const result = Object.entries(grouped).map(([label, data]) => ({
+            label,
+            averageScore: data.sum / data.count
+        }));
+
+        return result || []
+    }
+
+    async skillsMap(student_id: string, plan_id: string) {
+        const noticeCategories: {
+            category_id: string,
+            category_name: string,
+            correct_cnt: number,
+            fail_cnt: number
+        }[] = await this.prisma.$queryRaw`
+            SELECT 
+                c."category_id", 
+                c."category_name",
+                COUNT(CASE WHEN qet."isCorrect" = true THEN 1 END) AS correct_cnt,
+                COUNT(CASE WHEN qet."isCorrect" = false THEN 1 END) AS fail_cnt
+            FROM public."Categories" AS c
+            JOIN public."Structure" AS st ON c."category_id" = st."cate_id"
+            JOIN public."Lesson_Plan" AS lp ON st."plan_id" = lp."plan_id"
+            -- Joining the questions and results into the main flow
+            JOIN public."Questions" AS q ON c."category_id" = q."category_id"
+            JOIN public."Question_for_exam_taken" AS qet ON q."ques_id" = qet."ques_id"
+            JOIN public."Exam_taken" as et on et."et_id" = qet."et_id"
+            WHERE 
+                lp."plan_id" = ${plan_id} 
+                AND lp."type" = ${PlanType.book} 
+                AND et."student_uid" = ${student_id} 
+                AND et."exam_id" = NULL
+                AND et."session_id" = NULL
+            GROUP BY c."category_id", c."category_name";
+        `
+        // 1. Dùng Promise.all để đợi tất cả các vòng lặp map hoàn thành
+        const list = await Promise.all(
+            noticeCategories.map(async (item) => {
+                const rootCategory = await this.category.getRoot(item.category_id);
+                return {
+                    category_id: rootCategory.category_id,
+                    category_name: rootCategory.category_name,
+                    correct_cnt: item.correct_cnt,
+                    fail_cnt: item.fail_cnt
+                };
+            })
+        );
+
+        // 2. Gom nhóm theo category_id và tính tổng
+        const groupedList = Object.values(
+            list.reduce((acc, curr) => {
+                const id = curr.category_id;
+                
+                // Nếu category_id này chưa tồn tại trong object tích lũy (acc), khởi tạo nó
+                if (!acc[id]) {
+                    acc[id] = {
+                        category_id: id,
+                        category_name: curr.category_name,
+                        correct_cnt: 0,
+                        fail_cnt: 0
+                    };
+                }
+                
+                // Cộng dồn các chỉ số
+                acc[id].correct_cnt += curr.correct_cnt;
+                acc[id].fail_cnt += curr.fail_cnt;
+                
+                return acc;
+            }, {} as Record<string, any>) // Bỏ 'as Record...' nếu bạn chỉ dùng JavaScript
+        );
+
+        return groupedList || []
     }
 }
 

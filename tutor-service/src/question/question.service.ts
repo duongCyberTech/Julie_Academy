@@ -255,6 +255,19 @@ export class CategoryService {
     }
   }
 
+  async getRoot(category_id: string) {
+    const category = await this.prisma.categories.findUnique({
+      where: {category_id},
+      select: {
+        category_id: true,
+        category_name: true,
+        parent_id: true
+      }
+    })
+
+    return category.parent_id == null ? category : (await this.getRoot(category.parent_id))
+  }
+
   async getAllCategories(
     mode: string = 'tree',
     plan_id?: string,

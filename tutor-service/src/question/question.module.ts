@@ -7,5 +7,6 @@ import { PrismaModule } from 'src/prisma/prisma.module';
   imports: [PrismaModule],
   controllers: [QuestionController, CategoryController, BookController],
   providers: [QuestionService, CategoryService, LessonPlanService],
+  exports: [CategoryService]
 })
 export class QuestionModule {}

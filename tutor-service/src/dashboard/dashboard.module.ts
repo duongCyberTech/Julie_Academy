@@ -5,10 +5,11 @@ import { DashboardService, AdminDashboard, TutorDashboard, StudentDashboard } fr
 
 // Import other necessary modules
 import { PrismaModule } from "src/prisma/prisma.module";
+import { QuestionModule } from "src/question/question.module";
 
 @Module({
     controllers: [DashboardController],
     providers: [DashboardService, AdminDashboard, TutorDashboard, StudentDashboard],
-    imports: [PrismaModule],
+    imports: [PrismaModule, QuestionModule],
 })
 export class DashboardModule {}
