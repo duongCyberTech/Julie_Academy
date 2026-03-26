@@ -489,7 +489,7 @@ export default function StudentAssignmentSessionPage() {
 
       {/* Dialog xác nhận nộp bài */}
       <Dialog open={openSubmitConfirm} onClose={() => setOpenSubmitConfirm(false)} PaperProps={{ sx: { borderRadius: 4, p: 1, minWidth: 400 } }}>
-        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.5rem', textAlign: 'center', pb: 1 }}>Xác nhận nộp bài</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.6rem', textAlign: 'center', pb: 1 }}>Xác nhận nộp bài</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ fontSize: '1.1rem', textAlign: 'center', color: 'text.primary' }}>
             Bạn đã trả lời <Typography component="span" fontWeight={800} color="primary" fontSize="1.3rem">{Object.values(selectedAnswers).filter(a => a && a.length > 0).length}</Typography> / {questions.length} câu hỏi. <br/><br/>
