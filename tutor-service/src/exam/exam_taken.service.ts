@@ -343,6 +343,7 @@ export class ExamTakenService {
         
         let score: number = 0;
         let cnt: number = 0;
+        let ques_correct = []
 
         for (const ans of trueAnswers) {
             let currentQuesScore: number = 0.0;
@@ -352,6 +353,7 @@ export class ExamTakenService {
                 if (ans.answers[0] === userAnswer) {
                     currentQuesScore = 1.0;
                     cnt++;
+                    ques_correct.push(ans.ques_id)
                 }
             } else if (ans.type === QuestionType.multiple_choice) {
                 const sysAns = ans.answers;
@@ -364,7 +366,10 @@ export class ExamTakenService {
                     let subscore: number = (correctCount - wrongCount) * 1.0 / sysAns.length;
                     currentQuesScore = Math.max(subscore, 0.0);
 
-                    if (currentQuesScore > 0.0) cnt++;
+                    if (currentQuesScore > 0.0) {
+                        if (currentQuesScore > 0.5) ques_correct.push(ans.ques_id)
+                        cnt++;
+                    }
                 }
             }
 
@@ -374,7 +379,7 @@ export class ExamTakenService {
         // nếu cần fix sai số
         score = Number(score.toFixed(6));
 
-        return {score, cnt}
+        return {score, cnt, ques_correct}
     }
 
     async submitExam(class_id: string, et_id: string, isDone: boolean, student_id: string, answers: SubmitAnswerDto[]) {
@@ -400,7 +405,7 @@ export class ExamTakenService {
                 skipDuplicates: true
             })
 
-            const {score, cnt}: {score: number, cnt: number} = await this.calculateScore(tx, answers)
+            const {score, cnt, ques_correct}: {score: number, cnt: number, ques_correct: string[]} = await this.calculateScore(tx, answers)
 
             const examData = await tx.exam_session.findFirst({
                 where: {examTakens: {some: {et_id}}},
@@ -422,6 +427,13 @@ export class ExamTakenService {
                     doneAt: new Date(),
                     total_ques_completed: cnt,
                     final_score: new Prisma.Decimal((score * examData.exam.total_score / examData.exam.total_ques).toFixed(2)),
+                }
+            })
+
+            await tx.question_for_exam_taken.updateMany({
+                where: {et_id, ques_id: {in: ques_correct}},
+                data: {
+                    isCorrect: true
                 }
             })
 

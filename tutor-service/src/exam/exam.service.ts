@@ -244,8 +244,6 @@ export class ExamService {
                     ]
                 })
 
-                console.log(examSessions.length)
-
                 return examSessions
             } else {
                 const currentDate = new Date();
@@ -365,6 +363,8 @@ export class ExamService {
                 total_score: true,
                 total_ques: true,
                 level: true,
+                createdAt: true,
+                updateAt: true,
                 tutor: {
                     select:{ user:{
                         select:{
@@ -406,6 +406,8 @@ export class ExamService {
                 total_score: true,
                 total_ques: true,
                 level: true,
+                createdAt: true,
+                updateAt: true,
                 tutor: {
                     select:{ user:{
                         select:{

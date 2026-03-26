@@ -20,7 +20,7 @@ import {
   Fingerprint,
   InfoOutlined
 } from "@mui/icons-material";
-import "../student/Profile.css"; // Dùng chung CSS
+import "../student/Profile.css"; 
 
 const AdminProfilePage = () => {
   const navigate = useNavigate();

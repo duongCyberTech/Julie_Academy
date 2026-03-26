@@ -4,12 +4,14 @@ import {
     Stack, Select, MenuItem, TextField, FormControl, InputLabel,
     List, ListItem, ListItemText, IconButton, Divider, Link,
     Snackbar, Alert, Dialog, DialogTitle, DialogContent, 
-    DialogContentText, DialogActions, Chip, Grid
+    DialogContentText, DialogActions, Chip, Grid, useTheme
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import dayjs from 'dayjs';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -18,6 +20,8 @@ import EventRepeatIcon from '@mui/icons-material/EventRepeat';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 
 import { getScheduleByClass, createSchedule, deleteSchedule } from '../../services/ClassService';
+
+dayjs.extend(isSameOrBefore);
 
 const DAY_OPTIONS = [
     { value: 2, label: 'Thứ 2' },
@@ -37,6 +41,9 @@ const INITIAL_STATE = {
 };
 
 const ScheduleTab = ({ classId, token }) => {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -83,7 +90,15 @@ const ScheduleTab = ({ classId, token }) => {
 
     const handleAddSchedule = async () => {
         if (!formData.startAt || !formData.endAt) {
-            showToast('Vui lòng chọn thời gian bắt đầu và kết thúc', 'warning');
+            showToast('Vui lòng chọn đầy đủ thời gian bắt đầu và kết thúc', 'warning');
+            return;
+        }
+
+        const startTime = dayjs(formData.startAt, 'HH:mm');
+        const endTime = dayjs(formData.endAt, 'HH:mm');
+
+        if (endTime.isSameOrBefore(startTime)) {
+            showToast('Thời gian kết thúc phải lớn hơn thời gian bắt đầu!', 'error');
             return;
         }
 
@@ -122,15 +137,23 @@ const ScheduleTab = ({ classId, token }) => {
 
     return (
         <Box>
-            <Paper variant="outlined" sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-                <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EventRepeatIcon color="primary" /> Thiết lập lịch học
+            {/* FORM THÊM LỊCH HỌC */}
+            <Paper 
+                variant="outlined" 
+                sx={{ 
+                    p: 2, mb: 3, borderRadius: '12px', 
+                    bgcolor: isDark ? alpha(theme.palette.background.default, 0.4) : alpha(theme.palette.primary.main, 0.02),
+                    borderColor: isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6)
+                }}
+            >
+                <Typography variant="subtitle1" fontWeight={700} color="primary.main" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <EventRepeatIcon fontSize="small" /> Thiết lập lịch học
                 </Typography>
                 
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
+                    <Grid container spacing={1.5} alignItems="center" sx={{ mt: 0.5 }}>
                         <Grid size={{ xs: 12, md: 3 }}>
-                            <FormControl fullWidth size="small">
+                            <FormControl fullWidth size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
                                 <InputLabel>Ngày trong tuần</InputLabel>
                                 <Select
                                     name="meeting_date"
@@ -139,7 +162,7 @@ const ScheduleTab = ({ classId, token }) => {
                                     onChange={handleFormChange}
                                 >
                                     {DAY_OPTIONS.map(opt => (
-                                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                        <MenuItem key={opt.value} value={opt.value} sx={{ fontWeight: 500 }}>{opt.label}</MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
@@ -149,7 +172,7 @@ const ScheduleTab = ({ classId, token }) => {
                                 label="Bắt đầu"
                                 value={dayjs(formData.startAt, 'HH:mm')}
                                 onChange={(val) => handleTimeChange('startAt', val)}
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                                slotProps={{ textField: { size: 'small', fullWidth: true, sx: { bgcolor: 'background.paper', borderRadius: 1 } } }}
                                 ampm={false}
                             />
                         </Grid>
@@ -158,8 +181,9 @@ const ScheduleTab = ({ classId, token }) => {
                                 label="Kết thúc"
                                 value={dayjs(formData.endAt, 'HH:mm')}
                                 onChange={(val) => handleTimeChange('endAt', val)}
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                                slotProps={{ textField: { size: 'small', fullWidth: true, sx: { bgcolor: 'background.paper', borderRadius: 1 } } }}
                                 ampm={false}
+                                minTime={dayjs(formData.startAt, 'HH:mm').add(1, 'minute')}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, md: 3 }}>
@@ -168,10 +192,10 @@ const ScheduleTab = ({ classId, token }) => {
                                 variant="contained"
                                 onClick={handleAddSchedule}
                                 disabled={submitting}
-                                startIcon={submitting ? <CircularProgress size={20} color="inherit"/> : <AddCircleOutlineIcon />}
-                                sx={{ height: 40 }}
+                                startIcon={submitting ? <CircularProgress size={16} color="inherit"/> : <AddCircleOutlineIcon fontSize="small"/>}
+                                sx={{ height: 40, borderRadius: '8px', fontWeight: 700 }}
                             >
-                                Thêm lịch
+                                Thêm
                             </Button>
                         </Grid>
                         <Grid size={{ xs: 12 }}>
@@ -183,8 +207,9 @@ const ScheduleTab = ({ classId, token }) => {
                                 size="small"
                                 fullWidth
                                 placeholder="https://..."
+                                sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                                 InputProps={{
-                                    startAdornment: <LinkIcon color="action" sx={{ mr: 1 }} />
+                                    startAdornment: <LinkIcon color="action" sx={{ mr: 1, fontSize: 20 }} />
                                 }}
                             />
                         </Grid>
@@ -192,96 +217,122 @@ const ScheduleTab = ({ classId, token }) => {
                 </LocalizationProvider>
             </Paper>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" fontWeight={600}>
+            {/* DANH SÁCH LỊCH HỌC */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                <Typography variant="h6" fontWeight={700} color="text.primary">
                     Lịch học hiện tại ({schedules.length})
                 </Typography>
                 {schedules.length > 0 && (
                     <Button 
                         color="error" 
                         size="small" 
-                        startIcon={<DeleteSweepIcon />}
+                        startIcon={<DeleteSweepIcon fontSize="small"/>}
                         onClick={() => setDeleteDialog({ open: true, type: 'all' })}
+                        sx={{ fontWeight: 600, borderRadius: '8px', bgcolor: alpha(theme.palette.error.main, 0.08) }}
                     >
                         Xóa tất cả
                     </Button>
                 )}
             </Box>
 
-            <Paper variant="outlined" sx={{ borderRadius: 2 }}>
+            <Paper 
+                variant="outlined" 
+                sx={{ 
+                    borderRadius: '12px', 
+                    borderColor: isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6),
+                    bgcolor: 'background.paper',
+                    overflow: 'hidden'
+                }}
+            >
                 <List disablePadding>
                     {loading ? (
-                        <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
-                            <CircularProgress />
+                        <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
+                            <CircularProgress size={30} />
                         </Box>
                     ) : schedules.length === 0 ? (
-                        <Box sx={{ p: 4, textAlign: 'center' }}>
-                            <Typography color="text.secondary">Chưa có lịch học nào.</Typography>
+                        <Box sx={{ p: 3, textAlign: 'center' }}>
+                            <Typography variant="body2" color="text.secondary">Chưa có lịch học nào.</Typography>
                         </Box>
                     ) : (
                         schedules.map((item, index) => (
                             <React.Fragment key={item.schedule_id}>
                                 <ListItem
+                                    sx={{ 
+                                        py: 1.5,
+                                        transition: 'all 0.2s',
+                                        '&:hover': { bgcolor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.02) }
+                                    }}
                                     secondaryAction={
-                                        <IconButton edge="end" onClick={() => setDeleteDialog({ open: true, type: 'single', id: item.schedule_id })}>
-                                            <DeleteIcon color="action" />
+                                        <IconButton 
+                                            edge="end" 
+                                            size="small"
+                                            onClick={() => setDeleteDialog({ open: true, type: 'single', id: item.schedule_id })}
+                                            sx={{ color: 'error.main', '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) } }}
+                                        >
+                                            <DeleteIcon fontSize="small" />
                                         </IconButton>
                                     }
                                 >
                                     <ListItemText
                                         primary={
-                                            <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                                            <Stack direction="row" spacing={1.5} alignItems="center" mb={0.5}>
                                                 <Chip 
                                                     label={getDayLabel(item.meeting_date)} 
                                                     color="primary" 
                                                     size="small" 
-                                                    sx={{ fontWeight: 'bold', minWidth: 80 }}
+                                                    sx={{ fontWeight: 700, minWidth: 70, borderRadius: 1.5, height: 24, fontSize: '0.75rem' }}
                                                 />
-                                                <Typography variant="body1" fontWeight={500}>
+                                                <Typography variant="body2" fontWeight={600} color="text.primary">
                                                     {item.startAt} - {item.endAt}
                                                 </Typography>
                                             </Stack>
                                         }
                                         secondary={
                                             item.link_meet ? (
-                                                <Link href={item.link_meet} target="_blank" underline="hover" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    <LinkIcon fontSize="small" /> Vào phòng học
+                                                <Link href={item.link_meet} target="_blank" underline="hover" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.5, fontWeight: 500, fontSize: '0.8rem' }}>
+                                                    <LinkIcon fontSize="small" sx={{ fontSize: 16 }}/> Vào phòng học
                                                 </Link>
                                             ) : (
-                                                <Typography variant="caption" color="text.disabled">Chưa có link</Typography>
+                                                <Typography variant="caption" color="text.disabled" sx={{ display: 'inline-block', mt: 0.5 }}>Chưa có link</Typography>
                                             )
                                         }
                                     />
                                 </ListItem>
-                                {index < schedules.length - 1 && <Divider />}
+                                {index < schedules.length - 1 && <Divider sx={{ borderColor: isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6) }} />}
                             </React.Fragment>
                         ))
                     )}
                 </List>
             </Paper>
 
-            <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, type: null, id: null })}>
-                <DialogTitle>Xác nhận xóa</DialogTitle>
+            {/* DIALOG XÁC NHẬN XÓA */}
+            <Dialog 
+                open={deleteDialog.open} 
+                onClose={() => setDeleteDialog({ open: false, type: null, id: null })}
+                PaperProps={{ sx: { borderRadius: '12px', p: 1, bgcolor: 'background.paper', backgroundImage: 'none' } }}
+            >
+                <DialogTitle sx={{ fontWeight: 700, fontSize: '1.1rem' }}>Xác nhận xóa</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>
+                    <DialogContentText variant="body2">
                         {deleteDialog.type === 'all' 
                             ? "Bạn có chắc chắn muốn xóa toàn bộ lịch học không? Hành động này không thể hoàn tác."
                             : "Bạn có chắc chắn muốn xóa khung giờ học này không?"}
                     </DialogContentText>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setDeleteDialog({ open: false, type: null, id: null })}>Hủy</Button>
-                    <Button onClick={confirmDelete} color="error" variant="contained">Xóa</Button>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setDeleteDialog({ open: false, type: null, id: null })} color="inherit" size="small" sx={{ fontWeight: 600 }}>Hủy</Button>
+                    <Button onClick={confirmDelete} color="error" variant="contained" size="small" disableElevation sx={{ borderRadius: '8px', fontWeight: 700 }}>Xóa</Button>
                 </DialogActions>
             </Dialog>
 
+            {/* TOAST THÔNG BÁO */}
             <Snackbar 
                 open={toast.open} 
                 autoHideDuration={4000} 
                 onClose={() => setToast(prev => ({ ...prev, open: false }))}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
-                <Alert severity={toast.severity} variant="filled" onClose={() => setToast(prev => ({ ...prev, open: false }))}>
+                <Alert severity={toast.severity} variant="filled" onClose={() => setToast(prev => ({ ...prev, open: false }))} sx={{ borderRadius: '8px' }}>
                     {toast.message}
                 </Alert>
             </Snackbar>

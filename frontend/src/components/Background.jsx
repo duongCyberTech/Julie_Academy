@@ -1,5 +1,5 @@
+import React from 'react';
 import { Box, useTheme, alpha } from '@mui/material';
-import bgImage from '../assets/images/bg.webp';
 
 export const Background = ({ children }) => {
   const theme = useTheme();
@@ -10,19 +10,42 @@ export const Background = ({ children }) => {
       sx={{
         minHeight: '100vh',
         width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundImage: isDark
-          ? `linear-gradient(${alpha(theme.palette.background.default, 0.92)}, ${alpha(theme.palette.background.default, 0.95)}), url(${bgImage})`
-          : `linear-gradient(${alpha(theme.palette.background.default, 0.88)}, ${alpha(theme.palette.background.default, 0.92)}), url(${bgImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        backgroundRepeat: 'no-repeat',
-        transition: 'background-image 0.3s ease',
+        position: 'relative',
+        bgcolor: 'background.default',
+        overflow: 'hidden',
+        '&::before': isDark ? {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `linear-gradient(${alpha('#38BDF8', 0.05)} 1px, transparent 1px), 
+                            linear-gradient(90deg, ${alpha('#38BDF8', 0.05)} 1px, transparent 1px)`,
+          backgroundSize: '40px 40px',
+          maskImage: 'radial-gradient(ellipse at center, black, transparent 80%)',
+        } : {},
+        '&::after': isDark ? {
+          content: '""',
+          position: 'absolute',
+          top: '-10%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '80%',
+          height: '40%',
+          background: `radial-gradient(circle, ${alpha('#38BDF8', 0.15)} 0%, transparent 70%)`,
+          filter: 'blur(80px)',
+          zIndex: 0,
+        } : {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          background: `radial-gradient(circle at 0% 0%, #FFF5F7 0%, transparent 50%), 
+                       radial-gradient(circle at 100% 100%, #F0F9FF 0%, transparent 50%)`,
+          zIndex: 0,
+        },
       }}
     >
-      {children}
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        {children}
+      </Box>
     </Box>
   );
 };

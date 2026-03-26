@@ -5,7 +5,6 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
 export default function ReviewRestrictedDialog({ open, onClose, score }) {
   
-  // Format điểm số cho đẹp 
   const displayScore = score !== null 
     ? Number(score).toFixed(2).replace(/\.00$/, '').replace(/(\.[1-9])0$/, '$1') 
     : '-';

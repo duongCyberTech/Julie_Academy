@@ -20,69 +20,70 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import CreateClassDialog from '../../components/CreateClassDialog';
 import UpdateClassDialog from '../../components/UpdateClassDialog';
 
-// ==========================================
-// 1. PAGE WRAPPER CHUẨN SOFT UI
-// ==========================================
-const PageWrapper = styled(Paper)(({ theme }) => ({
-    margin: theme.spacing(2), 
-    padding: theme.spacing(4), 
-    backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : theme.palette.background.paper,
-    borderRadius: '24px',
-    border: `1px solid ${theme.palette.divider}`,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
-    minHeight: 'calc(100vh - 120px)', 
-    display: 'flex',
-    flexDirection: 'column',
-}));
+const PageWrapper = styled(Paper)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        margin: theme.spacing(3),
+        padding: theme.spacing(5),
+        backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB',
+        backgroundImage: 'none',
+        borderRadius: '24px',
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
+        boxShadow: isDark ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` : '0 8px 48px rgba(0,0,0,0.03)',
+        minHeight: 'calc(100vh - 120px)',
+        display: 'flex',
+        flexDirection: 'column',
+    };
+});
 
-
-// Header fix để không bị ép nhỏ khi cuộn
-const Header = styled(Box)(({ theme }) => ({
+const HeaderBar = styled(Box)(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing(3),
+    marginBottom: theme.spacing(4),
     flexShrink: 0,
 }));
 
-// Khu vực nội dung cuộn độc lập
 const ScrollableContent = styled(Box)(({ theme }) => ({
     flexGrow: 1,
     overflowY: 'auto',
-    paddingRight: theme.spacing(1), // Tránh để thanh cuộn đè lên nội dung
-    // Tùy chỉnh thanh cuộn thanh mảnh
+    paddingRight: theme.spacing(1),
     "&::-webkit-scrollbar": { width: "6px" },
     "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
     "&::-webkit-scrollbar-thumb": {
-        backgroundColor: alpha(theme.palette.grey[400], 0.5),
+        backgroundColor: alpha(theme.palette.text.secondary, 0.2),
         borderRadius: "10px",
-        "&:hover": { backgroundColor: theme.palette.grey[500] },
+        "&:hover": { backgroundColor: alpha(theme.palette.text.secondary, 0.4) },
     },
 }));
 
-// ==========================================
-// STYLED COMPONENTS KHÁC
-// ==========================================
-const ClassCardStyled = styled(Card)(({ theme }) => ({
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    transition: 'all 0.2s ease-in-out',
-    borderRadius: 16, // Bo góc cho Card
-    border: `1px solid ${theme.palette.divider}`,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-    '&:hover': {
-        transform: 'translateY(-4px)',
-        boxShadow: '0 12px 24px rgba(0,0,0,0.08)',
-        borderColor: theme.palette.primary.main,
-    }
-}));
+const ClassCardStyled = styled(Card)(({ theme }) => {
+    const isDark = theme.palette.mode === 'dark';
+    return {
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: '16px',
+        backgroundColor: theme.palette.background.paper,
+        backgroundImage: 'none',
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6)}`,
+        boxShadow: isDark ? 'none' : '0px 4px 12px rgba(0,0,0,0.02)',
+        transition: 'all 0.3s',
+        '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: isDark
+                ? `0 0 20px ${alpha(theme.palette.primary.main, 0.1)}`
+                : '0px 12px 24px rgba(0,0,0,0.06)',
+            borderColor: theme.palette.primary.main,
+        }
+    };
+});
 
 const EmptyIllustration = () => (
     <SvgIcon
         component="svg"
         viewBox="0 0 128 128"
-        sx={{ width: 140, height: 140, color: 'primary.main', opacity: 0.6 }}
+        sx={{ width: 140, height: 140, color: 'primary.main', opacity: (t) => t.palette.mode === 'dark' ? 0.4 : 0.6 }}
     >
         <path fill="currentColor" d="M101.4 39.9H82.2V28c0-3.3-2.7-6-6-6H51.8c-3.3 0-6 2.7-6 6v11.9H26.6c-3.3 0-6 2.7-6 6v47.5c0 3.3 2.7 6 6 6h74.9c3.3 0 6-2.7 6-6V45.9c-.1-3.3-2.7-6-6.1-6zM57.8 34h12.4v5.9H57.8V34zM99.4 87.4H28.6V47.9h70.9v39.5z" />
         <path fill="currentColor" d="M64 57.5c-1.7 0-3 1.3-3 3v13.1h-13.1c-1.7 0-3 1.3-3 3s1.3 3 3 3H61v13.1c0 1.7 1.3 3 3 3s3-1.3 3-3V79.6h13.1c1.7 0 3-1.3 3-3s-1.3-3-3-3H67V60.5c0-1.7-1.3-3-3-3z" />
@@ -91,31 +92,35 @@ const EmptyIllustration = () => (
 
 const RenderEmptyState = memo(({ onOpenCreateDialog }) => (
     <Paper
-        variant="outlined"
+        elevation={0}
         sx={{
-            flexGrow: 1, // Căn giữa tự động trong ScrollableContent
+            flexGrow: 1,
             minHeight: '400px',
-            p: { xs: 3, md: 6 }, textAlign: 'center',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
+            p: { xs: 3, md: 6 },
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '2px dashed',
             borderColor: 'divider',
-            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.02),
-            borderRadius: 3
+            backgroundColor: 'transparent',
+            borderRadius: 3,
+            mt: 2
         }}
     >
         <EmptyIllustration />
-        <Typography variant="h5" component="h2" fontWeight={600} mt={2} color="text.primary">
+        <Typography variant="h6" color="text.secondary" fontWeight={600} mt={2}>
             Bạn chưa có lớp học nào
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mt: 1.5, mb: 3, maxWidth: '450px' }}>
-            Hãy bắt đầu tạo lớp học đầu tiên của bạn để quản lý học sinh, 
-            giao bài tập và theo dõi tiến độ.
+        <Typography variant="body2" color="text.disabled" sx={{ mt: 1, mb: 3, maxWidth: '450px' }}>
+            Hãy bắt đầu tạo lớp học đầu tiên của bạn để quản lý học sinh, giao bài tập và theo dõi tiến độ.
         </Typography>
         <Button
             variant="contained"
-            onClick={onOpenCreateDialog} 
+            onClick={onOpenCreateDialog}
             startIcon={<AddCircleOutlineIcon />}
-            sx={{ fontWeight: 'bold', px: 4, py: 1.5, borderRadius: '12px' }}
+            sx={{ fontWeight: 700, px: 4, py: 1.5, borderRadius: '12px' }}
         >
             Tạo lớp học đầu tiên
         </Button>
@@ -130,20 +135,20 @@ const StatusChip = memo(({ status }) => {
         cancelled: { label: "Đã hủy", color: "error", icon: <CancelIcon /> },
     };
     const { label, color, icon } = statusMap[status] || statusMap.pending;
-    return <Chip icon={icon} label={label} color={color} size="small" variant="outlined" />;
+    return <Chip icon={icon} label={label} color={color} size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
 });
 
 const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
-    <Grid container spacing={3} sx={{ pb: 2, m: 0, width: '100%' }}>
+    <Grid container spacing={3} sx={{ pb: 2, pt: 2 }}>
         {classes.map((classItem) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={classItem.class_id} sx={{ pl: "0 !important" }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={classItem.class_id}>
                 <ClassCardStyled>
-                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
-                        <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
+                        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <StatusChip status={classItem.status} />
                         </Box>
                         
-                        <Typography variant="h6" component="h2" fontWeight={600} noWrap title={classItem.classname} gutterBottom>
+                        <Typography variant="h6" fontWeight="700" noWrap title={classItem.classname} sx={{ mb: 1 }} color="text.primary">
                             {classItem.classname}
                         </Typography>
                         
@@ -165,32 +170,38 @@ const RenderClassGrid = memo(({ classes, onNavigate, onEdit }) => (
                             {classItem.description || "Chưa có mô tả cho lớp học này."}
                         </Typography>
                         
-                        <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                            Môn: {classItem.subject || 'N/A'} • Khối: {classItem.grade || 'N/A'}
-                        </Typography>
+                        <Box display="flex" flexDirection="column" gap={0.5}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                                Môn học: <Box component="span" fontWeight={700} color="text.primary">{classItem.subject || 'N/A'}</Box>
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                                Khối lớp: <Box component="span" fontWeight={700} color="text.primary">{classItem.grade || 'N/A'}</Box>
+                            </Typography>
+                        </Box>
                     </CardContent>
                     
                     <CardActions sx={{ 
                         justifyContent: 'space-between', 
-                        px: 2.5, pb: 2, pt: 1.5, 
-                        backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.03),
+                        px: 3, pb: 2.5, pt: 2, 
+                        backgroundColor: (theme) => theme.palette.mode === 'dark' 
+                            ? alpha(theme.palette.background.default, 0.4) 
+                            : alpha(theme.palette.grey[50], 0.8),
                         borderTop: '1px solid',
                         borderColor: 'divider'
                     }}>
-                        <Box>
-                            <Tooltip title="Chỉnh sửa thông tin">
-                                <IconButton size="small" onClick={() => onEdit(classItem)}>
-                                    <EditIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
+                        <Tooltip title="Chỉnh sửa thông tin">
+                            <IconButton size="small" onClick={() => onEdit(classItem)} color="inherit" sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
                         <Button
                             size="small"
                             variant="contained"
+                            color="primary"
                             disableElevation
                             endIcon={<ArrowForwardIcon />}
                             onClick={() => onNavigate(classItem.class_id)}
-                            sx={{ fontWeight: 600, borderRadius: '8px' }}
+                            sx={{ fontWeight: 700, borderRadius: '10px' }}
                         >
                             Chi tiết
                         </Button>
@@ -260,8 +271,8 @@ function ClassPage() {
         
         if (error) {
             return (
-                <Alert severity="error" sx={{ mt: 2, flexShrink: 0 }} action={
-                    <Button color="inherit" size="small" onClick={fetchClasses}>Thử lại</Button>
+                <Alert severity="error" sx={{ mt: 2, flexShrink: 0, borderRadius: 2 }} action={
+                    <Button color="inherit" size="small" onClick={fetchClasses} sx={{ fontWeight: 700 }}>Thử lại</Button>
                 }>
                     {error}
                 </Alert>
@@ -283,12 +294,12 @@ function ClassPage() {
 
     return (
         <PageWrapper>
-            <Header>
+            <HeaderBar>
                 <Box>
-                    <Typography variant="h4" component="h1" fontWeight="bold">
+                    <Typography variant="h4" fontWeight="700" color="text.primary">
                         Lớp học của tôi
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.95rem", mt: 0.5, display: "block" }}>
                         Quản lý danh sách lớp học và học viên
                     </Typography>
                 </Box>
@@ -298,12 +309,12 @@ function ClassPage() {
                         color="primary"
                         onClick={() => setOpenCreateDialog(true)}
                         startIcon={<AddCircleOutlineIcon />}
-                        sx={{ fontWeight: 'bold', borderRadius: '12px', px: 3 }}
+                        sx={{ fontWeight: 700, borderRadius: '12px', px: 3, py: 1 }}
                     >
                         Tạo lớp mới
                     </Button>
                 )}
-            </Header>
+            </HeaderBar>
 
             <ScrollableContent>
                 {renderContent()}
@@ -314,7 +325,7 @@ function ClassPage() {
                 onClose={() => setOpenCreateDialog(false)} 
                 onRefresh={fetchClasses} 
             />
-             <UpdateClassDialog
+            <UpdateClassDialog
                 open={openEditDialog}
                 onClose={handleCloseEdit}
                 onRefresh={fetchClasses}

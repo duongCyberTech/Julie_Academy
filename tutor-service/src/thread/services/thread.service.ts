@@ -6,6 +6,7 @@ import { DateTime } from 'luxon'
 import { CloudinaryService } from "src/resource/cloudinary/cloudinary.service";
 import { CreateNotificationDTO } from "src/notifications/dto/notification.dto";
 import { NotificationType } from "@prisma/client";
+import { FilterDTO } from "../dto/filter.dto";
 
 @Injectable()
 export class ThreadService {
@@ -118,7 +119,7 @@ export class ThreadService {
         })
     }
 
-    async getThreadsByClass(uid: string, class_id: string, page: number = 1) {
+    async getThreadsByClass(uid: string, class_id: string, query: Partial<FilterDTO>) {
         const checkInClass = await this.prisma.class.findFirst({
             where: {
                 class_id,
@@ -129,6 +130,35 @@ export class ThreadService {
             }
         })
         if (!checkInClass) throw new ForbiddenException("User not have permission")
+
+        const { day, month, year, page } = query;
+
+        let timeCondition = {};
+
+        if (year && month) {
+            const monthIdx = month - 1; 
+
+            const startDate = new Date(year, monthIdx, day || 1);
+            startDate.setHours(0, 0, 0, 0);
+
+            const lastDay = day || new Date(year, month, 0).getDate();
+            const endDate = new Date(year, monthIdx, lastDay);
+            endDate.setHours(23, 59, 59, 999);
+
+            timeCondition = {
+                createAt: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            };
+        } else if (year) {
+            timeCondition = {
+                createAt: {
+                    gte: new Date(year, 0, 1, 0, 0, 0, 0),
+                    lte: new Date(year, 11, 31, 23, 59, 59, 999)
+                }
+            };
+        }
         return await this.prisma.thread.findMany({
             where: {
                 class_id,
@@ -136,10 +166,11 @@ export class ThreadService {
                     {is_restricted: false},
                     {open_list: {array_contains: uid}},
                     {sender: {uid}}
-                ]
+                ],
+                ...timeCondition
             },
             take: 10,
-            skip: (page - 1) * 10,
+            skip: ((page ?? 1) - 1) * 10,
             orderBy: {createAt: 'desc'},
             select: {
                 thread_id: true,

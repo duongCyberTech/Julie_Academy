@@ -53,6 +53,26 @@ export class CommentController {
         return this.commentService.createComment(uid, thread_id, data, images)
     }
 
+    @Patch('/pin/:thread_id/:comment_id')
+    pinComment(
+        @Param('thread_id', ParseUUIDPipe) thread_id: string,
+        @Param('comment_id', ParseIntPipe) comment_id: number,
+        @Request() req
+    ){
+        const uid = req.user.userId
+        this.commentService.pinComment(uid, thread_id, comment_id)
+    }
+
+    @Patch('/unpin/:thread_id/:comment_id')
+    unpinComment(
+        @Param('thread_id', ParseUUIDPipe) thread_id: string,
+        @Param('comment_id', ParseIntPipe) comment_id: number,
+        @Request() req
+    ){
+        const uid = req.user.userId
+        this.commentService.unpinComment(uid, thread_id, comment_id)
+    }
+
     @Get('/thread/:thread_id')
     getCommentsByThread(
         @Param('thread_id', ParseUUIDPipe) thread_id: string,

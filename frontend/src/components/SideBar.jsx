@@ -16,7 +16,6 @@ import {
 } from "@mui/material";
 import { jwtDecode } from "jwt-decode";
 
-// Import Icons
 import DashboardIcon from "@mui/icons-material/DashboardCustomizeOutlined";
 import LibraryIcon from "@mui/icons-material/MenuBookOutlined";
 import AccountBoxIcon from "@mui/icons-material/AccountBoxOutlined";
@@ -31,7 +30,6 @@ import HomeWorkOutlinedIcon from '@mui/icons-material/HomeWorkOutlined';
 
 import Logo from "../assets/images/logo.png";
 
-// Cấu hình Menu (Gọn gàng, dễ thêm/sửa)
 const menuConfigByRole = {
   tutor: [
     { label: "Tổng quan", to: "/tutor/dashboard", Icon: DashboardIcon },
@@ -59,80 +57,105 @@ const menuConfigByRole = {
   ],
 };
 
-// --- STYLED COMPONENTS ---
 
 const StyledDrawer = styled(Drawer, {
   shouldForwardProp: (prop) => prop !== "width",
-})(({ theme, width }) => ({
-  flexShrink: 0,
-  whiteSpace: "nowrap",
-  boxSizing: "border-box",
-  "& .MuiDrawer-paper": {
-    width: width, 
-    overflowX: "hidden",
-    borderRight: `1px solid ${alpha(theme.palette.divider, 0.5)}`, // Nối liền mạch với Header
-    backgroundColor: alpha(theme.palette.background.default, 0.7),
-    backdropFilter: "blur(10px)",
-    transition: theme.transitions.create("width", {
-      easing: theme.transitions.easing.easeInOut,
-      duration: theme.transitions.duration.standard,
-    }),
-  },
-}));
+})(({ theme, width }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+    boxSizing: "border-box",
+    "& .MuiDrawer-paper": {
+      width: width, 
+      overflowX: "hidden",
+      borderRight: `1px solid ${isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.divider, 0.08)}`, 
+      backgroundColor: theme.palette.background.paper,
+      backgroundImage: 'none',
+      transition: theme.transitions.create("width", {
+        easing: theme.transitions.easing.easeInOut,
+        duration: theme.transitions.duration.standard,
+      }),
+    },
+  };
+});
 
 const NavButton = styled(ListItemButton, {
   shouldForwardProp: (prop) => prop !== "active",
-})(({ theme, active }) => ({
-  margin: theme.spacing(0.5, 2),
-  padding: theme.spacing(1.2, 2),
-  borderRadius: theme.shape.borderRadius * 1.5,
-  transition: "all 0.2s ease-in-out",
-  color: theme.palette.text.secondary,
+})(({ theme, active }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    margin: theme.spacing(0.5, 2),
+    padding: theme.spacing(1.2, 2),
+    borderRadius: theme.shape.borderRadius * 1.5,
+    transition: "all 0.2s ease-in-out",
+    color: theme.palette.text.secondary,
+    position: 'relative', 
 
-  "&:hover": {
-    backgroundColor: alpha(theme.palette.primary.main, 0.08),
-    color: theme.palette.primary.main,
-    "& .MuiListItemIcon-root": { color: theme.palette.primary.main },
-  },
-  ...(active && {
-    backgroundColor: alpha(theme.palette.primary.main, 0.1),
-    color: theme.palette.primary.main,
-    "& .MuiListItemIcon-root": { color: theme.palette.primary.main },
-    "& .MuiListItemText-primary": { fontWeight: 600 },
-  }),
+    "&:hover": {
+      backgroundColor: isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.primary.main, 0.03),
+      color: isDark ? theme.palette.primary.light : theme.palette.primary.main,
+      "& .MuiListItemIcon-root": { color: isDark ? theme.palette.primary.light : theme.palette.primary.main },
+    },
+    
+    ...(active && {
+      backgroundColor: alpha(theme.palette.primary.main, 0.08),
+      color: theme.palette.primary.main,
+      "& .MuiListItemIcon-root": { color: theme.palette.primary.main },
+      "& .MuiListItemText-primary": { fontWeight: 700 },
+      "&::before": {
+        content: '""',
+        position: 'absolute',
+        left: theme.spacing(-1),
+        top: '15%',
+        bottom: '15%',
+        width: '4px',
+        borderRadius: '0 4px 4px 0',
+        backgroundColor: theme.palette.primary.main,
+        boxShadow: isDark ? `0 0 10px ${alpha(theme.palette.primary.main, 0.5)}` : 'none'
+      }
+    }),
 
-  "& .MuiListItemIcon-root": {
-    minWidth: "auto",
-    marginRight: theme.spacing(2),
+    "& .MuiListItemIcon-root": {
+      minWidth: "auto",
+      marginRight: theme.spacing(2),
+      justifyContent: "center",
+      color: "inherit",
+      transition: theme.transitions.create("color"),
+    },
+  };
+});
+
+const BrandBox = styled(Box)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    display: "flex",
+    alignItems: "center",
+    padding: theme.spacing(0, 3),
+    minHeight: "80px", 
+    borderBottom: `1px solid ${isDark ? alpha(theme.palette.primary.main, 0.03) : alpha(theme.palette.divider, 0.06)}`,
+    backgroundColor: isDark ? alpha(theme.palette.primary.main, 0.01) : 'transparent',
+  };
+});
+
+const SidebarFooter = styled(Box)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    marginTop: "auto",
+    padding: theme.spacing(2),
+    display: "flex",
     justifyContent: "center",
-    color: "inherit",
-    transition: theme.transitions.create("color"),
-  },
-}));
+    borderTop: `1px solid ${isDark ? alpha(theme.palette.primary.main, 0.03) : alpha(theme.palette.divider, 0.06)}`, 
+  };
+});
 
-const BrandBox = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  padding: theme.spacing(0, 3),
-  minHeight: "72px", // Dóng ngang tuyệt đối với Header
-}));
-
-const SidebarFooter = styled(Box)(({ theme }) => ({
-  marginTop: "auto",
-  padding: theme.spacing(2),
-  display: "flex",
-  justifyContent: "center",
-  borderTop: `1px solid ${alpha(theme.palette.divider, 0.4)}`, 
-}));
-
-// --- MAIN COMPONENT ---
 
 const Sidebar = ({ width, isCollapsed, onToggleCollapse, isMobileOpen, onMobileClose }) => {
   const location = useLocation();
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [token] = useState(() => localStorage.getItem("token"));
 
-  // Tối ưu hóa việc lấy Role
   const userRole = useMemo(() => {
     if (!token) return null;
     try {
@@ -152,15 +175,29 @@ const Sidebar = ({ width, isCollapsed, onToggleCollapse, isMobileOpen, onMobileC
       
       {/* KHU VỰC LOGO */}
       <BrandBox>
-        <Box component="img" src={Logo} alt="Logo" sx={{ width: 36, height: 36, flexShrink: 0 }} />
+        <Box 
+          component="img" 
+          src={Logo} 
+          alt="Logo" 
+          sx={{ 
+            width: 38, 
+            height: 38, 
+            flexShrink: 0,
+            filter: isDark ? `drop-shadow(0 0 8px ${alpha(theme.palette.primary.main, 0.4)})` : 'none'
+          }} 
+        />
         {!isCollapsed && (
           <Typography
             variant="h6"
             noWrap
             sx={{
               ml: 1.5,
-              fontWeight: 700,
-              color: "primary.main",
+              fontWeight: 800,
+              fontSize: '1.25rem',
+              letterSpacing: '-0.5px',
+              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
               animation: "fadeIn 0.3s ease-in-out",
               "@keyframes fadeIn": { "0%": { opacity: 0 }, "100%": { opacity: 1 } }
             }}
@@ -173,7 +210,6 @@ const Sidebar = ({ width, isCollapsed, onToggleCollapse, isMobileOpen, onMobileC
       {/* DANH SÁCH MENU */}
       <List component="nav" sx={{ flex: 1, overflowY: "auto", overflowX: "hidden", py: 2 }}>
         {menuItems.map(({ label, to, Icon }) => {
-          // Highlight chính xác root path
           const active = location.pathname.startsWith(to); 
           
           return (
@@ -194,18 +230,20 @@ const Sidebar = ({ width, isCollapsed, onToggleCollapse, isMobileOpen, onMobileC
         })}
       </List>
 
-      {/* NÚT THU GỌN Ở ĐÁY */}
       <SidebarFooter>
         <IconButton 
           onClick={onToggleCollapse}
           sx={{ 
-            border: `1px solid ${theme.palette.divider}`,
-            bgcolor: alpha(theme.palette.background.paper, 0.5),
+            border: 'none',
+            boxShadow: isDark 
+                ? `0 4px 12px ${alpha(theme.palette.common.black, 0.4)}` 
+                : `0 4px 12px ${alpha(theme.palette.common.black, 0.05)}`,
+            bgcolor: isDark ? alpha(theme.palette.background.default, 0.6) : theme.palette.background.paper,
             transition: "all 0.2s ease",
             '&:hover': { 
               bgcolor: alpha(theme.palette.primary.main, 0.1), 
               color: 'primary.main',
-              transform: 'scale(1.05)'
+              transform: 'translateY(-2px)' 
             }
           }}
         >
@@ -223,14 +261,14 @@ const Sidebar = ({ width, isCollapsed, onToggleCollapse, isMobileOpen, onMobileC
         variant="temporary"
         open={isMobileOpen}
         onClose={onMobileClose}
-        ModalProps={{ keepMounted: true }} // Cải thiện hiệu suất mở trên Mobile
+        ModalProps={{ keepMounted: true }} 
         sx={{
           display: { xs: "block", lg: "none" },
           "& .MuiDrawer-paper": {
-            width: 260, // Cố định chiều rộng menu trên mobile
+            width: 260, 
             boxSizing: "border-box",
-            backgroundColor: alpha(theme.palette.background.default, 0.95),
-            backdropFilter: "blur(10px)",
+            backgroundColor: theme.palette.background.paper,
+            borderRight: `1px solid ${isDark ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.divider, 0.08)}`,
           },
         }}
       >
