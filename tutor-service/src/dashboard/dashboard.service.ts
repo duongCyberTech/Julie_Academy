@@ -1,9 +1,9 @@
 import {
     Injectable,
 } from '@nestjs/common';
-import { PlanType, Prisma } from '@prisma/client';
+import { ExamType, PlanType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { FilterDTO, TimeRange } from './dto/filter.dto';
+import { ExamFilterType, FilterDTO, TimeRange } from './dto/filter.dto';
 import { CategoryService } from 'src/question/question.service';
 
 @Injectable()
@@ -52,6 +52,9 @@ export class StudentDashboard {
     }
 
     async currentActivities(student_id: string, filter: Partial<FilterDTO>) {
+        const take: number = Number(filter.limit ?? 10)
+        const skip: number = ((filter.page ?? 1) - 1) * (filter.limit ?? 10)
+
         return await this.prisma.exam_taken.findMany({
             where: {
                 student_uid: student_id,
@@ -85,18 +88,29 @@ export class StudentDashboard {
                 {doneAt: "desc"},
                 {startAt: "desc"}
             ],
-            take: (filter.limit ?? 10),
-            skip: ((filter.page ?? 1) - 1) * (filter.limit ?? 10)
+            take,
+            skip
         }).then(res => res.map(ex => ({
             title: ex.exam_session.exam.title,
             subject: ex.exam_session.exam_open_in[0].class.subject,
             score: ex.final_score,
             doneAt: ex.doneAt
-        }))).catch(err => [])
+        })))
     }
 
     async scoreTrend(student_id: string, filter: Partial<FilterDTO>) {
         const timeRange: TimeRange = filter?.group_time ?? TimeRange.week
+        const examType: ExamFilterType = filter?.exam_type ?? ExamFilterType.practice
+
+        const examTypeCondition = (
+            examType == ExamFilterType.practice ?
+            {exam_session: {exam_type: ExamType.practice}, exam_id: {not: null}, session_id: {not: null}} : (
+                examType == ExamFilterType.test ? 
+                {exam_session: {exam_type: ExamType.test}, exam_id: {not: null}, session_id: {not: null}} :
+                {exam_id: null, session_id: null}
+            )
+        ) 
+
         const currentDate = new Date()
         const dateAgo = new Date(currentDate)
         dateAgo.setDate(
@@ -116,7 +130,8 @@ export class StudentDashboard {
             where: {
                 student_uid: student_id,
                 isDone: true,
-                doneAt: { gte: dateAgo, lte: currentDate }
+                doneAt: { gte: dateAgo, lte: currentDate },
+                ...(examTypeCondition)
             },
             select: {
                 final_score: true,
