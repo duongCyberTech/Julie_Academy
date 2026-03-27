@@ -5,7 +5,8 @@ import {
     UseGuards,
     Request,
     ParseIntPipe,
-    Query
+    Query,
+    ParseUUIDPipe
 } from "@nestjs/common";
 import { DashboardService, StudentDashboard, TutorDashboard } from "./dashboard.service";
 import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
@@ -62,5 +63,25 @@ export class DashboardController {
     ) {
         const uid = req.user.userId
         return this.studentDashboard.currentActivities(uid, query)
+    }
+
+    @Get('student/score-trend')
+    @Roles('student')
+    getScoreTrend(
+        @Query() query: Partial<FilterDTO>,
+        @Request() req
+    ) {
+        const uid = req.user.userId
+        return this.studentDashboard.scoreTrend(uid, query)
+    }
+
+    @Get('student/skills-map')
+    @Roles('student')
+    getSkillsMap(
+        @Query('plan_id', ParseUUIDPipe) plan_id: string,
+        @Request() req
+    ) {
+        if (!plan_id) return []
+        return this.studentDashboard.skillsMap(req.user.userId, plan_id)
     }
 }
