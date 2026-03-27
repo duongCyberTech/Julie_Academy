@@ -254,7 +254,7 @@ export default function StudentAssignmentResultPage() {
           </Box>
         </Box>
         <Typography
-          variant="h3"
+          variant="h4"
           fontWeight={700}
           color="text.primary"
           gutterBottom
@@ -270,7 +270,7 @@ export default function StudentAssignmentResultPage() {
         <Grid container justifyContent="center" alignItems="center" spacing={0}>
           <Grid item xs={12} sm={3} sx={{ py: 2 }}>
             <Typography
-              variant="body1"
+              variant="h6"
               color="text.secondary"
               fontWeight={600}
               gutterBottom
@@ -295,7 +295,7 @@ export default function StudentAssignmentResultPage() {
 
           <Grid item xs={12} sm={3} sx={{ py: 2 }}>
             <Typography
-              variant="body1"
+              variant="h6"
               color="text.secondary"
               fontWeight={600}
               gutterBottom
@@ -303,7 +303,7 @@ export default function StudentAssignmentResultPage() {
               Thời gian làm bài
             </Typography>
             <Typography
-              variant="h5"
+              variant="h4"
               fontWeight={700}
               color="info.main"
               sx={{ mt: 1 }}
@@ -325,7 +325,7 @@ export default function StudentAssignmentResultPage() {
 
           <Grid item xs={12} sm={3} sx={{ py: 2 }}>
             <Typography
-              variant="body1"
+              variant="h6"
               color="text.secondary"
               fontWeight={600}
               gutterBottom

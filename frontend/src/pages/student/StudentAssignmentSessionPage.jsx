@@ -414,7 +414,7 @@ export default function StudentAssignmentSessionPage() {
 
             {/* Nút Điều hướng */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', p: { xs: 2, md: 3 }, borderTop: '1px solid #eee' }}>
-              <Button variant="outlined" size="large" onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowBackIcon />} sx={{ borderRadius: 2, px: 4, fontWeight: 700 }}>Câu trước</Button>
+              <Button variant="outlined" size="large" onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowBackIcon />} sx={{ borderRadius: 2, px: 2, fontWeight: 700 }}>Câu trước</Button>
               <Button variant="contained" size="large" onClick={handleNext} disabled={activeStep === questions.length - 1} endIcon={<ArrowForwardIcon />} disableElevation sx={{ borderRadius: 2, px: 4, fontWeight: 700 }}>Câu tiếp</Button>
             </Box>
           </Paper>
