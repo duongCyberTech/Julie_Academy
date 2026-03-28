@@ -1,0 +1,22 @@
+from sqlalchemy import Column, String, DateTime, Enum, Boolean, ForeignKey
+from datetime import datetime
+from app.core.database import Base
+from uuid6 import uuid7
+import enum
+
+class LevelStatus(str, enum.Enum):
+  EASY = "easy"
+  MEDIUM = "medium"
+  HARD = "hard"
+
+class TrainingData(Base):
+  __tablename__ = "training_data"
+
+  id = Column(String, primary_key=True, default=lambda: str(uuid7()))
+  ques_id = Column(String, nullable=False)
+  level = Column(Enum(LevelStatus, name="level_status"), nullable=False, default=LevelStatus.EASY)
+  timestamp = Column(DateTime, nullable=False, default=datetime.now())
+  is_done = Column(Boolean, nullable=False, default=False)
+  is_correct = Column(Boolean, nullable=False, default=False)
+
+  section_id = Column(String, ForeignKey("sections.id"), nullable=False)
