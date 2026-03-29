@@ -1,4 +1,5 @@
-import { Type } from "class-transformer";
+import { ExamType } from "@prisma/client";
+import { Transform, Type } from "class-transformer";
 import { IsDate, IsEnum, IsNumber, IsOptional } from "class-validator";
 
 export enum TimeRange {
@@ -7,15 +8,21 @@ export enum TimeRange {
     year
 }
 
+export enum ExamFilterType {
+    practice = 'practice',
+    test = 'test',
+    adaptive = 'adaptive'
+}
+
 export class FilterDTO {
     @IsOptional()
-    @IsNumber()
     @Type(() => Number)
+    @IsNumber()
     page: number = 1
 
     @IsOptional()
-    @IsNumber()
     @Type(() => Number)
+    @IsNumber()
     limit: number = 10
 
     @IsOptional()
@@ -31,4 +38,8 @@ export class FilterDTO {
     @IsOptional()
     @IsEnum(TimeRange)
     group_time: TimeRange = TimeRange.week
+
+    @IsOptional()
+    @IsEnum(ExamFilterType)
+    exam_type: ExamFilterType = ExamFilterType.practice
 }
