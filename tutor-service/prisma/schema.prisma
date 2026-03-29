@@ -601,6 +601,7 @@ enum AggregateType {
   avg
   max 
   incre
+  val
 }
 
 enum ValueType {
