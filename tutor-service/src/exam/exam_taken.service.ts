@@ -437,16 +437,18 @@ export class ExamTakenService {
                 }
             })
 
-            const staticsData = {
-                uid: student_id,
-                sum_exam: 1,
-                total_questions: examData.exam.total_ques,
-                total_correct_questions: cnt,
-                final_score: Number((score * examData.exam.total_score / examData.exam.total_ques).toFixed(2)),
-                exam_type: examData.exam_type
-            }
+            if (isDone) {
+                const staticsData = {
+                    uid: student_id,
+                    sum_exam: 1,
+                    total_questions: examData.exam.total_ques,
+                    total_correct_questions: cnt,
+                    final_score: Number((score * examData.exam.total_score / examData.exam.total_ques).toFixed(2)),
+                    exam_type: examData.exam_type
+                }
 
-            this.eventEmitter.emit('exam_taken.submit', staticsData)
+                this.eventEmitter.emit('exam_taken.submit', staticsData)
+            }
 
             return {
                 message: "Exam Submitted Successfully",

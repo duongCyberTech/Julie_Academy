@@ -37,7 +37,4 @@ export class AnalyticsDto {
 
     @IsDate()
     sign_up_date: Date;
-
-    @IsUUID()
-    student_id: string;
 }

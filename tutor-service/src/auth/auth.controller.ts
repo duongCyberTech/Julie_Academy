@@ -29,7 +29,6 @@ export class AuthController {
     const user = await this.userService.createUser(dto as UserDto);
     if (user && user.data.role === 'student') {
       await this.analysisService.createOrUpdateAnalytics(user.data.uid, {
-        student_id: user.data.uid,
         last_exam_taken_date: new Date(),
         sign_up_date: new Date(),
       });
