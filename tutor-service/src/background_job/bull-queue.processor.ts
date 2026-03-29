@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { CreateNotificationDTO } from 'src/notifications/dto/notification.dto';
 import { NotificationType } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Processor('system-tasks-queue')
 export class QueueProcessor {
@@ -12,7 +13,8 @@ export class QueueProcessor {
 
   constructor(
     private prisma: PrismaService,
-    private notify: NotificationsService
+    private notify: NotificationsService,
+    private eventEmitter: EventEmitter2
   ) {}
 
   @Process('exam-taken-timeout')
@@ -24,13 +26,41 @@ export class QueueProcessor {
     } = job.data;
 
     try {
-      await this.prisma.exam_taken.update({
+      const updated_et = await this.prisma.exam_taken.update({
         where: {et_id},
         data: {
           isDone: true,
           doneAt: new Date()
+        },
+        select: {
+          student_uid: true,
+          final_score: true,
+          exam_session: { select: { exam_type: true } },
+          _count: {
+            select:{
+              questions: true
+            }
+          },
+          questions: {
+            where: {
+              isCorrect: true, 
+              isDone: true
+            },
+            select: { ques_id: true }
+          }
         }
       })
+
+      const payload = {
+        uid: updated_et.student_uid,
+        sum_exam: 1,
+        total_questions: updated_et._count.questions,
+        total_correct_questions: updated_et.questions.length,
+        final_score: updated_et.final_score,
+        exam_type: updated_et.exam_session.exam_type
+      }
+
+      this.eventEmitter.emit('exam_taken.submit', payload)
       this.logger.log(`[EXAM SESSION TIMEOUT] - ${timeoutAt} [LOG] Phiên thi đã được đánh dấu là timeout!`);
     } catch (error) {
       this.logger.error(`[EXAM SESSION TIMEOUT] thất bại: ${error.message}`, error.stack);
