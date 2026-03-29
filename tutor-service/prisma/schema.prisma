@@ -104,15 +104,15 @@ model Review {
 
 model Student_analytics {
   ana_id     String    @id @default(uuid())
-  sum_exam_adaptive Int @default(0)
-  max_score_practice Float @default(0.0)
-  max_thread_comment Int @default(0)
-  sum_exam   Int         @default(0)
-  percentage_question_correct Float @default(0.0)
-  incre_percentage_question_correct Float @default(0.0)
-  streak     Int         @default(0)
-  last_exam_taken_date  DateTime   @default(now())
-  sign_up_date          DateTime   @default(now())
+  sum_exam_adaptive Int? @default(0)
+  max_score_practice Float? @default(0.0)
+  max_thread_comment Int? @default(0)
+  sum_exam   Int?         @default(0)
+  percentage_question_correct Float? @default(0.0)
+  incre_percentage_question_correct Float? @default(0.0)
+  streak     Int?         @default(0)
+  last_exam_taken_date  DateTime?   @default(now())
+  sign_up_date          DateTime?   @default(now())
   student_id            String     @unique
   student               Student    @relation(fields: [student_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
