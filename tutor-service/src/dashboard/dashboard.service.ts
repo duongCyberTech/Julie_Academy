@@ -36,6 +36,10 @@ export class StudentDashboard {
         }))
     }
 
+    async totalExamTaken(student_id: string, filter: Partial<FilterDTO>) {
+
+    }
+
     async totalPracticeTime(student_id: string) {
         return await this.prisma.exam_taken.findMany({
             where: {
@@ -111,9 +115,6 @@ export class StudentDashboard {
             )
         ) 
 
-        console.log("[TIME LOG] -> ", timeRange)
-        console.log("[LOG] -> ", examTypeCondition)
-
         const currentDate = new Date()
         const dateAgo = new Date(currentDate)
         dateAgo.setDate(
@@ -177,11 +178,10 @@ export class StudentDashboard {
 
         // Helper to get the group key
         const getGroupKey = (date: Date, range: TimeRange): string => {
-            console.log("[TIME RANGE] -> ", range)
             const d = new Date(date);
             const year = d.getFullYear();
             const month = String(d.getMonth() + 1).padStart(2, '0'); // "03" thay vì "3"
-            console.log(range == TimeRange.month)
+
             if (range == TimeRange.week) {
                 return d.toISOString().split('T')[0]; // "2026-03-26"
             } 
@@ -215,7 +215,7 @@ export class StudentDashboard {
             averageScore: data.sum / data.count
         }));
 
-        return result || []
+        return {score_trend: result, total: finalResults.length}
     }
 
     async skillsMap(student_id: string, plan_id: string) {
