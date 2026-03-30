@@ -15,10 +15,54 @@ export class StudentDashboard {
 
     async scoreOfLatestTest(student_id: string) {
         return await this.prisma.exam_taken.findFirst({
-            where: {isDone: true, student_uid: student_id},
+            where: {
+                isDone: true, 
+                student_uid: student_id,
+                exam_session: { exam_type: ExamType.test } // I sua - Chỉ lấy bài Test
+            },
             select: {final_score: true},
             orderBy: {doneAt: "desc"}
-        }).then(res => res.final_score)
+        }).then(res => res?.final_score || 0) 
+    }
+
+    async averageTestScore(student_id: string) {
+        // 1. Lấy tất cả các bài Test đã nộp
+        const scoreSet = await this.prisma.exam_taken.findMany({
+            where: {
+                student_uid: student_id,
+                isDone: true,
+                exam_id: { not: null },
+                session_id: { not: null },
+                exam_session: { exam_type: ExamType.test } // Chỉ lấy bài Test
+            },
+            select: {
+                final_score: true,
+                exam_id: true,
+                session_id: true
+            }
+        });
+
+        if (scoreSet.length === 0) return 0.0;
+
+        // 2. Nhóm lại để lấy điểm cao nhất của mỗi bài
+        const groupedScores = new Map();
+        scoreSet.forEach(record => {
+            const key = `${record.exam_id}_${record.session_id}`;
+            const currentScore = record.final_score.toNumber(); 
+            if (!groupedScores.has(key)) {
+                groupedScores.set(key, currentScore);
+            } else {
+                const existingScore = groupedScores.get(key);
+                if (currentScore > existingScore) {
+                    groupedScores.set(key, currentScore);
+                }
+            }
+        });
+
+        // 3. Tính điểm trung bình
+        let sum = 0;
+        groupedScores.forEach(score => sum += score);
+        return Number((sum / groupedScores.size).toFixed(2));
     }
 
     async currentClasses(student_id: string) {
@@ -34,6 +78,10 @@ export class StudentDashboard {
             total_classes: res.length,
             subjects: [...new Set(res.map(klass => klass.subject))] 
         }))
+    }
+
+    async totalExamTaken(student_id: string, filter: Partial<FilterDTO>) {
+
     }
 
     async totalPracticeTime(student_id: string) {
@@ -102,7 +150,7 @@ export class StudentDashboard {
         const timeRange: TimeRange = filter?.group_time ?? TimeRange.week
         const examType: ExamFilterType = filter?.exam_type ?? ExamFilterType.practice
 
-        const examTypeCondition = (
+        const examTypeCondition = examType == ExamFilterType.all ? {} : (
             examType == ExamFilterType.practice ?
             {exam_session: {exam_type: ExamType.practice}, exam_id: {not: null}, session_id: {not: null}} : (
                 examType == ExamFilterType.test ? 
@@ -136,27 +184,65 @@ export class StudentDashboard {
             select: {
                 final_score: true,
                 doneAt: true,
+                exam_id: true,
+                session_id: true
             },
             orderBy: { doneAt: 'asc' }
         });
 
+        const groupedScores = new Map();
+        const nullRecords = [];
+
+        scoreSet.forEach(record => {
+            const { exam_id, session_id, final_score } = record;
+
+            // Nếu cả 2 đều null -> Luôn giữ lại
+            if (exam_id === null && session_id === null) {
+                nullRecords.push(record);
+                return;
+            }
+
+            // Tạo key định danh cho cặp exam và session
+            const key = `${exam_id}_${session_id}`;
+
+            if (!groupedScores.has(key)) {
+                // Nếu chưa có trong Map, thêm mới
+                groupedScores.set(key, record);
+            } else {
+                // Nếu đã có, so sánh điểm để giữ lại cái cao hơn
+                const existingRecord = groupedScores.get(key);
+                if (final_score > existingRecord.final_score) {
+                    groupedScores.set(key, record);
+                }
+            }
+        });
+
+        // Gộp kết quả từ Map và các record null lại thành mảng cuối cùng
+        const finalResults = [...Array.from(groupedScores.values()), ...nullRecords];
+
         // Helper to get the group key
         const getGroupKey = (date: Date, range: TimeRange): string => {
             const d = new Date(date);
-            if (range === TimeRange.week) {
-                return d.toISOString().split('T')[0]; // "2026-03-26" (Daily)
-            } else if (range === TimeRange.month) {
-                // Simple logic for Week of Year
-                const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
-                const pastDaysOfYear = (d.getTime() - firstDayOfYear.getTime()) / 86400000;
-                return `Week ${Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7)}`;
-            } else {
-                return `${d.getFullYear()}-${d.getMonth() + 1}`; // "2026-3" (Monthly)
-            }
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0'); // "03" thay vì "3"
+
+            if (range == TimeRange.week) {
+                return d.toISOString().split('T')[0]; // "2026-03-26"
+            } 
+            
+            if (range == TimeRange.month) {
+                // Tính tuần thứ mấy TRONG THÁNG (1-5)
+                const firstDayOfMonth = new Date(year, d.getMonth(), 1);
+                const weekOfMonth = Math.ceil((d.getDate() + firstDayOfMonth.getDay()) / 7);
+                return `Tháng ${month} - Tuần ${weekOfMonth}`;
+            } 
+            
+            // Mặc định cho Year (Lọc theo từng tháng)
+            return `${year}-${month}`; 
         };
 
         // Reduce to calculate sums and counts
-        const grouped = scoreSet.reduce((acc, curr) => {
+        const grouped: Record<string, { sum: number; count: number }> = finalResults.reduce((acc, curr) => {
             const key = getGroupKey(curr.doneAt, timeRange);
             if (!acc[key]) acc[key] = { sum: 0, count: 0 };
             
@@ -173,7 +259,7 @@ export class StudentDashboard {
             averageScore: data.sum / data.count
         }));
 
-        return result || []
+        return {score_trend: result, total: finalResults.length}
     }
 
     async skillsMap(student_id: string, plan_id: string) {
@@ -564,10 +650,13 @@ export class DashboardService {
         const totalPracticeTime = await this.student.totalPracticeTime(student_id)
         const numJoinClassess = await this.student.currentClasses(student_id)
 
+        const avgTestScore = await this.student.averageTestScore(student_id)
+
         return {
             latestScore,
             totalPracticeTime,
-            numJoinClassess
+            numJoinClassess,
+            avgTestScore
         }
     }
 }

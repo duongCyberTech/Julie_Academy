@@ -3,15 +3,16 @@ import { Transform, Type } from "class-transformer";
 import { IsDate, IsEnum, IsNumber, IsOptional } from "class-validator";
 
 export enum TimeRange {
-    week,
-    month,
-    year
+    week = "week",
+    month = "month",
+    year = "year"
 }
 
 export enum ExamFilterType {
     practice = 'practice',
     test = 'test',
-    adaptive = 'adaptive'
+    adaptive = 'adaptive',
+    all = 'all'
 }
 
 export class FilterDTO {

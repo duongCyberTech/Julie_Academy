@@ -21,6 +21,7 @@ import { ExceptionResponse } from 'src/exception/Exception.exception';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BookController {
     constructor(private readonly bookService: LessonPlanService){}
+
     @Get('/plan/:plan_id')
     getPlanDetail(@Param('plan_id') plan_id: string) {
         return this.bookService.getPlanById(plan_id);

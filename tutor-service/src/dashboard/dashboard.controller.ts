@@ -75,13 +75,14 @@ export class DashboardController {
         return this.studentDashboard.scoreTrend(uid, query)
     }
 
-    @Get('student/skills-map')
+       return this.studentDashboard.skillsMap(req.user.userId, plan_id)
+    }
+}
+@Get('student/skills-map')
     @Roles('student')
     getSkillsMap(
         @Query('plan_id', ParseUUIDPipe) plan_id: string,
         @Request() req
     ) {
         if (!plan_id) return []
-        return this.studentDashboard.skillsMap(req.user.userId, plan_id)
-    }
-}
+     

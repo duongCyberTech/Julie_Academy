@@ -61,7 +61,7 @@ export class AnalysisService {
 
         return await this.prisma.student_analytics.create({
             data: {
-                student_id: uid,
+                student: {connect: {uid}},
                 sum_exam_adaptive: data.sum_exam_adaptive || 0,
                 max_score_practice: data.max_score_practice || 0,
                 max_thread_comment: data.max_thread_comment || 0,
