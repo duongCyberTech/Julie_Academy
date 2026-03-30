@@ -245,7 +245,7 @@ export class StudentDashboard {
                 AND et."session_id" = NULL
             GROUP BY c."category_id", c."category_name";
         `
-        // 1. Dùng Promise.all để đợi tất cả các vòng lặp map hoàn thành
+
         const list = await Promise.all(
             noticeCategories.map(async (item) => {
                 const rootCategory = await this.category.getRoot(item.category_id);
@@ -258,12 +258,10 @@ export class StudentDashboard {
             })
         );
 
-        // 2. Gom nhóm theo category_id và tính tổng
         const groupedList = Object.values(
             list.reduce((acc, curr) => {
                 const id = curr.category_id;
-                
-                // Nếu category_id này chưa tồn tại trong object tích lũy (acc), khởi tạo nó
+
                 if (!acc[id]) {
                     acc[id] = {
                         category_id: id,
@@ -273,12 +271,11 @@ export class StudentDashboard {
                     };
                 }
                 
-                // Cộng dồn các chỉ số
                 acc[id].correct_cnt += curr.correct_cnt;
                 acc[id].fail_cnt += curr.fail_cnt;
                 
                 return acc;
-            }, {} as Record<string, any>) // Bỏ 'as Record...' nếu bạn chỉ dùng JavaScript
+            }, {} as Record<string, any>)
         );
 
         return groupedList || []
