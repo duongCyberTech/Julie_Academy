@@ -57,14 +57,16 @@ export class BookController {
     }
 
     @Get()
-    getAllLessonPlan(){
-        return this.bookService.getAllPlans();
+    getAllLessonPlan(@Request() req){
+        const user = req.user
+        return this.bookService.getAllPlans(user.userId, user.role);
     }
 
     @Get(':tutor_id')
     @Roles('tutor')
-    getLessonPlanByTutor(@Param('tutor_id') tutor_id: string){
-        return this.bookService.getAllPlans(tutor_id);
+    getLessonPlanByTutor(@Request() req, @Param('tutor_id') tutor_id: string){
+        const user = req.user
+        return this.bookService.getAllPlans(tutor_id, user.role);
     }
 
     @Patch(':plan_id')

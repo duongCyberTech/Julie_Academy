@@ -1,12 +1,15 @@
 import { 
     Controller, UseGuards,
     Post, Get, Patch, Delete,
-    Body, Param, Query, Request 
+    Body, Param, Query, Request, 
+    UseInterceptors,
+    UploadedFile
 } from "@nestjs/common";
 import { BadgeService } from "./badge.service";
 import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guard/roles.guard";
 import { BadgeDto } from "./dto/badge.dto";
+import { FileInterceptor } from "@nestjs/platform-express/multer/interceptors/file.interceptor";
 
 @Controller('badge')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -16,10 +19,12 @@ export class BadgeController {
     ){}
 
     @Post()
+    @UseInterceptors(FileInterceptor('file'))
     createNewBadge(
-        @Body() data: BadgeDto
+        @Body() data: BadgeDto, 
+        @UploadedFile() file: Express.Multer.File
     ){
-        return this.badgeService.createBadge(data)
+        return this.badgeService.createBadge(data, file)
     }
 
     @Get()

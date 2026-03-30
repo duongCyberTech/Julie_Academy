@@ -16,6 +16,7 @@ import {
   QuestionType,
   Prisma,
   QuestionAccess,
+  UserRole,
 } from '@prisma/client';
 
 // =================================================================================================
@@ -121,14 +122,21 @@ export class LessonPlanService {
     })
   }
 
-  async getAllPlans(tutor_id?: string) {
-    if (tutor_id)
+  async getAllPlans(uid?: string, role: UserRole = UserRole.admin) {
+    if (role == UserRole.tutor)
       return this.prisma.lesson_Plan.findMany({
         where: {
-          OR: [{ tutor_id: tutor_id }, { type: 'book' }],
+          OR: [{ tutor_id: uid }, { type: 'book' }],
         },
         orderBy: [ {type: "desc"}, {title: 'asc'} ],
       });
+    else if (role == UserRole.student) {
+      return this.prisma.lesson_Plan.findMany({
+        where: {type: "book"},
+        orderBy: [ {type: "desc"}, {title: 'asc'} ],
+      });
+    }
+
     return this.prisma.lesson_Plan.findMany({
       orderBy: [ {type: "desc"}, {title: 'asc'} ],
     });
