@@ -1,7 +1,10 @@
 import { Module } from "@nestjs/common";
 // Dashboard Module
 import { DashboardController } from "./dashboard.controller";
-import { DashboardService, AdminDashboard, TutorDashboard, StudentDashboard } from "./dashboard.service";
+import { StudentDashboard } from './role-based-dashboard/student.dashboard';
+import { TutorDashboard } from './role-based-dashboard/tutor.dashboard';
+import { AdminDashboard } from './role-based-dashboard/admin.dashboard';
+import { DashboardService } from "./dashboard.service";
 
 // Import other necessary modules
 import { PrismaModule } from "src/prisma/prisma.module";

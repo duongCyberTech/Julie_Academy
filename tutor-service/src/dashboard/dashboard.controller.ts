@@ -8,7 +8,9 @@ import {
     Query,
     ParseUUIDPipe
 } from "@nestjs/common";
-import { DashboardService, StudentDashboard, TutorDashboard } from "./dashboard.service";
+import { StudentDashboard } from './role-based-dashboard/student.dashboard';
+import { TutorDashboard } from './role-based-dashboard/tutor.dashboard';
+import { DashboardService } from "./dashboard.service";
 import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guard/roles.guard";
 import { Roles } from "src/auth/decorator/roles.decorator";
@@ -30,12 +32,23 @@ export class DashboardController {
     }
         
     @Get('tutor-stats/exam-session')
+    @Roles('tutor')
     getExamSessionStats(
         @Query('day_range', ParseIntPipe) day_range: number,
         @Request() req
     ) {
         const uid = req.user.userId
         return this.tutorDashboard.getWeeklyClassESProgress(uid, day_range)
+    }
+
+    @Get('tutor-stats/student-attention')
+    @Roles('tutor')
+    getAttentionRequiredStudents(
+        @Request() req,
+        @Query() query: Partial<FilterDTO>
+    ) {
+        const uid = req.user.userId
+        return this.tutorDashboard.attentionRequiredStudents(uid, query)
     }
 
     @Get('tutor-stats/:tutor_id')
