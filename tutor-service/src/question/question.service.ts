@@ -183,7 +183,6 @@ export class LessonPlanService {
       return new ExceptionResponse().returnError(error, `Plan ${plan_id}`);
     }
   }
-
 }
 
 // =================================================================================================

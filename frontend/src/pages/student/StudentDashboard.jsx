@@ -1,398 +1,425 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios"; 
 import {
-  Container,
-  Grid,
-  Paper,
-  Typography,
-  Box,
-  Card,
-  CardContent,
-  Avatar,
-  Stack,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  LinearProgress,
-  FormControl,
-  Select,
-  MenuItem,
-  InputLabel,
-  Tooltip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  TextField,
-  IconButton,
+  Container, Paper, Typography, Box, Card, CardContent, Avatar, Stack, Chip,
+  LinearProgress, FormControl, Select, MenuItem, InputLabel,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
+  Dialog, DialogTitle, DialogContent, IconButton, Grid, Pagination, TextField
 } from "@mui/material";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Tooltip as RechartsTooltip
+  LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip as RechartsTooltip,
+  BarChart, Bar
 } from "recharts";
-import { useNavigate } from "react-router-dom";
 
-// Icons
 import SchoolIcon from "@mui/icons-material/School";
 import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
 import StarIcon from "@mui/icons-material/Star";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
-import CloseIcon from "@mui/icons-material/Close";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import CloseIcon from "@mui/icons-material/Close";
 
-// MOCK DATA TẠM THỜI
-import { 
-  MOCK_USER_PROFILE, 
-  MOCK_BADGES, 
-  MOCK_SUGGESTIONS,
-  MOCK_PROGRESS_DATA, 
-  MOCK_SKILL_MAP,     
-  MOCK_EXAM_HISTORY   
-} from "./MockDashboardData";
 
-// --- HELPER FUNCTIONS ---
-const calculateDaysJoined = (dateString) => {
-  if (!dateString) return 0;
-  const diffTime = Math.abs(new Date() - new Date(dateString));
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+const BASE_URL = "http://localhost:4000"; 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token"); 
+  return { headers: { Authorization: `Bearer ${token}` } };
 };
 
-// --- SUB-COMPONENTS ---
-const StatCard = ({ title, value, icon, color, subtext }) => (
-  <Card sx={{ 
-    height: "100%", 
-    borderRadius: 3, 
-    boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.03)", 
-    border: "1px solid #f0f0f0" 
-  }}>
-    <CardContent sx={{ p: 3 }}>
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Avatar variant="rounded" sx={{ bgcolor: `${color}.light`, color: `${color}.main`, width: 56, height: 56, borderRadius: 2 }}>
-          {icon}
-        </Avatar>
-        <Box>
-          <Typography variant="body2" color="text.secondary" fontWeight={600} gutterBottom>
-            {title}
-          </Typography>
-          <Typography variant="h5" fontWeight={800} color="text.primary">
-            {value}
-          </Typography>
-        </Box>
-      </Stack>
-      {subtext && (
-        <Typography variant="caption" sx={{ display: "block", mt: 2, color: "text.secondary", bgcolor: "grey.50", p: 1, borderRadius: 1 }}>
-          {subtext}
-        </Typography>
-      )}
-    </CardContent>
-  </Card>
-);
 
-// --- MAIN DASHBOARD ---
+const MOCK_AI_SUGGESTIONS = [
+  { id: 1, title: "🆘 Báo động đỏ: Hàm số", reason: "Tỷ lệ đúng ở bài Thích ứng chỉ đạt 30%. Hãy ôn lại ngay để chuẩn bị cho kỳ thi CUỐI KỲ sắp tới." },
+  { id: 2, title: "⚠️ Cần cải thiện: Hình học không gian", reason: "Bạn thường xuyên sai phần tính khoảng cách. Kỳ thi GIỮA KỲ đang đến rất gần." },
+  { id: 3, title: "⭐ Duy trì phong độ: Xác suất", reason: "Bạn đang làm rất tốt phần này. Hãy tiếp tục phát huy ở các bài Test nhé!" },
+];
+
 export default function StudentDashboard() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
-  // States bộ lọc Biểu đồ
+  // 1. States cho 4 Cards (Stats)
+  const [stats, setStats] = useState({ latestScore: 0, totalPracticeTime: 0, numJoinClassess: {total_classes: 0}, avgTestScore: 0 });
+
+  // 2. States cho Line Chart (Trend)
+  const [trendData, setTrendData] = useState([]);
   const [progressTimeRange, setProgressTimeRange] = useState("week");
-  const [progressSubject, setProgressSubject] = useState("all");
-  
-  // States bộ lọc Bảng Lịch sử
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [progressExamType, setProgressExamType] = useState("all");
+
+  // 3. States cho Radar Chart (Skills Map)
+  const [myPlans, setMyPlans] = useState([]);
+  const [selectedPlan, setSelectedPlan] = useState("");
+  const [radarData, setRadarData] = useState([]);
+
+  // 4. States cho Drill Down (Chi tiết Radar)
+  const [openDrillDown, setOpenDrillDown] = useState(false);
+  const [selectedChapterName, setSelectedChapterName] = useState("");
+  const [drillDownData, setDrillDownData] = useState([]);
+
+  // 5. States cho History Table
+  const [historyData, setHistoryData] = useState([]);
+  const [historyTotal, setHistoryTotal] = useState(0);
   const [activityType, setActivityType] = useState("all");
-  
-  // States Phân trang (Pagination)
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
-  // State UI
-  const [openBadgeDialog, setOpenBadgeDialog] = useState(false);
 
-  // Fake Loading
+  // 6. States AI Pagination
+  const [aiPage, setAiPage] = useState(1);
+  const aiItemsPerPage = 2;
+
+  // =====================================================================
+  // FETCH DATA FUNCTIONS
+  // =====================================================================
+
+  // Fetch 4 Cards Stats
+  const fetchStats = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/dashboard/student-stats`, getAuthHeaders());
+      setStats(res.data);
+    } catch (error) { console.error("Error fetching stats:", error); }
+  };
+
+  // Fetch Danh sách Sách (Lấy plan_id đầu tiên làm mặc định)
+  const fetchMyPlans = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/books`, getAuthHeaders());
+      const plans = res.data.map(p => ({ id: p.plan_id, name: p.title }));
+      setMyPlans(plans);
+      if (plans.length > 0) setSelectedPlan(plans[0].id);
+    } catch (error) { console.error("Error fetching plans:", error); }
+  };
+
+  // Fetch Line Chart Data
+  const fetchTrend = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/dashboard/student/score-trend`, {
+        ...getAuthHeaders(),
+        params: { group_time: progressTimeRange, exam_type: progressExamType }
+      });
+      const formattedTrend = res.data.score_trend.map(item => ({
+        name: item.label,
+        score: Number(item.averageScore).toFixed(1)
+      }));
+      setTrendData(formattedTrend);
+    } catch (error) { console.error("Error fetching trend:", error); }
+  };
+
+  // Fetch Radar Chart Data
+  const fetchRadar = async () => {
+    if (!selectedPlan) return;
+    try {
+      const res = await axios.get(`${BASE_URL}/dashboard/student/skills-map`, {
+        ...getAuthHeaders(),
+        params: { plan_id: selectedPlan }
+      });
+      
+      // Tính % (A) = (correct / (correct + fail)) * 100
+      const formattedRadar = res.data.map(item => {
+        const total = item.correct_cnt + item.fail_cnt;
+        const percent = total === 0 ? 0 : Math.round((item.correct_cnt / total) * 100);
+        return {
+          chapter_id: item.category_id,
+          subject: item.category_name,
+          A: percent
+        };
+      });
+      setRadarData(formattedRadar);
+    } catch (error) { console.error("Error fetching radar:", error); }
+  };
+
+  // Fetch History Table
+  const fetchHistory = async () => {
+    try {
+      const params = { limit: rowsPerPage, page: page + 1 };
+      
+      if (activityType !== 'all') params.exam_type = activityType;
+      if (startDate) params.startAt = startDate;
+      if (endDate) params.endAt = endDate;
+
+      const res = await axios.get(`${BASE_URL}/dashboard/student/current-test`, {
+        ...getAuthHeaders(),
+        params
+      });
+      setHistoryData(res.data);
+    } catch (error) { console.error("Error fetching history:", error); }
+  };
+
+
   useEffect(() => {
-    setTimeout(() => setLoading(false), 800);
+    // Chạy 1 lần khi load trang
+    const initData = async () => {
+      setLoading(true);
+      await Promise.all([fetchStats(), fetchMyPlans()]);
+      setLoading(false);
+    };
+    initData();
   }, []);
 
-  // Xử lý Phân trang
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
+  useEffect(() => { fetchTrend(); }, [progressTimeRange, progressExamType]);
+  useEffect(() => { fetchHistory(); }, [activityType, page, rowsPerPage, startDate, endDate]);
+  useEffect(() => { fetchRadar(); }, [selectedPlan]); 
+  const handleRadarClick = async (data) => {
+    if (data && data.activePayload && data.activePayload.length > 0) {
+      const chapter = data.activePayload[0].payload;
+      setSelectedChapterName(chapter.subject);
+      
+      try {
+        // GỌI API MỚI: Drill down
+        const res = await axios.get(`${BASE_URL}/dashboard/student/skills-map/${chapter.chapter_id}`, {
+          ...getAuthHeaders(),
+          params: { plan_id: selectedPlan }
+        });
+        
+        const formattedDrillDown = res.data.map(item => {
+          const total = item.correct_cnt + item.fail_cnt;
+          const percent = total === 0 ? 0 : Math.round((item.correct_cnt / total) * 100);
+          return { topic: item.category_name, percent: percent };
+        });
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  // Logic Lọc Dữ liệu Bảng (Tạm thời lọc trên Mock Data để bạn thấy UI)
-  const getFilteredActivities = () => {
-    let filtered = [...MOCK_EXAM_HISTORY];
-    if (activityType !== "all") {
-      filtered = filtered.filter(item => item.exam.exam_type === activityType);
+        setDrillDownData(formattedDrillDown);
+        setOpenDrillDown(true);
+      } catch (error) {
+        console.error("Error fetching drill down:", error);
+      }
     }
-    // (Sau này API sẽ đảm nhận việc lọc này thông qua Query params)
-    return filtered;
   };
 
-  const filteredActivities = getFilteredActivities();
-  const paginatedActivities = filteredActivities.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-
-  const displayedBadges = MOCK_BADGES.slice(0, 5);
-  const remainingBadgesCount = MOCK_BADGES.length - 5;
+  // AI Pagination logic
+  const currentAiSuggestions = MOCK_AI_SUGGESTIONS.slice((aiPage - 1) * aiItemsPerPage, aiPage * aiItemsPerPage);
 
   if (loading) return <LinearProgress />;
+
+  // Component Thẻ thống kê
+  const StatCard = ({ title, value, icon, color, subtext }) => (
+    <Card sx={{ height: "100%", borderRadius: 3, boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.03)", border: "1px solid #f0f0f0", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+      <CardContent sx={{ p: 2.5 }}>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Avatar variant="rounded" sx={{ bgcolor: `${color}.light`, color: `${color}.main`, width: 48, height: 48, borderRadius: 2 }}>{icon}</Avatar>
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: 'block', mb: 0.5 }}>{title}</Typography>
+            <Typography variant="h5" fontWeight={800} color="text.primary">{value}</Typography>
+          </Box>
+        </Stack>
+        {subtext && <Typography variant="caption" sx={{ display: "block", mt: 2, color: "text.secondary", bgcolor: "grey.50", p: 1, borderRadius: 1 }}>{subtext}</Typography>}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
       
-      {/* 1. HEADER ROW */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <Stack direction="row" spacing={2.5} alignItems="center">
-          <Avatar src={MOCK_USER_PROFILE.avatar_url} sx={{ width: 72, height: 72, border: "3px solid #fff", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }} />
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: "primary.main", letterSpacing: "-0.5px" }}>
-              Xin chào, {MOCK_USER_PROFILE.fname}! 👋
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
-              {MOCK_USER_PROFILE.student.school} • Thành viên {calculateDaysJoined(MOCK_USER_PROFILE.createAt)} ngày
-            </Typography>
-          </Box>
-        </Stack>
-
-        <Paper elevation={0} sx={{ p: 1, border: "1px solid #e0e0e0", borderRadius: 4, display: 'flex', alignItems: 'center', gap: 1, bgcolor: "#fff" }}>
-          {displayedBadges.map((badge) => (
-            <Tooltip key={badge.badge_id} title={badge.title}>
-              <Avatar sx={{ bgcolor: badge.color, width: 40, height: 40, fontSize: "1.1rem", cursor: "pointer" }}>{badge.icon}</Avatar>
-            </Tooltip>
-          ))}
-          {remainingBadgesCount > 0 && (
-            <Avatar sx={{ bgcolor: "grey.200", color: "text.primary", width: 40, height: 40, fontSize: "0.9rem", cursor: "pointer", fontWeight: "bold" }} onClick={() => setOpenBadgeDialog(true)}>
-              +{remainingBadgesCount}
-            </Avatar>
-          )}
-        </Paper>
+      {/* 1. CARDS ROW */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2.5, mb: 4 }}>
+        <StatCard title="Điểm bài mới nhất" value={stats.latestScore} icon={<StarIcon />} color="warning" subtext="Loại bài: Kiểm tra (Test)" />
+        <StatCard title="Lớp đang tham gia" value={stats.numJoinClassess?.total_classes || 0} icon={<SchoolIcon />} color="info" subtext="Các lớp học hiện tại" />
+        <StatCard title="Giờ luyện tập" value={`${stats.totalPracticeTime || 0}h`} icon={<AccessTimeFilledIcon />} color="success" subtext="Tính trên bài Thích ứng" />
+        <StatCard title="Điểm trung bình" value={stats.avgTestScore} icon={<WorkspacePremiumIcon />} color="error" subtext="Tính trên các bài Kiểm tra" />
       </Box>
 
-      {/* 2. STATS ROW */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}><StatCard title="Điểm bài mới nhất" value="8.5" icon={<StarIcon />} color="warning" subtext="Tiếp tục phát huy nhé!" /></Grid>
-        <Grid item xs={12} sm={6} md={3}><StatCard title="Lớp đang tham gia" value="3" icon={<SchoolIcon />} color="info" subtext="Toán, Lý, Hóa" /></Grid>
-        <Grid item xs={12} sm={6} md={3}><StatCard title="Giờ luyện tập" value="12.5h" icon={<AccessTimeFilledIcon />} color="success" subtext="Tính trên bài thực hành" /></Grid>
-        <Grid item xs={12} sm={6} md={3}><StatCard title="Điểm trung bình" value="8.2" icon={<WorkspacePremiumIcon />} color="error" subtext="Top 15% của lớp" /></Grid>
-      </Grid>
-
-      {/* 3. CHARTS ROW (SỬ DỤNG CSS GRID THEO ĐỀ XUẤT CỦA BẠN: 1fr 340px) */}
-      <Box sx={{ 
-        display: 'grid', 
-        gridTemplateColumns: { xs: '1fr', lg: '1fr 340px', xl: '1fr 580px' }, 
-        gap: 3, 
-        mb: 4,
-        alignItems: 'stretch' // Giúp 2 cột cao bằng nhau
-      }}>
+      {/* 2. CHARTS ROW */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 360px' }, gap: 3, mb: 4, alignItems: 'stretch' }}>
         
-        {/* CỘT TRÁI (Biểu đồ đường - Chiếm không gian còn lại: 1fr) */}
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: "1px solid #e0e0e0", display: "flex", flexDirection: "column", height: "100%" }}>
+        {/* LINE CHART */}
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: "1px solid #e0e0e0", display: "flex", flexDirection: "column" }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4, flexWrap: "wrap", gap: 2 }}>
-            <Box>
-              <Typography variant="h6" fontWeight={700}>📈 Xu hướng điểm số</Typography>
-              <Typography variant="body2" color="text.secondary">Kết quả các bài làm gần đây</Typography>
-            </Box>
+            <Typography variant="h6" fontWeight={700}>📈 Xu hướng điểm số</Typography>
             <Stack direction="row" spacing={2}>
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Môn học</InputLabel>
-                <Select value={progressSubject} label="Môn học" onChange={(e) => setProgressSubject(e.target.value)}>
+              <FormControl size="small" sx={{ minWidth: 130 }}>
+                <InputLabel>Loại bài</InputLabel>
+                <Select value={progressExamType} label="Loại bài" onChange={(e) => setProgressExamType(e.target.value)}>
                   <MenuItem value="all">Tất cả</MenuItem>
-                  <MenuItem value="Toán">Toán</MenuItem>
-                  <MenuItem value="Lý">Lý</MenuItem>
+                  <MenuItem value="practice">Luyện tập</MenuItem>
+                  <MenuItem value="test">Kiểm tra</MenuItem>
+                  <MenuItem value="adaptive">Thích ứng</MenuItem>
                 </Select>
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <Select value={progressTimeRange} onChange={(e) => setProgressTimeRange(e.target.value)}>
                   <MenuItem value="week">Tuần này</MenuItem>
                   <MenuItem value="month">Tháng này</MenuItem>
+                  <MenuItem value="term">Học kỳ</MenuItem>
                 </Select>
               </FormControl>
             </Stack>
           </Stack>
-          
-          <Box sx={{ flexGrow: 1, minHeight: 350 }}>
+          <Box sx={{ flexGrow: 1, minHeight: 320 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={MOCK_PROGRESS_DATA.week}>
+              <LineChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <XAxis dataKey="name" tick={{fontSize: 12, fill: '#666'}} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 10]} tick={{fontSize: 12, fill: '#666'}} axisLine={false} tickLine={false} />
                 <RechartsTooltip />
-                <Legend />
-                <Line type="monotone" dataKey="score" name="Điểm số" stroke="#2196f3" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="score" name="Điểm số" stroke="#2196f3" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           </Box>
         </Paper>
 
-        {/* CỘT PHẢI (Radar Chart & Gợi ý - Được khóa cứng kích thước 340px) */}
-        <Stack spacing={3} sx={{ height: "100%" }}>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: "1px solid #e0e0e0", flexGrow: 1, display: "flex", flexDirection: "column" }}>
-            <Typography variant="subtitle1" fontWeight={700} align="center" gutterBottom>🕸️ Bản đồ Kỹ năng</Typography>
-            <Box sx={{ flexGrow: 1, minHeight: 220 }}>
-               <ResponsiveContainer width="100%" height="100%">
-                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={MOCK_SKILL_MAP}>
-                   <PolarGrid stroke="#e0e0e0" />
-                   <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#666' }} />
-                   <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-                   <Radar name="Kỹ năng" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-                   <RechartsTooltip />
-                 </RadarChart>
-               </ResponsiveContainer>
-            </Box>
-          </Paper>
-
-          <Card sx={{ borderRadius: 3, bgcolor: "#f8f9fa", border: "1px solid #e0e0e0", boxShadow: "none" }}>
-            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                <AutoAwesomeIcon color="primary" fontSize="small" />
-                <Typography variant="subtitle1" fontWeight={700} color="primary.main">Gợi ý AI</Typography>
-              </Stack>
-              <List dense disablePadding>
-                {MOCK_SUGGESTIONS.slice(0, 2).map((item, index) => (
-                  <ListItem key={item.id} sx={{ px: 0, py: 1, borderBottom: index === 0 ? "1px dashed #e0e0e0" : "none" }}>
-                    <ListItemText 
-                      primary={<Typography variant="body2" fontWeight={600} color="text.primary">{item.title}</Typography>}
-                      secondary={<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>{item.reason}</Typography>}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </Stack>
+        {/* RADAR CHART */}
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: "1px solid #e0e0e0", display: "flex", flexDirection: "column" }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+            <Typography variant="subtitle1" fontWeight={700}>🕸️ Bản đồ Kỹ năng</Typography>
+          </Stack>
+          <FormControl size="small" fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Chọn Sách / Lộ trình</InputLabel>
+            <Select value={selectedPlan} label="Chọn Sách / Lộ trình" onChange={(e) => setSelectedPlan(e.target.value)}>
+              {myPlans.map(plan => (
+                <MenuItem key={plan.id} value={plan.id}>{plan.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Typography variant="caption" color="text.secondary" align="center" sx={{ display: 'block', fontStyle: 'italic' }}>
+            * Click vào tên chương để xem chi tiết
+          </Typography>
+          <Box sx={{ flexGrow: 1, minHeight: 250, cursor: 'pointer' }}>
+             <ResponsiveContainer width="100%" height="100%">
+               <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData} onClick={handleRadarClick}>
+                 <PolarGrid stroke="#e0e0e0" />
+                 <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#333', fontWeight: 600 }} />
+                 <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                 <Radar name="Độ thông thạo (%)" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                 <RechartsTooltip />
+               </RadarChart>
+             </ResponsiveContainer>
+          </Box>
+        </Paper>
       </Box>
 
-      {/* 4. BẢNG HOẠT ĐỘNG GẦN ĐÂY CÓ FILTER DROP-DOWN VÀ PAGINATION */}
-      <Paper elevation={0} sx={{ borderRadius: 3, border: "1px solid #e0e0e0", overflow: 'hidden', boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.03)" }}>
-        
-        {/* Khu vực Filter Header */}
+      {/* 3. AI SUGGESTIONS (MOCK DATA) */}
+      <Card sx={{ borderRadius: 3, bgcolor: "#f0f4f8", border: "1px solid #d9e2ec", boxShadow: "none", mb: 4 }}>
+        <CardContent sx={{ p: 3, pb: "16px !important" }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            <AutoAwesomeIcon color="primary" />
+            <Typography variant="h6" fontWeight={700} color="primary.dark">Cố vấn học tập AI</Typography>
+            <Chip label="Phân tích từ bài Thích ứng" size="small" sx={{ ml: 2, bgcolor: "primary.light", color: "primary.dark", fontWeight: 600, fontSize: '0.7rem' }}/>
+          </Stack>
+          
+          <Grid container spacing={2}>
+            {currentAiSuggestions.map((item) => (
+              <Grid item xs={12} md={6} key={item.id}>
+                <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid #e2e8f0", height: "100%" }}>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>{item.title}</Typography>
+                  <Typography variant="body2" color="text.secondary">{item.reason}</Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+            <Pagination 
+              count={Math.ceil(MOCK_AI_SUGGESTIONS.length / aiItemsPerPage)} 
+              page={aiPage} 
+              onChange={(e, val) => setAiPage(val)} 
+              color="primary" 
+              size="small"
+            />
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* 4. HISTORY TABLE */}
+      <Paper elevation={0} sx={{ borderRadius: 3, border: "1px solid #e0e0e0", overflow: 'hidden' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, py: 2, bgcolor: '#fff' }}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2}>
             <Stack direction="row" alignItems="center" spacing={1}>
               <FilterListIcon color="action" />
               <Typography variant="h6" fontWeight={700}>Lịch sử hoạt động</Typography>
             </Stack>
-            
             <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-              {/* Filter: Loại bài */}
-              <FormControl size="small" sx={{ minWidth: 140 }}>
-                <InputLabel>Loại bài</InputLabel>
-                <Select value={activityType} label="Loại bài" onChange={(e) => { setActivityType(e.target.value); setPage(0); }}>
-                  <MenuItem value="all">Tất cả</MenuItem>
-                  <MenuItem value="practice">Luyện tập (Practice)</MenuItem>
-                  <MenuItem value="test">Kiểm tra (Test)</MenuItem>
-                  <MenuItem value="adaptive">Thích ứng (Adaptive)</MenuItem>
-                </Select>
-              </FormControl>
-              
-              {/* Filter: Từ ngày - Đến ngày */}
-              <TextField label="Từ ngày" type="date" size="small" InputLabelProps={{ shrink: true }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-              <TextField label="Đến ngày" type="date" size="small" InputLabelProps={{ shrink: true }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <TextField
+                label="Từ ngày"
+                type="date"
+                size="small"
+                InputLabelProps={{ shrink: true }}
+                value={startDate}
+                onChange={(e) => { setStartDate(e.target.value); setPage(0); }}
+              />
+              <TextField
+                label="Đến ngày"
+                type="date"
+                size="small"
+                InputLabelProps={{ shrink: true }}
+                value={endDate}
+                onChange={(e) => { setEndDate(e.target.value); setPage(0); }}
+              />
+        
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <Select value={activityType} onChange={(e) => { setActivityType(e.target.value); setPage(0); }}>
+                <MenuItem value="all">Tất cả</MenuItem>
+                <MenuItem value="practice">Luyện tập</MenuItem>
+                <MenuItem value="test">Kiểm tra</MenuItem>
+                <MenuItem value="adaptive">Thích ứng</MenuItem>
+              </Select>
+            </FormControl>
             </Stack>
           </Stack>
         </Box>
 
-        <TableContainer sx={{ maxHeight: 450 }}>
-          <Table stickyHeader size="medium">
+        <TableContainer sx={{ maxHeight: 400 }}>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ bgcolor: "#fafafa", fontWeight: 700 }}>Tên bài</TableCell>
-                <TableCell sx={{ bgcolor: "#fafafa", fontWeight: 700 }}>Môn học</TableCell>
-                <TableCell align="center" sx={{ bgcolor: "#fafafa", fontWeight: 700 }}>Loại</TableCell>
-                <TableCell align="center" sx={{ bgcolor: "#fafafa", fontWeight: 700 }}>Điểm số</TableCell>
-                <TableCell align="right" sx={{ bgcolor: "#fafafa", fontWeight: 700 }}>Thời gian nộp</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Tên bài</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Môn học</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Loại</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Thời gian nộp</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Điểm số</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedActivities.length > 0 ? (
-                paginatedActivities.map((row, index) => (
-                  <TableRow key={index} hover>
-                    <TableCell><Typography variant="body2" fontWeight={500} color="text.primary">{row.exam.title}</Typography></TableCell>
-                    <TableCell><Chip label={row.exam.class.subject} size="small" variant="outlined" sx={{ borderRadius: 1 }} /></TableCell>
-                    <TableCell align="center">
-                      <Chip 
-                        label={row.exam.exam_type.toUpperCase()} 
-                        size="small" 
-                        color={row.exam.exam_type === 'test' ? 'error' : row.exam.exam_type === 'adaptive' ? 'secondary' : 'default'}
-                        sx={{ fontWeight: 600, fontSize: "0.7rem" }}
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Typography fontWeight={700} color={row.final_score >= 8 ? "success.main" : row.final_score >= 5 ? "warning.main" : "error.main"}>
-                        {row.final_score}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right"><Typography variant="body2" color="text.secondary">{new Date(row.doneAt).toLocaleString("vi-VN")}</Typography></TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
-                    <Typography color="text.secondary">Không tìm thấy hoạt động nào phù hợp. 🍃</Typography>
+              {historyData.map((row, index) => (
+                <TableRow key={index} hover>
+                  <TableCell><Typography variant="body2" fontWeight={500}>{row.title || 'Bài tập'}</Typography></TableCell>
+                  <TableCell><Chip label={row.subject || 'N/A'} size="small" variant="outlined" /></TableCell>
+
+                  {/* HIỂN THỊ CHIP MÀU SẮC DỰA VÀO EXAM_TYPE */}
+                  <TableCell align="center">
+                    <Chip 
+                      label={row.exam_type ? row.exam_type.toUpperCase() : 'PRACTICE'} 
+                      size="small" 
+                      color={row.exam_type === 'test' ? 'error' : row.exam_type === 'adaptive' ? 'secondary' : 'default'} 
+                      sx={{ fontWeight: 600, fontSize: "0.7rem" }}
+                    />
                   </TableCell>
+
+                  <TableCell align="center"><Typography variant="body2">{new Date(row.doneAt).toLocaleDateString('vi-VN')}</Typography></TableCell>
+                  <TableCell align="center"><Typography fontWeight={700}>{row.score}</Typography></TableCell>
                 </TableRow>
+              ))}
+              {historyData.length === 0 && (
+                 <TableRow>
+                   <TableCell colSpan={4} align="center" sx={{py: 3}}>Chưa có lịch sử làm bài</TableCell>
+                 </TableRow>
               )}
             </TableBody>
           </Table>
         </TableContainer>
-        
-        {/* Phân trang (Pagination) */}
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={filteredActivities.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="Số dòng:"
-          labelDisplayedRows={({ from, to, count }) => `${from}–${to} trên ${count !== -1 ? count : `hơn ${to}`}`}
-        />
+        <TablePagination rowsPerPageOptions={[5, 10]} component="div" count={historyTotal > 0 ? historyTotal : -1} rowsPerPage={rowsPerPage} page={page} onPageChange={(e, newPage) => setPage(newPage)} onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }} labelRowsPerPage="Số dòng:" />
       </Paper>
 
-      {/* DIALOG HUY HIỆU */}
-      <Dialog open={openBadgeDialog} onClose={() => setOpenBadgeDialog(false)} maxWidth="sm" fullWidth>
+      {/* DIALOG DRILL-DOWN (CHI TIẾT CHỦ ĐỀ) */}
+      <Dialog open={openDrillDown} onClose={() => setOpenDrillDown(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700 }}>
-          Bộ sưu tập Huy hiệu
-          <IconButton onClick={() => setOpenBadgeDialog(false)}><CloseIcon /></IconButton>
+          Phân tích: {selectedChapterName}
+          <IconButton onClick={() => setOpenDrillDown(false)}><CloseIcon /></IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          <Grid container spacing={2}>
-            {MOCK_BADGES.map((badge) => (
-              <Grid item xs={12} sm={6} key={badge.badge_id}>
-                <Paper variant="outlined" sx={{ p: 2, display: "flex", alignItems: "center", gap: 2, borderRadius: 2 }}>
-                  <Avatar sx={{ bgcolor: badge.color, width: 48, height: 48, fontSize: "1.5rem" }}>{badge.icon}</Avatar>
-                  <Box>
-                    <Typography variant="subtitle2" fontWeight={700}>{badge.title}</Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{badge.description}</Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            Tỷ lệ thông thạo các chủ đề con (dựa trên bài Luyện tập Thích ứng).
+          </Typography>
+          <Box sx={{ width: '100%', height: 250, mt: 2 }}>
+            <ResponsiveContainer>
+              <BarChart data={drillDownData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                <XAxis type="number" domain={[0, 100]} />
+                <YAxis dataKey="topic" type="category" width={100} tick={{fontSize: 12}} />
+                <RechartsTooltip />
+                <Bar dataKey="percent" name="Độ thông thạo (%)" fill="#8884d8" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
         </DialogContent>
       </Dialog>
     </Container>
