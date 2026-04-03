@@ -202,7 +202,7 @@ export class TutorDashboard {
                             exam_id: { not: null },
                             isDone: true,
                             doneAt: { lte: now },
-                            // ...(examTypeCondition || {})
+                            ...(examTypeCondition || {})
                         },
                     }
                 },
@@ -217,8 +217,7 @@ export class TutorDashboard {
                                     exam_open_in: {
                                         where: {
                                             exam_session: {
-                                                startAt: { gte: past, lte: now },
-                                                // expireAt: { lte: now },
+                                                startAt: { gte: past },
                                             }
                                         },
                                         select: {
@@ -233,14 +232,13 @@ export class TutorDashboard {
                     exam_taken: {
                         where: {
                             exam_session: {
-                                startAt: { gte: past, lte: now },
-                                // expireAt: { lte: now },
+                                startAt: { gte: past },
+                                ...(examTypeCondition?.exam_session || {})
                             },
                             isDone: true,
-                            // doneAt: { gte: past, lte: now },
-                            // ...(examTypeCondition || {})
+                            doneAt: { lte: now },
                         },
-                        orderBy: { doneAt: 'asc' }, // QUAN TRỌNG: Sắp xếp theo thời gian tăng dần
+                        orderBy: { doneAt: 'asc' },
                         select: {
                             exam_id: true,
                             session_id: true,
@@ -269,14 +267,6 @@ export class TutorDashboard {
                 }))
             })));
 
-            console.log('========================= Attention Required Students - Score Downgrade Report ====================================');
-            console.log('Fetched raw score report for tutor', tutor_id, ':', raw_score_report.length, 'students');
-            console.log('Raw Score Report:', raw_score_report);
-            console.log('Time Range:', time_range, 'From:', past, 'To:', now);
-            console.log('Grade Threshold:', grade_threshold);
-            console.log('Exam List Sample (first student):', raw_score_report[0]?.learning[0]?.student_exams.slice(0, 5));
-            console.log('===============================================================================================================');
-
             exam_score_report = raw_score_report.map(student => {
                 
                 // ==========================================
@@ -285,9 +275,6 @@ export class TutorDashboard {
                 const sessionToClassMap = new Map<string, { class_id: string, classname: string }>();
 
                 for (const l of student.learning) {
-                    console.log('Processing class', l.class_id, l.classname, 'for student', student.info.uid);
-                    console.log('Student exams in this class:', l.student_exams.length);
-                    
                     for (const open_in of l.student_exams) {
                         // Khóa (Key) là tổ hợp exam_id và session_id
                         const key = `${open_in.exam_id}_${open_in.session_id}`;
@@ -295,11 +282,8 @@ export class TutorDashboard {
                             class_id: l.class_id,
                             classname: l.classname
                         });
-                        console.log('Mapping exam session', key, 'to class', sessionToClassMap.get(key)?.class_id, sessionToClassMap.get(key)?.classname);
                     }
                 }
-
-                console.log('Session to Class Map for student', student.info.uid, ':', sessionToClassMap);
 
                 // ==========================================
                 // STEP 1: Lọc điểm cao nhất per {exam_id, session_id}
@@ -318,8 +302,6 @@ export class TutorDashboard {
                     }
                 }
 
-                console.log('Best Exams Map for student', student.info.uid, ':', bestExamsMap);
-
                 // Sort lại mảng các bài thi có điểm cao nhất theo đúng thứ tự thời gian nộp bài
                 const filteredExams = Array.from(bestExamsMap.values())
                     .sort((a, b) => new Date(a.doneAt).getTime() - new Date(b.doneAt).getTime());
@@ -328,7 +310,6 @@ export class TutorDashboard {
                 // STEP 2: Phân nhóm theo Lớp -> Phân nhóm theo Thời gian
                 // ==========================================
                 const classesMap = new Map();
-                console.log('Student', student.info.uid, student.info.fname, student.info.lname, 'has exams:', filteredExams.length);
 
                 for (const exam of filteredExams) {
                     const key = `${exam.exam_id}_${exam.session_id}`;
@@ -336,7 +317,6 @@ export class TutorDashboard {
 
                     // Bỏ qua nếu bài thi không map được với lớp nào do tutor dạy (đề phòng dữ liệu cũ/rác)
                     if (!classInfo) continue;
-                    console.log('Exam', exam.exam_id, exam.session_id, 'mapped to class', classInfo.class_id, classInfo.classname);
 
                     const classId = classInfo.class_id;
                     const className = classInfo.classname;
