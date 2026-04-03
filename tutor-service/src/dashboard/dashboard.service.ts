@@ -68,7 +68,7 @@ export class StudentDashboard {
     async currentClasses(student_id: string) {
         return await this.prisma.class.findMany({
             where: {
-                learning: {some: {student_uid: student_id}},
+                learning: {some: {student_uid: student_id, status: "accepted"}},
                 status: {in: ["pending", "ongoing"]}
             },
             select: {

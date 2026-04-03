@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Draggable from 'react-draggable';
 import {
   Container, Typography, Box, CircularProgress, Paper, Divider, 
   Grid, Button, Chip, Accordion, AccordionSummary, AccordionDetails,
@@ -172,24 +173,24 @@ export default function StudentAssignmentResultPage() {
       }}
     >
       {canViewDetails && (
-        <Fab
-          color="primary"
-          variant="extended"
-          aria-label="open-navigation"
-          onClick={() => setIsDrawerOpen(true)}
-          sx={{
-            position: "fixed",
-            bottom: 32,
-            right: { xs: 16, md: 32 },
-            zIndex: 1000,
-            fontWeight: 700,
-            px: 3,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-          }}
-        >
-          <FormatListBulletedIcon sx={{ mr: 1 }} />
-          Bảng điều hướng
-        </Fab>
+        <Draggable>
+          <Box sx={{ position: 'fixed', bottom: 32, right: { xs: 16, md: 32 }, zIndex: 1000, cursor: 'grab', '&:active': { cursor: 'grabbing' } }}>
+            <Fab
+              color="primary"
+              variant="extended"
+              aria-label="open-navigation"
+              onClick={() => setIsDrawerOpen(true)}
+              sx={{
+                fontWeight: 700,
+                px: 3,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              }}
+            >
+              <FormatListBulletedIcon sx={{ mr: 1 }} />
+              Bảng điều hướng
+            </Fab>
+          </Box>
+        </Draggable>
       )}
 
       <Box

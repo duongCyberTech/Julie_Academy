@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Draggable from 'react-draggable';
 import {
   Container, Typography, Box, Button, RadioGroup, Radio, Checkbox,
   FormGroup, FormControlLabel, CircularProgress, Paper, Chip,
@@ -8,7 +9,7 @@ import {
 
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import CloseIcon from '@mui/icons-material/Close';
-
+ 
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -326,98 +327,277 @@ export default function StudentAssignmentSessionPage() {
   const displaySubject = examData?.exam_session?.exam?.category?.subject || examData?.exam?.category?.subject || examData?.category?.subject || 'Bài tập';
 
   return (
-    <Container 
-      maxWidth="lg" 
-      sx={{ 
-        pt: 3, pb: 2, 
-        px: { xs: 2, sm: 3 }, 
-        backgroundColor: '#f4f6f8', 
-        minHeight: '100vh', 
-        display: 'flex', flexDirection: 'column' 
+    <Container
+      maxWidth="lg"
+      sx={{
+        pt: 3,
+        pb: 2,
+        px: { xs: 2, sm: 3 },
+        backgroundColor: "#f4f6f8",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      
       {/* Nút bật/tắt Bảng tiến độ */}
-      <Fab 
-        color="primary" variant="extended" aria-label="open-navigation"
-        onClick={() => setIsDrawerOpen(true)}
-        sx={{ position: 'fixed', bottom: 32, right: { xs: 16, md: 32 }, zIndex: 1000, fontWeight: 700, px: 3, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
-      >
-        <FormatListBulletedIcon sx={{ mr: 1 }} />
-        Bảng tiến độ
-      </Fab>
+      <Draggable>
+        <Box sx={{ position: 'fixed', bottom: 32, right: { xs: 16, md: 32 }, zIndex: 1000, cursor: 'grab', '&:active': { cursor: 'grabbing' } }}> 
+          <Fab 
+            color="primary" variant="extended" aria-label="open-navigation"
+            onClick={() => setIsDrawerOpen(true)}
+            sx={{ fontWeight: 700, px: 3, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+          >
+            <FormatListBulletedIcon sx={{ mr: 1 }} />
+            Bảng tiến độ
+          </Fab>
+        </Box>
+      </Draggable>
 
       {/* Header bài thi */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={700} color="text.primary" gutterBottom>{displayTitle}</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
+        <Typography
+          variant="h4"
+          fontWeight={700}
+          color="text.primary"
+          gutterBottom
+        >
+          {displayTitle}
+        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            color: "text.secondary",
+          }}
+        >
           <MenuBookIcon fontSize="small" sx={{ mr: 1 }} />
-          <Typography variant="body1" fontWeight={500}>{displaySubject}</Typography>
+          <Typography variant="body1" fontWeight={500}>
+            {displaySubject}
+          </Typography>
         </Box>
       </Box>
 
       {/* Vùng câu hỏi */}
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', pb: 2, width: '100%' }}>
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              flexGrow: 1, 
-              overflow: 'hidden',
-              borderRadius: 4, 
-              border: '1px solid', 
-              borderColor: 'grey.200', 
-              display: 'flex', flexDirection: 'column', 
-              backgroundColor: '#fff' 
+      <Box
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          flexDirection: "column",
+          pb: 2,
+          width: "100%",
+        }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            flexGrow: 1,
+            overflow: "hidden",
+            borderRadius: 4,
+            border: "1px solid",
+            borderColor: "grey.200",
+            display: "flex",
+            flexDirection: "column",
+            backgroundColor: "#fff",
+          }}
+        >
+          {/* Header Câu hỏi & Timer */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              p: { xs: 2, md: 3 },
+              borderBottom: "1px solid #eee",
             }}
           >
-            {/* Header Câu hỏi & Timer */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 2, md: 3 }, borderBottom: '1px solid #eee' }}>
-              <Box>
-                <Typography variant="h5" fontWeight={700} color="primary.main" component="span">Câu {activeStep + 1} </Typography>
-                <Typography component="span" color="text.secondary" variant="h6" fontWeight={600}> / {questions.length}</Typography>
-                <Chip label={isMultiChoice ? "Nhiều đáp án" : "Một đáp án"} variant="outlined" size="small" sx={{ ml: 2, fontWeight: 600 }} />
-              </Box>
-              <Chip icon={<AccessTimeIcon sx={{ fontSize: 20 }}/>} label={timeLeft !== null ? formatTime(timeLeft) : '00:00'} color={timeLeft < 300 ? "error" : "primary"} sx={{ fontWeight: 800, fontSize: '1.1rem', py: 2.5, px: 1, borderRadius: 2 }} />
+            <Box>
+              <Typography
+                variant="h5"
+                fontWeight={700}
+                color="primary.main"
+                component="span"
+              >
+                Câu {activeStep + 1}{" "}
+              </Typography>
+              <Typography
+                component="span"
+                color="text.secondary"
+                variant="h6"
+                fontWeight={600}
+              >
+                {" "}
+                / {questions.length}
+              </Typography>
+              <Chip
+                label={isMultiChoice ? "Nhiều đáp án" : "Một đáp án"}
+                variant="outlined"
+                size="small"
+                sx={{ ml: 2, fontWeight: 600 }}
+              />
             </Box>
-            
-            {/* Nội dung câu hỏi */}
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', overflowX: 'hidden', p: { xs: 2, md: 4, lg: 5 } }}>
-              <Box sx={{ fontSize: '1.2rem', lineHeight: 1.8, mb: 4, color: 'text.primary', fontWeight: 500, width: '100%' }}>
-                <HtmlContentRenderer htmlContent={currentQuestion.content} />
-              </Box>
-              
-              <FormGroup sx={{ width: '100%' }}>
-                {currentQuestion.answers?.map((answer, index) => {
-                  const isSelected = (selectedAnswers[currentQuestion.ques_id] || []).includes(answer.aid);
-                  return (
-                    <FormControlLabel
-                      key={answer.aid} value={answer.aid}
-                      control={isMultiChoice ? <Checkbox checked={isSelected} size="large" /> : <Radio checked={isSelected} size="large" />}
-                      label={
-                        <Box sx={{ display: 'flex', width: '100%', alignItems: 'flex-start', py: 1 }}>
-                            <Typography sx={{ mr: 2, fontWeight: 700, fontSize: '1.1rem', color: isSelected ? 'primary.main' : 'text.secondary', mt: '2px' }}>{getAnswerPrefix(index)}.</Typography>
-                            <Box sx={{ flexGrow: 1, fontSize: '1.1rem', lineHeight: 1.6, width: '100%' }}><HtmlContentRenderer htmlContent={answer.content} /></Box>
-                        </Box>
-                      }
-                      onChange={() => handleAnswerChange(currentQuestion.ques_id, answer.aid, isMultiChoice)}
-                      sx={{
-                        m: 0, mb: 2, pr: 3, pl: 1, py: 1, width: '100%', borderRadius: 3, border: '2px solid',
-                        borderColor: isSelected ? 'primary.main' : 'grey.200', backgroundColor: isSelected ? 'primary.50' : 'transparent',
-                        alignItems: 'flex-start', '&:hover': { borderColor: isSelected ? 'primary.main' : 'grey.300', backgroundColor: isSelected ? 'primary.50' : 'grey.50' },
-                        '& .MuiFormControlLabel-label': { width: '100%' } 
-                      }}
-                    />
-                  );
-                })}
-              </FormGroup>
+            <Chip
+              icon={<AccessTimeIcon sx={{ fontSize: 20 }} />}
+              label={timeLeft !== null ? formatTime(timeLeft) : "00:00"}
+              color={timeLeft < 300 ? "error" : "primary"}
+              sx={{
+                fontWeight: 800,
+                fontSize: "1.1rem",
+                py: 2.5,
+                px: 1,
+                borderRadius: 2,
+              }}
+            />
+          </Box>
+
+          {/* Nội dung câu hỏi */}
+          <Box
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              overflowX: "hidden",
+              p: { xs: 2, md: 4, lg: 5 },
+            }}
+          >
+            <Box
+              sx={{
+                fontSize: "1.2rem",
+                lineHeight: 1.8,
+                mb: 4,
+                color: "text.primary",
+                fontWeight: 500,
+                width: "100%",
+              }}
+            >
+              <HtmlContentRenderer htmlContent={currentQuestion.content} />
             </Box>
 
-            {/* Nút Điều hướng */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: { xs: 2, md: 3 }, borderTop: '1px solid #eee' }}>
-              <Button variant="outlined" size="large" onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowBackIcon />} sx={{ borderRadius: 2, px: 2, fontWeight: 700 }}>Câu trước</Button>
-              <Button variant="contained" size="large" onClick={handleNext} disabled={activeStep === questions.length - 1} endIcon={<ArrowForwardIcon />} disableElevation sx={{ borderRadius: 2, px: 4, fontWeight: 700 }}>Câu tiếp</Button>
-            </Box>
-          </Paper>
+            <FormGroup sx={{ width: "100%" }}>
+              {currentQuestion.answers?.map((answer, index) => {
+                const isSelected = (
+                  selectedAnswers[currentQuestion.ques_id] || []
+                ).includes(answer.aid);
+                return (
+                  <FormControlLabel
+                    key={answer.aid}
+                    value={answer.aid}
+                    control={
+                      isMultiChoice ? (
+                        <Checkbox checked={isSelected} size="large" />
+                      ) : (
+                        <Radio checked={isSelected} size="large" />
+                      )
+                    }
+                    label={
+                      <Box
+                        sx={{
+                          display: "flex",
+                          width: "100%",
+                          alignItems: "flex-start",
+                          py: 1,
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            mr: 2,
+                            fontWeight: 700,
+                            fontSize: "1.1rem",
+                            color: isSelected
+                              ? "primary.main"
+                              : "text.secondary",
+                            mt: "2px",
+                          }}
+                        >
+                          {getAnswerPrefix(index)}.
+                        </Typography>
+                        <Box
+                          sx={{
+                            flexGrow: 1,
+                            fontSize: "1.1rem",
+                            lineHeight: 1.6,
+                            width: "100%",
+                          }}
+                        >
+                          <HtmlContentRenderer htmlContent={answer.content} />
+                        </Box>
+                      </Box>
+                    }
+                    onChange={() =>
+                      handleAnswerChange(
+                        currentQuestion.ques_id,
+                        answer.aid,
+                        isMultiChoice,
+                      )
+                    }
+                    sx={{
+                      m: 0,
+                      mb: 2,
+                      pr: 3,
+                      pl: 1,
+                      py: 1,
+                      width: "100%",
+                      borderRadius: 3,
+                      border: "2px solid",
+                      borderColor: isSelected ? "primary.main" : "grey.200",
+                      backgroundColor: isSelected
+                        ? "primary.50"
+                        : "transparent",
+                      alignItems: "flex-start",
+                      "&:hover": {
+                        borderColor: isSelected ? "primary.main" : "grey.300",
+                        backgroundColor: isSelected ? "primary.50" : "grey.50",
+                      },
+                      "& .MuiFormControlLabel-label": { width: "100%" },
+                    }}
+                  />
+                );
+              })}
+            </FormGroup>
+          </Box>
+
+          {/* Nút Điều hướng */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: { xs: "center", sm: "space-between" },
+              gap: { xs: 2, sm: 0 },
+              p: { xs: 2, md: 3 },
+              borderTop: "1px solid #eee",
+            }}
+          >
+            <Button
+              variant="outlined"
+              
+              onClick={handleBack}
+              disabled={activeStep === 0}
+              startIcon={<ArrowBackIcon />}
+              sx={{
+                borderRadius: 2,
+                fontWeight: 700,
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 0.8, sm: 1 },
+                fontSize: { xs: "0.85rem", sm: "1rem" },
+              }}
+            >
+              Câu trước
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              disabled={activeStep === questions.length - 1}
+              endIcon={<ArrowForwardIcon />}
+              disableElevation
+              sx={{
+                borderRadius: 2,
+                fontWeight: 700,
+                px: { xs: 1.5, sm: 4 },
+                py: { xs: 0.8, sm: 1 },
+                fontSize: { xs: "0.85rem", sm: "1rem" },
+              }}
+            >
+              Câu tiếp
+            </Button>
+          </Box>
+        </Paper>
       </Box>
 
       {/* Drawer Bảng tiến độ  */}
@@ -426,16 +606,24 @@ export default function StudentAssignmentSessionPage() {
         open={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         PaperProps={{
-          sx: { 
-            width: { xs: '85vw', sm: 400 }, 
-            p: 3, 
-            borderTopLeftRadius: 16, 
+          sx: {
+            width: { xs: "85vw", sm: 400 },
+            p: 3,
+            borderTopLeftRadius: 16,
             borderBottomLeftRadius: 16,
-            display: 'flex', flexDirection: 'column'
-          }
+            display: "flex",
+            flexDirection: "column",
+          },
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
           <Typography variant="h5" fontWeight={700} color="text.primary">
             Tiến độ làm bài
           </Typography>
@@ -443,26 +631,53 @@ export default function StudentAssignmentSessionPage() {
             <CloseIcon />
           </IconButton>
         </Box>
-        
-        <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1.5 }}>
+
+        <Box sx={{ flexGrow: 1, overflowY: "auto", pr: 1 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(5, 1fr)",
+              gap: 1.5,
+            }}
+          >
             {questions.map((q, index) => {
               const isAnswered = (selectedAnswers[q.ques_id] || []).length > 0;
               const isActive = index === activeStep;
 
               return (
                 <Button
-                  key={q.ques_id} variant={isAnswered ? "contained" : "outlined"} 
+                  key={q.ques_id}
+                  variant={isAnswered ? "contained" : "outlined"}
                   onClick={() => {
                     handleStepClick(index);
-                    setIsDrawerOpen(false); 
+                    setIsDrawerOpen(false);
                   }}
                   sx={{
-                    minWidth: 0, height: 48, borderRadius: 2, fontWeight: 800, fontSize: '1.1rem', p: 0,
-                    bgcolor: isAnswered ? 'primary.main' : (isActive ? 'secondary.light' : 'grey.100'),
-                    color: isAnswered ? '#fff' : (isActive ? '#fff' : 'text.primary'),
-                    border: '2px solid', borderColor: isActive ? 'secondary.main' : (isAnswered ? 'primary.main' : 'grey.300'),
-                    '&:hover': { bgcolor: isAnswered ? 'primary.dark' : 'grey.200' }
+                    minWidth: 0,
+                    height: 48,
+                    borderRadius: 2,
+                    fontWeight: 800,
+                    fontSize: "1.1rem",
+                    p: 0,
+                    bgcolor: isAnswered
+                      ? "primary.main"
+                      : isActive
+                        ? "secondary.light"
+                        : "grey.100",
+                    color: isAnswered
+                      ? "#fff"
+                      : isActive
+                        ? "#fff"
+                        : "text.primary",
+                    border: "2px solid",
+                    borderColor: isActive
+                      ? "secondary.main"
+                      : isAnswered
+                        ? "primary.main"
+                        : "grey.300",
+                    "&:hover": {
+                      bgcolor: isAnswered ? "primary.dark" : "grey.200",
+                    },
                   }}
                 >
                   {index + 1}
@@ -472,15 +687,25 @@ export default function StudentAssignmentSessionPage() {
           </Box>
         </Box>
 
-        <Box sx={{ pt: 2, borderTop: '1px solid #eee', mt: 2 }}>
+        <Box sx={{ pt: 2, borderTop: "1px solid #eee", mt: 2 }}>
           <Button
-            fullWidth variant="contained" color="success" size="large" startIcon={<SendIcon />}
+            fullWidth
+            variant="contained"
+            color="success"
+            size="large"
+            startIcon={<SendIcon />}
             onClick={() => {
               setIsDrawerOpen(false);
               setOpenSubmitConfirm(true);
-            }} 
-            disabled={isSubmitting} disableElevation
-            sx={{ borderRadius: 3, py: 1.5, fontWeight: 700, fontSize: '1.2rem' }}
+            }}
+            disabled={isSubmitting}
+            disableElevation
+            sx={{
+              borderRadius: 3,
+              py: 1.5,
+              fontWeight: 700,
+              fontSize: "1.2rem",
+            }}
           >
             Nộp bài thi
           </Button>
@@ -488,21 +713,75 @@ export default function StudentAssignmentSessionPage() {
       </Drawer>
 
       {/* Dialog xác nhận nộp bài */}
-      <Dialog open={openSubmitConfirm} onClose={() => setOpenSubmitConfirm(false)} PaperProps={{ sx: { borderRadius: 4, p: 1, minWidth: 400 } }}>
-        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.6rem', textAlign: 'center', pb: 1 }}>Xác nhận nộp bài</DialogTitle>
+      <Dialog
+        open={openSubmitConfirm}
+        onClose={() => setOpenSubmitConfirm(false)}
+        PaperProps={{ sx: { borderRadius: 4, p: 1, minWidth: 400 } }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: "1.6rem",
+            textAlign: "center",
+            pb: 1,
+          }}
+        >
+          Xác nhận nộp bài
+        </DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ fontSize: '1.1rem', textAlign: 'center', color: 'text.primary' }}>
-            Bạn đã trả lời <Typography component="span" fontWeight={800} color="primary" fontSize="1.3rem">{Object.values(selectedAnswers).filter(a => a && a.length > 0).length}</Typography> / {questions.length} câu hỏi. <br/><br/>
+          <DialogContentText
+            sx={{
+              fontSize: "1.1rem",
+              textAlign: "center",
+              color: "text.primary",
+            }}
+          >
+            Bạn đã trả lời{" "}
+            <Typography
+              component="span"
+              fontWeight={800}
+              color="primary"
+              fontSize="1.3rem"
+            >
+              {
+                Object.values(selectedAnswers).filter((a) => a && a.length > 0)
+                  .length
+              }
+            </Typography>{" "}
+            / {questions.length} câu hỏi. <br />
+            <br />
             Bạn có chắc chắn muốn nộp ngay?
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0, justifyContent: 'center', gap: 2 }}>
-          <Button onClick={() => setOpenSubmitConfirm(false)} variant="outlined" color="inherit" size="large" sx={{ borderRadius: 2, fontWeight: 700 }}>Kiểm tra lại</Button>
-          <Button onClick={() => handleFinalSubmit(false)} variant="contained" color="success" size="large" disableElevation sx={{ borderRadius: 2, fontWeight: 700 }}>Nộp bài ngay</Button>
+        <DialogActions sx={{ p: 3, pt: 0, justifyContent: "center", gap: 2 }}>
+          <Button
+            onClick={() => setOpenSubmitConfirm(false)}
+            variant="outlined"
+            color="inherit"
+            size="large"
+            sx={{ borderRadius: 2, fontWeight: 700 }}
+          >
+            Kiểm tra lại
+          </Button>
+          <Button
+            onClick={() => handleFinalSubmit(false)}
+            variant="contained"
+            color="success"
+            size="large"
+            disableElevation
+            sx={{ borderRadius: 2, fontWeight: 700 }}
+          >
+            Nộp bài ngay
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <AppSnackbar open={snackbar.open} message={snackbar.message} severity={snackbar.severity} onClose={() => setSnackbar({...snackbar, open: false})} />
+      <AppSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      />
     </Container>
   );
 }

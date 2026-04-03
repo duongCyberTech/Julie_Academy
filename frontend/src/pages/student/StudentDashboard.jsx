@@ -27,11 +27,10 @@ const getAuthHeaders = () => {
   return { headers: { Authorization: `Bearer ${token}` } };
 };
 
-// Nhờ ai thêm cho vui chưa sửa
 const MOCK_AI_SUGGESTIONS = [
-  { id: 1, title: "🆘 Báo động đỏ: Hàm số", reason: "Tỷ lệ đúng ở bài Thích ứng chỉ đạt 30%. Hãy ôn lại ngay để chuẩn bị cho kỳ thi CUỐI KỲ sắp tới." },
-  { id: 2, title: "⚠️ Cần cải thiện: Hình học không gian", reason: "Bạn thường xuyên sai phần tính khoảng cách. Kỳ thi GIỮA KỲ đang đến rất gần." },
-  { id: 3, title: "⭐ Duy trì phong độ: Xác suất", reason: "Bạn đang làm rất tốt phần này. Hãy tiếp tục phát huy ở các bài Test nhé!" },
+  { id: 1, title: "Ôn tập chương Đại số", reason: "sfsdfsdsdfsdf." },
+  { id: 2, title: "Tập trung vào Hình học", reason: "sdfsdfsdfdsf ." },
+
 ];
 
 export default function StudentDashboard() {
@@ -354,7 +353,7 @@ export default function StudentDashboard() {
 
         <TableContainer sx={{ maxHeight: 400 }}>
           <Table stickyHeader>
-            <TableHead>
+            <TableHead sx ={{ bgcolor: '#f8fafc' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700 }}>Tên bài</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Môn học</TableCell>
