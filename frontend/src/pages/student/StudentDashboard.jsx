@@ -27,7 +27,7 @@ const getAuthHeaders = () => {
   return { headers: { Authorization: `Bearer ${token}` } };
 };
 
-
+// Nhờ ai thêm cho vui chưa sửa
 const MOCK_AI_SUGGESTIONS = [
   { id: 1, title: "🆘 Báo động đỏ: Hàm số", reason: "Tỷ lệ đúng ở bài Thích ứng chỉ đạt 30%. Hãy ôn lại ngay để chuẩn bị cho kỳ thi CUỐI KỲ sắp tới." },
   { id: 2, title: "⚠️ Cần cải thiện: Hình học không gian", reason: "Bạn thường xuyên sai phần tính khoảng cách. Kỳ thi GIỮA KỲ đang đến rất gần." },
@@ -69,10 +69,6 @@ export default function StudentDashboard() {
   const [aiPage, setAiPage] = useState(1);
   const aiItemsPerPage = 2;
 
-  // =====================================================================
-  // FETCH DATA FUNCTIONS
-  // =====================================================================
-
   // Fetch 4 Cards Stats
   const fetchStats = async () => {
     try {
@@ -81,7 +77,7 @@ export default function StudentDashboard() {
     } catch (error) { console.error("Error fetching stats:", error); }
   };
 
-  // Fetch Danh sách Sách (Lấy plan_id đầu tiên làm mặc định)
+  // Fetch Danh sách Sách 
   const fetchMyPlans = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/books`, getAuthHeaders());
@@ -115,7 +111,6 @@ export default function StudentDashboard() {
         params: { plan_id: selectedPlan }
       });
       
-      // Tính % (A) = (correct / (correct + fail)) * 100
       const formattedRadar = res.data.map(item => {
         const total = item.correct_cnt + item.fail_cnt;
         const percent = total === 0 ? 0 : Math.round((item.correct_cnt / total) * 100);
@@ -166,7 +161,7 @@ export default function StudentDashboard() {
       setSelectedChapterName(chapter.subject);
       
       try {
-        // GỌI API MỚI: Drill down
+        // Gọi API: Drill down
         const res = await axios.get(`${BASE_URL}/dashboard/student/skills-map/${chapter.chapter_id}`, {
           ...getAuthHeaders(),
           params: { plan_id: selectedPlan }
@@ -287,7 +282,7 @@ export default function StudentDashboard() {
         </Paper>
       </Box>
 
-      {/* 3. AI SUGGESTIONS (MOCK DATA) */}
+      {/* 3. AI SUGGESTIONS*/}
       <Card sx={{ borderRadius: 3, bgcolor: "#f0f4f8", border: "1px solid #d9e2ec", boxShadow: "none", mb: 4 }}>
         <CardContent sx={{ p: 3, pb: "16px !important" }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
@@ -374,7 +369,7 @@ export default function StudentDashboard() {
                   <TableCell><Typography variant="body2" fontWeight={500}>{row.title || 'Bài tập'}</Typography></TableCell>
                   <TableCell><Chip label={row.subject || 'N/A'} size="small" variant="outlined" /></TableCell>
 
-                  {/* HIỂN THỊ CHIP MÀU SẮC DỰA VÀO EXAM_TYPE */}
+                  {/* Hiển thị chip theo loại bài */}
                   <TableCell align="center">
                     <Chip 
                       label={row.exam_type ? row.exam_type.toUpperCase() : 'PRACTICE'} 
@@ -399,7 +394,7 @@ export default function StudentDashboard() {
         <TablePagination rowsPerPageOptions={[5, 10]} component="div" count={historyTotal > 0 ? historyTotal : -1} rowsPerPage={rowsPerPage} page={page} onPageChange={(e, newPage) => setPage(newPage)} onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }} labelRowsPerPage="Số dòng:" />
       </Paper>
 
-      {/* DIALOG DRILL-DOWN (CHI TIẾT CHỦ ĐỀ) */}
+      {/* Dialog chi tiết chủ đề theo chương */}
       <Dialog open={openDrillDown} onClose={() => setOpenDrillDown(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700 }}>
           Phân tích: {selectedChapterName}
