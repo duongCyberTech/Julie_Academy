@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: dev
+      RABBITMQ_DEFAULT_PASS: julie
+      RABBITMQ_DEFAULT_VHOST: julie_dev_vhost
+    ports:
+      - "5672:5672"     # Cổng gửi tin nhắn
+      - "15672:15672"   # Cổng UI quản lý
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - rabbitmq_net
+
+  # Ví dụ thêm Service A (Producer)
+  # service_a:
+  #   build: ./service_a
+  #   environment:
+  #     RABBIT_URL: "amqp://dev:julie@rabbitmq:5672/julie_dev_vhost"
+  #   depends_on:
+  #     - rabbitmq
+  #   networks:
+  #     - rabbitmq_net
+
+volumes:
+  rabbitmq_data:
+
+networks:
+  rabbitmq_net:
+    driver: bridge

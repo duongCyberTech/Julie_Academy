@@ -20,6 +20,7 @@ import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guard/roles.guard";
 import { ExceptionResponse } from "src/exception/Exception.exception";
 import { IsEnum } from "class-validator/types/decorator/typechecker/IsEnum";
+import { CurrentQuestionDto } from "./dto/adaptive.dto";
 
 @Controller('exam')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -246,5 +247,38 @@ export class ExamTakenController {
             return new ExceptionResponse().returnError(error);
         }
     }
-    
+}
+
+@Controller('exam/adaptive')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class AdaptiveExamController {
+    constructor(private et_service: ExamTakenService){}
+
+    @Post('take/:category_id')
+    takeAdaptiveExam(
+        @Param('category_id') category: string,
+        @Request() req
+    ){
+        const userId = req.user.userId;
+        return this.et_service.takeAdaptiveExam(category, userId)
+    }
+
+    @Post('next-question/:category_id')
+    getNextAdaptiveQuestion(
+        @Param('category_id') category: string,
+        @Body() cur_ques: CurrentQuestionDto,
+        @Request() req
+    ){
+        const userId = req.user.userId;
+        return this.et_service.getNextAdaptiveQuestion(userId, category, cur_ques)
+    }
+
+    @Post('submit/:et_id')
+    submitAdaptiveExam(
+        @Param('et_id') et_id: string,
+        @Request() req
+    ){
+        const userId = req.user.userId;
+        return this.et_service.submitAdaptiveExam(et_id, userId)
+    }
 }
