@@ -51,12 +51,13 @@ export class DashboardController {
         return this.tutorDashboard.attentionRequiredStudents(uid, query)
     }
 
-    @Get('tutor-stats/:tutor_id')
+    @Get('tutor-stats/overall')
     @Roles('tutor')
     getTutorStats(
-        @Param('tutor_id') tutor_id: string
+        @Request() req
     ){
-        return this.dashboardService.getTutorStats(tutor_id)
+        const uid = req.user.userId
+        return this.dashboardService.getTutorStats(uid)
     }
 
     @Get('student-stats')
