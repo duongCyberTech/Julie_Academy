@@ -4,15 +4,16 @@ import { ExamTakenService } from "./exam_taken.service";
 import { 
     ExamController, 
     ExamSessionController,
-    ExamTakenController 
+    ExamTakenController,
+    AdaptiveExamController
 } from "./exam.controller";
-import { PrismaModule } from "src/prisma/prisma.module";
 import { QuestionService } from "src/question/question.service";
 import { BackgroundJobModule } from "src/background_job/background-job.module";
+import { RabbitMQModule } from "src/rabbitmq/rabbitmq.module";
 
 @Module({
-    imports: [BackgroundJobModule],
-    controllers: [ExamController, ExamSessionController, ExamTakenController],
+    imports: [BackgroundJobModule, RabbitMQModule],
+    controllers: [ExamController, ExamSessionController, ExamTakenController, AdaptiveExamController],
     providers: [ExamService, QuestionService, ExamTakenService]
 })
 export class ExamModule{}
