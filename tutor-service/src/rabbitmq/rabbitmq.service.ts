@@ -1,40 +1,65 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
+import { uuidv7 as uuid } from 'uuidv7';
 
 @Injectable()
-export class RabbitMQService
-  implements OnModuleInit, OnModuleDestroy {
-
-  private connection: amqp.Connection;
+export class RabbitMQService implements OnModuleInit {
   private channel: amqp.Channel;
-
+  private replyQueue: string;
   constructor(private configService: ConfigService) {}
+
+  private pending = new Map<string, (data: any) => void>();
 
   async onModuleInit() {
     const url = this.configService.get<string>('rabbitmq.url');
-    const queue = this.configService.get<string>('rabbitmq.queue');
+    const conn = await amqp.connect(url);
 
-    this.connection = await amqp.connect(url);
-    this.channel = await this.connection.createChannel();
+    this.channel = await conn.createChannel();
 
-    await this.channel.assertQueue(queue, { durable: true });
+    // 👇 tạo queue tạm để nhận response
+    const q = await this.channel.assertQueue('', { exclusive: true });
+    this.replyQueue = q.queue;
 
-    console.log('RabbitMQ connected');
-  }
+    // 👇 lắng nghe response
+    this.channel.consume(
+      this.replyQueue,
+      (msg) => {
+        if (!msg) return;
 
-  async publish(data: any) {
-    const queue = this.configService.get<string>('rabbitmq.queue');
+        const correlationId = msg.properties.correlationId;
+        const data = JSON.parse(msg.content.toString());
+        console.log("Received response:", data);
 
-    this.channel.sendToQueue(
-      queue,
-      Buffer.from(JSON.stringify(data)),
-      { persistent: true }
+        if (this.pending.has(correlationId)) {
+          this.pending.get(correlationId)(data.payload.result);
+          this.pending.delete(correlationId);
+        }
+
+        this.channel.ack(msg);
+      },
+      { noAck: false }
     );
   }
 
-  async onModuleDestroy() {
-    await this.channel?.close();
-    await this.connection?.close();
+  async sendAndWait(data: any): Promise<any> {
+    const correlationId = uuid();
+    const queue: string = this.configService.get<string>('rabbitmq.queue') ?? "";
+    console.log("Sending message to queue:", queue, "with correlationId:", correlationId);
+    console.log("Message content:", data);
+
+    return new Promise((resolve) => {
+      this.pending.set(correlationId, resolve);
+
+      this.channel.sendToQueue(
+        queue,
+        Buffer.from(JSON.stringify(data)),
+        {
+          correlationId,
+          replyTo: this.replyQueue,
+          persistent: true,
+        }
+      );
+    });
   }
 }
