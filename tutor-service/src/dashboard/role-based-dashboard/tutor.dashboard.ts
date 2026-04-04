@@ -46,18 +46,21 @@ export class TutorDashboard {
     async getTodayUpcomingSchedule(tutor_id: string){
         try {
             const currentDate = new Date()
+            console.log("Current date:", currentDate.getDay());
+            console.log("Current user: ", tutor_id);
             const upcomingSchedules = await this.prisma.$queryRaw(
                 Prisma.sql`
                     SELECT s.*, c."classname", c."subject", c."grade"
                     FROM public."Schedule" as s
                     join public."Class" as c on s."class_id" = c."class_id"
                     where
-                        c."tutor_uid" = ${tutor_id} AND
+                        c."tutor_uid" = ${tutor_id} 
+                        AND
                         s."meeting_date" = ${(currentDate.getDay() == 0 ? 8 : currentDate.getDay() + 1)}
                     order by s."startAt"
                 `)
 
-            return upcomingSchedules || []
+            return upcomingSchedules
         } catch (error) {
             return []
         }
