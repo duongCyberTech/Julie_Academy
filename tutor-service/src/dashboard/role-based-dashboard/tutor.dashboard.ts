@@ -161,10 +161,10 @@ export class TutorDashboard {
 
         const examTypeCondition = examType == ExamFilterType.all ? null : (
             examType == ExamFilterType.practice ?
-            {some: {exam_session: {exam_type: ExamType.practice}}} : (
+            {exam_session: {exam_type: ExamType.practice}} : (
                 examType == ExamFilterType.test ? 
-                {some: {exam_session: {exam_type: ExamType.test}}} :
-                {none: {}}
+                {exam_session: {exam_type: ExamType.test}} :
+                {}
             )
         )
 
@@ -193,148 +193,214 @@ export class TutorDashboard {
                 }
             }
 
+            // 1. Prisma Query: Thêm orderBy để đảm bảo lấy ra đúng thứ tự thời gian
             const raw_score_report = await this.prisma.student.findMany({
                 where: {
-                    learning: {
+                    learning: { some: { class: { tutor_uid: tutor_id } } },
+                    exam_taken: {
                         some: {
-                            class: {tutor_uid: tutor_id}
-                        }
-                    },
-                    ...(examTypeCondition === null ? {
-                        exam_taken: {
-                            some: {
-                                isDone: true,
-                                doneAt: {gte: past, lte: now}
-                            }
-                        }
-                    } : {
-                        exam_taken: {
-                            some: {
-                                isDone: true,
-                                doneAt: {gte: past, lte: now}
-                            },
-                            ...examTypeCondition
-                        }
-                    })
+                            exam_id: { not: null },
+                            isDone: true,
+                            doneAt: { lte: now },
+                            ...(examTypeCondition || {})
+                        },
+                    }
                 },
                 select: {
-                    user: {select: {uid: true, fname: true, mname: true, lname: true}},
+                    user: { select: { uid: true, fname: true, mname: true, lname: true } },
+                    learning: {
+                        select: {
+                            class: {
+                                select: {
+                                    class_id: true,
+                                    classname: true,
+                                    exam_open_in: {
+                                        where: {
+                                            exam_session: {
+                                                startAt: { gte: past },
+                                            }
+                                        },
+                                        select: {
+                                            exam_id: true,
+                                            session_id: true,
+                                        }
+                                    }
+                                },                       
+                            }
+                        }
+                    },
                     exam_taken: {
+                        where: {
+                            exam_session: {
+                                startAt: { gte: past },
+                                ...(examTypeCondition?.exam_session || {})
+                            },
+                            isDone: true,
+                            doneAt: { lte: now },
+                        },
+                        orderBy: { doneAt: 'asc' },
                         select: {
                             exam_id: true,
                             session_id: true,
                             final_score: true,
-                            doneAt: true,
-                            exam_session: {
-                                select: {
-                                    exam_open_in: {
-                                        select: {
-                                            class: {
-                                                select: {
-                                                    class_id: true,
-                                                    classname: true
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            doneAt: true
                         }
                     }
                 },
                 take: limit,
                 skip: (page - 1) * limit,
-            })
+            }).then(res => res.map(student => ({
+                info: student.user,
+                learning: student.learning.map(l => ({
+                    class_id: l.class.class_id,
+                    classname: l.class.classname,
+                    student_exams: l.class.exam_open_in.filter(eoi => student.exam_taken.some(et => et.exam_id == eoi.exam_id && et.session_id == eoi.session_id)).map(eoi => ({
+                        exam_id: eoi.exam_id,
+                        session_id: eoi.session_id,
+                        final_score: student.exam_taken
+                                    .filter(et => et.exam_id == eoi.exam_id && et.session_id == eoi.session_id)
+                                    .sort((a, b) => Number(b.final_score) - Number(a.final_score))[0]?.final_score ?? null,
+                        doneAt: student.exam_taken
+                                    .filter(et => et.exam_id == eoi.exam_id && et.session_id == eoi.session_id)
+                                    .sort((a, b) => Number(b.final_score) - Number(a.final_score))[0]?.doneAt ?? null,
+                    }))
+                }))
+            })));
 
-            const processed_report = raw_score_report.map(student => {
+            exam_score_report = raw_score_report.map(student => {
                 
                 // ==========================================
-                // STEP 1: Filter to highest final_score per {exam_id, session_id}
+                // STEP 0: Tạo Map tra cứu Lớp học cho từng bài test
+                // ==========================================
+                const sessionToClassMap = new Map<string, { class_id: string, classname: string }>();
+
+                for (const l of student.learning) {
+                    for (const open_in of l.student_exams) {
+                        // Khóa (Key) là tổ hợp exam_id và session_id
+                        const key = `${open_in.exam_id}_${open_in.session_id}`;
+                        sessionToClassMap.set(key, {
+                            class_id: l.class_id,
+                            classname: l.classname
+                        });
+                    }
+                }
+
+                // ==========================================
+                // STEP 1: Lọc điểm cao nhất per {exam_id, session_id}
                 // ==========================================
                 const bestExamsMap = new Map();
-                const standaloneExams = []; // For records where both are null
 
-                student.exam_taken.forEach(exam => {
-                    if (exam.exam_id == null && exam.session_id == null) {
-                        // Always keep if both are null
-                        standaloneExams.push(exam);
-                    } else {
-                        // Create a composite key
+                // FIX: Vòng lặp phải đi vào từng lớp, sau đó mới duyệt qua các bài thi của lớp đó
+                for (const l of student.learning) {
+                    for (const exam of l.student_exams) {
                         const key = `${exam.exam_id}_${exam.session_id}`;
                         const existing = bestExamsMap.get(key);
                         
-                        if (!existing || exam.final_score > existing.final_score) {
+                        if (!existing || Number(exam.final_score) > Number(existing.final_score)) {
                             bestExamsMap.set(key, exam);
                         }
                     }
-                });
+                }
 
-                const filteredExams = [...bestExamsMap.values(), ...standaloneExams];
+                // Sort lại mảng các bài thi có điểm cao nhất theo đúng thứ tự thời gian nộp bài
+                const filteredExams = Array.from(bestExamsMap.values())
+                    .sort((a, b) => new Date(a.doneAt).getTime() - new Date(b.doneAt).getTime());
 
                 // ==========================================
-                // STEP 2: Group by Time
+                // STEP 2: Phân nhóm theo Lớp -> Phân nhóm theo Thời gian
                 // ==========================================
-                const timeGroups = new Map(); // Tracks { totalScore, count, exams } per group
+                const classesMap = new Map();
 
-                filteredExams.forEach(exam => {
+                for (const exam of filteredExams) {
+                    const key = `${exam.exam_id}_${exam.session_id}`;
+                    const classInfo = sessionToClassMap.get(key);
+
+                    // Bỏ qua nếu bài thi không map được với lớp nào do tutor dạy (đề phòng dữ liệu cũ/rác)
+                    if (!classInfo) continue;
+
+                    const classId = classInfo.class_id;
+                    const className = classInfo.classname;
+
+                    // Khởi tạo Lớp nếu chưa có
+                    if (!classesMap.has(classId)) {
+                        classesMap.set(classId, { classname: className, timeGroups: new Map() });
+                    }
+                    const currentClass = classesMap.get(classId);
+
+                    // Xác định mốc thời gian (timeKey)
                     const date = new Date(exam.doneAt);
                     let timeKey = '';
-
                     if (time_range === TimeRange.year) {
-                        // Group by year (e.g., "2026")
                         timeKey = `${date.getFullYear()}`;
-                    } 
-                    else if (time_range === TimeRange.month) {
-                        // Group by month (e.g., "2026-03")
+                    } else if (time_range === TimeRange.month) {
                         const month = (date.getMonth() + 1).toString().padStart(2, '0');
                         timeKey = `${date.getFullYear()}-${month}`;
-                    } 
-                    else {
-                        // Group by every 7 days since the 'past' threshold
+                    } else {
                         const msDiff = date.getTime() - past.getTime();
                         const weekNumber = Math.floor(msDiff / (7 * 24 * 60 * 60 * 1000));
                         timeKey = `Week ${weekNumber + 1}`; 
                     }
 
-                    // Initialize group if it doesn't exist
-                    if (!timeGroups.has(timeKey)) {
-                        timeGroups.set(timeKey, { totalScore: 0, count: 0, exams: [] });
+                    // Khởi tạo nhóm thời gian trong Lớp nếu chưa có
+                    if (!currentClass.timeGroups.has(timeKey)) {
+                        currentClass.timeGroups.set(timeKey, { totalScore: 0, count: 0 });
                     }
 
-                    // Add to group
-                    const group = timeGroups.get(timeKey);
-                    group.totalScore += Number(exam.final_score);
-                    group.count += 1;
-                    group.exams.push(exam);
-                });
+                    // Cộng dồn điểm
+                    const tGroup = currentClass.timeGroups.get(timeKey);
+                    tGroup.totalScore += Number(exam.final_score);
+                    tGroup.count += 1;
+                }
 
                 // ==========================================
-                // STEP 3: Calculate Average & Apply Threshold
+                // STEP 3 & 4: Tính trung bình & So sánh ngưỡng (Threshold)
                 // ==========================================
-                const finalGroupedExams = {};
+                const flaggedClasses = []; 
 
-                timeGroups.forEach((group, key) => {
-                    const average = group.totalScore / group.count;
+                for (const [classId, classData] of classesMap.entries()) {
+                    const periods = [];
                     
-                    // Only keep the group if the average is >= grade_threshold
-                    finalGroupedExams[key] = {
-                        average_score: average,
-                        exams: group.exams // Keep the actual exam records in the result
-                    };
-                });
+                    for (const [period, group] of classData.timeGroups.entries()) {
+                        periods.push({
+                            period,
+                            avg_score: Number((group.totalScore / group.count).toFixed(2))
+                        });
+                    }
 
-                // Return the modified student object
+                    let score_diff = 0;
+                    const len = periods.length;
+
+                    // Chỉ kiểm tra rớt điểm nếu có ít nhất 2 mốc thời gian để so sánh
+                    if (len > 1) {
+                        const latestAvg = periods[len - 1]?.avg_score ?? 0;
+                        const previousAvg = periods[len - 2]?.avg_score ?? 0;
+                        score_diff = Number((latestAvg - previousAvg).toFixed(2));
+
+                        // CHÚ Ý: Tại đây bạn có thể bọc logic bên trong if (score_diff <= -grade_threshold) 
+                        // để chỉ lấy những lớp tụt điểm vượt ngưỡng cho phép.
+                        flaggedClasses.push({
+                            class_id: classId,
+                            classname: classData.classname,
+                            score_diff: score_diff,
+                            history: periods 
+                        });
+                    }
+                    else {
+                        // Nếu chỉ có 1 mốc thời gian, vẫn có thể đưa vào báo cáo nhưng không tính score_diff
+                        flaggedClasses.push({
+                            class_id: classId,
+                            classname: classData.classname,
+                            score_diff: null, // Không đủ dữ liệu để tính rớt điểm
+                            history: periods 
+                        });
+                    }
+                }
+
                 return {
-                    user: student.user,
-                    grouped_exams: Object.entries(finalGroupedExams).map(([_, value]) => (value as { average_score: number, exams: any[] }).average_score)
+                    info: student.info, // FIX: Đổi từ student.user thành student.info
+                    flagged_classes: flaggedClasses 
                 };
             });
-
-            exam_score_report = processed_report.map(student => ({
-                info: student.user,
-                decrement: student.grouped_exams.length > 1 ? Number((student.grouped_exams[student.grouped_exams.length - 2] - student.grouped_exams[student.grouped_exams.length - 1]).toFixed(2)) : 0,
-                average_scores: student.grouped_exams
-            })).filter(student => student.decrement <= -grade_threshold)
         }
 
         if (issue == AttentionIssue.all || issue == AttentionIssue.test_miss) {
