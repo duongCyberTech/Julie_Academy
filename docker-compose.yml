@@ -10,12 +10,15 @@ services:
       RABBITMQ_DEFAULT_PASS: julie
       RABBITMQ_DEFAULT_VHOST: julie_dev_vhost
     ports:
-      - "5672:5672"     # Cổng gửi tin nhắn
-      - "15672:15672"   # Cổng UI quản lý
+      - "5672:5672"     # Message port
+      - "15672:15672"   # Management UI port
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - rabbitmq_net
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:latest
@@ -29,19 +32,17 @@ services:
 
   tutor-service:
     build:
-      context: ../tutor-service
+      context: ./tutor-service
       dockerfile: Dockerfile
       target: builder
     env_file:
-      - .env.docker.local
+      - .env.tutor
     container_name: tutor-app
     depends_on:
-      - redis
-      - rabbitmq
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=123456
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "4000:4000"
     # volumes:
@@ -51,23 +52,15 @@ services:
 
   adaptive-service:
     build:
-      context: ../adaptive-learning-service
+      context: ./adaptive-learning-service
       dockerfile: Dockerfile
       # target: builder
     env_file:
-      - .env
+      - .env.adaptive
     container_name: adaptive-app
     depends_on:
-      - rabbitmq
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=123456
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=dev
-      - RABBITMQ_PASSWORD=julie
-      - RABBITMQ_VHOST=julie_dev_vhost
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8000:8000"
     # volumes:
@@ -76,7 +69,3 @@ services:
 
 volumes:
   rabbitmq_data:
-
-networks:
-  rabbitmq_net:
-    driver: bridge
