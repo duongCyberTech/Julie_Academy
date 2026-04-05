@@ -25,6 +25,8 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ConfigModule } from '@nestjs/config';
 import { BackgroundJobModule } from './background_job/background-job.module';
 import { AnalysisModule } from './analysis/analysis.module';
+import rabbitmqConfig from './config/rabbitmq.config';
+import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 
 require('dotenv').config()
 
@@ -32,7 +34,7 @@ require('dotenv').config()
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      load: [rabbitmqConfig],
     }),
     ThrottlerModule.forRoot([
       {
@@ -64,6 +66,7 @@ require('dotenv').config()
     }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
+    RabbitMQModule,
     UserModule, 
     AuthModule, 
     ClassModule, 

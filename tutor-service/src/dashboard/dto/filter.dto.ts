@@ -16,6 +16,12 @@ export enum ExamFilterType {
     all = 'all'
 }
 
+export enum AttentionIssue {
+    all = "all",
+    downgrade = "downgrade",
+    test_miss = "test_miss"
+}
+
 export class FilterDTO {
     @IsOptional()
     @Type(() => Number)
@@ -44,4 +50,18 @@ export class FilterDTO {
     @IsOptional()
     @IsEnum(ExamFilterType)
     exam_type: ExamFilterType = ExamFilterType.practice
+
+    @IsOptional()
+    @IsEnum(AttentionIssue)
+    issue: AttentionIssue = AttentionIssue.all
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    grade_threshold: number = 1
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    test_miss_threshold: number = 1
 }

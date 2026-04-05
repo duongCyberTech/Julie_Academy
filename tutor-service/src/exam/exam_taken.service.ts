@@ -1,17 +1,22 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
+import { RabbitMQService } from "src/rabbitmq/rabbitmq.service";
 import { 
     ExamTakenDto, 
     SubmitAnswerDto 
 } from "./dto/exam.dto";
-import { ExamType, Prisma, PrismaClient, QuestionType } from "@prisma/client";
+import { DifficultyLevel, ExamType, Prisma, PrismaClient, QuestionType } from "@prisma/client";
 import { EventEmitter2 } from "@nestjs/event-emitter";
+import { CurrentQuestionDto } from "./dto/adaptive.dto";
 
 @Injectable()
 export class ExamTakenService {
+    private readonly MAX_ADAPTIVE_QUESTIONS = 5;
+
     constructor(
         private prisma: PrismaService,
-        private eventEmitter: EventEmitter2
+        private eventEmitter: EventEmitter2,
+        private rabbitMQService: RabbitMQService
     ){}
 
     async takeExam(class_id: string, exam_id: string, session_id: number, student_id: string) {
@@ -49,6 +54,10 @@ export class ExamTakenService {
                 }
             })
 
+            if (!takenLimit) {
+                throw new NotFoundException("Exam session not found")
+            }
+
             if (timeTaken >= takenLimit.limit_taken) {
                 throw new BadRequestException("No more time available")
             }
@@ -75,7 +84,7 @@ export class ExamTakenService {
                     exam_type: true
                 }
             }).then((info) => {
-                return {
+                return info ? {
                     exam_id: info.exam_id,
                     session_id: info.session_id,
                     title: info.exam.title,
@@ -86,8 +95,12 @@ export class ExamTakenService {
                     expireAt: info.expireAt,
                     limit_taken: info.limit_taken,
                     exam_type: info.exam_type
-                }
+                } : null
             })
+
+            if (!testInfo) {
+                throw new NotFoundException("Exam session not found")
+            }
 
             const questionList = await this.prisma.questions.findMany({
                 where: {
@@ -165,6 +178,205 @@ export class ExamTakenService {
                 message: "Taking exam",
                 info: {et_id: takenTime.et_id, ...testInfo},
                 questions: questionList
+            }
+        })
+    }
+
+    async takeAdaptiveExam(category_id: string, student_id: string) {
+        const newExamTaken = await this.prisma.exam_taken.create({
+            data: {
+                startAt: new Date(),
+                final_score: 0,
+                total_ques_completed: 0,
+                student: {connect: {uid: student_id}},
+                category: {connect: {category_id: category_id}}
+            }
+        })
+
+        const question = await this.prisma.questions.findFirst({
+            where: {category_id, type: QuestionType.single_choice},
+            select: {
+                ques_id: true,
+                title: true,
+                content: true,
+                explaination: true,
+                level: true,
+                answers: {
+                    select: {
+                        aid: true,
+                        content: true,
+                        explaination: true,
+                        is_correct: true
+                    }
+                }
+            }
+        }).then((ques) => ({
+            ...ques,
+            index: 1
+        }))
+
+        return {
+            exam_info: newExamTaken,
+            questions: [question]
+        }
+    }
+
+    async getNextAdaptiveQuestion(student_id: string, category_id: string, cur_ques: CurrentQuestionDto) {
+        const ans = await this.prisma.answers.findMany({
+            where: {
+                question: {ques_id: cur_ques.question_id},
+                aid: {in: cur_ques.answers}
+            },
+            select: {
+                aid: true,
+                is_correct: true
+            }
+        })
+
+        const checkCorrect = ans[0]?.is_correct || false;
+
+        await this.prisma.question_for_exam_taken.upsert({
+            where: {
+                et_id_ques_id: {
+                    et_id: cur_ques.et_id,
+                    ques_id: cur_ques.question_id
+                }
+            },
+            update: {
+                isCorrect: checkCorrect,
+                index: cur_ques.index,
+                answer_set: cur_ques.answers,
+                isDone: true,
+                chosen_answer_at: new Date(),
+            },
+            create: {
+                ques_id: cur_ques.question_id,
+                et_id: cur_ques.et_id,
+                isCorrect: checkCorrect,
+                index: cur_ques.index + 1,
+                answer_set: cur_ques.answers,
+                isDone: true,
+                chosen_answer_at: new Date(),
+            }
+        })
+
+        if (cur_ques.index >= this.MAX_ADAPTIVE_QUESTIONS) {
+            return this.submitAdaptiveExam(cur_ques.et_id, student_id)
+        }
+
+        const question_dons_list = await this.prisma.question_for_exam_taken.findMany({
+            where: {
+                exam_taken: {
+                    student_uid: student_id,
+                },
+                question: {
+                    category_id: category_id,
+                    type: QuestionType.single_choice
+                },
+                isDone: true
+            },
+            select: {
+                ques_id: true,
+                isCorrect: true,
+                index: true
+            },
+            orderBy: [
+                {exam_taken: {doneAt: 'desc'}},
+                {index: 'asc'}
+            ],
+            take: 10,
+            skip: 0
+        }).then(list => list.map(item => ({
+            ques_id: item.ques_id,
+            is_correct: item.isCorrect,
+            index: item.index
+        })))
+
+        const payload = question_dons_list
+
+        const p_l = await this.rabbitMQService.sendAndWait(payload)
+
+        if (!p_l) throw new NotFoundException("No more question available")
+
+        const next_level = p_l > 0.8 ? (cur_ques.level == DifficultyLevel.easy ? DifficultyLevel.medium : DifficultyLevel.hard) : 
+                            (p_l <= 0.8 && p_l > 0.5 ? cur_ques.level : (cur_ques.level == DifficultyLevel.hard ? DifficultyLevel.medium : DifficultyLevel.easy))
+
+        const question = await this.prisma.questions.findFirst({
+            where: {
+                exam_takens: {none: {et_id: cur_ques.et_id}},
+                category_id,
+                type: QuestionType.single_choice,
+                level: next_level
+            },
+            select: {
+                ques_id: true,
+                title: true,
+                content: true,
+                explaination: true,
+                level: true,
+                answers: {
+                    select: {
+                        aid: true,
+                        content: true,
+                        explaination: true,
+                        is_correct: true
+                    }
+                }
+            }
+        }).then((ques) => ({
+            ...ques,
+            index: cur_ques.index + 1
+        }))
+
+        return question
+    }
+
+    async submitAdaptiveExam(et_id: string, student_id: string) {
+        const answers: SubmitAnswerDto[] = await this.prisma.question_for_exam_taken.findMany({
+            where: {et_id},
+            select: {
+                ques_id: true,
+                answer_set: true,
+                index: true,
+            }
+        }).then((list) => list.map(item => ({
+            ques_id: item.ques_id,
+            answers: (item.answer_set as number[]) || [],
+            index: item.index,
+            ms_first_response: 100,
+            ms_total_response: 1000
+        })))
+
+        return await this.prisma.$transaction(async(tx) => {
+            const {score, cnt, ques_correct} = await this.calculateScore(tx, answers)
+
+            const examTaken = await tx.exam_taken.update({
+                where: {et_id},
+                data: {
+                    isDone: true,
+                    doneAt: new Date(),
+                    total_ques_completed: cnt,
+                    final_score: new Prisma.Decimal((score * cnt / this.MAX_ADAPTIVE_QUESTIONS).toFixed(2)),
+                }
+            })
+
+            await tx.question_for_exam_taken.updateMany({
+                where: {et_id},
+                data: {
+                    isDone: true
+                }
+            })
+
+            await tx.question_for_exam_taken.updateMany({
+                where: {et_id, ques_id: {in: ques_correct}},
+                data: {
+                    isCorrect: true
+                }
+            })
+
+            return {
+                message: "Adaptive Exam Submitted Successfully",
+                data: examTaken
             }
         })
     }
@@ -419,6 +631,10 @@ export class ExamTakenService {
                     }
                 }
             })
+
+            if (!examData) {
+                throw new NotFoundException("Exam session not found")
+            }
 
             const examTaken = await tx.exam_taken.update({
                 where: {et_id},
