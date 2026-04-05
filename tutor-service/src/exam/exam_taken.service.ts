@@ -234,8 +234,6 @@ export class ExamTakenService {
         })
 
         const checkCorrect = ans[0]?.is_correct || false;
-        console.log(`User's answer for question ${cur_ques.question_id} is ${checkCorrect ? 'correct' : 'incorrect'}`);
-
 
         await this.prisma.question_for_exam_taken.upsert({
             where: {
@@ -297,13 +295,11 @@ export class ExamTakenService {
         const payload = question_dons_list
 
         const p_l = await this.rabbitMQService.sendAndWait(payload)
-        console.log("Received p_l from RabbitMQ:", p_l);
+
         if (!p_l) throw new NotFoundException("No more question available")
 
         const next_level = p_l > 0.8 ? (cur_ques.level == DifficultyLevel.easy ? DifficultyLevel.medium : DifficultyLevel.hard) : 
                             (p_l <= 0.8 && p_l > 0.5 ? cur_ques.level : (cur_ques.level == DifficultyLevel.hard ? DifficultyLevel.medium : DifficultyLevel.easy))
-
-        console.log(`Adaptive question selection: p_l=${p_l}, current level=${cur_ques.level}, next level=${next_level}`);
 
         const question = await this.prisma.questions.findFirst({
             where: {
