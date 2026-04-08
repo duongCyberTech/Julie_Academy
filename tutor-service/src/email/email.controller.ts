@@ -34,13 +34,12 @@ export class EmailController {
     return this.emailService.getAllEmailChainsOfClass(req.user.tutor_id, class_id);
   }
 
-  @Get(':class_id/:config_id')
+  @Get(':config_id')
   getEmailChainById(
     @Request() req: any,
-    @Param('class_id') class_id: string,
     @Param('config_id') config_id: string
   ) {
-    return this.emailService.getEmailChainById(req.user.tutor_id, class_id, config_id);
+    return this.emailService.getEmailChainById(req.user.tutor_id, config_id);
   }
 
   @Patch(':config_id')
