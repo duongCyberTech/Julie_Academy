@@ -29,39 +29,17 @@ export class EmailService {
   }
 
   async getAllEmailChainsOfClass(tutor_id: string, class_id: string) {
-    const verifyClass = await this.prisma.class.findFirst({
-      where: {
-        class_id,
-        tutor_id,
-      },
-    });
-
-    if (!verifyClass) {
-      throw new ForbiddenException('You do not have permission to view email configuration for this class.');
-    }
-
     return this.prisma.emailConfig.findMany({
       where: {
-        class_id,
+        class: {tutor_uid: tutor_id, class_id},
       },
     });
   }
 
-  async getEmailChainById(tutor_id: string, class_id: string, config_id: string) {
-    const verifyClass = await this.prisma.class.findFirst({
-      where: {
-        class_id,
-        tutor_id,
-      },
-    });
-
-    if (!verifyClass) {
-      throw new ForbiddenException('You do not have permission to view email configuration for this class.');
-    }
-
+  async getEmailChainById(tutor_id: string, config_id: string) {
     const emailConfig = await this.prisma.emailConfig.findFirst({
       where: {
-        class_id,
+        class: {tutor_uid: tutor_id},
         config_id,
       },
     });
