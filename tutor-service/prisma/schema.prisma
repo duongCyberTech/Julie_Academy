@@ -163,6 +163,24 @@ model Class {
   folders       Folder_of_class[]
 
   threads Thread[]
+
+  emailConfig EmailConfig[]
+}
+
+model EmailConfig {
+  config_id String @id @default(uuid())
+  header    String
+  body      String
+  template_name String
+  use_template Boolean @default(false)
+  active     Boolean @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+  period     Period   @default(monthly)
+  day_of_week Int?    
+  day_of_month Int?
+  class_id String
+  class    Class @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Schedule {
@@ -614,4 +632,11 @@ enum NotificationType {
   system
   exam
   class
+}
+
+enum Period {
+  daily
+  weekly
+  monthly
+  none
 }
