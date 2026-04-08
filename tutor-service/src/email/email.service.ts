@@ -12,7 +12,7 @@ export class EmailService {
     const verifyClass = await this.prisma.class.findFirst({
       where: {
         class_id,
-        tutor_id,
+        tutor_uid: tutor_id,
       },
     });
 
