@@ -27,6 +27,7 @@ import { BackgroundJobModule } from './background_job/background-job.module';
 import { AnalysisModule } from './analysis/analysis.module';
 import rabbitmqConfig from './config/rabbitmq.config';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
+import { EmailModule } from './email/email.module';
 
 require('dotenv').config()
 
@@ -80,7 +81,8 @@ require('dotenv').config()
     ThreadModule,
     NotificationsModule,
     BackgroundJobModule,
-    AnalysisModule
+    AnalysisModule,
+    EmailModule
   ],
   controllers: [AppController],
   providers: [
