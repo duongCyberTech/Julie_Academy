@@ -45,8 +45,11 @@ services:
         condition: service_healthy
     ports:
       - "4000:4000"
-    # volumes:
-    #   - .:/usr/src/app 
+    volumes:
+      # 1. Syncs your local ./tutor-service folder with the container
+      - ./tutor-service:/usr/src/app 
+      # 2. Protects the container's node_modules from being overwritten
+      - /usr/src/app/node_modules
     command: npx nest start --watch --preserveWatchOutput
     restart: always
 

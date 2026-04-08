@@ -4,7 +4,7 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /usr/src/app
-
+RUN npm install -g @nestjs/cli
 # Cài đặt toàn bộ thư viện (bao gồm cả dev)
 COPY package*.json ./
 RUN npm ci
