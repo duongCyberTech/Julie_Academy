@@ -17,5 +17,12 @@
       "src/*": ["src/*"]
     }
   },
+  "watchOptions": {
+    "watchFile": "fixedPollingInterval",
+    "watchDirectory": "fixedPollingInterval",
+    "fallbackPolling": "dynamicPriority",
+    "synchronousWatchDirectory": true,
+    "excludeDirectories": ["**/node_modules", "dist"]
+  },
   "include": ["src/**/*", "test/**/*"]
 }

@@ -37,6 +37,9 @@ services:
       target: builder
     env_file:
       - .env.tutor
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     container_name: tutor-app
     depends_on:
       redis:
