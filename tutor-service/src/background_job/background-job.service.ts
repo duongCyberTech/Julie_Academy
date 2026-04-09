@@ -7,7 +7,8 @@ import { CreateNotificationDTO } from 'src/notifications/dto/notification.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { QueueService } from './bull-queue.service';
 import { AnalysisService } from 'src/analysis/analysis.service';
-import { ExamType, NotificationType } from '@prisma/client';
+import { AggregateType, BadgeType, ExamType, NotificationType, ValueType } from '@prisma/client';
+import { BadgeService } from 'src/badge/badge.service';
 
 @Injectable()
 export class BackgroundService {
@@ -17,7 +18,8 @@ export class BackgroundService {
     private notify: NotificationsService,
     private prisma: PrismaService,
     private jobQueue: QueueService,
-    private analysisService: AnalysisService
+    private analysisService: AnalysisService,
+    private badgeService: BadgeService
   ){}
 
   @OnEvent('cloudinary.delete')
@@ -258,5 +260,10 @@ export class BackgroundService {
     } catch (error) {
       return
     }
+  }
+
+  @OnEvent('badge.claim')
+  async handleBadgeClaim(payload: {uid: string, badge_type: BadgeType, func_type: AggregateType, value_type: ValueType, value: number}) {
+    await this.badgeService.checkBadge(payload.uid, payload.badge_type, payload.func_type, payload.value_type, payload.value)
   }
 }
