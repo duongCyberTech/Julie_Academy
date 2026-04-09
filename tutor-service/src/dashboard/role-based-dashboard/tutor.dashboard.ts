@@ -136,13 +136,17 @@ export class TutorDashboard {
                     COUNT(CASE WHEN qet."isCorrect" = true THEN 1 END) AS correct_cnt,
                     COUNT(CASE WHEN qet."isCorrect" = false THEN 1 END) AS fail_cnt
                 FROM public."Categories" AS c
-                JOIN public."Structure" AS st ON c."category_id" = st."cate_id"
-                JOIN public."Lesson_Plan" AS lp ON st."plan_id" = lp."plan_id"
-                -- Joining the questions and results into the main flow
-                JOIN public."Questions" AS q ON c."category_id" = q."category_id"
-                JOIN public."Question_for_exam_taken" AS qet ON q."ques_id" = qet."ques_id"
-                WHERE lp."tutor_id" = ${tutor_id}
-                GROUP BY c."category_id", c."category_name";
+                LEFT JOIN public."Structure" AS st ON c."category_id" = st."cate_id"
+                LEFT JOIN public."Lesson_Plan" AS lp ON st."plan_id" = lp."plan_id"
+                LEFT JOIN public."Questions" AS q ON c."category_id" = q."category_id"
+                LEFT JOIN public."Question_for_exam_taken" AS qet ON q."ques_id" = qet."ques_id"
+                LEFT JOIN public."Exam_taken" AS et ON qet."et_id" = et."et_id"
+                LEFT JOIN public."Exam_open_in" AS eoi ON et."exam_id" = eoi."exam_id" AND et."session_id" = eoi."session_id"
+                LEFT JOIN public."Class" AS cl ON eoi."class_id" = cl."class_id"
+                WHERE cl."tutor_uid" = ${tutor_id}
+                GROUP BY c."category_id", c."category_name"
+                HAVING COUNT(CASE WHEN qet."isCorrect" = true THEN 1 END) > 0 
+                    OR COUNT(CASE WHEN qet."isCorrect" = false THEN 1 END) > 0;
             `
 
             return noticeCategories || []
