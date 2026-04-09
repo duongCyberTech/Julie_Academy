@@ -120,7 +120,7 @@ model Student_analytics {
 model Badge {
   badge_id      String  @id @default(uuid())
   title         String
-  description   String
+  description   String?
   badge_url     String?
   badge_type    BadgeType
   func_type     AggregateType
@@ -171,16 +171,25 @@ model EmailConfig {
   config_id String @id @default(uuid())
   header    String
   body      String
-  template_name String
+  template_id String?
   use_template Boolean @default(false)
   active     Boolean @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
   period     Period   @default(monthly)
-  day_of_week Int?    
+  time_to_send String @default("00:00")
+  day_of_week Int?      
   day_of_month Int?
   class_id String
   class    Class @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model EmailTemplate {
+  template_id String @id @default(uuid())
+  type        EmailTemplateType
+  body        String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now())
 }
 
 model Schedule {
@@ -639,4 +648,10 @@ enum Period {
   weekly
   monthly
   none
+}
+
+enum EmailTemplateType {
+  public
+  private
+  custom
 }
