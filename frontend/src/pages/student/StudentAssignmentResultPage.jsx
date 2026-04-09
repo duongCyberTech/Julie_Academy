@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Draggable from 'react-draggable';
 import {
   Container, Typography, Box, CircularProgress, Paper, Divider, 
   Grid, Button, Chip, Accordion, AccordionSummary, AccordionDetails,
@@ -172,24 +173,24 @@ export default function StudentAssignmentResultPage() {
       }}
     >
       {canViewDetails && (
-        <Fab
-          color="primary"
-          variant="extended"
-          aria-label="open-navigation"
-          onClick={() => setIsDrawerOpen(true)}
-          sx={{
-            position: "fixed",
-            bottom: 32,
-            right: { xs: 16, md: 32 },
-            zIndex: 1000,
-            fontWeight: 700,
-            px: 3,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-          }}
-        >
-          <FormatListBulletedIcon sx={{ mr: 1 }} />
-          Bảng điều hướng
-        </Fab>
+        <Draggable>
+          <Box sx={{ position: 'fixed', bottom: 32, right: { xs: 16, md: 32 }, zIndex: 1000, cursor: 'grab', '&:active': { cursor: 'grabbing' } }}>
+            <Fab
+              color="primary"
+              variant="extended"
+              aria-label="open-navigation"
+              onClick={() => setIsDrawerOpen(true)}
+              sx={{
+                fontWeight: 700,
+                px: 3,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              }}
+            >
+              <FormatListBulletedIcon sx={{ mr: 1 }} />
+              Bảng điều hướng
+            </Fab>
+          </Box>
+        </Draggable>
       )}
 
       <Box
@@ -254,7 +255,7 @@ export default function StudentAssignmentResultPage() {
           </Box>
         </Box>
         <Typography
-          variant="h3"
+          variant="h4"
           fontWeight={700}
           color="text.primary"
           gutterBottom
@@ -270,7 +271,7 @@ export default function StudentAssignmentResultPage() {
         <Grid container justifyContent="center" alignItems="center" spacing={0}>
           <Grid item xs={12} sm={3} sx={{ py: 2 }}>
             <Typography
-              variant="body1"
+              variant="h6"
               color="text.secondary"
               fontWeight={600}
               gutterBottom
@@ -295,7 +296,7 @@ export default function StudentAssignmentResultPage() {
 
           <Grid item xs={12} sm={3} sx={{ py: 2 }}>
             <Typography
-              variant="body1"
+              variant="h6"
               color="text.secondary"
               fontWeight={600}
               gutterBottom
@@ -303,7 +304,7 @@ export default function StudentAssignmentResultPage() {
               Thời gian làm bài
             </Typography>
             <Typography
-              variant="h5"
+              variant="h4"
               fontWeight={700}
               color="info.main"
               sx={{ mt: 1 }}
@@ -325,7 +326,7 @@ export default function StudentAssignmentResultPage() {
 
           <Grid item xs={12} sm={3} sx={{ py: 2 }}>
             <Typography
-              variant="body1"
+              variant="h6"
               color="text.secondary"
               fontWeight={600}
               gutterBottom

@@ -51,11 +51,13 @@ export class DashboardService {
         const latestScore = await this.student.scoreOfLatestTest(student_id)
         const totalPracticeTime = await this.student.totalPracticeTime(student_id)
         const numJoinClassess = await this.student.currentClasses(student_id)
+        const avgTestScore = await this.student.averageTestScore(student_id)
 
         return {
             latestScore,
             totalPracticeTime,
-            numJoinClassess
+            numJoinClassess,
+            avgTestScore
         }
     }
 }
