@@ -79,7 +79,7 @@ export class TutorDashboard {
             }[] = await this.prisma.$queryRaw`
                 SELECT 
                     c.class_id, 
-                    c.classname
+                    c.classname,
                     COUNT(DISTINCT s.uid) as total_students
                 FROM public."Student" as s
                 JOIN public."Learning" as l on s."uid" = l."student_uid"
