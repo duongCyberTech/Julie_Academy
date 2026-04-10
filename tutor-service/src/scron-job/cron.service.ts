@@ -46,7 +46,7 @@ export class CronService {
 
                 const item_update = await tx.class.updateMany({
                     where: {
-                        startat: {gte: today},
+                        startat: {lte: today},
                         OR: [
                             {status: {not: 'cancelled'}},
                             {status: {not: 'ongoing'}},
