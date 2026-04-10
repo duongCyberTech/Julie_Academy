@@ -192,7 +192,7 @@ const Sidebar = ({ width, isCollapsed, onToggleCollapse, isMobileOpen, onMobileC
             noWrap
             sx={{
               ml: 1.5,
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '1.25rem',
               letterSpacing: '-0.5px',
               background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,

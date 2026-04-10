@@ -1,36 +1,80 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, memo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import {
-  Snackbar,
-  Alert,
-  CircularProgress,
-  Chip,
-  Tooltip
+  Box, Typography, Paper, CircularProgress, Alert, Snackbar,
+  Avatar, Button, TextField, Chip, Divider, IconButton, Badge,
+  Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, useTheme
 } from "@mui/material";
+import { styled, alpha } from "@mui/material/styles";
+
 import {
-  CameraAlt,
-  Save,
-  Email,
-  CloudUpload,
-  AdminPanelSettings,
-  Security,
-  GppGood,
-  Fingerprint,
-  InfoOutlined
+  CameraAlt as CameraAltIcon,
+  SaveOutlined as SaveOutlinedIcon,
+  EmailOutlined as EmailOutlinedIcon,
+  CloudUploadOutlined as CloudUploadOutlinedIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
+  Security as SecurityIcon,
+  GppGood as GppGoodIcon,
+  Fingerprint as FingerprintIcon,
+  InfoOutlined as InfoOutlinedIcon
 } from "@mui/icons-material";
-import "../student/Profile.css"; 
 
-const AdminProfilePage = () => {
+const PageWrapper = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    margin: theme.spacing(3),
+    padding: theme.spacing(5),
+    backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB',
+    backgroundImage: 'none',
+    borderRadius: '24px',
+    border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
+    boxShadow: isDark ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` : '0 8px 48px rgba(0,0,0,0.03)',
+    minHeight: 'calc(100vh - 120px)',
+    display: 'flex',
+    flexDirection: 'column',
+  };
+});
+
+const HeaderBar = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: theme.spacing(4),
+  flexShrink: 0,
+}));
+
+const ProfileCard = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    borderRadius: '16px',
+    backgroundColor: isDark ? alpha(theme.palette.background.default, 0.4) : theme.palette.background.paper,
+    border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6)}`,
+    boxShadow: isDark ? 'none' : '0px 4px 12px rgba(0,0,0,0.02)',
+    transition: 'all 0.3s',
+    height: '100%',
+    overflow: 'hidden',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: isDark ? `0 0 20px ${alpha(theme.palette.error.main, 0.1)}` : '0px 12px 24px rgba(0,0,0,0.06)',
+      borderColor: theme.palette.error.main,
+    }
+  };
+});
+
+const CoverBackground = styled(Box)(({ theme }) => ({
+  height: 120,
+  background: `linear-gradient(135deg, ${theme.palette.error.light}, ${theme.palette.error.main})`,
+  position: 'relative',
+}));
+
+function AdminProfilePage() {
   const navigate = useNavigate();
+  const theme = useTheme();
 
-  // --- STATE ---
   const [savedUser, setSavedUser] = useState({
-    fname: "", mname: "", lname: "",
-    email: "", role: "",
-    avata_url: "", createAt: "",
-    uid: "" // Admin cần hiển thị UID để thể hiện tính kỹ thuật
+    fname: "", mname: "", lname: "", email: "", role: "", avata_url: "", createAt: "", uid: ""
   });
 
   const [formData, setFormData] = useState({
@@ -42,22 +86,15 @@ const AdminProfilePage = () => {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
-  const API_URL = "http://localhost:4000";
-  const token = localStorage.getItem("token");
-
-  const getAuthConfig = () => ({
+  const getAuthConfig = useCallback(() => ({
     headers: { Authorization: `Bearer ${token}` },
-  });
+  }), [token]);
 
-  // --- FETCH DATA ---
   useEffect(() => {
     const fetchProfile = async () => {
       let userId = null;
       if (token) {
-        try {
-          const decoded = jwtDecode(token);
-          userId = decoded.sub || decoded.uid;
-        } catch (error) {}
+        try { userId = jwtDecode(token).sub || jwtDecode(token).uid; } catch (error) {}
       }
 
       if (!token || !userId) {
@@ -70,29 +107,23 @@ const AdminProfilePage = () => {
         const response = await axios.get(`${API_URL}/users/${userId}`, getAuthConfig());
         const data = response.data;
 
-        // Admin dùng bảng User gốc, không có bảng phụ
         setSavedUser(data);
         setFormData({
-          fname: data.fname || "",
-          mname: data.mname || "",
-          lname: data.lname || ""
+          fname: data.fname || "", mname: data.mname || "", lname: data.lname || ""
         });
-
-        setLoading(false);
       } catch (error) {
-        console.error("Lỗi tải thông tin:", error);
+        setToast({ open: true, message: "Lỗi tải thông tin.", severity: "error" });
+      } finally {
         setLoading(false);
       }
     };
-
     fetchProfile();
-  }, [navigate, token]);
+  }, [navigate, token, getAuthConfig]);
 
-  // --- HANDLERS ---
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }, []);
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -103,26 +134,16 @@ const AdminProfilePage = () => {
       return;
     }
 
-    const decoded = jwtDecode(token);
-    const userId = decoded.sub || decoded.uid;
+    const userId = jwtDecode(token).sub || jwtDecode(token).uid;
     const uploadData = new FormData();
     uploadData.append("file", file);
 
     try {
-      const res = await axios.post(
-        `${API_URL}/users/${userId}/avatar`,
-        uploadData,
-        {
-          headers: {
-            ...getAuthConfig().headers,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
+      const res = await axios.post(`${API_URL}/users/${userId}/avatar`, uploadData, {
+        headers: { ...getAuthConfig().headers, "Content-Type": "multipart/form-data" },
+      });
       if (res.data) {
-        const newAvatarUrl = res.data.avata_url || URL.createObjectURL(file);
-        setSavedUser(prev => ({ ...prev, avata_url: newAvatarUrl }));
+        setSavedUser(prev => ({ ...prev, avata_url: res.data.avata_url || URL.createObjectURL(file) }));
         setToast({ open: true, message: "Cập nhật ảnh quản trị viên thành công!", severity: "success" });
         setShowAvatarModal(false);
       }
@@ -134,14 +155,8 @@ const AdminProfilePage = () => {
   const handleSave = async () => {
     try {
       setUpdating(true);
-      const decoded = jwtDecode(token);
-      const userId = decoded.sub || decoded.uid;
-
-      const payload = {
-        fname: formData.fname,
-        mname: formData.mname,
-        lname: formData.lname
-      };
+      const userId = jwtDecode(token).sub || jwtDecode(token).uid;
+      const payload = { fname: formData.fname, mname: formData.mname, lname: formData.lname };
 
       await axios.patch(`${API_URL}/users/${userId}`, payload, getAuthConfig());
 
@@ -155,194 +170,154 @@ const AdminProfilePage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="profile-container" style={{ alignItems: "center" }}>
-        <CircularProgress />
-      </div>
-    );
+    return <PageWrapper sx={{ justifyContent: 'center', alignItems: 'center' }}><CircularProgress color="error" /></PageWrapper>;
   }
 
-  const displayAvatar = savedUser.avata_url || "https://via.placeholder.com/150";
-
   return (
-    <div className="profile-container">
-      <div className="profile-content">
-        
-        {/* === CỘT TRÁI: THẺ ĐỊNH DANH (Theme Đỏ/Xám - Quyền lực) === */}
-        <div className="left-panel card" style={{ background: "linear-gradient(to bottom, #fef2f2, #f3f4f6)" }}>
-          <div className="avatar-wrapper">
-            <img
-              src={displayAvatar}
-              alt="Avatar"
-              className="avatar-img"
-              style={{ borderColor: "#dc2626" }} // Viền đỏ quyền lực
-              onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
-            />
-            <button className="camera-btn" onClick={() => setShowAvatarModal(true)} style={{ background: "#dc2626", borderColor: "white" }}>
-              <CameraAlt fontSize="small" />
-            </button>
-          </div>
+    <PageWrapper>
+      <HeaderBar>
+        <Box>
+          <Typography variant="h4" fontWeight="700" color="text.primary">Hồ sơ Quản trị</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.95rem", mt: 0.5, display: "block" }}>
+            Quản lý thông tin định danh hệ thống (Root Access).
+          </Typography>
+        </Box>
+      </HeaderBar>
 
-          <h2 className="user-fullname">
-            {savedUser.lname} {savedUser.mname} {savedUser.fname}
-          </h2>
-          
-          <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Chip 
-              label="QUẢN TRỊ VIÊN" 
-              style={{ backgroundColor: "#dc2626", color: "white", fontWeight: "bold", paddingLeft: "5px" }}
-              icon={<AdminPanelSettings style={{ color: "white", fontSize: 18 }} />}
-            />
-            <Chip 
-              label="Root Access" 
-              variant="outlined"
-              style={{ borderColor: "#4b5563", color: "#4b5563", fontWeight: "600" }}
-              icon={<Security style={{ color: "#4b5563", fontSize: 16 }} />}
-              size="small"
-            />
-          </div>
+      <Grid container spacing={3}>
+        {/* ================================================= */}
+        {/* CỘT TRÁI */}
+        {/* ================================================= */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <ProfileCard elevation={0}>
+            <CoverBackground />
+            <Box sx={{ px: 3, pb: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', mt: -7 }}>
+              <Badge
+                overlap="circular" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                badgeContent={
+                  <IconButton 
+                    onClick={() => setShowAvatarModal(true)} 
+                    sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', '&:hover': { bgcolor: 'action.hover' }, width: 36, height: 36 }}
+                  >
+                    <CameraAltIcon fontSize="small" color="error" />
+                  </IconButton>
+                }
+              >
+                <Avatar 
+                  src={savedUser.avata_url || ""} 
+                  sx={{ width: 120, height: 120, border: `4px solid ${theme.palette.background.paper}`, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main', fontSize: '3rem', fontWeight: 700 }}
+                >
+                  {savedUser.fname?.charAt(0)?.toUpperCase()}
+                </Avatar>
+              </Badge>
 
-          {/* Phần thông tin cơ bản - Căn chỉnh giống Tutor/Parent */}
-          <div className="basic-info" style={{ alignItems: 'flex-start', textAlign: 'left', width: '100%', paddingLeft: '10%' }}>
-            
-            <div className="info-item" style={{ width: '100%', justifyContent: 'flex-start' }}>
-              <Email fontSize="small" style={{ color: "#dc2626" }} /> 
-              <span style={{ fontSize: '0.9rem', wordBreak: 'break-all' }}>{savedUser.email}</span>
-            </div>
-            
-            <div className="info-item" style={{ width: '100%', justifyContent: 'flex-start', color: '#15803d' }}>
-              <GppGood fontSize="small" /> 
-              <span style={{ fontWeight: 500 }}>Tài khoản bảo mật</span>
-            </div>
+              <Typography variant="h6" fontWeight="700" sx={{ mt: 2, textAlign: 'center' }}>
+                {[savedUser.lname, savedUser.mname, savedUser.fname].filter(Boolean).join(" ")}
+              </Typography>
+              
+              <Stack direction="row" spacing={1} mt={1} mb={3} flexWrap="wrap" justifyContent="center">
+                <Chip label="QUẢN TRỊ VIÊN" color="error" size="small" icon={<AdminPanelSettingsIcon />} sx={{ fontWeight: 700 }} />
+                <Chip label="Root Access" size="small" variant="outlined" icon={<SecurityIcon />} sx={{ fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }} />
+              </Stack>
 
-          </div>
+              <Box sx={{ width: '100%', textAlign: 'left' }}>
+                <Typography variant="overline" color="text.secondary" fontWeight={700}>THÔNG TIN CƠ BẢN</Typography>
+                <Stack spacing={1.5} mt={1}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'action.hover' }}><EmailOutlinedIcon fontSize="small" color="error" /></Avatar>
+                    <Typography variant="body2" fontWeight={600} noWrap sx={{ wordBreak: 'break-all' }}>{savedUser.email}</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar sx={{ width: 32, height: 32, bgcolor: alpha(theme.palette.success.main, 0.1) }}><GppGoodIcon fontSize="small" color="success" /></Avatar>
+                    <Typography variant="body2" fontWeight={600} color="success.main">Tài khoản bảo mật</Typography>
+                  </Box>
+                </Stack>
+              </Box>
 
-          {/* UID - Thông số kỹ thuật cho Admin */}
-          <div style={{ 
-              marginTop: '20px', 
-              padding: '10px', 
-              backgroundColor: '#e5e7eb', 
-              borderRadius: '6px',
-              fontSize: '0.75rem',
-              color: '#4b5563',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-          }}>
-              <Fingerprint fontSize="small" />
-              UID: {savedUser.uid ? `${savedUser.uid.substring(0, 15)}...` : 'N/A'}
-          </div>
-        </div>
+              <Box sx={{ width: '100%', mt: 4, p: 1.5, bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <FingerprintIcon fontSize="small" color="action" />
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  UID: {savedUser.uid ? `${savedUser.uid.substring(0, 15)}...` : 'N/A'}
+                </Typography>
+              </Box>
+            </Box>
+          </ProfileCard>
+        </Grid>
 
-        {/* === CỘT PHẢI: FORM CHỈNH SỬA === */}
-        <div className="right-panel card">
-          <div className="panel-header">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <h3>Thông Tin Quản Trị</h3>
-                    <p>Quản lý thông tin định danh hệ thống.</p>
-                </div>
-                <Security style={{ fontSize: 40, color: '#9ca3af', opacity: 0.5 }} />
-            </div>
-          </div>
+        {/* ================================================= */}
+        {/* CỘT PHẢI */}
+        {/* ================================================= */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <ProfileCard elevation={0} sx={{ p: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6" fontWeight="700" sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main' }}>
+                <InfoOutlinedIcon /> Thông Tin Định Danh
+              </Typography>
+              <SecurityIcon sx={{ fontSize: 40, color: 'text.disabled', opacity: 0.5 }} />
+            </Box>
 
-          <div className="form-grid">
-            {/* Hàng tên */}
-            <div className="form-group">
-              <label>Họ (Last Name)</label>
-              <input type="text" name="lname" value={formData.lname} onChange={handleInputChange} />
-            </div>
-            <div className="form-group">
-              <label>Tên đệm (Middle Name)</label>
-              <input type="text" name="mname" value={formData.mname} onChange={handleInputChange} />
-            </div>
-            <div className="form-group full-width-mobile">
-              <label>Tên (First Name)</label>
-              <input type="text" name="fname" value={formData.fname} onChange={handleInputChange} />
-            </div>
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField fullWidth label="Họ (Last Name)" name="lname" value={formData.lname} onChange={handleInputChange} size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField fullWidth label="Tên đệm (Middle Name)" name="mname" value={formData.mname} onChange={handleInputChange} size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField fullWidth label="Tên (First Name)" name="fname" value={formData.fname} onChange={handleInputChange} size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }} />
+              </Grid>
 
-            {/* Email Read-only */}
-            <div className="form-group full-width">
-              <label>Email đăng nhập</label>
-              <div style={{ position: 'relative' }}>
-                <input type="email" value={savedUser.email || ""} disabled className="input-disabled" style={{ paddingLeft: '40px' }} />
-                <Email style={{ position: "absolute", left: "12px", top: "12px", color: "#9ca3af", fontSize: "20px" }} />
-              </div>
-            </div>
+              <Grid size={{ xs: 12 }}>
+                <TextField fullWidth label="Email đăng nhập" value={savedUser.email || ""} disabled size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }} />
+              </Grid>
 
-            {/* System Info Read-only */}
-            <div className="form-group">
-               <label>Vai trò hệ thống</label>
-               <input type="text" value="Super Admin" disabled className="input-disabled" style={{ fontWeight: 'bold', color: '#dc2626' }} />
-            </div>
+              <Grid size={{ xs: 12 }}><Divider sx={{ my: 1 }} /></Grid>
 
-            <div className="form-group">
-               <label>Ngày gia nhập</label>
-               <input 
-                  type="text" 
-                  value={savedUser.createAt ? new Date(savedUser.createAt).toLocaleDateString("vi-VN") : "N/A"} 
-                  disabled 
-                  className="input-disabled" 
-               />
-            </div>
-          </div>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth label="Vai trò hệ thống" value="Super Admin" disabled size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1, '& .MuiInputBase-input.Mui-disabled': { color: 'error.main', WebkitTextFillColor: theme.palette.error.main, fontWeight: 'bold' } }} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth label="Ngày gia nhập" value={savedUser.createAt ? new Date(savedUser.createAt).toLocaleDateString("vi-VN") : "N/A"} disabled size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }} />
+              </Grid>
+            </Grid>
 
-          <div className="action-buttons">
-            <button 
-                className="btn-save" 
-                onClick={handleSave} 
-                disabled={updating}
-                style={{ 
-                    background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)", 
-                    boxShadow: "0 4px 12px rgba(220, 38, 38, 0.3)" 
-                }}
-            >
-              {updating ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <Save fontSize="small" />
-              )}
-              {updating ? " Đang cập nhật..." : " Lưu Thay Đổi"}
-            </button>
-          </div>
-        </div>
-      </div>
+            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+              <Button 
+                variant="contained" color="error" size="large" onClick={handleSave} disabled={updating} 
+                startIcon={updating ? <CircularProgress size={20} color="inherit" /> : <SaveOutlinedIcon />} 
+                sx={{ px: 4, py: 1.5, borderRadius: '12px', fontWeight: 700 }}
+              >
+                {updating ? "Đang cập nhật..." : "Lưu Thay Đổi"}
+              </Button>
+            </Box>
+          </ProfileCard>
+        </Grid>
+      </Grid>
 
-      {/* Modal Upload giống Student/Tutor */}
-      {showAvatarModal && (
-        <div className="modal-overlay" onClick={() => setShowAvatarModal(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ color: '#dc2626' }}>Ảnh Hồ Sơ Admin</h3>
-            
-            <div style={{ margin: '20px 0', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px', textAlign: 'left', border: '1px dashed #cbd5e1' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#334155', fontWeight: 600 }}>
-                    <InfoOutlined fontSize="small" color="error"/> Lưu ý:
-                </div>
-                <ul style={{ margin: 0, paddingLeft: '20px', color: '#64748b', fontSize: '0.9rem' }}>
-                    <li>Dùng ảnh chân dung rõ mặt.</li>
-                    <li>Định dạng: <strong>JPEG, PNG</strong> (Max 5MB).</li>
-                </ul>
-            </div>
+      {/* DIALOG UPLOAD ẢNH */}
+      <Dialog open={showAvatarModal} onClose={() => setShowAvatarModal(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
+        <DialogTitle sx={{ fontWeight: 700, textAlign: 'center', color: 'error.main' }}>Ảnh Hồ Sơ Admin</DialogTitle>
+        <DialogContent>
+          <Box sx={{ p: 2, bgcolor: alpha(theme.palette.error.main, 0.05), borderRadius: 2, mb: 2, border: '1px dashed', borderColor: 'error.main' }}>
+            <Typography variant="subtitle2" fontWeight={700} color="error.main" gutterBottom>Lưu ý hệ thống:</Typography>
+            <Typography variant="body2" color="text.secondary">• Dùng ảnh chân dung rõ mặt.</Typography>
+            <Typography variant="body2" color="text.secondary">• Định dạng: JPEG, PNG (Max 5MB).</Typography>
+          </Box>
+          <Button variant="outlined" color="error" component="label" fullWidth startIcon={<CloudUploadOutlinedIcon />} sx={{ py: 1.5, borderStyle: 'dashed', borderRadius: '10px', fontWeight: 700 }}>
+            Chọn ảnh từ máy tính
+            <input type="file" accept="image/jpeg, image/png" hidden onChange={handleFileChange} />
+          </Button>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setShowAvatarModal(false)} color="inherit" sx={{ fontWeight: 700, borderRadius: '10px' }}>Đóng</Button>
+        </DialogActions>
+      </Dialog>
 
-            <div className="modal-actions">
-              <label htmlFor="file-upload" className="btn-upload" style={{ backgroundColor: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }}>
-                <CloudUpload fontSize="small" style={{ marginRight: '5px' }}/> Chọn ảnh
-              </label>
-              <input id="file-upload" type="file" accept="image/*" hidden onChange={handleFileChange} />
-              <button className="btn-close" onClick={() => setShowAvatarModal(false)}>Đóng</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Toast */}
-      <Snackbar open={toast.open} autoHideDuration={3000} onClose={() => setToast({ ...toast, open: false })} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
-        <Alert onClose={() => setToast({ ...toast, open: false })} severity={toast.severity} sx={{ width: "100%" }}>
-          {toast.message}
-        </Alert>
+      <Snackbar open={toast.open} autoHideDuration={3000} onClose={() => setToast({ ...toast, open: false })} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+        <Alert onClose={() => setToast({ ...toast, open: false })} severity={toast.severity} variant="filled" sx={{ width: "100%", borderRadius: '12px' }}>{toast.message}</Alert>
       </Snackbar>
-    </div>
+    </PageWrapper>
   );
-};
+}
 
-export default AdminProfilePage;
+export default memo(AdminProfilePage);

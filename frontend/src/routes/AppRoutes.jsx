@@ -15,7 +15,7 @@ const AboutPage = React.lazy(() => import("../pages/public/AboutPage"));
 const ContactPage = React.lazy(() => import("../pages/public/ContactPage"));
 const PolicyPage = React.lazy(() => import("../pages/public/PolicyPage"));
 const TermPage = React.lazy(() => import("../pages/public/TermPage"));
-
+const NotificationPage = React.lazy(() => import("../pages/public/NotificationPage.jsx"));
 // --- ADMIN (Lazy Load) ---
 const AdminDashboard = React.lazy(() => import("../pages/admin/AdminDashboard"));
 const UserManagement = React.lazy(() => import("../pages/admin/UserManagement"));
@@ -39,27 +39,23 @@ const QuestionEditor = React.lazy(() => import("../pages/tutor/QuestionEditor.js
 // --- STUDENT (Lazy Load) ---
 const StudentDashboard = React.lazy(() => import("../pages/student/StudentDashboard"));
 const StudentProfilePage = React.lazy(() => import("../pages/student/StudentProfilePage"));
-const StudentMyClassPage = React.lazy(() => import("../pages/student/StudentMyClassPage"));
-const StudentClassDetailPage = React.lazy(() => import("../pages/student/StudentClassDetailPage"));
-const StudentThreadDetailPage = React.lazy(() => import("../pages/student/StudentThreadDetailPage"));
-const StudentPracticePage = React.lazy(() => import("../pages/student/StudentPracticePage"));
-const StudentPracticeSessionPage = React.lazy(() => import("../pages/student/StudentPracticeSessionPage"));
-const StudentPracticeResultPage = React.lazy(() => import("../pages/student/StudentPracticeResultPage"));
-const StudentPracticeReviewPage = React.lazy(() => import("../pages/student/StudentPracticeReviewPage"));
-const StudentAssignmentPage = React.lazy(() => import("../pages/student/StudentAssignmentPage"));
-const StudentAssignmentSessionPage = React.lazy(() => import("../pages/student/StudentAssignmentSessionPage"));
-const StudentAssignmentResultPage = React.lazy(() => import("../pages/student/StudentAssignmentResultPage"));
+const StudentMyClassPage = React.lazy(() => import("../pages/student/MyClassPage"));
+const StudentClassDetailPage = React.lazy(() => import("../pages/student/ClassDetailPage"));
+const StudentThreadDetailPage = React.lazy(() => import("../pages/student/ThreadDetailPage"));
+const StudentPracticePage = React.lazy(() => import("../pages/student/PracticePage"));
+const StudentPracticeSessionPage = React.lazy(() => import("../pages/student/PracticeSessionPage"));
+const StudentPracticeResultPage = React.lazy(() => import("../pages/student/PracticeResultPage"));
+const StudentPracticeReviewPage = React.lazy(() => import("../pages/student/PracticeReviewPage"));
+const StudentAssignmentSessionPage = React.lazy(() => import("../pages/student/AssignmentSessionPage"));
+const StudentAssignmentResultPage = React.lazy(() => import("../pages/student/AssignmentResultPage"));
 const StudentEnrollPage = React.lazy(() => import("../pages/student/StudentEnrollPage.jsx"));
-const StudentGlobalAssignmentPage = React.lazy(() => import("../pages/student/StudentGlobalAssignmentPage"));
-const StudentAssignmentHistoryPage = React.lazy(() => import("../pages/student/StudentAssignmentHistoryPage.jsx"));
-
+const StudentGlobalAssignmentPage = React.lazy(() => import("../pages/student/AssignmentPage"));
+const StudentAssignmentHistoryPage = React.lazy(() => import("../pages/student/AssignmentHistoryPage.jsx"));
 // --- PARENT (Lazy Load) ---
 const ParentDashboard = React.lazy(() => import("../pages/parent/ParentDashboard.jsx"));
 const ParentEnrollPage = React.lazy(() => import("../pages/parent/ParentEnrollPage.jsx"));
 const ParentProfilePage = React.lazy(() => import("../pages/parent/ParentProfilePage.jsx"));
 
-// --- CHUNG (Lazy Load) ---
-const NotificationPage = React.lazy(() => import("../pages/general/NotificationPage.jsx"));
 
 // --- HIỆU ỨNG TẢI TRANG (Fallback UI) ---
 const LoadingFallback = () => (
@@ -159,10 +155,6 @@ function AppRoutes(props) {
               element={<StudentGlobalAssignmentPage />}
             />
 
-            <Route
-              path="assignment/class/:classId"
-              element={<StudentAssignmentPage />}
-            />
 
             <Route
               path="assignment/class/:classId/exam/:examId/session/:sessionId"

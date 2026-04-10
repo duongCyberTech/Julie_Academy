@@ -51,6 +51,7 @@ out/
 
 # Local Environment & Editor
 # Các tệp cấu hình môi trường cục bộ và của trình soạn thảo code.
+design.md
 .env
 .env.*
 !.env.example
