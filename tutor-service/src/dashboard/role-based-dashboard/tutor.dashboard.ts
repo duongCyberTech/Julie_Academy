@@ -79,7 +79,7 @@ export class TutorDashboard {
             }[] = await this.prisma.$queryRaw`
                 SELECT 
                     c.class_id, 
-                    c.classname
+                    c.classname,
                     COUNT(DISTINCT s.uid) as total_students
                 FROM public."Student" as s
                 JOIN public."Learning" as l on s."uid" = l."student_uid"
@@ -109,11 +109,11 @@ export class TutorDashboard {
 
             const cntMapper = cntESDone.map(item => ({
                 class_id: item.class_id,
-                classname: cntClassStudent.find(i => i.class_id == item.class_id).classname,
+                classname: cntClassStudent?.find(i => i.class_id == item.class_id)?.classname ?? 0,
                 exam_id: item.exam_id,
                 session_id: item.session_id,
                 num_students_done: item.total_students_done,
-                total_class_students: cntClassStudent.find(i => i.class_id == item.class_id).total_students
+                total_class_students: cntClassStudent?.find(i => i.class_id == item.class_id)?.total_students ?? 0
             }))
 
             return cntMapper
@@ -136,8 +136,6 @@ export class TutorDashboard {
                     COUNT(CASE WHEN qet."isCorrect" = true THEN 1 END) AS correct_cnt,
                     COUNT(CASE WHEN qet."isCorrect" = false THEN 1 END) AS fail_cnt
                 FROM public."Categories" AS c
-                LEFT JOIN public."Structure" AS st ON c."category_id" = st."cate_id"
-                LEFT JOIN public."Lesson_Plan" AS lp ON st."plan_id" = lp."plan_id"
                 LEFT JOIN public."Questions" AS q ON c."category_id" = q."category_id"
                 LEFT JOIN public."Question_for_exam_taken" AS qet ON q."ques_id" = qet."ques_id"
                 LEFT JOIN public."Exam_taken" AS et ON qet."et_id" = et."et_id"
@@ -146,7 +144,10 @@ export class TutorDashboard {
                 WHERE cl."tutor_uid" = ${tutor_id}
                 GROUP BY c."category_id", c."category_name"
                 HAVING COUNT(CASE WHEN qet."isCorrect" = true THEN 1 END) > 0 
-                    OR COUNT(CASE WHEN qet."isCorrect" = false THEN 1 END) > 0;
+                    OR COUNT(CASE WHEN qet."isCorrect" = false THEN 1 END) > 0
+                    
+                ORDER BY fail_cnt DESC, correct_cnt ASC
+                LIMIT 5;
             `
 
             return noticeCategories || []

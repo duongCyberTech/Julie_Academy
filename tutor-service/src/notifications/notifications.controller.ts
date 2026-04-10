@@ -44,10 +44,12 @@ export class NotificationsController {
 
     @Patch(':notice_id')
     markAsRead(
-        @Param('notice_id', ParseUUIDPipe) notice_id: string
+        @Param('notice_id', ParseUUIDPipe) notice_id: string,
+        @Request() req
     ) {
         try {
-            return this.notificationsService.markAsRead(notice_id)
+            const uid = req.user.userId
+            return this.notificationsService.markAsRead(uid, notice_id)
         } catch (error) {
             return new ExceptionResponse().returnError(error)
         }

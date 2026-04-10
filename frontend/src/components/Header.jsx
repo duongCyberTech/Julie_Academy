@@ -101,7 +101,9 @@ const Header = React.memo(function Header({
 
     const handleUnreadCount = (newCount) => {
       setCntUnRead(newCount);
-      notifyAudio.play().catch((err) => console.warn("Audio blocked:", err));
+      if (newCount > cntUnRead) {
+        notifyAudio.play().catch((err) => console.warn("Audio blocked:", err));
+      }
     };
     const handleLocalRead = () => {
       setCntUnRead((prev) => Math.max(0, prev - 1));
