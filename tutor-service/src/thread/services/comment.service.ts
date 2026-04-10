@@ -186,7 +186,7 @@ export class CommentService {
         }
     }
 
-    async getCommentsByThread(thread_id: string, parent_cmt_id: number = null, page: number = 1) {
+    async getCommentsByThread(thread_id: string, parent_cmt_id: number | null = null, page: number = 1) {
         const cmts = await this.prisma.comments.findMany({
             take: 10,
             skip: (page - 1) * 10,
