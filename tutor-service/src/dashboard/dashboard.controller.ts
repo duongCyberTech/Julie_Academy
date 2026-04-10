@@ -6,7 +6,8 @@ import {
     Request,
     ParseIntPipe,
     Query,
-    ParseUUIDPipe
+    ParseUUIDPipe,
+    DefaultValuePipe
 } from "@nestjs/common";
 import { StudentDashboard } from './role-based-dashboard/student.dashboard';
 import { TutorDashboard } from './role-based-dashboard/tutor.dashboard';
@@ -34,7 +35,7 @@ export class DashboardController {
     @Get('tutor-stats/exam-session')
     @Roles('tutor')
     getExamSessionStats(
-        @Query('day_range', ParseIntPipe) day_range: number,
+        @Query('day_range', new DefaultValuePipe(1), ParseIntPipe) day_range: number,
         @Request() req
     ) {
         const uid = req.user.userId
