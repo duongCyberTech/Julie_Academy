@@ -75,7 +75,7 @@ export class NotificationsService {
         }
     }
 
-    async markAsRead(notice_id: string) {
+    async markAsRead(uid: string, notice_id: string) {
         try {
             await this.prisma.notifications.update({
                 where: {notice_id},
@@ -83,6 +83,8 @@ export class NotificationsService {
                     have_read: true
                 }
             })
+
+            this.notify.sendNewNotification(uid, null, await this.countNotifications(uid, ReadStatus.have_not_read))
 
             return { status: 200 }
         } catch (error) {
