@@ -6,12 +6,16 @@ import {
   Post,
   Get,
   Patch,
-  Delete
+  Delete,
+  UseGuards
 } from "@nestjs/common";
 import { EmailService } from "./email.service";
 import { EmailConfigDto } from "./dto/email.dto";
+import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
+import { RolesGuard } from "src/auth/guard/roles.guard";
 
 @Controller('email-chain')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class EmailController {
   constructor(
     private readonly emailService: EmailService,

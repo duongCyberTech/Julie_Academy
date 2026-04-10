@@ -181,6 +181,7 @@ model EmailConfig {
   day_of_week Int?      
   day_of_month Int?
   class_id String
+  template EmailTemplate? @relation(fields: [template_id], references: [template_id], onDelete: SetNull, onUpdate: Cascade)
   class    Class @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
 }
 
@@ -190,6 +191,8 @@ model EmailTemplate {
   body        String
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now())
+
+  emailConfigs EmailConfig[]
 }
 
 model Schedule {
