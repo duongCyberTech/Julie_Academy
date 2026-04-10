@@ -36,7 +36,7 @@ export class DashboardController {
     @Roles('tutor')
     getExamSessionStats(
         @Query('day_range', new DefaultValuePipe(1), ParseIntPipe) day_range: number,
-        @Request() req
+        @Request() req: any
     ) {
         const uid = req.user.userId
         return this.tutorDashboard.getWeeklyClassESProgress(uid, day_range)
@@ -45,7 +45,7 @@ export class DashboardController {
     @Get('tutor-stats/student-attention')
     @Roles('tutor')
     getAttentionRequiredStudents(
-        @Request() req,
+        @Request() req: any,
         @Query() query: Partial<FilterDTO>
     ) {
         const uid = req.user.userId
@@ -55,7 +55,7 @@ export class DashboardController {
     @Get('tutor-stats/overall')
     @Roles('tutor')
     getTutorStats(
-        @Request() req
+        @Request() req: any
     ){
         const uid = req.user.userId
         return this.dashboardService.getTutorStats(uid)
@@ -64,7 +64,7 @@ export class DashboardController {
     @Get('student-stats')
     @Roles('student')
     getStudentStats(
-        @Request() req
+        @Request() req: any
     ) {
         const uid = req.user.userId
         return this.dashboardService.getStudentOverallStats(uid)
@@ -73,7 +73,7 @@ export class DashboardController {
     @Get('student/current-test')
     @Roles('student')
     getStudentCurrentTest(
-        @Request() req,
+        @Request() req: any,
         @Query() query: Partial<FilterDTO>
     ) {
         const uid = req.user.userId
@@ -84,7 +84,7 @@ export class DashboardController {
     @Roles('student')
     getScoreTrend(
         @Query() query: Partial<FilterDTO>,
-        @Request() req
+        @Request() req: any
     ) {
         const uid = req.user.userId
         return this.studentDashboard.scoreTrend(uid, query)
@@ -94,7 +94,7 @@ export class DashboardController {
     @Roles('student')
     getSkillsMap(
         @Query('plan_id', ParseUUIDPipe) plan_id: string,
-        @Request() req
+        @Request() req: any
     ) {
         if (!plan_id) return []
         return this.studentDashboard.skillsMap(req.user.userId, plan_id)

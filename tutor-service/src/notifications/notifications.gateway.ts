@@ -14,7 +14,9 @@ export class NotificationGateway {
     }
 
     sendNewNotification(uid: string, notificationData: any, cntUnRead: number = 0) {
-        this.server.to(uid).emit('receive_notification', notificationData)
+        if (notificationData) {
+            this.server.to(uid).emit('receive_notification', notificationData)
+        }
         this.server.to(uid).emit('cnt_unread', cntUnRead)
     }
 }
