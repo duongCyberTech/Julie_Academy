@@ -64,7 +64,7 @@ export class TutorDashboard {
         }
     }
 
-    async getWeeklyClassESProgress(tutor_id: string, day_range: number = 1) {
+    async getWeeklyClassESProgress(tutor_id: string, class_id: string, day_range: number = 1) {
         try {
             const currentDate = new Date()
             const _ndaysAgo = new Date()
@@ -72,51 +72,61 @@ export class TutorDashboard {
             currentDate.setHours(23, 59, 59, 999)
             _ndaysAgo.setHours(0, 0, 0, 0)
 
-            const cntClassStudent: {
-                class_id: string,
-                classname: string
-                total_students: number
-            }[] = await this.prisma.$queryRaw`
-                SELECT 
-                    c.class_id, 
-                    c.classname,
-                    COUNT(DISTINCT s.uid) as total_students
-                FROM public."Student" as s
-                JOIN public."Learning" as l on s."uid" = l."student_uid"
-                JOIN public."Class" as c on c."class_id" = l."class_id"
-                WHERE c."tutor_uid" = ${tutor_id}
-                GROUP BY c.class_id, c.classname
-            `
-
-            const cntESDone: {
-                class_id: string,
-                exam_id: string,
-                session_id: number,
-                total_students_done: number
-            }[] = await this.prisma.$queryRaw`
-                SELECT 
-                    c.class_id, 
-                    es."exam_id", es."session_id",
-                    COUNT(DISTINCT s.uid) as total_students_done
-                FROM public."Student" as s
-                JOIN public."Exam_taken" as et on et."student_uid" = s."uid"
-                JOIN public."Exam_session" as es on et."session_id" = es."session_id" and et."exam_id" = es."exam_id"
-                JOIN public."Exam_open_in" as eoi on eoi."session_id" = es."session_id" and eoi."exam_id" = es."exam_id"
-                JOIN public."Class" as c on eoi."class_id" = c."class_id"
-                WHERE c."tutor_uid" = ${tutor_id}
-                GROUP BY c.class_id, es."exam_id", es."session_id"
-            `
-
-            const cntMapper = cntESDone.map(item => ({
-                class_id: item.class_id,
-                classname: cntClassStudent?.find(i => i.class_id == item.class_id)?.classname ?? 0,
-                exam_id: item.exam_id,
-                session_id: item.session_id,
-                num_students_done: item.total_students_done,
-                total_class_students: cntClassStudent?.find(i => i.class_id == item.class_id)?.total_students ?? 0
+            const cntClassStudent = await this.prisma.class.findUnique({
+                where: {class_id},
+                select: {
+                    class_id: true,
+                    classname: true,
+                    _count: {
+                        select: {
+                            learning: {
+                                where: {
+                                    class_id,
+                                    status: "accepted"
+                                }
+                            }
+                        }
+                    },
+                    exam_open_in: {
+                        select: {
+                            exam_session: {
+                                select: {
+                                    exam_id: true,
+                                    session_id: true,
+                                    exam: {
+                                        select: {
+                                            title: true,
+                                            description: true,
+                                            level: true,
+                                            duration: true,
+                                            total_ques: true,
+                                            total_score: true
+                                        }
+                                    },
+                                    examTakens: {
+                                        select: {
+                                            student_uid: true
+                                        },
+                                        distinct: ['student_uid']
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }).then(res => ({
+                class_id: res?.class_id,
+                classname: res?.classname,
+                total_students: res?._count.learning,
+                es_mapper: res?.exam_open_in.map(item => {
+                    return {
+                        exam_session: item.exam_session,
+                        number_of_students_done: item.exam_session.examTakens.length
+                    }
+                })
             }))
 
-            return cntMapper
+            return cntClassStudent
         } catch (error) {
             return []
         }

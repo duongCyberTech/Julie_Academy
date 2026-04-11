@@ -32,14 +32,15 @@ export class DashboardController {
         return this.dashboardService.getAdminStats()
     }
         
-    @Get('tutor-stats/exam-session')
+    @Get('tutor-stats/:class_id/exam-session')
     @Roles('tutor')
     getExamSessionStats(
         @Query('day_range', new DefaultValuePipe(1), ParseIntPipe) day_range: number,
+        @Param('class_id', ParseUUIDPipe) class_id: string,
         @Request() req: any
     ) {
         const uid = req.user.userId
-        return this.tutorDashboard.getWeeklyClassESProgress(uid, day_range)
+        return this.tutorDashboard.getWeeklyClassESProgress(uid, class_id, day_range)
     }
 
     @Get('tutor-stats/student-attention')
