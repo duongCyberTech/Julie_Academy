@@ -34,6 +34,8 @@ model User {
   tags Tag[]
 
   notifications Notifications[]
+
+  emailTemplates EmailTemplate[]
 }
 
 model Tutor {
@@ -189,6 +191,8 @@ model EmailTemplate {
   template_id String @id @default(uuid())
   type        EmailTemplateType
   body        String
+  user_id     String
+  creator     User     @relation(fields: [user_id], references: [uid])
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now())
 

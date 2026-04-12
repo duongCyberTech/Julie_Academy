@@ -30,7 +30,7 @@ export class EmailController {
     return this.emailService.createEmailConfig(req.user.tutor_id, class_id, data);
   }
 
-  @Get(':class_id')
+  @Get('class/:class_id')
   getAllEmailChains(
     @Request() req: any,
     @Param('class_id') class_id: string
@@ -38,7 +38,7 @@ export class EmailController {
     return this.emailService.getAllEmailChainsOfClass(req.user.tutor_id, class_id);
   }
 
-  @Get(':config_id')
+  @Get('config/:config_id')
   getEmailChainById(
     @Request() req: any,
     @Param('config_id') config_id: string
