@@ -41,9 +41,6 @@ import katex from 'katex';
 // Import Component phụ trợ
 import AppSnackbar from '../../components/SnackBar';
 
-// --- Import Mock Data ---
-import { mockQuestionDatabase, PRACTICE_ID_1 } from './MockData';
-
 // ======================================================
 // --- HELPERS ---
 // ======================================================

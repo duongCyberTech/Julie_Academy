@@ -2,7 +2,6 @@ import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { Typography, Box, CircularProgress } from "@mui/material";
 
-// --- CÁC COMPONENT CỐT LÕI (Giữ nguyên import đồng bộ) ---
 import HomePage from "../pages/public/HomePage";
 import ProtectedRoute from "./ProtectedRoutes";
 import Layout from "../components/Layout";
@@ -35,6 +34,7 @@ const AssignmentPage = React.lazy(() => import("../pages/tutor/AssignmentPage"))
 const QuestionDetailPage = React.lazy(() => import("../pages/tutor/QuestionDetailPage.jsx"));
 const TutorProfilePage = React.lazy(() => import("../pages/tutor/TutorProfilePage.jsx"));
 const QuestionEditor = React.lazy(() => import("../pages/tutor/QuestionEditor.jsx"));
+const EmailPage = React.lazy(() => import("../pages/tutor/EmailPage.jsx"));
 
 // --- STUDENT (Lazy Load) ---
 const StudentDashboard = React.lazy(() => import("../pages/student/StudentDashboard"));
@@ -113,6 +113,7 @@ function AppRoutes(props) {
             <Route path="question/:id" element={<QuestionDetailPage />} />
             <Route path="profile" element={<TutorProfilePage />} />
             <Route path="edit-question/:id" element={<QuestionEditor />} />
+            <Route path="email" element={<EmailPage />} />
             <Route
               path="classes/:classId/:threadId"
               element={<StudentThreadDetailPage />}

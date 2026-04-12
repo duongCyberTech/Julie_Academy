@@ -12,7 +12,6 @@ const getAuthHeaders = (token) => ({
 export const getTutorOverallStats = async (token) => {
     try {
         const response = await apiClient.get('/dashboard/tutor-stats/overall', getAuthHeaders(token));
-        console.log('[API TutorService] getTutorOverallStats trả về:', response.data); // LOG DATA
         return response.data;
     } catch (error) {
         console.error('Error fetching tutor overall stats:', error.response?.data || error.message);
@@ -20,13 +19,16 @@ export const getTutorOverallStats = async (token) => {
     }
 };
 
-export const getExamSessionStats = async (token, dayRange = 7) => {
+export const getExamSessionStats = async (token, classId, dayRange = 7) => {
+    if (!classId) {
+        throw new Error("classId is required to fetch exam session stats");
+    }
+
     try {
-        const response = await apiClient.get(`/dashboard/tutor-stats/exam-session`, {
+        const response = await apiClient.get(`/dashboard/tutor-stats/${classId}/exam-session`, {
             ...getAuthHeaders(token),
             params: { day_range: dayRange } 
         });
-        console.log(`[API TutorService] getExamSessionStats (dayRange: ${dayRange}) trả về:`, response.data); // LOG DATA
         return response.data;
     } catch (error) {
         console.error('Error fetching exam session stats:', error.response?.data || error.message);
@@ -56,7 +58,6 @@ export const getAttentionRequiredStudents = async (token, filters = {}) => {
             ...getAuthHeaders(token),
             params 
         });
-        console.log(`[API TutorService] getAttentionRequiredStudents (params: ${JSON.stringify(params)}) trả về:`, response.data); // LOG DATA
         return response.data;
     } catch (error) {
         console.error('Error fetching student attention stats:', error.response?.data || error.message);
