@@ -79,7 +79,9 @@ const Header = React.memo(function Header({
         console.log(e);
       }
     };
+
     if (!token) return;
+
     try {
       const decoded = jwtDecode(token);
       socket.emit("notify", decoded.sub);
@@ -103,9 +105,17 @@ const Header = React.memo(function Header({
         notifyAudio.play().catch((err) => console.warn("Audio blocked:", err));
       }
     };
+    const handleLocalRead = () => {
+      setCntUnRead((prev) => Math.max(0, prev - 1));
+    };
 
     socket.on("cnt_unread", handleUnreadCount);
-    return () => socket.off("cnt_unread", handleUnreadCount);
+    window.addEventListener("notification_read", handleLocalRead);
+
+    return () => {
+      socket.off("cnt_unread", handleUnreadCount);
+      window.removeEventListener("notification_read", handleLocalRead);
+    };
   }, [token, notifyAudio]);
 
   const userMenuItems = useMemo(() => {

@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Button, Paper, CircularProgress, Alert,
     Stack, Chip, Grid, Card, CardContent, CardActions,
-    IconButton, Tooltip, Divider
+    IconButton, Tooltip, Divider, LinearProgress
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import dayjs from 'dayjs';
 
 import { getSessionsByClass } from '../../services/ExamService';
+import { getExamSessionStats } from '../../services/DashboardTutorService'; // Import API tiến độ
 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
@@ -21,7 +22,7 @@ const HeaderBar = styled(Box)(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing(3), // Gọn hơn so với 4
+    marginBottom: theme.spacing(3), 
     flexShrink: 0,
 }));
 
@@ -31,11 +32,11 @@ const SessionCardStyled = styled(Card)(({ theme }) => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: '12px', // Đồng bộ 12px
+        borderRadius: '12px', 
         backgroundColor: theme.palette.background.paper,
         backgroundImage: 'none',
         border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.6)}`,
-        boxShadow: isDark ? 'none' : '0px 2px 8px rgba(0,0,0,0.02)', // Nhẹ nhàng hơn
+        boxShadow: isDark ? 'none' : '0px 2px 8px rgba(0,0,0,0.02)', 
         transition: 'all 0.2s',
         '&:hover': {
             transform: 'translateY(-2px)',
@@ -49,8 +50,8 @@ const SessionCardStyled = styled(Card)(({ theme }) => {
 
 const EmptyStatePaper = styled(Paper)(({ theme }) => ({
     flexGrow: 1,
-    minHeight: '200px', // Gọn hơn
-    padding: theme.spacing(4), // Gọn hơn
+    minHeight: '200px', 
+    padding: theme.spacing(4), 
     textAlign: 'center',
     display: 'flex',
     flexDirection: 'column',
@@ -83,6 +84,9 @@ const SessionCard = memo(({ session }) => {
         statusIcon = <PlayCircleOutlineIcon fontSize="small" sx={{ fontSize: 16 }} />;
     }
 
+    const progressPercent = session.totalStudents > 0 ? (session.doneCount / session.totalStudents) * 100 : 0;
+    const isCompleted = session.doneCount === session.totalStudents && session.totalStudents > 0;
+
     return (
         <SessionCardStyled>
             <CardContent sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}>
@@ -100,11 +104,11 @@ const SessionCard = memo(({ session }) => {
                     </Typography>
                 </Stack>
                 
-                <Typography variant="subtitle1" fontWeight="700" color="text.primary" gutterBottom title={session.exam?.title} sx={{ mb: 1.5, lineHeight: 1.3 }}>
+                <Typography variant="subtitle1" fontWeight={700} color="text.primary" gutterBottom title={session.exam?.title} sx={{ mb: 1.5, lineHeight: 1.3 }}>
                     {session.exam?.title || "Bài tập không tên"}
                 </Typography>
                 
-                <Stack spacing={0.5} mb={2} flexGrow={1}>
+                <Stack spacing={0.5} flexGrow={1}>
                     <Typography variant="body2" color="text.secondary">
                         Loại: <Box component="span" fontWeight={600} color="text.primary">{session.exam_type === 'practice' ? 'Luyện tập' : 'Kiểm tra'}</Box>
                     </Typography>
@@ -115,6 +119,24 @@ const SessionCard = memo(({ session }) => {
                         Làm tối đa: <Box component="span" fontWeight={600} color="text.primary">{session.limit_taken} lần</Box>
                     </Typography>
                 </Stack>
+
+                {/* THÊM WIDGET TIẾN ĐỘ VÀO ĐÂY */}
+                <Box sx={{ mt: 2, mb: 0.5 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                            Tiến độ nộp bài
+                        </Typography>
+                        <Typography variant="body2" color={isCompleted ? "success.main" : "primary.main"} fontWeight={700}>
+                            {session.doneCount} / {session.totalStudents}
+                        </Typography>
+                    </Stack>
+                    <LinearProgress 
+                        variant="determinate" 
+                        value={progressPercent}
+                        color={isCompleted ? "success" : "primary"}
+                        sx={{ height: 6, borderRadius: '8px', bgcolor: (theme) => alpha(theme.palette.divider, 0.4) }}
+                    />
+                </Box>
 
                 <Divider sx={{ my: 1.5, borderStyle: 'dashed', borderColor: (theme) => alpha(theme.palette.divider, 0.6) }} />
 
@@ -169,9 +191,40 @@ function AssignmentTab({ classId, token }) {
         if (!classId || !token) return;
         setLoading(true);
         setError(null);
+        
         try {
-            const data = await getSessionsByClass(classId, token);
-            setSessions(Array.isArray(data) ? data : []); 
+            // Sử dụng Promise.allSettled để đảm bảo nếu API thống kê lỗi thì vẫn load được danh sách
+            const [sessRes, progRes] = await Promise.allSettled([
+                getSessionsByClass(classId, token),
+                getExamSessionStats(token, classId, 365) // Set 365 ngày để lấy toàn bộ tiến độ trong 1 năm
+            ]);
+
+            let sessionData = [];
+            let progressData = null;
+
+            if (sessRes.status === 'fulfilled') sessionData = Array.isArray(sessRes.value) ? sessRes.value : [];
+            else throw new Error("Không thể tải danh sách bài tập");
+
+            if (progRes.status === 'fulfilled') progressData = progRes.value;
+
+            // Xử lý map dữ liệu tiến độ
+            const totalStudents = progressData?.total_students || 0;
+            const progressMap = {};
+            
+            (progressData?.es_mapper || []).forEach(item => {
+                if(item.exam_session?.session_id) {
+                    progressMap[item.exam_session.session_id] = item.number_of_students_done || 0;
+                }
+            });
+
+            // Gắn tiến độ vào từng bài tập
+            const mergedSessions = sessionData.map(s => ({
+                ...s,
+                doneCount: progressMap[s.session_id] || 0,
+                totalStudents: totalStudents
+            }));
+
+            setSessions(mergedSessions);
         } catch (err) {
             console.error("Fetch sessions error:", err);
             setError('Không thể tải danh sách bài tập.');
@@ -198,7 +251,7 @@ function AssignmentTab({ classId, token }) {
 
             <HeaderBar direction={{ xs: 'column', sm: 'row' }}>
                 <Box>
-                    <Typography variant="h6" fontWeight="700" color="text.primary">
+                    <Typography variant="h6" fontWeight={700} color="text.primary">
                         Bài tập & Kiểm tra
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -217,9 +270,9 @@ function AssignmentTab({ classId, token }) {
             </HeaderBar>
 
             {sessions.length > 0 ? (
-                <Grid container spacing={2} sx={{ pb: 2 }}>
+                <Grid container spacing={3} sx={{ pb: 2 }}>
                     {sessions.map(session => (
-                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={session.session_id}>
+                        <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={session.session_id}>
                             <SessionCard session={session} />
                         </Grid>
                     ))}

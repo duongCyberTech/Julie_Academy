@@ -124,7 +124,6 @@ const mockData = {
   ],
 };
 
-// --- STYLED COMPONENTS ---
 const DashboardWidget = styled(Card)(({ theme }) => ({
   height: "100%",
   backgroundColor: theme.palette.background.paper,
@@ -133,9 +132,6 @@ const DashboardWidget = styled(Card)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
 }));
 
-// --- WIDGET COMPONENTS ---
-
-// 1. Widget cho Q1, Q5: Thẻ KPI
 const KpiCardWidget = memo(
   ({ title, value, icon, color = "primary" }) => {
     const theme = useTheme();
@@ -171,7 +167,6 @@ const KpiCardWidget = memo(
   }
 );
 
-// 2. Widget cho Q2: Lịch Dạy Hôm Nay
 const ScheduleWidget = memo(() => {
   const theme = useTheme(); // Sửa lỗi: Thêm useTheme
   return (
