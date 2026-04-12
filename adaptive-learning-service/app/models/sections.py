@@ -9,6 +9,6 @@ class Sections(Base):
 
   id = Column(String, primary_key=True, default=lambda: str(uuid7()))
   user_id = Column(String, nullable=False)
-  category = Column(String, nullable=False)
+  skill = Column(String, nullable=False) # -> category_name
   grade = Column(Integer, nullable=False)
   subject = Column(String, nullable=False)
