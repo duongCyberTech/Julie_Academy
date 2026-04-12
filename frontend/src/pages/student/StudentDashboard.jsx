@@ -1,687 +1,334 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios"; 
 import {
-  Container,
-  Grid,
-  Paper,
-  Typography,
-  Box,
-  Card,
-  CardContent,
-  Avatar,
-  Stack,
-  Chip,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Divider,
-  LinearProgress,
-  FormControl,
-  Select,
-  MenuItem,
-  InputLabel,
-  Button,
-  Tooltip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  TextField,
-  IconButton,
+  Container, Paper, Typography, Box, Card, CardContent, Avatar, Stack, Chip,
+  LinearProgress, FormControl, Select, MenuItem, InputLabel,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
+  Dialog, DialogTitle, DialogContent, IconButton, Grid, Pagination, TextField
 } from "@mui/material";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  ReferenceLine,
-  Tooltip as RechartsTooltip,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  PieChart,
-  Pie,
-  Cell,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip as RechartsTooltip,
+  BarChart, Bar
 } from "recharts";
-import { useNavigate } from "react-router-dom";
 
-// Icons
 import SchoolIcon from "@mui/icons-material/School";
 import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
 import StarIcon from "@mui/icons-material/Star";
-import DateRangeIcon from "@mui/icons-material/DateRange";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
-import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
-import AssignmentIcon from "@mui/icons-material/Assignment";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
-// Import Mock Data
-import {
-  MOCK_USER_PROFILE,
-  MOCK_BADGES,
-  MOCK_PROGRESS_DATA,
-  MOCK_COMPARISON_DATA,
-  MOCK_TIME_DISTRIBUTION,
-  MOCK_SKILL_MAP,
-  MOCK_SUGGESTIONS,
-  MOCK_EXAM_HISTORY,
-  MOCK_ACTIVE_CLASSES,
-} from "./MockDashboardData";
 
-// --- HELPER FUNCTIONS ---
-const calculateDaysJoined = (dateString) => {
-  const joinDate = new Date(dateString);
-  const now = new Date();
-  const diffTime = Math.abs(now - joinDate);
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+const BASE_URL = "http://localhost:4000"; 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token"); 
+  return { headers: { Authorization: `Bearer ${token}` } };
 };
 
-const calculateStudyHours = (history) => {
-  if (!history) return 0;
-  const validSessions = history.filter(
-    (item) =>
-      item.exam &&
-      (item.exam.exam_type === "practice" || item.exam.exam_type === "test")
-  );
-  let totalMinutes = 0;
-  validSessions.forEach((session) => {
-    const start = new Date(session.startAt);
-    const end = new Date(session.doneAt);
-    const diffMs = end - start;
-    if (diffMs > 0) totalMinutes += Math.round(diffMs / 60000);
-  });
-  return (totalMinutes / 60).toFixed(1);
-};
+const MOCK_AI_SUGGESTIONS = [
+  { id: 1, title: "Ôn tập chương Đại số", reason: "sfsdfsdsdfsdf." },
+  { id: 2, title: "Tập trung vào Hình học", reason: "sdfsdfsdfdsf ." },
 
-const getLatestScore = (history) => {
-  if (!history || history.length === 0) return 0;
-  const sorted = [...history].sort(
-    (a, b) => new Date(b.doneAt) - new Date(a.doneAt)
-  );
-  return sorted[0].final_score;
-};
+];
 
-// --- SUB-COMPONENTS ---
-const StatCard = ({ title, value, icon, color, subtext }) => (
-  <Card
-    sx={{
-      height: "100%",
-      borderRadius: 4,
-      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-    }}
-  >
-    <CardContent>
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <Avatar
-          variant="rounded"
-          sx={{
-            bgcolor: `${color}.light`,
-            color: `${color}.main`,
-            width: 56,
-            height: 56,
-            borderRadius: 3,
-          }}
-        >
-          {icon}
-        </Avatar>
-        <Box>
-          <Typography
-            variant="h4"
-            sx={{ fontWeight: 800, color: "text.primary" }}
-          >
-            {value}
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontWeight: 600 }}
-          >
-            {title}
-          </Typography>
-        </Box>
-      </Stack>
-      {subtext && (
-        <Typography
-          variant="caption"
-          sx={{
-            display: "block",
-            mt: 1,
-            color: "text.secondary",
-            bgcolor: "grey.50",
-            p: 0.5,
-            borderRadius: 1,
-            textAlign: "center",
-          }}
-        >
-          {subtext}
-        </Typography>
-      )}
-    </CardContent>
-  </Card>
-);
-
-// --- MAIN DASHBOARD ---
 export default function StudentDashboard() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
-  // States cho Biểu đồ
-  const [progressTimeRange, setProgressTimeRange] = useState("week");
-  const [progressSubject, setProgressSubject] = useState("all"); // Mới thêm: Lọc môn học cho biểu đồ xu hướng
-  const [comparisonTimeRange, setComparisonTimeRange] = useState("month");
+  // 1. States cho 4 Cards (Stats)
+  const [stats, setStats] = useState({ latestScore: 0, totalPracticeTime: 0, numJoinClassess: {total_classes: 0}, avgTestScore: 0 });
 
-  // States cho Hoạt động gần đây (Lịch sử)
+  // 2. States cho Line Chart (Trend)
+  const [trendData, setTrendData] = useState([]);
+  const [progressTimeRange, setProgressTimeRange] = useState("week");
+  const [progressExamType, setProgressExamType] = useState("all");
+
+  // 3. States cho Radar Chart (Skills Map)
+  const [myPlans, setMyPlans] = useState([]);
+  const [selectedPlan, setSelectedPlan] = useState("");
+  const [radarData, setRadarData] = useState([]);
+
+  // 4. States cho Drill Down (Chi tiết Radar)
+  const [openDrillDown, setOpenDrillDown] = useState(false);
+  const [selectedChapterName, setSelectedChapterName] = useState("");
+  const [drillDownData, setDrillDownData] = useState([]);
+
+  // 5. States cho History Table
+  const [historyData, setHistoryData] = useState([]);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [activityType, setActivityType] = useState("all");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); // Trạng thái mở rộng bảng
 
-  // States cho Huy hiệu
-  const [openBadgeDialog, setOpenBadgeDialog] = useState(false);
+
+  // 6. States AI Pagination
+  const [aiPage, setAiPage] = useState(1);
+  const aiItemsPerPage = 2;
+
+  // Fetch 4 Cards Stats
+  const fetchStats = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/dashboard/student-stats`, getAuthHeaders());
+      setStats(res.data);
+    } catch (error) { console.error("Error fetching stats:", error); }
+  };
+
+  // Fetch Danh sách Sách 
+  const fetchMyPlans = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/books`, getAuthHeaders());
+      const plans = res.data.map(p => ({ id: p.plan_id, name: p.title }));
+      setMyPlans(plans);
+      if (plans.length > 0) setSelectedPlan(plans[0].id);
+    } catch (error) { console.error("Error fetching plans:", error); }
+  };
+
+  // Fetch Line Chart Data
+  const fetchTrend = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/dashboard/student/score-trend`, {
+        ...getAuthHeaders(),
+        params: { group_time: progressTimeRange, exam_type: progressExamType }
+      });
+      const formattedTrend = res.data.score_trend.map(item => ({
+        name: item.label,
+        score: Number(item.averageScore).toFixed(1)
+      }));
+      setTrendData(formattedTrend);
+    } catch (error) { console.error("Error fetching trend:", error); }
+  };
+
+  // Fetch Radar Chart Data
+  const fetchRadar = async () => {
+    if (!selectedPlan) return;
+    try {
+      const res = await axios.get(`${BASE_URL}/dashboard/student/skills-map`, {
+        ...getAuthHeaders(),
+        params: { plan_id: selectedPlan }
+      });
+      
+      const formattedRadar = res.data.map(item => {
+        const total = item.correct_cnt + item.fail_cnt;
+        const percent = total === 0 ? 0 : Math.round((item.correct_cnt / total) * 100);
+        return {
+          chapter_id: item.category_id,
+          subject: item.category_name,
+          A: percent
+        };
+      });
+      setRadarData(formattedRadar);
+    } catch (error) { console.error("Error fetching radar:", error); }
+  };
+
+  // Fetch History Table
+  const fetchHistory = async () => {
+    try {
+      const params = { limit: rowsPerPage, page: page + 1 };
+      
+      if (activityType !== 'all') params.exam_type = activityType;
+      if (startDate) params.startAt = startDate;
+      if (endDate) params.endAt = endDate;
+
+      const res = await axios.get(`${BASE_URL}/dashboard/student/current-test`, {
+        ...getAuthHeaders(),
+        params
+      });
+      setHistoryData(res.data);
+    } catch (error) { console.error("Error fetching history:", error); }
+  };
+
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 800);
+    // Chạy 1 lần khi load trang
+    const initData = async () => {
+      setLoading(true);
+      await Promise.all([fetchStats(), fetchMyPlans()]);
+      setLoading(false);
+    };
+    initData();
   }, []);
 
-  // --- LOGIC LỌC DỮ LIỆU ---
+  useEffect(() => { fetchTrend(); }, [progressTimeRange, progressExamType]);
+  useEffect(() => { fetchHistory(); }, [activityType, page, rowsPerPage, startDate, endDate]);
+  useEffect(() => { fetchRadar(); }, [selectedPlan]); 
+  const handleRadarClick = async (data) => {
+    if (data && data.activePayload && data.activePayload.length > 0) {
+      const chapter = data.activePayload[0].payload;
+      setSelectedChapterName(chapter.subject);
+      
+      try {
+        // Gọi API: Drill down
+        const res = await axios.get(`${BASE_URL}/dashboard/student/skills-map/${chapter.chapter_id}`, {
+          ...getAuthHeaders(),
+          params: { plan_id: selectedPlan }
+        });
+        
+        const formattedDrillDown = res.data.map(item => {
+          const total = item.correct_cnt + item.fail_cnt;
+          const percent = total === 0 ? 0 : Math.round((item.correct_cnt / total) * 100);
+          return { topic: item.category_name, percent: percent };
+        });
 
-  // 1. Lọc Lịch sử Hoạt động theo ngày
-  const getFilteredHistory = () => {
-    let data = [...MOCK_EXAM_HISTORY];
-
-    // Sắp xếp mới nhất lên đầu
-    data.sort((a, b) => new Date(b.doneAt) - new Date(a.doneAt));
-
-    if (startDate) {
-      data = data.filter(
-        (item) => new Date(item.doneAt) >= new Date(startDate)
-      );
+        setDrillDownData(formattedDrillDown);
+        setOpenDrillDown(true);
+      } catch (error) {
+        console.error("Error fetching drill down:", error);
+      }
     }
-    if (endDate) {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      data = data.filter((item) => new Date(item.doneAt) <= end);
-    }
-    return data;
   };
 
-  const filteredHistory = getFilteredHistory();
-  const displayedHistory = isHistoryExpanded
-    ? filteredHistory
-    : filteredHistory.slice(0, 5);
+  // AI Pagination logic
+  const currentAiSuggestions = MOCK_AI_SUGGESTIONS.slice((aiPage - 1) * aiItemsPerPage, aiPage * aiItemsPerPage);
 
-  // 2. Logic Huy hiệu
-  const MAX_BADGES_DISPLAY = 5;
-  const displayedBadges = MOCK_BADGES.slice(0, MAX_BADGES_DISPLAY);
-  const remainingBadgesCount = MOCK_BADGES.length - MAX_BADGES_DISPLAY;
+  if (loading) return <LinearProgress />;
 
-  // 3. Logic Lọc Biểu đồ Xu hướng (Nâng cao)
-  const getFilteredProgressData = () => {
-    let data = MOCK_PROGRESS_DATA[progressTimeRange] || [];
-
-    // Lọc theo môn học
-    if (progressSubject !== "all") {
-      data = data.filter((item) => item.subject === progressSubject);
-    }
-    // Nếu chọn tất cả môn ở view Tháng/Kỳ -> Gom nhóm tính trung bình để biểu đồ gọn
-    else if (progressTimeRange !== "week") {
-      const grouped = data.reduce((acc, curr) => {
-        if (!acc[curr.name])
-          acc[curr.name] = { sum: 0, count: 0, name: curr.name };
-        acc[curr.name].sum += curr.score;
-        acc[curr.name].count += 1;
-        return acc;
-      }, {});
-      data = Object.values(grouped).map((item) => ({
-        name: item.name,
-        score: parseFloat((item.sum / item.count).toFixed(1)),
-        subject: "Trung bình",
-      }));
-    }
-    return data;
-  };
-
-  const currentComparisonData = MOCK_COMPARISON_DATA[comparisonTimeRange] || [];
-
-  if (loading)
-    return (
-      <Container sx={{ mt: 4 }}>
-        <LinearProgress />
-      </Container>
-    );
+  // Component Thẻ thống kê
+  const StatCard = ({ title, value, icon, color, subtext }) => (
+    <Card sx={{ height: "100%", borderRadius: 3, boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.03)", border: "1px solid #f0f0f0", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+      <CardContent sx={{ p: 2.5 }}>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Avatar variant="rounded" sx={{ bgcolor: `${color}.light`, color: `${color}.main`, width: 48, height: 48, borderRadius: 2 }}>{icon}</Avatar>
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: 'block', mb: 0.5 }}>{title}</Typography>
+            <Typography variant="h5" fontWeight={700} color="text.primary">{value}</Typography>
+          </Box>
+        </Stack>
+        {subtext && <Typography variant="caption" sx={{ display: "block", mt: 2, color: "text.secondary", bgcolor: "grey.50", p: 1, borderRadius: 1 }}>{subtext}</Typography>}
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <Container maxWidth={false} sx={{ mt: 3, mb: 5, px: { xs: 2, md: 12 } }}>
-      {/* 1. HEADER */}
-      <Box sx={{ mb: 4 }}>
-        <Grid container alignItems="center" spacing={2}>
-          <Grid item>
-            <Avatar
-              src={MOCK_USER_PROFILE.avatar_url}
-              sx={{
-                width: 80,
-                height: 80,
-                border: "3px solid #fff",
-                boxShadow: 2,
-              }}
-            />
-          </Grid>
-          <Grid item xs>
-            <Typography
-              variant="h4"
-              sx={{ fontWeight: 800, color: "primary.main" }}
-            >
-              Xin chào, {MOCK_USER_PROFILE.fname}! 👋
-            </Typography>
-            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-              <Chip
-                icon={<DateRangeIcon />}
-                label={`Thành viên: ${calculateDaysJoined(
-                  MOCK_USER_PROFILE.createAt
-                )} ngày`}
-                color="primary"
-                variant="outlined"
-                size="small"
-              />
-              <Chip
-                icon={<SchoolIcon />}
-                label={MOCK_USER_PROFILE.student.school}
-                size="small"
-                variant="outlined"
-              />
-            </Stack>
-          </Grid>
-
-          {/* KHU VỰC HUY HIỆU */}
-          <Grid item>
-            <Paper
-              elevation={0}
-              sx={{ p: 1, border: "1px solid #e0e0e0", borderRadius: 3 }}
-            >
-              <Stack direction="row" spacing={1} alignItems="center">
-                {displayedBadges.map((badge) => (
-                  <Tooltip key={badge.badge_id} title={badge.title}>
-                    <Avatar
-                      sx={{
-                        bgcolor: badge.color,
-                        width: 40,
-                        height: 40,
-                        fontSize: "1.2rem",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {badge.icon}
-                    </Avatar>
-                  </Tooltip>
-                ))}
-                {remainingBadgesCount > 0 && (
-                  <Tooltip title="Xem tất cả huy hiệu">
-                    <Avatar
-                      sx={{
-                        bgcolor: "grey.300",
-                        color: "grey.800",
-                        width: 40,
-                        height: 40,
-                        fontSize: "0.9rem",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                      }}
-                      onClick={() => setOpenBadgeDialog(true)}
-                    >
-                      +{remainingBadgesCount}
-                    </Avatar>
-                  </Tooltip>
-                )}
-              </Stack>
-            </Paper>
-          </Grid>
-        </Grid>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
+      
+      {/* 1. CARDS ROW */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2.5, mb: 4 }}>
+        <StatCard title="Điểm bài mới nhất" value={stats.latestScore} icon={<StarIcon />} color="warning" subtext="Loại bài: Kiểm tra (Test)" />
+        <StatCard title="Lớp đang tham gia" value={stats.numJoinClassess?.total_classes || 0} icon={<SchoolIcon />} color="info" subtext="Các lớp học hiện tại" />
+        <StatCard title="Giờ luyện tập" value={`${stats.totalPracticeTime || 0}h`} icon={<AccessTimeFilledIcon />} color="success" subtext="Tính trên bài Thích ứng" />
+        <StatCard title="Điểm trung bình" value={stats.avgTestScore} icon={<WorkspacePremiumIcon />} color="error" subtext="Tính trên các bài Kiểm tra" />
       </Box>
 
-      {/* 2. STATS */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Điểm bài mới nhất"
-            value={getLatestScore(MOCK_EXAM_HISTORY)}
-            icon={<StarIcon />}
-            color="warning"
-            subtext="Cố gắng phát huy!"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Lớp đang tham gia"
-            value={MOCK_ACTIVE_CLASSES.length}
-            icon={<SchoolIcon />}
-            color="info"
-            subtext={MOCK_ACTIVE_CLASSES.map((c) => c.subject).join(", ")}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Giờ luyện tập"
-            value={`${calculateStudyHours(MOCK_EXAM_HISTORY)}h`}
-            icon={<AccessTimeFilledIcon />}
-            color="success"
-            subtext="Tính trên bài thực hành"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Điểm trung bình"
-            value="8.2"
-            icon={<WorkspacePremiumIcon />}
-            color="error"
-            subtext="Top 15% của lớp"
-          />
-        </Grid>
-      </Grid>
-
-      {/* 3. CHARTS */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* TIẾN ĐỘ & SO SÁNH */}
-        <Grid item xs={12} md={8}>
-          <Stack spacing={3}>
-            {/* Chart 1: Xu hướng điểm số (Có lọc Môn + Thời gian) */}
-            <Paper
-              elevation={0}
-              sx={{ p: 3, borderRadius: 3, border: "1px solid #e0e0e0" }}
-            >
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 3, flexWrap: "wrap", gap: 2 }}
-              >
-                <Box>
-                  <Typography variant="h6" fontWeight={700}>
-                    📈 Xu hướng điểm số
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Kết quả các bài kiểm tra gần đây
-                  </Typography>
-                </Box>
-                <Stack direction="row" spacing={2}>
-                  <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel>Môn học</InputLabel>
-                    <Select
-                      value={progressSubject}
-                      label="Môn học"
-                      onChange={(e) => setProgressSubject(e.target.value)}
-                    >
-                      <MenuItem value="all">Tất cả</MenuItem>
-                      <MenuItem value="Toán">Toán</MenuItem>
-                      <MenuItem value="Lý">Lý</MenuItem>
-                      <MenuItem value="Hóa">Hóa</MenuItem>
-                      <MenuItem value="Anh">Anh</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <Select
-                      value={progressTimeRange}
-                      onChange={(e) => setProgressTimeRange(e.target.value)}
-                    >
-                      <MenuItem value="week">Tuần này</MenuItem>
-                      <MenuItem value="month">Tháng này</MenuItem>
-                      <MenuItem value="semester">Học kỳ</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Stack>
-              </Stack>
-              <Box sx={{ height: 350 }}>
-                <ResponsiveContainer>
-                  <LineChart data={getFilteredProgressData()}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" />
-                    <YAxis domain={[0, 10]} />
-                    <RechartsTooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="score"
-                      name={
-                        progressSubject === "all"
-                          ? "Điểm trung bình"
-                          : "Điểm số"
-                      }
-                      stroke="#2196f3"
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            </Paper>
-
-            {/* Chart 2: So sánh (Có lọc Thời gian) */}
-            <Paper
-              elevation={0}
-              sx={{ p: 3, borderRadius: 3, border: "1px solid #e0e0e0" }}
-            >
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 3 }}
-              >
-                <Box>
-                  <Typography variant="h6" fontWeight={700}>
-                    📊 So sánh với lớp
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Điểm trung bình của bạn vs Lớp
-                  </Typography>
-                </Box>
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <Select
-                    value={comparisonTimeRange}
-                    onChange={(e) => setComparisonTimeRange(e.target.value)}
-                  >
-                    <MenuItem value="week">Tuần này</MenuItem>
-                    <MenuItem value="month">Tháng này</MenuItem>
-                    <MenuItem value="semester">Cả kỳ</MenuItem>
-                  </Select>
-                </FormControl>
-              </Stack>
-              <Box sx={{ height: 340 }}>
-                <ResponsiveContainer>
-                  <BarChart
-                    data={currentComparisonData}
-                    barGap={2}
-                    layout="horizontal"
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="subject" />
-                    <YAxis domain={[0, 10]} />
-                    <RechartsTooltip cursor={{ fill: "transparent" }} />
-                    <Legend wrapperStyle={{ fontSize: "12px" }} />
-                    <Bar
-                      dataKey="myAvg"
-                      name="Bạn"
-                      fill="#4caf50"
-                      radius={[4, 4, 0, 0]}
-                      barSize={30}
-                    />
-                    <Bar
-                      dataKey="classAvg"
-                      name="TB Lớp"
-                      fill="#ff9800"
-                      radius={[4, 4, 0, 0]}
-                      barSize={30}
-                    />
-                    <ReferenceLine
-                      y={5}
-                      stroke="red"
-                      strokeDasharray="3 3"
-                      label={{
-                        value: "Đạt",
-                        position: "insideTopRight",
-                        fill: "red",
-                        fontSize: 10,
-                      }}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            </Paper>
+      {/* 2. CHARTS ROW */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 360px' }, gap: 3, mb: 4, alignItems: 'stretch' }}>
+        
+        {/* LINE CHART */}
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: "1px solid #e0e0e0", display: "flex", flexDirection: "column" }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4, flexWrap: "wrap", gap: 2 }}>
+            <Typography variant="h6" fontWeight={700}>📈 Xu hướng điểm số</Typography>
+            <Stack direction="row" spacing={2}>
+              <FormControl size="small" sx={{ minWidth: 130 }}>
+                <InputLabel>Loại bài</InputLabel>
+                <Select value={progressExamType} label="Loại bài" onChange={(e) => setProgressExamType(e.target.value)}>
+                  <MenuItem value="all">Tất cả</MenuItem>
+                  <MenuItem value="practice">Luyện tập</MenuItem>
+                  <MenuItem value="test">Kiểm tra</MenuItem>
+                  <MenuItem value="adaptive">Thích ứng</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <Select value={progressTimeRange} onChange={(e) => setProgressTimeRange(e.target.value)}>
+                  <MenuItem value="week">Tuần này</MenuItem>
+                  <MenuItem value="month">Tháng này</MenuItem>
+                  <MenuItem value="term">Học kỳ</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
           </Stack>
-        </Grid>
+          <Box sx={{ flexGrow: 1, minHeight: 320 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="name" tick={{fontSize: 12, fill: '#666'}} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 10]} tick={{fontSize: 12, fill: '#666'}} axisLine={false} tickLine={false} />
+                <RechartsTooltip />
+                <Line type="monotone" dataKey="score" name="Điểm số" stroke="#2196f3" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+        </Paper>
 
-        {/* CỘT PHẢI: KỸ NĂNG, PIE, AI */}
-        <Grid item xs={12} md={4}>
-          <Stack spacing={3}>
-            <Paper
-              elevation={0}
-              sx={{ p: 3, borderRadius: 3, border: "1px solid #e0e0e0" }}
-            >
-              <Typography
-                variant="h6"
-                fontWeight={700}
-                align="center"
-                gutterBottom
-              >
-                🕸️ Bản đồ Kỹ năng
-              </Typography>
-              <Box sx={{ height: 391 }}>
-                <ResponsiveContainer>
-                  <RadarChart
-                    cx="50%"
-                    cy="50%"
-                    outerRadius="70%"
-                    data={MOCK_SKILL_MAP}
-                  >
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                    <PolarRadiusAxis domain={[0, 100]} angle={30} />
-                    <Radar
-                      name="Điểm năng lực"
-                      dataKey="A"
-                      stroke="#8884d8"
-                      fill="#8884d8"
-                      fillOpacity={0.6}
-                    />
-                    <RechartsTooltip />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </Box>
-            </Paper>
-
-            <Card
-              sx={{
-                borderRadius: 3,
-                bgcolor: "#e8eaf6",
-                border: "1px solid #c5cae9",
-              }}
-            >
-              <CardContent>
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  spacing={1}
-                  sx={{ mb: 2 }}
-                >
-                  <AutoAwesomeIcon color="primary" />
-                  <Typography
-                    variant="h6"
-                    fontWeight={700}
-                    color="primary.main"
-                  >
-                    Gợi ý
-                  </Typography>
-                </Stack>
-                <List dense disablePadding>
-                  {MOCK_SUGGESTIONS.map((item, index) => (
-                    <React.Fragment key={item.id}>
-                      <ListItem alignItems="flex-start" sx={{ px: 0 }}>
-                        <ListItemAvatar sx={{ minWidth: 40 }}>
-                          <Avatar
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              bgcolor: "white",
-                              color: "primary.main",
-                              border: "1px solid #c5cae9",
-                            }}
-                          >
-                            {item.type === "topic" ? (
-                              <TrendingUpIcon fontSize="small" />
-                            ) : (
-                              <SchoolIcon fontSize="small" />
-                            )}
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography variant="subtitle2" fontWeight={600}>
-                              {item.title}
-                            </Typography>
-                          }
-                          secondary={item.reason}
-                        />
-                      </ListItem>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        fullWidth
-                        onClick={() => navigate("/student/practice")}
-                        sx={{ mb: 1 }}
-                      >
-                        Học ngay
-                      </Button>
-                      {index < MOCK_SUGGESTIONS.length - 1 && (
-                        <Divider sx={{ my: 1 }} />
-                      )}
-                    </React.Fragment>
-                  ))}
-                </List>
-              </CardContent>
-            </Card>
+        {/* RADAR CHART */}
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: "1px solid #e0e0e0", display: "flex", flexDirection: "column" }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+            <Typography variant="subtitle1" fontWeight={700}>🕸️ Bản đồ Kỹ năng</Typography>
           </Stack>
-        </Grid>
-      </Grid>
+          <FormControl size="small" fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Chọn Sách / Lộ trình</InputLabel>
+            <Select value={selectedPlan} label="Chọn Sách / Lộ trình" onChange={(e) => setSelectedPlan(e.target.value)}>
+              {myPlans.map(plan => (
+                <MenuItem key={plan.id} value={plan.id}>{plan.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Typography variant="caption" color="text.secondary" align="center" sx={{ display: 'block', fontStyle: 'italic' }}>
+            * Click vào tên chương để xem chi tiết
+          </Typography>
+          <Box sx={{ flexGrow: 1, minHeight: 250, cursor: 'pointer' }}>
+             <ResponsiveContainer width="100%" height="100%">
+               <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData} onClick={handleRadarClick}>
+                 <PolarGrid stroke="#e0e0e0" />
+                 <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#333', fontWeight: 600 }} />
+                 <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                 <Radar name="Độ thông thạo (%)" dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                 <RechartsTooltip />
+               </RadarChart>
+             </ResponsiveContainer>
+          </Box>
+        </Paper>
+      </Box>
 
-      {/* 4. HOẠT ĐỘNG GẦN ĐÂY (LỊCH SỬ) - CÓ BỘ LỌC NGÀY & NÚT MỞ RỘNG */}
-      <Paper
-        elevation={0}
-        sx={{ p: 3, borderRadius: 3, border: "1px solid #e0e0e0" }}
-      >
-        <Grid container alignItems="center" spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={4}>
-            <Typography variant="h6" fontWeight={700}>
-              📚 Hoạt động gần đây
-            </Typography>
+      {/* 3. AI SUGGESTIONS*/}
+      <Card sx={{ borderRadius: 3, bgcolor: "#f0f4f8", border: "1px solid #d9e2ec", boxShadow: "none", mb: 4 }}>
+        <CardContent sx={{ p: 3, pb: "16px !important" }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            <AutoAwesomeIcon color="primary" />
+            <Typography variant="h6" fontWeight={700} color="primary.dark">Cố vấn học tập AI</Typography>
+            <Chip label="Phân tích từ bài Thích ứng" size="small" sx={{ ml: 2, bgcolor: "primary.light", color: "primary.dark", fontWeight: 600, fontSize: '0.7rem' }}/>
+          </Stack>
+          
+          <Grid container spacing={2}>
+            {currentAiSuggestions.map((item) => (
+              <Grid item xs={12} md={6} key={item.id}>
+                <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid #e2e8f0", height: "100%" }}>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>{item.title}</Typography>
+                  <Typography variant="body2" color="text.secondary">{item.reason}</Typography>
+                </Paper>
+              </Grid>
+            ))}
           </Grid>
 
-          {/* Bộ lọc Từ ngày - Đến ngày */}
-          <Grid item xs={12} md={8}>
-            <Stack
-              direction="row"
-              spacing={2}
-              justifyContent={{ xs: "flex-start", md: "flex-end" }}
-            >
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+            <Pagination 
+              count={Math.ceil(MOCK_AI_SUGGESTIONS.length / aiItemsPerPage)} 
+              page={aiPage} 
+              onChange={(e, val) => setAiPage(val)} 
+              color="primary" 
+              size="small"
+            />
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* 4. HISTORY TABLE */}
+      <Paper elevation={0} sx={{ borderRadius: 3, border: "1px solid #e0e0e0", overflow: 'hidden' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, py: 2, bgcolor: '#fff' }}>
+          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <FilterListIcon color="action" />
+              <Typography variant="h6" fontWeight={700}>Lịch sử hoạt động</Typography>
+            </Stack>
+            <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
               <TextField
                 label="Từ ngày"
                 type="date"
                 size="small"
                 InputLabelProps={{ shrink: true }}
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => { setStartDate(e.target.value); setPage(0); }}
               />
               <TextField
                 label="Đến ngày"
@@ -689,156 +336,84 @@ export default function StudentDashboard() {
                 size="small"
                 InputLabelProps={{ shrink: true }}
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => { setEndDate(e.target.value); setPage(0); }}
               />
+        
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <Select value={activityType} onChange={(e) => { setActivityType(e.target.value); setPage(0); }}>
+                <MenuItem value="all">Tất cả</MenuItem>
+                <MenuItem value="practice">Luyện tập</MenuItem>
+                <MenuItem value="test">Kiểm tra</MenuItem>
+                <MenuItem value="adaptive">Thích ứng</MenuItem>
+              </Select>
+            </FormControl>
             </Stack>
-          </Grid>
-        </Grid>
+          </Stack>
+        </Box>
 
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ bgcolor: "grey.50" }}>
-                <TableCell>
-                  <strong>Tên bài / Hoạt động</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Môn học</strong>
-                </TableCell>
-                <TableCell align="center">
-                  <strong>Điểm số</strong>
-                </TableCell>
-                <TableCell align="right">
-                  <strong>Thời gian</strong>
-                </TableCell>
+        <TableContainer sx={{ maxHeight: 400 }}>
+          <Table stickyHeader>
+            <TableHead sx ={{ bgcolor: '#f8fafc' }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700 }}>Tên bài</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Môn học</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Loại</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Thời gian nộp</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Điểm số</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {displayedHistory.length > 0 ? (
-                displayedHistory.map((row) => (
-                  <TableRow key={row.et_id} hover>
-                    <TableCell component="th" scope="row">
-                      <Typography variant="body2" fontWeight={500}>
-                        {row.exam.title}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={row.exam.class.subject}
-                        size="small"
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        label={row.final_score}
-                        color={
-                          row.final_score >= 8
-                            ? "success"
-                            : row.final_score >= 5
-                            ? "warning"
-                            : "error"
-                        }
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      {new Date(row.doneAt).toLocaleString("vi-VN")}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
-                    <Typography color="text.secondary">
-                      Không tìm thấy hoạt động nào trong khoảng thời gian này.
-                    </Typography>
+              {historyData.map((row, index) => (
+                <TableRow key={index} hover>
+                  <TableCell><Typography variant="body2" fontWeight={500}>{row.title || 'Bài tập'}</Typography></TableCell>
+                  <TableCell><Chip label={row.subject || 'N/A'} size="small" variant="outlined" /></TableCell>
+
+                  {/* Hiển thị chip theo loại bài */}
+                  <TableCell align="center">
+                    <Chip 
+                      label={row.exam_type ? row.exam_type.toUpperCase() : 'PRACTICE'} 
+                      size="small" 
+                      color={row.exam_type === 'test' ? 'error' : row.exam_type === 'adaptive' ? 'secondary' : 'default'} 
+                      sx={{ fontWeight: 600, fontSize: "0.7rem" }}
+                    />
                   </TableCell>
+
+                  <TableCell align="center"><Typography variant="body2">{new Date(row.doneAt).toLocaleDateString('vi-VN')}</Typography></TableCell>
+                  <TableCell align="center"><Typography fontWeight={700}>{row.score}</Typography></TableCell>
                 </TableRow>
+              ))}
+              {historyData.length === 0 && (
+                 <TableRow>
+                   <TableCell colSpan={4} align="center" sx={{py: 3}}>Chưa có lịch sử làm bài</TableCell>
+                 </TableRow>
               )}
             </TableBody>
           </Table>
         </TableContainer>
-
-        {/* Nút Xem tất cả / Thu gọn */}
-        {filteredHistory.length > 5 && (
-          <Box sx={{ textAlign: "center", mt: 2 }}>
-            <Button
-              variant="text"
-              endIcon={
-                isHistoryExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />
-              }
-              onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
-            >
-              {isHistoryExpanded
-                ? "Thu gọn"
-                : `Xem tất cả (${filteredHistory.length})`}
-            </Button>
-          </Box>
-        )}
+        <TablePagination rowsPerPageOptions={[5, 10]} component="div" count={historyTotal > 0 ? historyTotal : -1} rowsPerPage={rowsPerPage} page={page} onPageChange={(e, newPage) => setPage(newPage)} onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }} labelRowsPerPage="Số dòng:" />
       </Paper>
 
-      {/* DIALOG HIỂN THỊ TẤT CẢ HUY HIỆU */}
-      <Dialog
-        open={openBadgeDialog}
-        onClose={() => setOpenBadgeDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          Bộ sưu tập Huy hiệu
-          <IconButton onClick={() => setOpenBadgeDialog(false)}>
-            <CloseIcon />
-          </IconButton>
+      {/* Dialog chi tiết chủ đề theo chương */}
+      <Dialog open={openDrillDown} onClose={() => setOpenDrillDown(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700 }}>
+          Phân tích: {selectedChapterName}
+          <IconButton onClick={() => setOpenDrillDown(false)}><CloseIcon /></IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          <Grid container spacing={2}>
-            {MOCK_BADGES.map((badge) => (
-              <Grid item xs={12} sm={6} key={badge.badge_id}>
-                <Paper
-                  variant="outlined"
-                  sx={{ p: 2, display: "flex", alignItems: "center", gap: 2 }}
-                >
-                  <Avatar
-                    sx={{
-                      bgcolor: badge.color,
-                      width: 50,
-                      height: 50,
-                      fontSize: "1.5rem",
-                    }}
-                  >
-                    {badge.icon}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="subtitle2" fontWeight={700}>
-                      {badge.title}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ lineHeight: 1.2, display: "block" }}
-                    >
-                      {badge.description}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.disabled"
-                      sx={{ fontSize: "0.65rem" }}
-                    >
-                      Nhận ngày:{" "}
-                      {new Date(badge.claimedAt).toLocaleDateString("vi-VN")}
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            Tỷ lệ thông thạo các chủ đề con (dựa trên bài Luyện tập Thích ứng).
+          </Typography>
+          <Box sx={{ width: '100%', height: 250, mt: 2 }}>
+            <ResponsiveContainer>
+              <BarChart data={drillDownData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                <XAxis type="number" domain={[0, 100]} />
+                <YAxis dataKey="topic" type="category" width={100} tick={{fontSize: 12}} />
+                <RechartsTooltip />
+                <Bar dataKey="percent" name="Độ thông thạo (%)" fill="#8884d8" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
         </DialogContent>
       </Dialog>
     </Container>

@@ -15,16 +15,56 @@ export class StudentDashboard {
 
     async scoreOfLatestTest(student_id: string) {
         return await this.prisma.exam_taken.findFirst({
-            where: {isDone: true, student_uid: student_id},
+            where: {isDone: true, student_uid: student_id, exam_session: { exam_type: ExamType.test }},
             select: {final_score: true},
             orderBy: {doneAt: "desc"}
-        }).then(res => res.final_score)
+        }).then(res => res?.final_score || 0)
+    }
+    
+    async averageTestScore(student_id: string) {
+      // 1. Lấy tất cả các bài Test đã nộp
+      const scoreSet = await this.prisma.exam_taken.findMany({
+        where: {
+          student_uid: student_id,
+          isDone: true,
+          exam_id: { not: null },
+          session_id: { not: null },
+          exam_session: { exam_type: ExamType.test }, // Chỉ lấy bài Test
+        },
+        select: {
+          final_score: true,
+          exam_id: true,
+          session_id: true,
+        },
+      });
+
+      if (scoreSet.length === 0) return 0.0;
+
+      // 2. Nhóm lại để lấy điểm cao nhất của mỗi bài
+      const groupedScores = new Map();
+      scoreSet.forEach((record) => {
+        const key = `${record.exam_id}_${record.session_id}`;
+        const currentScore = record.final_score.toNumber();
+        if (!groupedScores.has(key)) {
+          groupedScores.set(key, currentScore);
+        } else {
+          const existingScore = groupedScores.get(key);
+          if (currentScore > existingScore) {
+            groupedScores.set(key, currentScore);
+          }
+        }
+      });
+
+      // 3. Tính điểm trung bình
+      let sum = 0;
+      groupedScores.forEach((score) => (sum += score));
+      return Number((sum / groupedScores.size).toFixed(2));
     }
 
     async currentClasses(student_id: string) {
         return await this.prisma.class.findMany({
             where: {
-                learning: {some: {student_uid: student_id}},
+                learning: {some: {student_uid: student_id, status: "accepted"}},
                 status: {in: ["pending", "ongoing"]}
             },
             select: {
@@ -51,6 +91,13 @@ export class StudentDashboard {
         }).then(res => res.reduce((acc, cur) => acc + (cur.doneAt.getTime() - cur.startAt.getTime()), 0) / (1000 * 60 * 60))
     }
 
+    async testStreak(student_id: string) {
+        return await this.prisma.student_analytics.findFirst({
+            where:{ student_id },
+            select: { streak: true }
+        }).then(res => res?.streak)
+    }
+
     async currentActivities(student_id: string, filter: Partial<FilterDTO>) {
         const take: number = Number(filter.limit ?? 10)
         const skip: number = ((filter.page ?? 1) - 1) * (filter.limit ?? 10)
@@ -59,12 +106,18 @@ export class StudentDashboard {
             where: {
                 student_uid: student_id,
                 isDone: true,
+                // Lọc theo loại bài thi 
+                ...(filter.exam_type && filter.exam_type !== 'all' ? {
+                    exam_session: { exam_type: filter.exam_type as any }
+                } : {}),
+
                 ...(filter.startAt ? {startAt: {gte: filter.startAt}} : {}),
                 ...(filter.endAt ? {doneAt: {lte: filter.endAt}} : {})
             },
             select: {
                 exam_session: {
                     select: {
+                        exam_type: true,
                         exam: {
                             select: {
                                 title: true
@@ -93,6 +146,7 @@ export class StudentDashboard {
         }).then(res => res.map(ex => ({
             title: ex.exam_session.exam.title,
             subject: ex.exam_session.exam_open_in[0].class.subject,
+            exam_type: ex.exam_session.exam_type,
             score: ex.final_score,
             doneAt: ex.doneAt
         })))
@@ -114,13 +168,10 @@ export class StudentDashboard {
         const currentDate = new Date()
         const dateAgo = new Date(currentDate)
         dateAgo.setDate(
-            timeRange == TimeRange.week ? 
-            currentDate.getDate() - 7 : 
-            (
-                timeRange == TimeRange.month ? 
-                currentDate.getDate() - 30 : 
-                currentDate.getDate() - 365
-            )
+            timeRange == TimeRange.week ? currentDate.getDate() - 7 : 
+            timeRange == TimeRange.month ? currentDate.getDate() - 30 : 
+            timeRange == TimeRange.term ? currentDate.getDate() - 112 : 
+            currentDate.getDate() - 365
         )
 
         currentDate.setHours(23, 59, 59, 999)
@@ -181,6 +232,12 @@ export class StudentDashboard {
                 const weekOfMonth = Math.ceil((d.getDate() + firstDayOfMonth.getDay()) / 7);
                 return `Tháng ${month} - Tuần ${weekOfMonth}`;
             } 
+
+            if (range == TimeRange.term) {
+                const diffTime = Math.abs(currentDate.getTime() - d.getTime());
+                const weekNum = 16 - Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+                return `Tuần ${weekNum > 0 ? weekNum : 1}`;
+            }
 
             return `${year}-${month}`; 
         };
@@ -264,4 +321,41 @@ export class StudentDashboard {
 
         return groupedList || []
     }
+
+    // Lấy chi tiết các chủ đề khi click vào 1 chương
+    async skillsMapDetail(student_id: string, plan_id: string, chapter_id: string) {
+        const detailCategories: {
+            category_id: string,
+            category_name: string,
+            correct_cnt: number,
+            fail_cnt: number
+        }[] = await this.prisma.$queryRaw`
+            SELECT 
+                c."category_id", 
+                c."category_name",
+                COUNT(CASE WHEN qet."isCorrect" = true THEN 1 END) AS correct_cnt,
+                COUNT(CASE WHEN qet."isCorrect" = false THEN 1 END) AS fail_cnt
+            FROM public."Categories" AS c
+            JOIN public."Structure" AS st ON c."category_id" = st."cate_id"
+            JOIN public."Lesson_Plan" AS lp ON st."plan_id" = lp."plan_id"
+            JOIN public."Questions" AS q ON c."category_id" = q."category_id"
+            JOIN public."Question_for_exam_taken" AS qet ON q."ques_id" = qet."ques_id"
+            JOIN public."Exam_taken" as et on et."et_id" = qet."et_id"
+            WHERE 
+                lp."plan_id" = ${plan_id} 
+                AND c."parent_id" = ${chapter_id} -- Lọc lấy các chủ đề con của Chương được click
+                AND et."student_uid" = ${student_id} 
+                AND et."exam_id" IS NULL
+                AND et."session_id" IS NULL
+            GROUP BY c."category_id", c."category_name";
+        `
+        
+        return detailCategories.map(item => ({
+            category_id: item.category_id,
+            category_name: item.category_name,
+            correct_cnt: Number(item.correct_cnt),
+            fail_cnt: Number(item.fail_cnt)
+        })) || [];
+    }
 }
+

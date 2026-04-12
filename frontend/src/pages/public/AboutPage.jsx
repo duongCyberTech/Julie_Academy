@@ -102,7 +102,7 @@ const StyledImageBox = React.memo(({ src, alt }) => {
         sx={{
           width: "100%",
           height: "auto",
-          aspectRatio: "4/3",
+          aspectRatio: "4/4",
           objectFit: "cover",
           borderRadius: theme.shape.borderRadius * 2,
           display: "block",

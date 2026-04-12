@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box, Typography, Button, Paper, CircularProgress, Stack,
@@ -153,6 +153,8 @@ function AssignmentPage() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   
+  const isMountedRef = useRef(true);
+
   const [token] = useState(() => localStorage.getItem("token"));
   const [masterExams, setMasterExams] = useState([]);
   const [tutorClasses, setTutorClasses] = useState([]);
@@ -169,23 +171,36 @@ function AssignmentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
+  const commonInputSx = useMemo(() => ({ bgcolor: "background.paper", borderRadius: 1 }), []);
+
   const handleCloseSnackbar = useCallback(() => setSnackbar((prev) => ({ ...prev, open: false })), []);
 
-  const fetchData = useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const [examsRes, classesRes] = await Promise.all([getMyExams(token), getClassesByTutor(token)]);
-      setMasterExams(Array.isArray(examsRes) ? examsRes : examsRes?.data || []);
-      setTutorClasses(Array.isArray(classesRes) ? classesRes : classesRes?.data || []);
-    } catch (err) {
-      setSnackbar({ open: true, message: "Không thể tải dữ liệu.", severity: "error" });
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    let isMounted = true;
+    const initData = async () => {
+      if (!token) return;
+      setLoading(true);
+      try {
+        const [examsRes, classesRes] = await Promise.all([getMyExams(token), getClassesByTutor(token)]);
+        if (isMounted) {
+          setMasterExams(Array.isArray(examsRes) ? examsRes : examsRes?.data || []);
+          setTutorClasses(Array.isArray(classesRes) ? classesRes : classesRes?.data || []);
+        }
+      } catch (err) {
+        if (isMounted) setSnackbar({ open: true, message: "Không thể tải dữ liệu.", severity: "error" });
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    initData();
+    return () => { isMounted = false; };
+  }, [token]);
 
   const handleSelectExam = useCallback((event, newValue) => {
     setSelectedExam(newValue);
@@ -196,6 +211,10 @@ function AssignmentPage() {
       }
     }
   }, [startAt, expireAt]);
+
+  const handleSelectClasses = useCallback((_, val) => {
+    setSelectedClasses(val);
+  }, []);
 
   const handleStartAtChange = useCallback((newValue) => {
     setStartAt(newValue);
@@ -211,6 +230,15 @@ function AssignmentPage() {
     }
   }, [selectedExam, expireAt]);
 
+  const handleChangeExamType = useCallback((e) => setExamType(e.target.value), []);
+  const handleChangeExpireAt = useCallback((n) => setExpireAt(n), []);
+  const handleChangeRatio = useCallback((e) => {
+    setRatio(Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)));
+  }, []);
+  const handleChangeLimit = useCallback((e) => {
+    setLimitTaken(Math.max(1, parseInt(e.target.value, 10) || 1));
+  }, []);
+
   const timeWarning = useMemo(() => {
     if (!selectedExam || !startAt || !startAt.isValid() || !expireAt || !expireAt.isValid()) return null;
     const minRequiredExpire = startAt.add(selectedExam.duration, "minute");
@@ -220,7 +248,7 @@ function AssignmentPage() {
     return null;
   }, [startAt, expireAt, selectedExam]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!selectedExam) return setSnackbar({ open: true, message: "Chọn đề thi ở Cột 1.", severity: "warning" });
     if (selectedClasses.length === 0) return setSnackbar({ open: true, message: "Chọn lớp ở Cột 2.", severity: "warning" });
     if (timeWarning) return setSnackbar({ open: true, message: "Chỉnh lại thời gian đóng đề.", severity: "error" });
@@ -236,19 +264,22 @@ function AssignmentPage() {
 
     try {
       await createExamSession(selectedExam.exam_id, selectedClasses.map((c) => c.class_id), payload, token);
-      setSnackbar({ open: true, message: `Giao bài thành công!`, severity: "success" });
-      setSelectedExam(null);
-      setSelectedClasses([]);
-      setStartAt(dayjs().startOf("minute"));
-      setExpireAt(dayjs().add(1, "hour").startOf("minute"));
+      if (isMountedRef.current) {
+        setSnackbar({ open: true, message: `Giao bài thành công!`, severity: "success" });
+        setSelectedExam(null);
+        setSelectedClasses([]);
+        setStartAt(dayjs().startOf("minute"));
+        setExpireAt(dayjs().add(1, "hour").startOf("minute"));
+      }
     } catch (err) {
-      setSnackbar({ open: true, message: err.response?.data?.message || "Thất bại.", severity: "error" });
+      if (isMountedRef.current) {
+        setSnackbar({ open: true, message: err.response?.data?.message || "Thất bại.", severity: "error" });
+      }
     } finally {
-      setIsSubmitting(false);
+      if (isMountedRef.current) setIsSubmitting(false);
     }
-  };
+  }, [selectedExam, selectedClasses, timeWarning, startAt, expireAt, limitTaken, examType, ratio, token]);
 
-  if (loading) return <Box height="100vh" display="flex" justifyContent="center" alignItems="center"><CircularProgress /></Box>;
 
   return (
     <PageWrapper>
@@ -262,6 +293,8 @@ function AssignmentPage() {
       <MainContent>
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
           <Grid container spacing={3} sx={{ height: "100%", m: 0, width: "100%", alignItems: "stretch" }}>
+            
+            {/* CỘT 1: CHỌN ĐỀ THI */}
             <Grid size={{ xs: 12, md: 4 }} sx={{ pl: "0 !important", py: "0 !important" }}>
               <ColumnCard>
                 <CardHeader>
@@ -272,49 +305,59 @@ function AssignmentPage() {
                   </Box>
                 </CardHeader>
                 <CardBody>
-                  <Autocomplete
-                    options={masterExams}
-                    getOptionLabel={(option) => option?.title || ""}
-                    isOptionEqualToValue={(option, value) => option.exam_id === value.exam_id}
-                    getOptionKey={(option) => option.exam_id} 
-                    value={selectedExam}
-                    onChange={handleSelectExam}
-                    renderInput={(params) => <TextField {...params} label="Nhập tên đề thi..." fullWidth size="small" sx={{ bgcolor: "background.paper", borderRadius: 1 }} />}
-                    renderOption={(props, option) => {
-                      const { key, ...otherProps } = props;
-                      return (
-                        <Box component="li" key={key} {...otherProps} sx={{ display: "block !important", py: 1.5 }}>
-                          <Typography variant="body2" fontWeight={600} noWrap color="text.primary">{option.title}</Typography>
-                          <Stack direction="row" spacing={1} mt={1}>
-                            <Chip label={`${option.total_ques} câu`} size="small" sx={{ height: 22, fontSize: "0.75rem", fontWeight: 600, bgcolor: alpha(theme.palette.primary.main, 0.1), color: "primary.main" }} />
-                            <Chip label={option.level} size="small" variant="outlined" sx={{ height: 22, fontSize: "0.75rem", fontWeight: 600 }} />
-                          </Stack>
-                        </Box>
-                      );
-                    }}
-                  />
-                  <SectionDivider><Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ px: 1 }}>ĐỀ ĐÃ CHỌN</Typography></SectionDivider>
-                  {selectedExam ? (
-                    <Box p={2} bgcolor={alpha(theme.palette.primary.main, 0.05)} borderRadius={3} border="1px dashed" borderColor="primary.main">
-                      <Box display="flex" alignItems="center" gap={1.5} mb={1}>
-                        <DescriptionOutlinedIcon sx={{ fontSize: 28, color: "primary.main" }} />
-                        <Typography variant="body1" color="primary.main" fontWeight={700}>{selectedExam.title}</Typography>
-                      </Box>
-                      <Stack direction="row" spacing={1} flexWrap="wrap">
-                        <Chip icon={<AccessTimeIcon />} label={`${selectedExam.duration} phút`} size="small" sx={{ bgcolor: "background.paper", fontWeight: 600 }} />
-                        <Chip label={`${selectedExam.total_ques} câu`} size="small" sx={{ bgcolor: "background.paper", fontWeight: 600 }} />
-                      </Stack>
+                  {/* HIỂN THỊ LOADING Ở ĐÂY NẾU ĐANG CALL API */}
+                  {loading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%" py={4}>
+                      <CircularProgress size={30} />
                     </Box>
                   ) : (
-                    <Box textAlign="center" py={4} color="text.disabled">
-                      <DescriptionOutlinedIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1 }} />
-                      <Typography variant="body2">Chưa chọn đề</Typography>
-                    </Box>
+                    <>
+                      <Autocomplete
+                        options={masterExams}
+                        getOptionLabel={(option) => option?.title || ""}
+                        isOptionEqualToValue={(option, value) => option.exam_id === value.exam_id}
+                        getOptionKey={(option) => option.exam_id} 
+                        value={selectedExam}
+                        onChange={handleSelectExam}
+                        renderInput={(params) => <TextField {...params} label="Nhập tên đề thi..." fullWidth size="small" sx={commonInputSx} />}
+                        renderOption={(props, option) => {
+                          const { key, ...otherProps } = props;
+                          return (
+                            <Box component="li" key={key} {...otherProps} sx={{ display: "block !important", py: 1.5 }}>
+                              <Typography variant="body2" fontWeight={600} noWrap color="text.primary">{option.title}</Typography>
+                              <Stack direction="row" spacing={1} mt={1}>
+                                <Chip label={`${option.total_ques} câu`} size="small" sx={{ height: 22, fontSize: "0.75rem", fontWeight: 600, bgcolor: alpha(theme.palette.primary.main, 0.1), color: "primary.main" }} />
+                                <Chip label={option.level} size="small" variant="outlined" sx={{ height: 22, fontSize: "0.75rem", fontWeight: 600 }} />
+                              </Stack>
+                            </Box>
+                          );
+                        }}
+                      />
+                      <SectionDivider><Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ px: 1 }}>ĐỀ ĐÃ CHỌN</Typography></SectionDivider>
+                      {selectedExam ? (
+                        <Box p={2} bgcolor={alpha(theme.palette.primary.main, 0.05)} borderRadius={3} border="1px dashed" borderColor="primary.main">
+                          <Box display="flex" alignItems="center" gap={1.5} mb={1}>
+                            <DescriptionOutlinedIcon sx={{ fontSize: 28, color: "primary.main" }} />
+                            <Typography variant="body1" color="primary.main" fontWeight={700}>{selectedExam.title}</Typography>
+                          </Box>
+                          <Stack direction="row" spacing={1} flexWrap="wrap">
+                            <Chip icon={<AccessTimeIcon />} label={`${selectedExam.duration} phút`} size="small" sx={{ bgcolor: "background.paper", fontWeight: 600 }} />
+                            <Chip label={`${selectedExam.total_ques} câu`} size="small" sx={{ bgcolor: "background.paper", fontWeight: 600 }} />
+                          </Stack>
+                        </Box>
+                      ) : (
+                        <Box textAlign="center" py={4} color="text.disabled">
+                          <DescriptionOutlinedIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1 }} />
+                          <Typography variant="body2">Chưa chọn đề</Typography>
+                        </Box>
+                      )}
+                    </>
                   )}
                 </CardBody>
               </ColumnCard>
             </Grid>
 
+            {/* CỘT 2: CHỌN LỚP HỌC */}
             <Grid size={{ xs: 12, md: 4 }} sx={{ py: "0 !important" }}>
               <ColumnCard>
                 <CardHeader>
@@ -325,48 +368,58 @@ function AssignmentPage() {
                   </Box>
                 </CardHeader>
                 <CardBody>
-                  <Autocomplete
-                    multiple
-                    options={tutorClasses}
-                    getOptionLabel={(option) => option?.classname || ""}
-                    isOptionEqualToValue={(option, value) => option.class_id === value.class_id}
-                    getOptionKey={(option) => option.class_id}
-                    value={selectedClasses}
-                    onChange={(_, val) => setSelectedClasses(val)}
-                    disableCloseOnSelect
-                    renderInput={(params) => <TextField {...params} label="Tìm lớp học..." placeholder="Chọn lớp..." size="small" sx={{ bgcolor: "background.paper", borderRadius: 1 }} />}
-                    renderTags={(value, getTagProps) =>
-                      value.map((option, index) => {
-                        const { key, ...tagProps } = getTagProps({ index });
-                        return (
-                          <Chip key={key} label={option.classname} {...tagProps} size="small" sx={{ m: 0.5, fontWeight: 600, bgcolor: alpha(theme.palette.primary.main, 0.1), color: "primary.main" }} />
-                        );
-                      })
-                    }
-                  />
-                  <SectionDivider><Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ px: 1 }}>DANH SÁCH ({selectedClasses.length})</Typography></SectionDivider>
-                  {selectedClasses.length > 0 ? (
-                    <Stack spacing={1.5}>
-                      {selectedClasses.map((cls) => (
-                        <Paper key={cls.class_id} variant="outlined" sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1.5, borderRadius: 2, borderColor: isDark ? theme.palette.midnight?.border : "divider" }}>
-                          <Avatar sx={{ width: 36, height: 36, bgcolor: alpha(theme.palette.primary.main, 0.15), color: "primary.main", fontWeight: 700, fontSize: "1rem" }}>{cls.classname.charAt(0)}</Avatar>
-                          <Box flex={1}>
-                            <Typography variant="body2" fontWeight={600} color="text.primary">{cls.classname}</Typography>
-                            <Typography variant="caption" color="text.secondary">Sĩ số: {cls.nb_of_student || 0}</Typography>
-                          </Box>
-                        </Paper>
-                      ))}
-                    </Stack>
-                  ) : (
-                    <Box textAlign="center" py={4} color="text.disabled">
-                      <SchoolOutlinedIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1 }} />
-                      <Typography variant="body2">Chưa chọn lớp</Typography>
+                  {/* HIỂN THỊ LOADING Ở ĐÂY NẾU ĐANG CALL API */}
+                  {loading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%" py={4}>
+                      <CircularProgress size={30} />
                     </Box>
+                  ) : (
+                    <>
+                      <Autocomplete
+                        multiple
+                        options={tutorClasses}
+                        getOptionLabel={(option) => option?.classname || ""}
+                        isOptionEqualToValue={(option, value) => option.class_id === value.class_id}
+                        getOptionKey={(option) => option.class_id}
+                        value={selectedClasses}
+                        onChange={handleSelectClasses}
+                        disableCloseOnSelect
+                        renderInput={(params) => <TextField {...params} label="Tìm lớp học..." placeholder="Chọn lớp..." size="small" sx={commonInputSx} />}
+                        renderTags={(value, getTagProps) =>
+                          value.map((option, index) => {
+                            const { key, ...tagProps } = getTagProps({ index });
+                            return (
+                              <Chip key={key} label={option.classname} {...tagProps} size="small" sx={{ m: 0.5, fontWeight: 600, bgcolor: alpha(theme.palette.primary.main, 0.1), color: "primary.main" }} />
+                            );
+                          })
+                        }
+                      />
+                      <SectionDivider><Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ px: 1 }}>DANH SÁCH ({selectedClasses.length})</Typography></SectionDivider>
+                      {selectedClasses.length > 0 ? (
+                        <Stack spacing={1.5}>
+                          {selectedClasses.map((cls) => (
+                            <Paper key={cls.class_id} variant="outlined" sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1.5, borderRadius: 2, borderColor: isDark ? theme.palette.midnight?.border : "divider" }}>
+                              <Avatar sx={{ width: 36, height: 36, bgcolor: alpha(theme.palette.primary.main, 0.15), color: "primary.main", fontWeight: 700, fontSize: "1rem" }}>{cls.classname.charAt(0)}</Avatar>
+                              <Box flex={1}>
+                                <Typography variant="body2" fontWeight={600} color="text.primary">{cls.classname}</Typography>
+                                <Typography variant="caption" color="text.secondary">Sĩ số: {cls.nb_of_student || 0}</Typography>
+                              </Box>
+                            </Paper>
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Box textAlign="center" py={4} color="text.disabled">
+                          <SchoolOutlinedIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1 }} />
+                          <Typography variant="body2">Chưa chọn lớp</Typography>
+                        </Box>
+                      )}
+                    </>
                   )}
                 </CardBody>
               </ColumnCard>
             </Grid>
 
+            {/* CỘT 3: CẤU HÌNH & GIAO (Luôn hiển thị vì không phụ thuộc API fetch initial) */}
             <Grid size={{ xs: 12, md: 4 }} sx={{ pr: "0 !important", py: "0 !important" }}>
               <ColumnCard sx={{ borderColor: "primary.main", borderWidth: isDark ? 1 : 2 }}>
                 <CardHeader sx={{ bgcolor: isDark ? alpha(theme.palette.primary.main, 0.15) : alpha(theme.palette.primary.main, 0.05) }}>
@@ -378,15 +431,15 @@ function AssignmentPage() {
                 </CardHeader>
                 <CardBody>
                   <Stack spacing={2.5}>
-                    <FormControl fullWidth size="small" sx={{ bgcolor: "background.paper", borderRadius: 1 }}>
+                    <FormControl fullWidth size="small" sx={commonInputSx}>
                       <InputLabel>Loại bài tập</InputLabel>
-                      <Select value={examType} label="Loại bài tập" onChange={(e) => setExamType(e.target.value)}>
+                      <Select value={examType} label="Loại bài tập" onChange={handleChangeExamType}>
                         <MenuItem value="practice">Luyện tập</MenuItem>
                         <MenuItem value="test">Kiểm tra</MenuItem>
                       </Select>
                     </FormControl>
                     {examType === "test" && (
-                      <TextField label="Trọng số điểm" type="number" size="small" value={ratio} onChange={(e) => setRatio(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} InputProps={{ endAdornment: <InputAdornment position="end"><PercentIcon fontSize="small" /></InputAdornment> }} sx={{ bgcolor: "background.paper", borderRadius: 1 }} />
+                      <TextField label="Trọng số điểm" type="number" size="small" value={ratio} onChange={handleChangeRatio} InputProps={{ endAdornment: <InputAdornment position="end"><PercentIcon fontSize="small" /></InputAdornment> }} sx={commonInputSx} />
                     )}
                     <SectionDivider><Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ px: 1 }}>THỜI GIAN</Typography></SectionDivider>
                     <DesktopDateTimePicker
@@ -395,18 +448,18 @@ function AssignmentPage() {
                       onChange={handleStartAtChange}
                       format="DD/MM/YYYY HH:mm"
                       ampm={false}
-                      slotProps={{ textField: { size: "small", fullWidth: true, placeholder: "DD/MM/YYYY HH:mm", inputProps: { readOnly: false }, sx: { bgcolor: "background.paper", borderRadius: 1 } } }}
+                      slotProps={{ textField: { size: "small", fullWidth: true, placeholder: "DD/MM/YYYY HH:mm", inputProps: { readOnly: false }, sx: commonInputSx } }}
                     />
                     <DesktopDateTimePicker
                       label="Thời gian đóng đề"
                       value={expireAt}
-                      onChange={(n) => setExpireAt(n)}
+                      onChange={handleChangeExpireAt}
                       format="DD/MM/YYYY HH:mm"
                       ampm={false}
-                      slotProps={{ textField: { size: "small", fullWidth: true, placeholder: "DD/MM/YYYY HH:mm", inputProps: { readOnly: false }, sx: { bgcolor: "background.paper", borderRadius: 1 } } }}
+                      slotProps={{ textField: { size: "small", fullWidth: true, placeholder: "DD/MM/YYYY HH:mm", inputProps: { readOnly: false }, sx: commonInputSx } }}
                     />
                     {timeWarning && <Alert severity="warning" sx={{ borderRadius: 2, fontWeight: 500 }}>{timeWarning}</Alert>}
-                    <TextField label="Số lần làm bài tối đa" type="number" size="small" value={limitTaken} onChange={(e) => setLimitTaken(Math.max(1, parseInt(e.target.value) || 1))} InputProps={{ endAdornment: <InputAdornment position="end">lần</InputAdornment> }} sx={{ bgcolor: "background.paper", borderRadius: 1 }} />
+                    <TextField label="Số lần làm bài tối đa" type="number" size="small" value={limitTaken} onChange={handleChangeLimit} InputProps={{ endAdornment: <InputAdornment position="end">lần</InputAdornment> }} sx={commonInputSx} />
                   </Stack>
                 </CardBody>
                 <CardFooter>

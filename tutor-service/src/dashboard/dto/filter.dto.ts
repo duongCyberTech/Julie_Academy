@@ -5,6 +5,7 @@ import { IsDate, IsEnum, IsNumber, IsOptional } from "class-validator";
 export enum TimeRange {
     week = "week",
     month = "month",
+    term = "term",
     year = "year"
 }
 
