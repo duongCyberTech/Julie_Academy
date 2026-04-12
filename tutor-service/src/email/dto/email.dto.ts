@@ -1,5 +1,5 @@
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
-import { Period } from "@prisma/client";
+import { EmailTemplateType, Period } from "@prisma/client";
 
 export class EmailConfigDto {
   @IsString()
@@ -37,4 +37,13 @@ export class EmailConfigDto {
   @IsOptional()
   @IsBoolean()
   create_as_template?: boolean = false;
+}
+
+export class EmailTemplateCreateDto {
+  @IsString()
+  body: string
+
+  @IsOptional()
+  @IsEnum(EmailTemplateType)
+  type: EmailTemplateType = EmailTemplateType.public
 }
