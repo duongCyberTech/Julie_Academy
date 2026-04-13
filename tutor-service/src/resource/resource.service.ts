@@ -66,7 +66,7 @@ export class FolderService {
         let result = []
         
         for (const item of fatherLayer) { 
-            const children = await this.traverseFolderTree(class_id, item.folder_id)
+            const children: any = await this.traverseFolderTree(class_id, item.folder_id)
             
             const formattedItem = {
                 ...item,
@@ -198,7 +198,7 @@ export class ResourceService {
                 data: {
                     did: fileUploaded.id,
                     title: data.title,
-                    description: data.description,
+                    description: data.description ? data.description : "",
                     createAt: new Date(),
                     updateAt: new Date(),
                     file_path: fileUploaded.url,
@@ -244,12 +244,13 @@ export class ResourceService {
 
         try {
             const url = new URL(fileInfo.file_path);
-            const key = url.pathname.substring(1);
+            const key = decodeURIComponent(url.pathname.substring(1));
+            console.log("Key: ", key)
 
             const s3Response = await this.s3.getFileStream(key);
             return { s3Response, fileInfo }; 
         } catch (error) {
-            console.error("Lỗi khi kết nối S3:", error.message);
+            console.error("Lỗi khi kết nối S3:", (error as Error).message);
             throw new NotFoundException("Không tìm thấy file trên S3");
         }
     }
