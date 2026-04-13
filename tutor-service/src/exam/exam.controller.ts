@@ -9,7 +9,8 @@ import {
     ParseBoolPipe,
     DefaultValuePipe,
     ParseEnumPipe,
-    UnauthorizedException
+    UnauthorizedException,
+    ParseUUIDPipe
 } from "@nestjs/common";
 import { Request as Reqst } from "express";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
@@ -246,6 +247,13 @@ export class ExamTakenController {
         } catch (error) {
             return new ExceptionResponse().returnError(error);
         }
+    }
+
+    @Get(":et_id")
+    getExamTakenById(
+        @Param('et_id', ParseUUIDPipe) et_id: string
+    ) {
+        return this.et_service.getExamTakenById(et_id)
     }
 }
 
