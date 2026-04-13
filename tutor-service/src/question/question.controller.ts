@@ -22,6 +22,7 @@ import { ExceptionResponse } from 'src/exception/Exception.exception';
 export class BookController {
     constructor(private readonly bookService: LessonPlanService){}
     @Get('/plan/:plan_id')
+    @Roles('admin', 'tutor', 'student')
     getPlanDetail(@Param('plan_id') plan_id: string) {
         return this.bookService.getPlanById(plan_id);
     }
@@ -101,7 +102,7 @@ export class CategoryController {
   }
 
   @Get() 
-  @Roles('tutor', 'admin')
+  @Roles('tutor', 'admin', 'student')
   getAllCategories( 
     @Query() query: any 
   ) {
