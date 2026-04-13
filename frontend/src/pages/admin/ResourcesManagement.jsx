@@ -9,7 +9,6 @@ import {
 import { alpha } from "@mui/material/styles";
 import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 
-// --- ICONS ---
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import SearchIcon from "@mui/icons-material/Search";
@@ -23,19 +22,14 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
-// --- SERVICES ---
 import { 
   getAllPlans, getPlanDetail, createBook, 
   updateBook, deleteBook, getAllCategories,
   createCategory, updateCategory, deleteCategory
 } from "../../services/CategoryService";
 
-// --- COMPONENTS ---
 import CreateLessonPlanDialog from "../../components/CreatePlanDialog";
 
-// ============================================================================
-// 1. SUB-COMPONENTS DÀNH RIÊNG CHO ADMIN
-// ============================================================================
 const NameInputDialog = ({ open, onClose, onSubmit, title, label, initialValue = "", loading }) => {
   const [name, setName] = useState("");
   useEffect(() => { if (open) setName(initialValue); }, [open, initialValue]);
@@ -61,38 +55,28 @@ const NameInputDialog = ({ open, onClose, onSubmit, title, label, initialValue =
   );
 };
 
-// ============================================================================
-// 2. MAIN COMPONENT: RESOURCES MANAGEMENT (ADMIN ROLE)
-// ============================================================================
 const ResourcesManagement = ({ tutorId, token }) => {
   const theme = useTheme();
   
-  // --- CHẾ ĐỘ HIỂN THỊ ---
-  const [view, setView] = useState("list"); // 'list' (Dashboard) | 'editor' (Config Skeleton)
+  const [view, setView] = useState("list"); 
   const [selectedPlanId, setSelectedPlanId] = useState(null);
 
-  // --- DATA STATES ---
   const [plans, setPlans] = useState([]);
   const [planInfo, setPlanInfo] = useState(null);
   const [rawCategories, setRawCategories] = useState([]);
   
-  // --- UI STATES ---
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
-  // --- DIALOGS & MENUS ---
   const [dialogs, setDialogs] = useState({ createPlan: false, editPlan: false, createCate: false, editCate: false });
   const [menuAnchor, setMenuAnchor] = useState({ plan: null, cate: null });
   const [tempData, setTempData] = useState({ targetId: null, initialName: "" });
 
   const showToast = (message, severity = "success") => setToast({ open: true, message, severity });
 
-  // ----------------------------------------------------------------------------
-  // LOGIC: DANH SÁCH GIÁO ÁN MẪU (VIEW: LIST)
-  // ----------------------------------------------------------------------------
   const fetchAllTemplates = useCallback(async () => {
     // CHỐT CHẶN 401: Kiểm tra token trước khi gọi
     if (!token || token === "null") return;
@@ -290,7 +274,7 @@ const ResourcesManagement = ({ tutorId, token }) => {
         <Stack direction="row" spacing={2} alignItems="center">
           <IconButton onClick={() => { setView("list"); setSelectedPlanId(null); setSelectedCategoryId(null); }}><ArrowBackIcon /></IconButton>
           <Box>
-            <Typography variant="subtitle2" color="primary" fontWeight={800} sx={{ lineHeight: 1 }}>EDITOR GIÁO ÁN MẪU</Typography>
+            <Typography variant="subtitle2" color="primary" fontWeight={700} sx={{ lineHeight: 1 }}>EDITOR GIÁO ÁN MẪU</Typography>
             <Typography variant="h6" fontWeight={700}>{planInfo?.title || "Đang tải..."}</Typography>
           </Box>
           <Chip label="Bản Gốc Hệ Thống" color="info" size="small" variant="filled" sx={{ fontWeight: 700, borderRadius: 1 }} />
@@ -301,7 +285,7 @@ const ResourcesManagement = ({ tutorId, token }) => {
         {/* PANEL TRÁI: CÂY MỤC LỤC MẪU */}
         <Grid item size={{ xs: 12, md: 4, lg: 3 }} sx={{ borderRight: "1px solid", borderColor: "divider", p: 2, overflowY: "auto", bgcolor: "background.paper" }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="overline" fontWeight={800} color="text.secondary">Cấu trúc Skeleton</Typography>
+            <Typography variant="overline" fontWeight={700} color="text.secondary">Cấu trúc Skeleton</Typography>
             <Button 
               size="small" startIcon={<AddCircleIcon />} variant="contained" disableElevation
               onClick={() => setDialogs(p => ({ ...p, createCate: true }))}
@@ -337,8 +321,8 @@ const ResourcesManagement = ({ tutorId, token }) => {
               <Paper sx={{ p: 4, borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="start" mb={3}>
                   <Box>
-                    <Typography variant="overline" color="primary" fontWeight={800}>Đang chọn mục mẫu</Typography>
-                    <Typography variant="h4" fontWeight={800}>{tempData.initialName || "Chi tiết mục"}</Typography>
+                    <Typography variant="overline" color="primary" fontWeight={700}>Đang chọn mục mẫu</Typography>
+                    <Typography variant="h4" fontWeight={700}>{tempData.initialName || "Chi tiết mục"}</Typography>
                   </Box>
                   <Stack direction="row" spacing={1}>
                     <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setDialogs(p => ({ ...p, editCate: true }))}>Đổi tên</Button>

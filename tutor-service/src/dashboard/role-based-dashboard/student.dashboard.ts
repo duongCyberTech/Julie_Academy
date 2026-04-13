@@ -91,6 +91,13 @@ export class StudentDashboard {
         }).then(res => res.reduce((acc, cur) => acc + (cur.doneAt.getTime() - cur.startAt.getTime()), 0) / (1000 * 60 * 60))
     }
 
+    async testStreak(student_id: string) {
+        return await this.prisma.student_analytics.findFirst({
+            where:{ student_id },
+            select: { streak: true }
+        }).then(res => res?.streak)
+    }
+
     async currentActivities(student_id: string, filter: Partial<FilterDTO>) {
         const take: number = Number(filter.limit ?? 10)
         const skip: number = ((filter.page ?? 1) - 1) * (filter.limit ?? 10)

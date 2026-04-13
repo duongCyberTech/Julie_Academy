@@ -27,6 +27,7 @@ import AutoStoriesOutlined from "@mui/icons-material/AutoStoriesOutlined";
 import ArticleOutlined from "@mui/icons-material/ArticleOutlined";
 import AssignmentTurnedInOutlined from "@mui/icons-material/AssignmentTurnedInOutlined";
 import HomeWorkOutlinedIcon from '@mui/icons-material/HomeWorkOutlined';
+import EmailIcon from '@mui/icons-material/EmailOutlined';
 
 import Logo from "../assets/images/logo.png";
 
@@ -37,6 +38,7 @@ const menuConfigByRole = {
     { label: "Thư viện câu hỏi", to: "/tutor/question", Icon: LibraryIcon },
     { label: "Quản lý đề thi", to: "/tutor/exam", Icon: ArticleOutlined },
     { label: "Giao bài", to: "/tutor/assignment", Icon: AssignmentTurnedInOutlined },
+    { label: "Gửi email", to: "/tutor/email", Icon: EmailIcon },
   ],
   admin: [
     { label: "Tổng quan", to: "/admin/dashboard", Icon: DashboardIcon },
@@ -192,7 +194,7 @@ const Sidebar = ({ width, isCollapsed, onToggleCollapse, isMobileOpen, onMobileC
             noWrap
             sx={{
               ml: 1.5,
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '1.25rem',
               letterSpacing: '-0.5px',
               background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,

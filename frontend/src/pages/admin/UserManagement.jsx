@@ -97,9 +97,6 @@ const StyledCard = styled(Paper)(({ theme }) => {
   };
 });
 
-// ==========================================
-// LOGIC UTILS
-// ==========================================
 function descendingComparator(a, b, orderBy) {
   const valA = a[orderBy] ?? "";
   const valB = b[orderBy] ?? "";

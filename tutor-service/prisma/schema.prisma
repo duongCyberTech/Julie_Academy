@@ -34,6 +34,8 @@ model User {
   tags Tag[]
 
   notifications Notifications[]
+
+  emailTemplates EmailTemplate[]
 }
 
 model Tutor {
@@ -181,6 +183,7 @@ model EmailConfig {
   day_of_week Int?      
   day_of_month Int?
   class_id String
+  template EmailTemplate? @relation(fields: [template_id], references: [template_id], onDelete: SetNull, onUpdate: Cascade)
   class    Class @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
 }
 
@@ -188,8 +191,12 @@ model EmailTemplate {
   template_id String @id @default(uuid())
   type        EmailTemplateType
   body        String
+  user_id     String
+  creator     User     @relation(fields: [user_id], references: [uid])
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now())
+
+  emailConfigs EmailConfig[]
 }
 
 model Schedule {

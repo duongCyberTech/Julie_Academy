@@ -1,6 +1,7 @@
-import { ForbiddenException, Injectable } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { EmailConfigDto } from "./dto/email.dto";
+import { EmailConfigDto, EmailTemplateCreateDto } from "./dto/email.dto";
+import { EmailTemplateType } from "@prisma/client";
 
 @Injectable()
 export class EmailService {
@@ -20,12 +21,57 @@ export class EmailService {
       throw new ForbiddenException('You do not have permission to create email configuration for this class.');
     }
 
-    return this.prisma.emailConfig.create({
-      data: {
-        ...data,
-        class_id,
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const { create_as_template, ...emailConfigData } = data;
+
+      if (create_as_template) {
+        const emailTemplate = await tx.emailTemplate.create({
+          data: {
+            type: EmailTemplateType.custom,
+            body: data.body,
+            creator: {connect: {uid: tutor_id}}
+          },
+        });
+
+        emailConfigData.template_id = emailTemplate.template_id;
+      }
+
+      if (data.use_template && data.template_id) {
+        const template = await tx.emailTemplate.findUnique({
+          where: {
+            template_id: data.template_id,
+          },
+        });
+
+        if (!template) {
+          throw new BadRequestException('The specified template does not exist.');
+        }
+
+        emailConfigData.body = template.body;
+        emailConfigData.use_template = true;
+        emailConfigData.template_id = template.template_id;
+      }
+
+      return await tx.emailConfig.create({
+        data: {
+          ...emailConfigData,
+          class_id,
+        },
+      });
+    })
+  }
+
+  async createEmailTemplate(user_id: string, data: EmailTemplateCreateDto) {
+    try {
+      return this.prisma.emailTemplate.create({
+        data: {
+          ...data,
+          creator: {connect: {uid: user_id}}
+        }
+      })
+    } catch (error) {
+      throw new InternalServerErrorException("Failed to create Template!")
+    }
   }
 
   async getAllEmailChainsOfClass(tutor_id: string, class_id: string) {

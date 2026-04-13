@@ -25,8 +25,6 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
 
-// Import MockData
-import { mockQuestionDatabase } from './MockData';
 
 // ... (Giữ nguyên phần HELPERS: LatexRenderer, getAnswerPrefix, isQuestionCorrect) ...
 const LatexRenderer = ({ content }) => {

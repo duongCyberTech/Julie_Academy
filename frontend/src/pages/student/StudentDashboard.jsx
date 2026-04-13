@@ -193,7 +193,7 @@ export default function StudentDashboard() {
           <Avatar variant="rounded" sx={{ bgcolor: `${color}.light`, color: `${color}.main`, width: 48, height: 48, borderRadius: 2 }}>{icon}</Avatar>
           <Box>
             <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: 'block', mb: 0.5 }}>{title}</Typography>
-            <Typography variant="h5" fontWeight={800} color="text.primary">{value}</Typography>
+            <Typography variant="h5" fontWeight={700} color="text.primary">{value}</Typography>
           </Box>
         </Stack>
         {subtext && <Typography variant="caption" sx={{ display: "block", mt: 2, color: "text.secondary", bgcolor: "grey.50", p: 1, borderRadius: 1 }}>{subtext}</Typography>}
