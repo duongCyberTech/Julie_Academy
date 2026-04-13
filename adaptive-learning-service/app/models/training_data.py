@@ -13,10 +13,9 @@ class TrainingData(Base):
   __tablename__ = "training_data"
 
   id = Column(String, primary_key=True, default=lambda: str(uuid7()))
-  ques_id = Column(String, nullable=False)
+  problem_id = Column(String, nullable=False) # -> ques_id
   level = Column(Enum(LevelStatus, name="level_status"), nullable=False, default=LevelStatus.EASY)
-  timestamp = Column(DateTime, nullable=False, default=datetime.now())
-  is_done = Column(Boolean, nullable=False, default=False)
-  is_correct = Column(Boolean, nullable=False, default=False)
+  order_id = Column(DateTime, nullable=False, default=datetime.now()) # -> start_at
+  correct = Column(Boolean, nullable=False, default=False) # -> is_correct
 
   section_id = Column(String, ForeignKey("sections.id"), nullable=False)

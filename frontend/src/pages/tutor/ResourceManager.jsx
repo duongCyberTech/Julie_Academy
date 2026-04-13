@@ -1,38 +1,13 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-} from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Breadcrumbs,
-  Link as MuiLink,
-  Stack,
-  Button,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  TextField,
-  DialogActions,
-  Tooltip,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Snackbar,
-  Alert,
-  Divider,
-  useTheme
+  Box, Typography, Paper, Grid, Breadcrumbs, Link as MuiLink, Stack,
+  Button, IconButton, Dialog, DialogTitle, DialogContent, TextField,
+  DialogActions, Tooltip, Menu, MenuItem, ListItemIcon, ListItemText,
+  Snackbar, Alert, Divider, useTheme
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 
-// --- ICONS ---
 import FolderIcon from "@mui/icons-material/Folder";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -52,27 +27,15 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
-// --- SERVICES ---
 import {
-  getAllCategories,
-  createCategory,
-  deleteCategory,
-  deleteBook,
-  getPlanDetail,
+  getAllCategories, createCategory, deleteCategory, deleteBook, getPlanDetail
 } from "../../services/CategoryService";
 import { updateClass } from "../../services/ClassService";
 import {
-  getFoldersByClass,
-  createFolder,
-  uploadResource,
-  deleteFolder,
+  getFoldersByClass, createFolder, uploadResource, deleteFolder, fetchFileStreamS3
 } from "../../services/ResourceService";
 
 import FilePreviewDialog from "../../components/FilePreviewDialog";
-
-// ============================================================================
-// HELPER FUNCTIONS 
-// ============================================================================
 
 const addFileToFolderState = (nodes, targetFolderId, newFile) => {
   return nodes.map((node) => {
@@ -103,10 +66,6 @@ const findFolderNode = (nodes, id) => {
   return null;
 };
 
-// ============================================================================
-// SUB-COMPONENTS 
-// ============================================================================
-
 const FileIcon = ({ mimeType }) => {
   if (mimeType?.includes("pdf")) return <PictureAsPdfIcon color="error" fontSize="large" />;
   if (mimeType?.includes("image")) return <DescriptionIcon color="warning" fontSize="large" />;
@@ -115,9 +74,13 @@ const FileIcon = ({ mimeType }) => {
 
 const NameInputDialog = ({ open, onClose, onSubmit, title, label, initialValue = "", loading }) => {
   const [name, setName] = useState(initialValue);
-  useEffect(() => { if (open) setName(initialValue); }, [open, initialValue]);
+
+  useEffect(() => {
+    if (open) setName(initialValue);
+  }, [open, initialValue]);
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3, backgroundImage: 'none' }}}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3, backgroundImage: 'none' } }}>
       <DialogTitle sx={{ fontWeight: 700 }}>{title}</DialogTitle>
       <DialogContent>
         <TextField autoFocus margin="dense" label={label} fullWidth value={name} onChange={(e) => setName(e.target.value)} />
@@ -137,29 +100,46 @@ const UploadFileDialog = ({ open, onClose, onSubmit, loading }) => {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const theme = useTheme();
-  
+
   const handleSubmit = () => {
     if (file && title) {
-      onSubmit(file, { title, description: desc });
-      setFile(null); setTitle(""); setDesc("");
+      const safeFileName = file.name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/[^a-zA-Z0-9.\-_]/g, "");
+
+      const cleanFile = new File([file], safeFileName, { type: file.type });
+
+      onSubmit(cleanFile, { title, description: desc });
+      setFile(null);
+      setTitle("");
+      setDesc("");
     }
   };
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3, backgroundImage: 'none' }}}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3, backgroundImage: 'none' } }}>
       <DialogTitle sx={{ fontWeight: 700 }}>Tải lên tài liệu</DialogTitle>
       <DialogContent>
         <Stack spacing={2} mt={1}>
-          <Button 
-            variant="outlined" 
-            component="label" 
-            fullWidth 
-            sx={{ 
+          <Button
+            variant="outlined"
+            component="label"
+            fullWidth
+            sx={{
               height: 80, borderStyle: "dashed", borderRadius: 2, borderWidth: 2,
               borderColor: theme.palette.mode === 'dark' ? theme.palette.midnight?.border : 'divider'
             }}
           >
             {file ? file.name : "Chọn file từ máy tính"}
-            <input type="file" hidden onChange={(e) => { const f = e.target.files[0]; if (f) { setFile(f); setTitle(f.name); } }} />
+            <input type="file" hidden onChange={(e) => {
+              const f = e.target.files[0];
+              if (f) {
+                setFile(f);
+                setTitle(f.name);
+              }
+            }} />
           </Button>
           <TextField label="Tên hiển thị" fullWidth size="small" value={title} onChange={(e) => setTitle(e.target.value)} />
           <TextField label="Mô tả (tùy chọn)" fullWidth size="small" value={desc} onChange={(e) => setDesc(e.target.value)} />
@@ -175,47 +155,30 @@ const UploadFileDialog = ({ open, onClose, onSubmit, loading }) => {
   );
 };
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
-
 const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
-  // --- STATE ---
   const [planInfo, setPlanInfo] = useState(null);
   const [rawCategories, setRawCategories] = useState([]);
   const [folderTree, setFolderTree] = useState([]);
-
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [currentFolder, setCurrentFolder] = useState(null);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
-
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
-
-  const [dialogs, setDialogs] = useState({
-    upload: false,
-    createCategory: false,
-    editCategory: false,
-    createFolder: false,
-    editPlanName: false,
-  });
-
+  const [dialogs, setDialogs] = useState({ upload: false, createCategory: false, editCategory: false, createFolder: false, editPlanName: false });
   const [planMenuAnchor, setPlanMenuAnchor] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
   const [contextTargetId, setContextTargetId] = useState(null);
-
   const [tempData, setTempData] = useState({ parentId: null, categoryId: null, initialName: "" });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, type: null });
-  
   const [previewFile, setPreviewFile] = useState(null);
+  const [blobUrl, setBlobUrl] = useState(null);
 
   const showToast = (message, severity = "success") => setToast({ open: true, message, severity });
   const closeToast = () => setToast((prev) => ({ ...prev, open: false }));
 
-  // --- DATA LOADING ---
   const loadData = useCallback(async () => {
     try {
       const [planRes, catsRes, foldersRes] = await Promise.all([
@@ -235,7 +198,6 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
       setRawCategories(nodes);
       setFolderTree(foldersRes || []);
     } catch (e) {
-      console.error("Load Data Error:", e);
       showToast("Lỗi tải dữ liệu", "error");
     }
   }, [planId, classId, token]);
@@ -244,10 +206,9 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
     loadData();
   }, [loadData]);
 
-  // --- TREE BUILDING ---
   const categoryTreeData = useMemo(() => {
     if (!rawCategories || rawCategories.length === 0) return [];
-    
+
     const getItemId = (itm) => String(itm.id ?? itm.category_id ?? itm._id ?? "");
     const getParentId = (itm) => {
       const pid = itm.parent_id ?? itm.parentId ?? itm.parent_category_id;
@@ -263,32 +224,27 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
       if (pid && !allItemIds.has(pid)) {
         if (!parentMap.has(pid)) {
           parentMap.set(pid, {
-             id: pid, category_id: pid, category_name: item.description || "Danh mục gốc", parent_id: null, isFake: true 
+            id: pid, category_id: pid, category_name: item.description || "Danh mục gốc", parent_id: null, isFake: true
           });
         }
       }
     });
 
     const allNodes = [...Array.from(parentMap.values()), ...rawCategories];
+
     const buildTree = (items, targetParentId = null) => {
       return items
-        .filter(item => {
-           const itemPid = getParentId(item);
-           return itemPid === targetParentId;
-        })
-        .map(item => {
-          const itemId = getItemId(item);
-          return {
-            id: itemId,
-            label: String(item.name ?? item.category_name ?? "No Name"),
-            children: buildTree(items, itemId),
-          };
-        });
+        .filter(item => getParentId(item) === targetParentId)
+        .map(item => ({
+          id: getItemId(item),
+          label: String(item.name ?? item.category_name ?? "No Name"),
+          children: buildTree(items, getItemId(item)),
+        }));
     };
+
     return buildTree(allNodes, null);
   }, [rawCategories]);
 
-  // --- HANDLERS ---
   const handleTreeSelection = (event, selectedItems) => {
     const selectedId = Array.isArray(selectedItems) ? selectedItems[0] : selectedItems;
     if (selectedId) {
@@ -312,7 +268,7 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
         category_name: name,
         description: "Created by tutor",
         plan_id: planId,
-        ...(tempData.parentId ? { parent_id: tempData.parentId } : {}) 
+        ...(tempData.parentId ? { parent_id: tempData.parentId } : {})
       }], token);
 
       setDialogs(p => ({ ...p, createCategory: false }));
@@ -329,8 +285,8 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
     if (!selectedCategoryId) return { folders: [], files: [] };
     if (currentFolder) {
       const activeNode = findFolderNode(folderTree, currentFolder.folder_id);
-      return activeNode 
-        ? { folders: activeNode.children || [], files: activeNode.resources || [] } 
+      return activeNode
+        ? { folders: activeNode.children || [], files: activeNode.resources || [] }
         : { folders: [], files: [] };
     } else {
       const rootFolders = folderTree.filter(f => String(f.category_id) === String(selectedCategoryId) && !f.parent_id);
@@ -343,10 +299,10 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
     try {
       await createFolder(classId, selectedCategoryId, {
         folder_name: name,
-        parent_id: currentFolder?.folder_id 
+        parent_id: currentFolder?.folder_id
       }, token);
       setDialogs(p => ({ ...p, createFolder: false }));
-      await loadData(); 
+      await loadData();
       showToast("Tạo thư mục thành công");
     } catch (e) {
       showToast("Lỗi tạo thư mục", "error");
@@ -363,13 +319,12 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
     setActionLoading(true);
     try {
       const response = await uploadResource(currentFolder.folder_id, file, metaData, token);
-      const newUploadedFile = response?.data || response; 
+      const newUploadedFile = response?.data || response;
 
       setDialogs(p => ({ ...p, upload: false }));
       setFolderTree(prevTree => addFileToFolderState(prevTree, currentFolder.folder_id, newUploadedFile));
       showToast("Upload thành công");
     } catch (e) {
-      console.error(e);
       showToast("Lỗi upload file", "error");
     } finally {
       setActionLoading(false);
@@ -393,8 +348,8 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
         setSelectedCategoryId(null);
       } else if (type === "plan") {
         await deleteBook(item.id, "FORCE", token);
-        if(onRemovePlan) onRemovePlan();
-      } 
+        if (onRemovePlan) onRemovePlan();
+      }
       showToast("Đã xóa thành công");
       await loadData();
       setDeleteConfirm({ open: false, item: null, type: null });
@@ -416,7 +371,6 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
       setBreadcrumbs([]);
     } else {
       setCurrentFolder(folder);
-      // FIX LỖI: Chỉ lấy các thư mục TRƯỚC thư mục được click (bỏ + 1)
       setBreadcrumbs(prev => prev.slice(0, index));
     }
   };
@@ -446,16 +400,37 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
     return findLabel(categoryTreeData, selectedCategoryId) || "Danh mục";
   }, [selectedCategoryId, categoryTreeData]);
 
+  const handlePreviewClick = async (e, file) => {
+    e.stopPropagation();
+    setActionLoading(true);
+    try {
+      const fileBlob = await fetchFileStreamS3(file.did, token);
+      const objectUrl = URL.createObjectURL(fileBlob);
+      setBlobUrl(objectUrl);
+      setPreviewFile({ ...file, secureViewUrl: objectUrl });
+    } catch (error) {
+      showToast("Lỗi khi tải dữ liệu file từ Server", "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewFile(null);
+    if (blobUrl) {
+      URL.revokeObjectURL(blobUrl);
+      setBlobUrl(null);
+    }
+  };
+
   return (
     <Box sx={{ height: "75vh", display: "flex", flexDirection: "column" }}>
       <Grid container spacing={0} sx={{ flexGrow: 1, height: "100%" }}>
-        
-        {/* LEFT PANEL: TREE VIEW */}
-        <Grid size={{ xs: 12, md: 3 }} sx={{ 
-            borderRight: "1px solid", borderColor: isDark ? theme.palette.midnight?.border : "divider", 
-            display: "flex", flexDirection: "column", 
-            bgcolor: "background.paper", height: "100%", overflow: "hidden",
-            borderTopLeftRadius: 16, borderBottomLeftRadius: 16
+        <Grid size={{ xs: 12, md: 3 }} sx={{
+          borderRight: "1px solid", borderColor: isDark ? theme.palette.midnight?.border : "divider",
+          display: "flex", flexDirection: "column",
+          bgcolor: "background.paper", height: "100%", overflow: "hidden",
+          borderTopLeftRadius: 16, borderBottomLeftRadius: 16
         }}>
           <Box p={2} borderBottom="1px solid" borderColor={isDark ? theme.palette.midnight?.border : "divider"} bgcolor={isDark ? alpha(theme.palette.primary.main, 0.05) : "background.default"} sx={{ flexShrink: 0 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
@@ -472,13 +447,13 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
               </Tooltip>
             </Stack>
             <Box mt={1.5} display="flex" gap={1}>
-              <Button 
-                variant={isDark && !selectedCategoryId ? "outlined" : "contained"} 
-                size="small" 
-                fullWidth 
-                startIcon={selectedCategoryId ? <AddCircleIcon /> : <AddBoxIcon />} 
-                color={selectedCategoryId ? "secondary" : "primary"} 
-                onClick={handleAddCategoryClick} 
+              <Button
+                variant={isDark && !selectedCategoryId ? "outlined" : "contained"}
+                size="small"
+                fullWidth
+                startIcon={selectedCategoryId ? <AddCircleIcon /> : <AddBoxIcon />}
+                color={selectedCategoryId ? "secondary" : "primary"}
+                onClick={handleAddCategoryClick}
                 disableElevation
                 sx={{ textTransform: "none", fontSize: "0.85rem", fontWeight: 600, borderRadius: 1.5 }}
               >
@@ -508,11 +483,11 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
                 selectedItems={selectedCategoryId ? [selectedCategoryId] : []}
                 slotProps={{ item: (ownerState) => ({ onContextMenu: (e) => { e.preventDefault(); e.stopPropagation(); setContextTargetId(ownerState.itemId); setContextMenu(e.currentTarget); } }) }}
                 sx={{
-                    "& .MuiTreeItem-content": {
-                        py: 0.5, borderRadius: 1.5,
-                        "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.15), color: "primary.main", fontWeight: "bold" },
-                        "&.Mui-selected:hover": { bgcolor: alpha(theme.palette.primary.main, 0.25) }
-                    }
+                  "& .MuiTreeItem-content": {
+                    py: 0.5, borderRadius: 1.5,
+                    "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.15), color: "primary.main", fontWeight: "bold" },
+                    "&.Mui-selected:hover": { bgcolor: alpha(theme.palette.primary.main, 0.25) }
+                  }
                 }}
               />
             ) : (
@@ -521,15 +496,13 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
           </Box>
         </Grid>
 
-        {/* RIGHT PANEL: CONTENT */}
         <Grid size={{ xs: 12, md: 9 }} sx={{ display: "flex", flexDirection: "column", bgcolor: isDark ? alpha(theme.palette.background.default, 0.4) : "#F9FAFB", height: "100%", overflow: "hidden", borderTopRightRadius: 16, borderBottomRightRadius: 16 }}>
           {selectedCategoryId ? (
             <>
-              {/* Breadcrumb Header */}
               <Paper square elevation={0} sx={{ p: 2, borderBottom: "1px solid", borderColor: isDark ? theme.palette.midnight?.border : "divider", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, bgcolor: "background.paper" }}>
                 <Box display="flex" alignItems="center">
                   {currentFolder && <IconButton size="small" onClick={handleBack} sx={{ mr: 1, bgcolor: isDark ? alpha('#fff', 0.05) : alpha(theme.palette.primary.main, 0.05) }}><ArrowBackIcon fontSize="small" /></IconButton>}
-                  <Breadcrumbs separator={<ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }}/>}>
+                  <Breadcrumbs separator={<ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />}>
                     <MuiLink component="button" underline="hover" color="inherit" onClick={() => handleBreadcrumbClick(null)} sx={{ display: "flex", alignItems: "center", fontWeight: !currentFolder ? 700 : 500, color: !currentFolder ? 'primary.main' : 'text.secondary' }}>
                       <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />{currentCategoryName}
                     </MuiLink>
@@ -548,29 +521,28 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
               </Paper>
 
               <Box sx={{ p: 3, flexGrow: 1, overflowY: "auto", minHeight: 0 }}>
-                {/* Folders */}
                 {currentViewData.folders.length > 0 && (
                   <Box mb={4}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight={700} sx={{ mb: 2 }}>THƯ MỤC ({currentViewData.folders.length})</Typography>
                     <Grid container spacing={2}>
                       {currentViewData.folders.map(folder => (
                         <Grid size={{ xs: 6, sm: 4, md: 3, lg: 2 }} key={`folder-${folder.folder_id}`}>
-                          <Paper 
-                            elevation={0} variant="outlined" 
+                          <Paper
+                            elevation={0} variant="outlined"
                             onClick={() => handleEnterFolder(folder)}
-                            sx={{ 
-                                p: 2, textAlign: "center", cursor: "pointer", borderRadius: 3, position: "relative", 
-                                bgcolor: "background.paper", borderColor: isDark ? theme.palette.midnight?.border : "divider",
-                                transition: "all 0.2s ease-in-out",
-                                "&:hover": { 
-                                    borderColor: "primary.main", 
-                                    boxShadow: isDark ? `0 4px 20px ${alpha(theme.palette.primary.main, 0.15)}` : "0 4px 12px rgba(0,0,0,0.06)", 
-                                    transform: "translateY(-2px)",
-                                    "& .del-btn": { opacity: 1 } 
-                                } 
-                            }} 
+                            sx={{
+                              p: 2, textAlign: "center", cursor: "pointer", borderRadius: 3, position: "relative",
+                              bgcolor: "background.paper", borderColor: isDark ? theme.palette.midnight?.border : "divider",
+                              transition: "all 0.2s ease-in-out",
+                              "&:hover": {
+                                borderColor: "primary.main",
+                                boxShadow: isDark ? `0 4px 20px ${alpha(theme.palette.primary.main, 0.15)}` : "0 4px 12px rgba(0,0,0,0.06)",
+                                transform: "translateY(-2px)",
+                                "& .del-btn": { opacity: 1 }
+                              }
+                            }}
                           >
-                            <IconButton className="del-btn" size="small" color="error" sx={{ position: "absolute", top: 4, right: 4, opacity: 0, bgcolor: isDark ? alpha(theme.palette.background.paper, 0.9) : "rgba(255,255,255,0.9)", '&:hover':{ bgcolor: alpha(theme.palette.error.main, 0.1) } }} onClick={(e) => handleDeleteClick(e, folder, "folder")}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                            <IconButton className="del-btn" size="small" color="error" sx={{ position: "absolute", top: 4, right: 4, opacity: 0, bgcolor: isDark ? alpha(theme.palette.background.paper, 0.9) : "rgba(255,255,255,0.9)", '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) } }} onClick={(e) => handleDeleteClick(e, folder, "folder")}><DeleteOutlineIcon fontSize="small" /></IconButton>
                             <FolderIcon sx={{ fontSize: 52, color: "#FFC107", mb: 1.5 }} />
                             <Typography variant="body2" fontWeight={600} color="text.primary" noWrap>{folder.folder_name}</Typography>
                           </Paper>
@@ -579,31 +551,30 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
                     </Grid>
                   </Box>
                 )}
-                {/* Files */}
                 {currentViewData.files.length > 0 && (
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight={700} sx={{ mb: 2 }}>TÀI LIỆU ({currentViewData.files.length})</Typography>
                     <Grid container spacing={2}>
                       {currentViewData.files.map(file => (
                         <Grid size={{ xs: 12, sm: 6, md: 4 }} key={`file-${file.did}`}>
-                          <Paper 
-                            elevation={0} variant="outlined" 
-                            onClick={() => setPreviewFile(file)}
-                            sx={{ 
-                                p: 2, display: "flex", alignItems: "center", cursor: "pointer", borderRadius: 3, position: "relative", 
-                                bgcolor: "background.paper", borderColor: isDark ? theme.palette.midnight?.border : "divider",
-                                transition: "all 0.2s ease-in-out",
-                                "&:hover": { 
-                                    borderColor: "primary.main", 
-                                    boxShadow: isDark ? `0 4px 20px ${alpha(theme.palette.primary.main, 0.15)}` : "0 4px 12px rgba(0,0,0,0.06)", 
-                                    transform: "translateY(-2px)",
-                                    "& .actions": { opacity: 1 } 
-                                } 
-                            }} 
+                          <Paper
+                            elevation={0} variant="outlined"
+                            onClick={(e) => handlePreviewClick(e, file)}
+                            sx={{
+                              p: 2, display: "flex", alignItems: "center", cursor: "pointer", borderRadius: 3, position: "relative",
+                              bgcolor: "background.paper", borderColor: isDark ? theme.palette.midnight?.border : "divider",
+                              transition: "all 0.2s ease-in-out",
+                              "&:hover": {
+                                borderColor: "primary.main",
+                                boxShadow: isDark ? `0 4px 20px ${alpha(theme.palette.primary.main, 0.15)}` : "0 4px 12px rgba(0,0,0,0.06)",
+                                transform: "translateY(-2px)",
+                                "& .actions": { opacity: 1 }
+                              }
+                            }}
                           >
                             <Stack className="actions" direction="row" sx={{ position: "absolute", top: "50%", right: 12, transform: "translateY(-50%)", opacity: 0, bgcolor: isDark ? alpha(theme.palette.background.paper, 0.9) : "rgba(255,255,255,0.9)", borderRadius: 1.5, p: 0.5 }}>
                               <Tooltip title="Xem / Tải">
-                                <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); setPreviewFile(file); }}>
+                                <IconButton size="small" color="primary" onClick={(e) => handlePreviewClick(e, file)}>
                                   <VisibilityIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
@@ -621,30 +592,29 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
                 )}
                 {currentViewData.folders.length === 0 && currentViewData.files.length === 0 && (
                   <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="60%" opacity={0.5}>
-                      <FolderOpenIcon sx={{ fontSize: 80, color: "text.disabled", mb: 2 }} />
-                      <Typography variant="h6" color="text.secondary" fontWeight={600}>Thư mục trống</Typography>
+                    <FolderOpenIcon sx={{ fontSize: 80, color: "text.disabled", mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary" fontWeight={600}>Thư mục trống</Typography>
                   </Box>
                 )}
               </Box>
             </>
           ) : (
-             <Box display="flex" alignItems="center" justifyContent="center" height="100%" color="text.secondary" flexDirection="column">
-                 <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: 'text.primary' }}>👋 Chào mừng!</Typography>
-                 <Typography variant="body1">Vui lòng chọn Chương/Bài học ở menu bên trái để bắt đầu quản lý tài liệu.</Typography>
-             </Box>
+            <Box display="flex" alignItems="center" justifyContent="center" height="100%" color="text.secondary" flexDirection="column">
+              <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: 'text.primary' }}>👋 Chào mừng!</Typography>
+              <Typography variant="body1">Vui lòng chọn Chương/Bài học ở menu bên trái để bắt đầu quản lý tài liệu.</Typography>
+            </Box>
           )}
         </Grid>
       </Grid>
 
-      {/* --- DIALOGS & MENUS --- */}
-      <Menu open={Boolean(planMenuAnchor)} anchorEl={planMenuAnchor} onClose={() => setPlanMenuAnchor(null)} PaperProps={{ sx: { borderRadius: 2, backgroundImage: 'none', mt: 1 }}}>
+      <Menu open={Boolean(planMenuAnchor)} anchorEl={planMenuAnchor} onClose={() => setPlanMenuAnchor(null)} PaperProps={{ sx: { borderRadius: 2, backgroundImage: 'none', mt: 1 } }}>
         <MenuItem onClick={() => { setPlanMenuAnchor(null); setTempData({ initialName: planInfo?.title }); setDialogs(p => ({ ...p, editPlanName: true })); }}><ListItemIcon><EditIcon fontSize="small" /></ListItemIcon><ListItemText>Đổi tên giáo án</ListItemText></MenuItem>
-        <MenuItem onClick={() => { setPlanMenuAnchor(null); if(window.confirm("Gỡ giáo án khỏi lớp?")) updateClass(classId, { plan_id: null }, token).then(() => { showToast("Đã gỡ"); if(onRemovePlan) onRemovePlan(); }); }}><ListItemIcon><LinkOffIcon fontSize="small" /></ListItemIcon><ListItemText>Gỡ khỏi lớp</ListItemText></MenuItem>
+        <MenuItem onClick={() => { setPlanMenuAnchor(null); if (window.confirm("Gỡ giáo án khỏi lớp?")) updateClass(classId, { plan_id: null }, token).then(() => { showToast("Đã gỡ"); if (onRemovePlan) onRemovePlan(); }); }}><ListItemIcon><LinkOffIcon fontSize="small" /></ListItemIcon><ListItemText>Gỡ khỏi lớp</ListItemText></MenuItem>
         <Divider />
         <MenuItem onClick={() => { setPlanMenuAnchor(null); setDeleteConfirm({ open: true, item: { id: planId }, type: "plan" }); }}><ListItemIcon><DeleteForeverIcon fontSize="small" color="error" /></ListItemIcon><ListItemText sx={{ color: "error.main", fontWeight: 600 }}>Xóa vĩnh viễn</ListItemText></MenuItem>
       </Menu>
 
-      <Menu open={Boolean(contextMenu)} anchorEl={contextMenu} onClose={() => setContextMenu(null)} PaperProps={{ sx: { borderRadius: 2, backgroundImage: 'none' }}}>
+      <Menu open={Boolean(contextMenu)} anchorEl={contextMenu} onClose={() => setContextMenu(null)} PaperProps={{ sx: { borderRadius: 2, backgroundImage: 'none' } }}>
         <MenuItem onClick={() => { setTempData({ categoryId: contextTargetId, initialName: "..." }); setDialogs(p => ({ ...p, editCategory: true })); setContextMenu(null); }}><ListItemIcon><EditIcon fontSize="small" /></ListItemIcon><ListItemText>Đổi tên</ListItemText></MenuItem>
         <MenuItem onClick={() => { setDeleteConfirm({ open: true, item: { id: contextTargetId, name: "mục này" }, type: "category" }); setContextMenu(null); }}><ListItemIcon><DeleteOutlineIcon fontSize="small" color="error" /></ListItemIcon><ListItemText sx={{ color: "error.main", fontWeight: 600 }}>Xóa</ListItemText></MenuItem>
       </Menu>
@@ -652,14 +622,14 @@ const ResourceManager = ({ classId, planId, token, onRemovePlan }) => {
       <NameInputDialog open={dialogs.createCategory} onClose={() => setDialogs(p => ({ ...p, createCategory: false }))} onSubmit={handleCreateCategory} title={tempData.parentId ? "Thêm bài học" : "Thêm chương mới"} label="Tên mục" loading={actionLoading} />
       <NameInputDialog open={dialogs.createFolder} onClose={() => setDialogs(p => ({ ...p, createFolder: false }))} onSubmit={handleCreateFolder} title="Tạo thư mục" label="Tên thư mục" loading={actionLoading} />
       <UploadFileDialog open={dialogs.upload} onClose={() => setDialogs(p => ({ ...p, upload: false }))} onSubmit={handleUpload} loading={actionLoading} />
-      
-      <FilePreviewDialog 
-        open={!!previewFile} 
-        onClose={() => setPreviewFile(null)} 
-        fileData={previewFile} 
+
+      <FilePreviewDialog
+        open={!!previewFile}
+        onClose={handleClosePreview}
+        fileData={previewFile}
       />
 
-      <Dialog open={deleteConfirm.open} onClose={() => setDeleteConfirm(p => ({ ...p, open: false }))} PaperProps={{ sx: { borderRadius: 3, p: 1, backgroundImage: 'none' }}}>
+      <Dialog open={deleteConfirm.open} onClose={() => setDeleteConfirm(p => ({ ...p, open: false }))} PaperProps={{ sx: { borderRadius: 3, p: 1, backgroundImage: 'none' } }}>
         <DialogTitle sx={{ fontWeight: 700 }}>Xác nhận xóa</DialogTitle>
         <DialogContent><Typography>Bạn có chắc muốn xóa <strong>{deleteConfirm.item?.name || "mục này"}</strong>?</Typography></DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

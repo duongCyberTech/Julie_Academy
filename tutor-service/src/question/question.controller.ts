@@ -23,6 +23,7 @@ export class BookController {
     constructor(private readonly bookService: LessonPlanService){}
     
     @Get('/plan/:plan_id')
+    @Roles('admin', 'tutor', 'student')
     getPlanDetail(@Param('plan_id') plan_id: string) {
         return this.bookService.getPlanById(plan_id);
     }

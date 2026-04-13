@@ -164,9 +164,11 @@ function AssignmentPage() {
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [startAt, setStartAt] = useState(() => dayjs().startOf("minute"));
   const [expireAt, setExpireAt] = useState(() => dayjs().add(1, "hour").startOf("minute"));
-  const [limitTaken, setLimitTaken] = useState(1);
+  
+  // Chuyển state sang chuỗi (String) để nhập liệu không bị giật/nhảy số
+  const [limitTaken, setLimitTaken] = useState("1");
   const [examType, setExamType] = useState("practice");
-  const [ratio, setRatio] = useState(100);
+  const [ratio, setRatio] = useState("100");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
@@ -232,12 +234,30 @@ function AssignmentPage() {
 
   const handleChangeExamType = useCallback((e) => setExamType(e.target.value), []);
   const handleChangeExpireAt = useCallback((n) => setExpireAt(n), []);
+
+  // -- SỬA LỖI NHẬP LIỆU: Tách riêng onChange (cho phép gõ tự do/xóa rỗng) và onBlur (ép số chuẩn) --
   const handleChangeRatio = useCallback((e) => {
-    setRatio(Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)));
+    const val = e.target.value;
+    if (val === "" || /^[0-9\b]+$/.test(val)) setRatio(val);
   }, []);
+
+  const handleBlurRatio = useCallback(() => {
+    let num = parseInt(ratio, 10);
+    if (isNaN(num)) num = 100;
+    setRatio(Math.min(100, Math.max(0, num)).toString());
+  }, [ratio]);
+
   const handleChangeLimit = useCallback((e) => {
-    setLimitTaken(Math.max(1, parseInt(e.target.value, 10) || 1));
+    const val = e.target.value;
+    if (val === "" || /^[0-9\b]+$/.test(val)) setLimitTaken(val);
   }, []);
+
+  const handleBlurLimit = useCallback(() => {
+    let num = parseInt(limitTaken, 10);
+    if (isNaN(num) || num < 1) num = 1;
+    setLimitTaken(num.toString());
+  }, [limitTaken]);
+  // ------------------------------------------------------------------------------------------------
 
   const timeWarning = useMemo(() => {
     if (!selectedExam || !startAt || !startAt.isValid() || !expireAt || !expireAt.isValid()) return null;
@@ -257,9 +277,9 @@ function AssignmentPage() {
     const payload = {
       startAt: startAt.toISOString(),
       expireAt: expireAt.toISOString(),
-      limit_taken: parseInt(limitTaken, 10),
+      limit_taken: parseInt(limitTaken, 10) || 1, // Đảm bảo luôn gửi số nguyên cho API
       exam_type: examType,
-      ...(examType === "test" && { ratio: parseInt(ratio, 10) }),
+      ...(examType === "test" && { ratio: parseInt(ratio, 10) || 100 }), // Đảm bảo luôn gửi số nguyên cho API
     };
 
     try {
@@ -305,7 +325,6 @@ function AssignmentPage() {
                   </Box>
                 </CardHeader>
                 <CardBody>
-                  {/* HIỂN THỊ LOADING Ở ĐÂY NẾU ĐANG CALL API */}
                   {loading ? (
                     <Box display="flex" justifyContent="center" alignItems="center" height="100%" py={4}>
                       <CircularProgress size={30} />
@@ -368,7 +387,6 @@ function AssignmentPage() {
                   </Box>
                 </CardHeader>
                 <CardBody>
-                  {/* HIỂN THỊ LOADING Ở ĐÂY NẾU ĐANG CALL API */}
                   {loading ? (
                     <Box display="flex" justifyContent="center" alignItems="center" height="100%" py={4}>
                       <CircularProgress size={30} />
@@ -419,7 +437,7 @@ function AssignmentPage() {
               </ColumnCard>
             </Grid>
 
-            {/* CỘT 3: CẤU HÌNH & GIAO (Luôn hiển thị vì không phụ thuộc API fetch initial) */}
+            {/* CỘT 3: CẤU HÌNH & GIAO */}
             <Grid size={{ xs: 12, md: 4 }} sx={{ pr: "0 !important", py: "0 !important" }}>
               <ColumnCard sx={{ borderColor: "primary.main", borderWidth: isDark ? 1 : 2 }}>
                 <CardHeader sx={{ bgcolor: isDark ? alpha(theme.palette.primary.main, 0.15) : alpha(theme.palette.primary.main, 0.05) }}>
@@ -438,28 +456,54 @@ function AssignmentPage() {
                         <MenuItem value="test">Kiểm tra</MenuItem>
                       </Select>
                     </FormControl>
+
                     {examType === "test" && (
-                      <TextField label="Trọng số điểm" type="number" size="small" value={ratio} onChange={handleChangeRatio} InputProps={{ endAdornment: <InputAdornment position="end"><PercentIcon fontSize="small" /></InputAdornment> }} sx={commonInputSx} />
+                      <TextField 
+                        label="Trọng số điểm" 
+                        type="text" 
+                        size="small" 
+                        value={ratio} 
+                        onChange={handleChangeRatio} 
+                        onBlur={handleBlurRatio} 
+                        InputProps={{ endAdornment: <InputAdornment position="end"><PercentIcon fontSize="small" /></InputAdornment> }} 
+                        sx={commonInputSx} 
+                      />
                     )}
+
                     <SectionDivider><Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ px: 1 }}>THỜI GIAN</Typography></SectionDivider>
+                    
+                    {/* ĐÃ CẬP NHẬT AM/PM Ở ĐÂY VÀ GIỮ NGUYÊN BỐ CỤC MẶC ĐỊNH */}
                     <DesktopDateTimePicker
                       label="Thời gian mở đề"
                       value={startAt}
                       onChange={handleStartAtChange}
-                      format="DD/MM/YYYY HH:mm"
-                      ampm={false}
-                      slotProps={{ textField: { size: "small", fullWidth: true, placeholder: "DD/MM/YYYY HH:mm", inputProps: { readOnly: false }, sx: commonInputSx } }}
+                      format="DD/MM/YYYY hh:mm A"  // <-- Đổi sang 12 giờ
+                      ampm={true}                  // <-- Bật AM/PM
+                      slotProps={{ textField: { size: "small", fullWidth: true, placeholder: "DD/MM/YYYY hh:mm A", inputProps: { readOnly: false }, sx: commonInputSx } }}
                     />
+                    
                     <DesktopDateTimePicker
                       label="Thời gian đóng đề"
                       value={expireAt}
                       onChange={handleChangeExpireAt}
-                      format="DD/MM/YYYY HH:mm"
-                      ampm={false}
-                      slotProps={{ textField: { size: "small", fullWidth: true, placeholder: "DD/MM/YYYY HH:mm", inputProps: { readOnly: false }, sx: commonInputSx } }}
+                      format="DD/MM/YYYY hh:mm A"  // <-- Đổi sang 12 giờ
+                      ampm={true}                  // <-- Bật AM/PM
+                      slotProps={{ textField: { size: "small", fullWidth: true, placeholder: "DD/MM/YYYY hh:mm A", inputProps: { readOnly: false }, sx: commonInputSx } }}
                     />
+                    {/* -------------------------------------------------------- */}
+
                     {timeWarning && <Alert severity="warning" sx={{ borderRadius: 2, fontWeight: 500 }}>{timeWarning}</Alert>}
-                    <TextField label="Số lần làm bài tối đa" type="number" size="small" value={limitTaken} onChange={handleChangeLimit} InputProps={{ endAdornment: <InputAdornment position="end">lần</InputAdornment> }} sx={commonInputSx} />
+                    
+                    <TextField 
+                      label="Số lần làm bài tối đa" 
+                      type="text" 
+                      size="small" 
+                      value={limitTaken} 
+                      onChange={handleChangeLimit} 
+                      onBlur={handleBlurLimit} 
+                      InputProps={{ endAdornment: <InputAdornment position="end">lần</InputAdornment> }} 
+                      sx={commonInputSx} 
+                    />
                   </Stack>
                 </CardBody>
                 <CardFooter>
