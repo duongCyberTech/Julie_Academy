@@ -672,4 +672,10 @@ export class ExamTakenService {
             }
         })  
     }
+
+    async getExamTakenById(et_id: string) {
+        return await this.prisma.exam_taken.findUnique({
+            where: {et_id}
+        }).catch(err => {throw new NotFoundException("Exam taken not found!")}) 
+    }
 }
