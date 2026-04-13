@@ -62,7 +62,6 @@ model Student {
   uid        String       @id @default(uuid())
   school     String?
   dob        DateTime?
-  badges     Claim[]
   exam_taken Exam_taken[]
   feedback   Feedback[]
   learning   Learning[]
@@ -106,40 +105,32 @@ model Review {
 
 model Student_analytics {
   ana_id     String    @id @default(uuid())
-  sum_exam_adaptive Int? @default(0)
-  max_score_practice Float? @default(0.0)
-  max_thread_comment Int? @default(0)
-  sum_exam   Int?         @default(0)
-  percentage_question_correct Float? @default(0.0)
-  incre_percentage_question_correct Float? @default(0.0)
-  streak     Int?         @default(0)
-  last_exam_taken_date  DateTime?   @default(now())
-  sign_up_date          DateTime?   @default(now())
+  water_drops Int       @default(0)
+  experience  Int       @default(0)
+  curent_level Int       @default(1)
+  streak      Int       @default(0)
+  last_activity_at  DateTime?
   student_id            String     @unique
   student               Student    @relation(fields: [student_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
 
-model Badge {
-  badge_id      String  @id @default(uuid())
-  title         String
-  description   String?
-  badge_url     String?
-  badge_type    BadgeType
-  func_type     AggregateType
-  value_type    ValueType
-  threshold     Int
-  badge_claimed Claim[]
+model LevelConfig {
+  level    Int    @id @unique @default(autoincrement())
+  exp_required Int
 }
 
-model Claim {
-  student_id String
-  badge_id   String
-  claim_at   DateTime @default(now())
-  claim_level Int @default(0)
-  badge      Badge   @relation(fields: [badge_id], references: [badge_id], onDelete: Cascade, onUpdate: Cascade)
-  student    Student @relation(fields: [student_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+model ActionConfig {
+  action_id       String @id @default(uuid())
+  title           String @unique
+  description     String?
+  drops_claim     Int
+}
 
-  @@id([student_id, badge_id])
+model SystemConfig {
+  config_id       String @id @default(uuid())
+  key             String @unique
+  value           String
+  description     String?
 }
 
 model Class {
@@ -614,33 +605,6 @@ enum EnrollStatus {
   accepted
   cancelled
   completed
-}
-
-enum BadgeType {
-  exam
-  exam_practice
-  exam_adaptive
-  exam_test
-  thread
-  thread_comment 
-  question_correct
-  score
-  score_test
-  score_practice
-  streak
-}
-
-enum AggregateType {
-  sum
-  avg
-  max 
-  incre
-  val
-}
-
-enum ValueType {
-  value 
-  percent
 }
 
 enum NotificationType {

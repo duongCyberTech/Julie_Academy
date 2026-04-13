@@ -20,6 +20,11 @@ export class AuthController {
   async login(@Body() dto: LoginDto) {
     const user = await this.authService.validateUser(dto.email, dto.password);
     if (!user) throw new NotFoundException("Account not exist!");
+    try {
+      await this.analysisService.createOrUpdateAnalytics(user.uid, {water_drops: 1})
+    } catch(err) {
+
+    }
     return this.authService.login(user);       
   }
 
@@ -27,12 +32,6 @@ export class AuthController {
   @Post('register')
   async register(@Body() dto: RegisterDto){
     const user = await this.userService.createUser(dto as UserDto);
-    if (user && user.data.role === 'student') {
-      await this.analysisService.createOrUpdateAnalytics(user.data.uid, {
-        last_exam_taken_date: new Date(),
-        sign_up_date: new Date(),
-      });
-    }
     return user;
   }
 }

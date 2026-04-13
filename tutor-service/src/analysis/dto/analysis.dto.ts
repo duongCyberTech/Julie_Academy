@@ -1,40 +1,37 @@
 import { 
+    IsBoolean,
     IsDate,
     IsInt, 
     IsNumber,
+    IsOptional,
+    IsString,
     IsUUID
 } from "class-validator";
 
-enum UpdateAnalyticsType {
-    replace = "replace",
-    increase = "increase"
-}
-
 export class AnalyticsDto {
     @IsInt()
-    sum_exam_adaptive: number;
+    water_drops?: number;
 
     @IsInt()
-    max_score_practice: number;
+    experience?: number;
+
+    @IsBoolean()
+    streak_trigger?: boolean = false
+}
+
+export class LevelConfigDto {
+    @IsInt()
+    exp_required!: number;
+}
+
+export class ActionConfigDto {
+    @IsString()
+    title!: string;
+
+    @IsOptional()
+    @IsString()
+    description?: string;
 
     @IsInt()
-    max_thread_comment: number;
-
-    @IsInt()
-    sum_exam: number;
-
-    @IsNumber()
-    percentage_question_correct: number;
-
-    @IsNumber()
-    incre_percentage_question_correct: number;
-
-    @IsInt()
-    streak: number;
-
-    @IsDate()
-    last_exam_taken_date: Date;
-
-    @IsDate()
-    sign_up_date: Date;
+    drops_claim!: number;
 }

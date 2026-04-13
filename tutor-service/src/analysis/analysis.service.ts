@@ -4,6 +4,63 @@ import {
 import { PrismaService } from "src/prisma/prisma.service";
 import { AnalyticsDto } from "./dto/analysis.dto";
 
+import { ActionConfigDto, LevelConfigDto } from "src/analysis/dto/analysis.dto";
+
+@Injectable()
+export class AdminConfigService {
+    constructor(
+        private prisma: PrismaService
+    ) {}
+
+    async createNewLevelConfig(exp_required: LevelConfigDto) {
+        return await this.prisma.levelConfig.create({
+            data: {
+                ...exp_required
+            }
+        });
+    }
+
+    async getAllLevelConfigs() {
+        return await this.prisma.levelConfig.findMany({
+            orderBy: {
+                level: 'asc'
+            }
+        });
+    }
+
+    async createNewActionConfig(title: string, description: string, drops_claim: number) {
+        return await this.prisma.actionConfig.create({
+            data: {
+                title,
+                description,
+                drops_claim
+            }
+        });
+    }
+
+    async getAllActionConfigs() {
+        return await this.prisma.actionConfig.findMany({
+            orderBy: {
+                title: 'asc'
+            }
+        });
+    }
+
+    async updateLevelConfig(level: number, data: LevelConfigDto) {
+        return await this.prisma.levelConfig.update({
+            where: { level },
+            data: { ...data }
+        });
+    }
+
+    async updateActionConfig(action_id: string, data: Partial<ActionConfigDto>) {
+        return await this.prisma.actionConfig.update({
+            where: { action_id },
+            data: { ...data }
+        });
+    }
+}
+
 @Injectable()
 export class AnalysisService {
     constructor(
@@ -11,68 +68,50 @@ export class AnalysisService {
     ) {}
 
     async createOrUpdateAnalytics(uid: string, data: Partial<AnalyticsDto>) {
-        const existingAnalytics = await this.prisma.student_analytics.findUnique({
+        const {streak_trigger, ...newData} = data
+        const existingData = await this.prisma.student_analytics.findFirst({
             where: { student_id: uid }
-        });
+        })
 
-        if (existingAnalytics) {
-            let toggleStreak = false
-            if (data.last_exam_taken_date) {
-                const lastExamDate = existingAnalytics.last_exam_taken_date;
-                const currentExamDate = data.last_exam_taken_date;
-                const diffTime = Math.abs(currentExamDate.getTime() - lastExamDate.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays >= 1) toggleStreak = true
-            }
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
 
+        const activityDate = existingData?.last_activity_at 
+            ? new Date(existingData.last_activity_at) 
+            : new Date();
+
+        activityDate.setHours(0, 0, 0, 0);
+
+        const diffInMs = now.getTime() - activityDate.getTime();
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+        if (streak_trigger && existingData && diffInDays <= 1) {
             return await this.prisma.student_analytics.update({
-                where: { student_id: uid },
+                where: {student_id: uid},
                 data: {
-                    ...(data.sum_exam_adaptive ? 
-                        {sum_exam_adaptive: {increment: 1}} : 
-                        {}),
-                    ...(data.max_score_practice && data.max_score_practice > existingAnalytics.max_score_practice ? 
-                        {max_score_practice: data.max_score_practice} : 
-                        {}),
-                    ...(data.max_thread_comment && data.max_thread_comment > existingAnalytics.max_thread_comment ? 
-                        {max_thread_comment: data.max_thread_comment} : 
-                        {}),
-                    ...(data.sum_exam ? 
-                        {sum_exam: {increment: 1}} :
-                        {}),
-                    ...(data.percentage_question_correct ?
-                        {percentage_question_correct: data.percentage_question_correct} :
-                        {}),
-                    ...(data.incre_percentage_question_correct ?
-                        {incre_percentage_question_correct: data.incre_percentage_question_correct} :
-                        {}),
-                    ...(toggleStreak ? 
-                        {streak: {increment: 1}} :
-                        {}),
-                    ...(data.last_exam_taken_date ? 
-                        {last_exam_taken_date: data.last_exam_taken_date} :
-                        {}),
-                    ...(data.sign_up_date ?
-                        {sign_up_date: data.sign_up_date} :
-                        {})
+                    streak: {increment: 1},
+                    water_drops: {increment: newData.water_drops ?? 0},
+                    experience: { increment: newData.experience ?? 0 },
+                    last_activity_at: new Date()
                 }
             })
         }
 
-        return await this.prisma.student_analytics.create({
-            data: {
+        return await this.prisma.student_analytics.upsert({
+            where: { student_id: uid },
+            update: {
+                water_drops: {increment: newData.water_drops ?? 0},
+                experience: { increment: newData.experience ?? 0 },
+                last_activity_at: new Date(),
+                ...(streak_trigger ? {streak: 1} : {})
+            },
+            create: {
                 student: {connect: {uid}},
-                sum_exam_adaptive: data.sum_exam_adaptive || 0,
-                max_score_practice: data.max_score_practice || 0,
-                max_thread_comment: data.max_thread_comment || 0,
-                sum_exam: data.sum_exam || 0,
-                percentage_question_correct: data.percentage_question_correct || 0,
-                incre_percentage_question_correct: data.incre_percentage_question_correct || 0,
-                streak: data.streak || 0,
-                last_exam_taken_date: data.last_exam_taken_date || null,
-                sign_up_date: data.sign_up_date || null
+                streak: 1,
+                last_activity_at: new Date(),
+                ...newData
             }
-        })
+        });
     }
 
     async getAnalytics(uid: string) {

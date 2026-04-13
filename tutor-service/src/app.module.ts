@@ -19,7 +19,6 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { CronModule } from './scron-job/cron.module';
 import { MailModule } from './mail/mail.module';
 import { ResourceModule } from './resource/resource.module';
-import { BadgeModule } from './badge/badge.module';
 import { ThreadModule } from './thread/thread.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ConfigModule } from '@nestjs/config';
@@ -77,7 +76,6 @@ require('dotenv').config()
     CronModule, 
     MailModule, 
     ResourceModule,
-    BadgeModule,
     ThreadModule,
     NotificationsModule,
     BackgroundJobModule,

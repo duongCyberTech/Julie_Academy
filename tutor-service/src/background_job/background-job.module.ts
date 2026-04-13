@@ -6,7 +6,6 @@ import { QueueProcessor } from './bull-queue.processor';
 import { ResourceModule } from 'src/resource/resource.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { AnalysisModule } from 'src/analysis/analysis.module';
-import { BadgeModule } from 'src/badge/badge.module';
 
 @Module({
   imports: [
@@ -16,7 +15,6 @@ import { BadgeModule } from 'src/badge/badge.module';
     ResourceModule,
     NotificationsModule,
     AnalysisModule,
-    BadgeModule
   ],
   providers: [QueueService, QueueProcessor, BackgroundService],
   exports: [QueueService, BackgroundService],
