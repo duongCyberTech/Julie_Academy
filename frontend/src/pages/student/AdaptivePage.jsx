@@ -13,12 +13,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 import { apiClient } from '../../services/ApiClient';
 
-// ==============================================================
-// 1. HELPER: Xây dựng cây Chương -> Bài học
-// ==============================================================
-// ==============================================================
-// 1. HELPER: Xây dựng cây Chương -> Bài học và SẮP XẾP CHUẨN
-// ==============================================================
+// Xây dựng cây  
 const buildCategoryTree = (categories) => {
   if (!categories || !Array.isArray(categories)) return [];
   const map = {};
@@ -38,8 +33,7 @@ const buildCategoryTree = (categories) => {
     }
   });
 
-  // ---- THÊM LOGIC SẮP XẾP Ở ĐÂY ----
-  // Hàm phụ: Dịch số La Mã (I, II, IX, V...) sang số thường để so sánh
+  // Logic sắp xếp số la mã
   const getRomanValue = (str) => {
     const match = str.match(/(?:Chương|Phần|Bài)\s+([IVXLCDM]+)(?:[\s:.\-]|$)/i);
     if (!match) return null;
@@ -56,7 +50,6 @@ const buildCategoryTree = (categories) => {
     return total;
   };
 
-  // Hàm so sánh thông minh
   const sortCategories = (a, b) => {
     const nameA = a.category_name || '';
     const nameB = b.category_name || '';
@@ -67,27 +60,22 @@ const buildCategoryTree = (categories) => {
     // Nếu cả 2 đều chứa số La Mã, so sánh theo giá trị La Mã
     if (valA !== null && valB !== null) return valA - valB;
     
-    // Nếu là số thường (1, 2, 10), dùng localeCompare với { numeric: true }
     return nameA.localeCompare(nameB, 'vi', { numeric: true });
   };
-
-  // Áp dụng sắp xếp cho các bài học bên trong từng chương
   Object.values(map).forEach(node => {
     if (node.children.length > 0) {
       node.children.sort(sortCategories);
     }
   });
 
-  // Áp dụng sắp xếp cho các chương bên ngoài
+  // Sắp xếp cho các chương bên ngoài
   chapters.sort(sortCategories);
   // ----------------------------------
 
   return chapters;
 };
 
-// ==============================================================
 // 2. COMPONENT: TabPanel (Nội dung bên dưới Tab Sách)
-// ==============================================================
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
   return (
@@ -111,9 +99,7 @@ function TabPanel(props) {
   );
 }
 
-// ==============================================================
 // 3. COMPONENT: Render Accordion (Chương) & Button (Bài học)
-// ==============================================================
 const TopicNode = ({ node, onStartPractice }) => {
   if (!node) return null;
 
@@ -157,7 +143,7 @@ const TopicNode = ({ node, onStartPractice }) => {
     );
   }
 
-  // RENDER: BÀI HỌC (Button)
+  // Render bài học
   return (
     <Paper
       elevation={0}
@@ -205,9 +191,7 @@ const TopicNode = ({ node, onStartPractice }) => {
   );
 };
 
-// ==============================================================
-// 4. MAIN COMPONENT
-// ==============================================================
+// 4. Main component
 export default function StudentAdaptivePage() {
   const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
@@ -223,8 +207,6 @@ export default function StudentAdaptivePage() {
       try {
         setInitialLoading(true);
         const token = localStorage.getItem('token');
-        
-        // Gọi trực tiếp API /books như bạn cung cấp
         const res = await apiClient.get('/books', { 
           headers: { Authorization: `Bearer ${token}` } 
         });
@@ -248,7 +230,6 @@ export default function StudentAdaptivePage() {
           });
 
           setBooks(sortedBooks);
-          // Tự động load Chương/Bài học của cuốn sách đầu tiên
           await fetchCategoriesByPlanId(sortedBooks[0].plan_id, token);
         }
       } catch (error) {
@@ -316,7 +297,7 @@ export default function StudentAdaptivePage() {
             boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.02)' 
           }}
         >
-          {/* TAB BAR (Thanh ngang hiển thị các Sách) */}
+          {/* Thanh ngang hiển thị các sách */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#fff' }}>
             <Tabs
               value={tabValue}
@@ -340,7 +321,7 @@ export default function StudentAdaptivePage() {
             </Tabs>
           </Box>
 
-          {/* NỘI DUNG (Danh sách Chương & Bài học của Sách đang chọn) */}
+          {/* Danh sách Chương & Bài học của Sách đang chọn */}
           {books.map((book, index) => (
             <TabPanel key={book.plan_id} value={tabValue} index={index}>
               {treeLoading ? (
