@@ -112,7 +112,7 @@ function TabPanel(props) {
 }
 
 // --- Main Component ---
-const StudentGlobalAssignmentPage = memo(() => {
+const StudentAssignmentPage = memo(() => {
   const [tabValue, setTabValue] = useState(1); // Mặc định mở tab "Cần làm"
   const [assignments, setAssignments] = useState({ upcoming: [], todo: [], overdue: [], completed: [] });
   const [loading, setLoading] = useState(true);
@@ -209,7 +209,6 @@ const StudentGlobalAssignmentPage = memo(() => {
           <Tabs 
             value={tabValue} 
             onChange={handleTabChange} 
-            centered
             variant="scrollable"
             scrollButtons="auto"
             textColor="primary"
@@ -282,4 +281,4 @@ const StudentGlobalAssignmentPage = memo(() => {
   );
 });
 
-export default StudentGlobalAssignmentPage;
+export default StudentAssignmentPage;
