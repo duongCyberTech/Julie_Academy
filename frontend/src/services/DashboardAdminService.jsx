@@ -10,71 +10,23 @@ const getAuthHeaders = (token) => ({
 });
 
 /**
- * Lấy thống kê đăng ký (Gia sư + Học sinh) trong 7 ngày
- * @returns {Promise<number[]>} Mảng 7 con số
+ * Lấy toàn bộ thống kê tổng quan cho Admin Dashboard
+ * Backend trả về 1 object chứa tất cả các chỉ số.
+ * * @param {string} token - JWT Token của admin
+ * @returns {Promise<{
+ * numRegByWeek: number[],        // Mảng 7 con số thống kê đăng ký 7 ngày qua
+ * numClassCreatedByWeek: number[], // Mảng 7 con số thống kê lớp học mới 7 ngày qua
+ * numExamTakenByWeek: number[],    // Mảng 7 con số thống kê lượt làm bài 7 ngày qua
+ * numActiveClasses: number,        // Tổng số lớp đang hoạt động
+ * numQuestion: number              // Tổng số câu hỏi trong hệ thống
+ * }>}
  */
-export const getRegisterStats = async (token) => {
+export const getAdminStats = async (token) => {
     try {
-        const response = await apiClient.get('/dashboard/register-stats', getAuthHeaders(token));
+        const response = await apiClient.get('/dashboard/admin-stats', getAuthHeaders(token));
         return response.data;
     } catch (error) {
-        console.error('Error fetching register stats:', error.response?.data || error.message);
-        throw error;
-    }
-};
-
-/**
- * Lấy thống kê lớp học được tạo trong 7 ngày
- * @returns {Promise<number[]>} Mảng 7 con số
- */
-export const getClassCreatedStats = async (token) => {
-    try {
-        const response = await apiClient.get('/dashboard/class-created-stats', getAuthHeaders(token));
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching class created stats:', error.response?.data || error.message);
-        throw error;
-    }
-};
-
-/**
- * Lấy thống kê lượt làm bài thi trong 7 ngày
- * @returns {Promise<number[]>} Mảng 7 con số
- */
-export const getExamTakenStats = async (token) => {
-    try {
-        const response = await apiClient.get('/dashboard/exam-taken-stats', getAuthHeaders(token));
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching exam taken stats:', error.response?.data || error.message);
-        throw error;
-    }
-};
-
-/**
- * Lấy tổng số lớp đang hoạt động
- * @returns {Promise<number>} 1 con số
- */
-export const getNumberOfActiveClasses = async (token) => {
-    try {
-        const response = await apiClient.get('/dashboard/number-of-active-classes', getAuthHeaders(token));
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching active classes count:', error.response?.data || error.message);
-        throw error;
-    }
-};
-
-/**
- * Lấy tổng số câu hỏi trong kho
- * @returns {Promise<number>} 1 con số
- */
-export const getNumberOfQuestions = async (token) => {
-    try {
-        const response = await apiClient.get('/dashboard/number-of-questions', getAuthHeaders(token));
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching questions count:', error.response?.data || error.message);
+        console.error('Error fetching admin stats:', error.response?.data || error.message);
         throw error;
     }
 };

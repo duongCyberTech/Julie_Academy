@@ -1,21 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Draggable from 'react-draggable';
+import React, { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react';
 import {
-  Container, Typography, Box, Button, RadioGroup, Radio, Checkbox,
+  Typography, Box, Button, RadioGroup, Radio, Checkbox,
   FormGroup, FormControlLabel, CircularProgress, Paper, Chip,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
-  Drawer, Fab, IconButton
+  Drawer, Fab, IconButton, Grid, useTheme, useMediaQuery, Tooltip, Zoom
 } from '@mui/material';
+import { styled, alpha } from '@mui/material/styles';
 
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import CloseIcon from '@mui/icons-material/Close';
- 
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SendIcon from '@mui/icons-material/Send';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
+import FlagIcon from '@mui/icons-material/Flag';
+import OutlinedFlagIcon from '@mui/icons-material/OutlinedFlag';
+import CloudDoneIcon from '@mui/icons-material/CloudDone';
+import CloudSyncIcon from '@mui/icons-material/CloudSync';
 
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
@@ -24,8 +26,27 @@ import DOMPurify from 'dompurify';
 import AppSnackbar from '../../components/SnackBar';
 import { takeExam, continueTakeExam, submitExam } from '../../services/ExamService';
 
-// --- Component render HTML & Công thức Toán học ---
-const HtmlContentRenderer = ({ htmlContent }) => {
+const PageWrapper = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    margin: theme.spacing(2),
+    padding: theme.spacing(3),
+    backgroundColor: isDark ? theme.palette.background.paper : alpha(theme.palette.background.default, 0.6),
+    backgroundImage: 'none',
+    borderRadius: '24px',
+    border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
+    boxShadow: isDark ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` : `0 8px 48px ${alpha(theme.palette.common.black, 0.03)}`,
+    minHeight: 'calc(100vh - 120px)',
+    display: 'flex',
+    flexDirection: 'column',
+    [theme.breakpoints.down('md')]: {
+      margin: theme.spacing(1),
+      padding: theme.spacing(2),
+    }
+  };
+});
+
+const HtmlContentRenderer = memo(({ htmlContent }) => {
   const containerRef = useRef(null);
   const cleanHtml = DOMPurify.sanitize(htmlContent || '', { ADD_TAGS: ['span'], ADD_ATTR: ['class', 'data-value'] });
 
@@ -36,7 +57,7 @@ const HtmlContentRenderer = ({ htmlContent }) => {
               const latex = element.getAttribute('data-value') || element.textContent; 
               if (latex) {
                   try { katex.render(latex, element, { throwOnError: false, displayMode: false }); } 
-                  catch (e) { element.textContent = `[Lỗi LaTeX: ${latex}]`; }
+                  catch (e) { element.textContent = `[Error: ${latex}]`; }
               }
           });
       }
@@ -47,22 +68,25 @@ const HtmlContentRenderer = ({ htmlContent }) => {
     dangerouslySetInnerHTML={{ __html: cleanHtml }} 
     sx={{ 
       '& p': { m: 0, p: 0 }, 
-      '& img': { maxWidth: '100%', height: 'auto', display: 'block' }, 
+      '& img': { maxWidth: '100%', height: 'auto', display: 'block', borderRadius: '8px' }, 
       width: '100%', 
       overflowX: 'auto', 
       wordBreak: 'break-word' 
     }} 
   />;
-};
+});
 
 const getAnswerPrefix = (index) => String.fromCharCode(65 + index); 
 
 export default function StudentAssignmentSessionPage() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+
   const { classId, examId, sessionId, etId } = useParams(); 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
-  // States
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [examData, setExamData] = useState(null);
@@ -71,10 +95,10 @@ export default function StudentAssignmentSessionPage() {
   
   const [activeStep, setActiveStep] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({}); 
+  const [bookmarkedQuestions, setBookmarkedQuestions] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [filter, setFilter] = useState('all'); 
+  const [saveStatus, setSaveStatus] = useState('');
 
-  // Tracking thời gian làm bài từng câu
   const [timeTracker, setTimeTracker] = useState({}); 
   const currentStartTime = useRef(Date.now());
 
@@ -82,19 +106,28 @@ export default function StudentAssignmentSessionPage() {
   const [openSubmitConfirm, setOpenSubmitConfirm] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  const getActualClassId = () => {
+  const isFetchingExam = useRef(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (!isSubmitting && timeLeft > 0) {
+        e.preventDefault();
+        e.returnValue = ''; 
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isSubmitting, timeLeft]);
+
+  const getActualClassId = useCallback(() => {
     if (classId) return classId;
     if (examTakenId) {
       const savedClassId = localStorage.getItem(`exam_class_${examTakenId}`);
       if (savedClassId) return savedClassId;
     }
     return examData?.class_id || examData?.exam_open_in?.[0]?.class_id || null;
-  };
+  }, [classId, examTakenId, examData]);
 
-
-  const isFetchingExam = useRef(false);
-  
-  // Fetch data và set up luồng làm bài
   useEffect(() => {
     const fetchExamData = async () => {
       if (isFetchingExam.current) return;
@@ -104,7 +137,6 @@ export default function StudentAssignmentSessionPage() {
         isFetchingExam.current = true; 
         setIsLoading(true);
 
-        // Luồng 1: Bắt đầu làm bài mới
         if (classId && examId && sessionId && !etId) {
             const res = await takeExam(classId, examId, sessionId, token);
             const newEtId = res.info?.et_id || res.et_id;
@@ -112,16 +144,25 @@ export default function StudentAssignmentSessionPage() {
             if (newEtId) {
                 localStorage.setItem(`exam_class_${newEtId}`, classId);
                 isRedirecting = true;
+                // Dùng replace: true để học sinh không back lại trang tạo session được
                 navigate(`/student/assignment/continue/${newEtId}`, { replace: true });
                 return; 
             }
         }
 
-        // Luồng 2: Tiếp tục làm bài dở dang (Có etId trên URL)
         if (etId) {
             const responseData = await continueTakeExam(etId, token);
             const coreData = responseData.data || responseData;
             
+            // 🛡️ BẢO MẬT LOGIC: Kiểm tra nếu bài thi đã được nộp
+            // Tuỳ vào backend của bạn trả về field nào (is_done, status, submitAt...)
+            if (coreData.is_done === true || coreData.status === 'COMPLETED' || coreData.submitAt) {
+                 isRedirecting = true;
+                 // Đá thẳng sang trang kết quả, dùng replace để xóa lịch sử trang hiện tại
+                 navigate(`/student/assignment/result/${etId}`, { replace: true });
+                 return;
+            }
+
             setExamTakenId(etId);
             setExamData(coreData);
             
@@ -132,11 +173,12 @@ export default function StudentAssignmentSessionPage() {
             });
             setQuestions(questionsList);
 
-            // Phục hồi đáp án đã chọn & setup bộ đếm thời gian
             if (questionsList.length > 0) {
                 const restoredAnswers = {};
                 const restoredTime = {};
                 const localDraft = JSON.parse(localStorage.getItem(`exam_draft_${etId}`)) || {};
+                const localBookmarks = JSON.parse(localStorage.getItem(`exam_bookmarks_${etId}`)) || [];
+                setBookmarkedQuestions(localBookmarks);
 
                 questionsList.forEach((q, index) => {
                     if (!q.ques_id) return;
@@ -154,13 +196,14 @@ export default function StudentAssignmentSessionPage() {
                 setTimeTracker(restoredTime);
             }
 
-            // Đồng bộ thời gian đếm ngược
+            // Đồng bộ thời gian bảo mật
             let expireTime;
             const duration = coreData.exam_session?.exam?.duration || coreData.exam?.duration || 60; 
             const dbExpire = coreData.exam_session?.expireAt || coreData.expireAt; 
             const startAt = coreData.startAt; 
 
             if (startAt) {
+                // Ưu tiên tính thời gian từ server (chống hack localstorage)
                 expireTime = new Date(startAt).getTime() + duration * 60000;
             } else {
                 const savedExpire = localStorage.getItem(`exam_expire_${etId}`);
@@ -172,6 +215,7 @@ export default function StudentAssignmentSessionPage() {
                 }
             }
 
+            // Chốt chặn cuối cùng: Không bao giờ vượt quá giờ đóng cửa của kỳ thi
             if (dbExpire && expireTime > new Date(dbExpire).getTime()) {
                 expireTime = new Date(dbExpire).getTime();
             }
@@ -180,13 +224,11 @@ export default function StudentAssignmentSessionPage() {
         }
 
       } catch (error) {
-        console.error("Lỗi lấy đề thi:", error);
         setSnackbar({ open: true, message: 'Lỗi tải đề thi. Vui lòng thử lại!', severity: 'error' });
       } finally {
         if (!isRedirecting) {
           setIsLoading(false);
         }
-
         isFetchingExam.current = false; 
       }
     };
@@ -194,36 +236,7 @@ export default function StudentAssignmentSessionPage() {
     if (token) fetchExamData();
   }, [classId, examId, sessionId, etId, token, navigate]);
 
-  // Đếm ngược thời gian
-  useEffect(() => {
-    if (timeLeft === null || isSubmitting) return;
-    if (timeLeft <= 0) {
-      handleFinalSubmit(true); // Hết giờ -> Tự động nộp
-      return;
-    }
-    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft, isSubmitting]);
-
-  const formatTime = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
-  };
-
-  // Cập nhật tổng thời gian đã dành cho 1 câu hỏi
-  const updateTimeSpent = (questionId) => {
-    const timeSpent = Date.now() - currentStartTime.current;
-    setTimeTracker(prev => {
-      const current = prev[questionId] || { firstResponse: 0, totalSpent: 0 };
-      return { ...prev, [questionId]: { ...current, totalSpent: current.totalSpent + timeSpent }};
-    });
-    currentStartTime.current = Date.now(); 
-  };
-
-  // Xây dựng Payload gửi lên Server
-  const buildPayload = (currentAnswers, tracker) => {
+  const buildPayload = useCallback((currentAnswers, tracker) => {
     return questions.map((q, index) => {
       const t = tracker[q.ques_id] || { firstResponse: 0, totalSpent: 0 };
       return {
@@ -234,10 +247,68 @@ export default function StudentAssignmentSessionPage() {
         index: index
       };
     });
-  };
+  }, [questions]);
 
-  // Xử lý khi click vào Đáp án
-  const handleAnswerChange = (questionId, answerAid, isMultiChoice) => {
+  const handleFinalSubmit = useCallback(async (isAutoSubmit = false) => {
+    setIsSubmitting(true);
+    setOpenSubmitConfirm(false);
+
+    try {
+      const actClassId = getActualClassId();
+      const payload = buildPayload(selectedAnswers, timeTracker);
+      
+      const res = await submitExam(examTakenId, actClassId || 'no-class-id', payload, true, token); 
+      
+      localStorage.removeItem(`exam_draft_${examTakenId}`);
+      localStorage.removeItem(`exam_expire_${examTakenId}`);
+      localStorage.removeItem(`exam_class_${examTakenId}`);
+      localStorage.removeItem(`exam_bookmarks_${examTakenId}`);
+
+      setSnackbar({ open: true, message: isAutoSubmit ? 'Hết giờ! Đã nộp bài tự động.' : 'Nộp bài thành công!', severity: 'success' });
+      
+      setTimeout(() => {
+        // 🛡️ BẢO MẬT LOGIC: Dùng replace: true để đè lên lịch sử
+        // Trình duyệt sẽ "quên" trang làm bài này đi, bấm Back sẽ về trang bên ngoài
+        navigate(`/student/assignment/result/${examTakenId}`, { 
+            state: { resultData: res.data },
+            replace: true 
+        });
+      }, 1000);
+
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Lỗi nộp bài. Vui lòng thử lại!', severity: 'error' });
+      setIsSubmitting(false);
+    }
+  }, [getActualClassId, buildPayload, selectedAnswers, timeTracker, examTakenId, token, navigate]);
+
+  useEffect(() => {
+    if (timeLeft === null || isSubmitting) return;
+    if (timeLeft <= 0) {
+      handleFinalSubmit(true); 
+      return;
+    }
+    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft, isSubmitting, handleFinalSubmit]);
+
+  const formatTime = useCallback((seconds) => {
+    if (seconds === null) return "00:00";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
+  }, []);
+
+  const updateTimeSpent = useCallback((questionId) => {
+    const timeSpent = Date.now() - currentStartTime.current;
+    setTimeTracker(prev => {
+      const current = prev[questionId] || { firstResponse: 0, totalSpent: 0 };
+      return { ...prev, [questionId]: { ...current, totalSpent: current.totalSpent + timeSpent }};
+    });
+    currentStartTime.current = Date.now(); 
+  }, []);
+
+  const handleAnswerChange = useCallback((questionId, answerAid, isMultiChoice) => {
     let newAnswersObj = {};
     
     setSelectedAnswers((prev) => {
@@ -254,12 +325,10 @@ export default function StudentAssignmentSessionPage() {
       }
       newAnswersObj = newAnswers;
       
-      // Lưu nháp xuống LocalStorage
       localStorage.setItem(`exam_draft_${examTakenId}`, JSON.stringify(newAnswersObj));
       return newAnswers;
     });
 
-    // Cập nhật ms_first_response
     setTimeTracker(prev => {
       const current = prev[questionId] || { totalSpent: 0 };
       const newTracker = { ...prev };
@@ -269,519 +338,336 @@ export default function StudentAssignmentSessionPage() {
 
       const actClassId = getActualClassId();
       if (actClassId && examTakenId) {
+         setSaveStatus('saving');
          const payload = buildPayload(newAnswersObj, newTracker);
-         // Gửi isDone: false để báo server đây chỉ là lưu nháp
-         submitExam(examTakenId, actClassId, payload, false, token).catch(() => {});
+         submitExam(examTakenId, actClassId, payload, false, token)
+            .then(() => setSaveStatus('saved'))
+            .catch(() => setSaveStatus(''));
       }
       return newTracker;
     });
-  };
+  }, [examTakenId, getActualClassId, buildPayload, token]);
 
-  // Điều hướng câu hỏi
-  const handleStepClick = (stepIndex) => {
+  const handleStepClick = useCallback((stepIndex) => {
     if (questions[activeStep]) updateTimeSpent(questions[activeStep].ques_id);
     setActiveStep(stepIndex);
-  };
-  const handleNext = () => handleStepClick(Math.min(activeStep + 1, questions.length - 1));
-  const handleBack = () => handleStepClick(Math.max(activeStep - 1, 0));
+  }, [questions, activeStep, updateTimeSpent]);
 
-  // Hàm nộp bài chính thức
-  const handleFinalSubmit = async (isAutoSubmit = false) => {
-    if (questions[activeStep]) updateTimeSpent(questions[activeStep].ques_id); 
-    setIsSubmitting(true);
-    setOpenSubmitConfirm(false);
+  const handleNext = useCallback(() => handleStepClick(Math.min(activeStep + 1, questions.length - 1)), [activeStep, questions.length, handleStepClick]);
+  const handleBack = useCallback(() => handleStepClick(Math.max(activeStep - 1, 0)), [activeStep, handleStepClick]);
 
-    try {
-      const actClassId = getActualClassId();
-      const payload = buildPayload(selectedAnswers, timeTracker);
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') return;
+      if (e.key === 'ArrowRight' && activeStep < questions.length - 1) handleNext();
+      if (e.key === 'ArrowLeft' && activeStep > 0) handleBack();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeStep, questions.length, handleNext, handleBack]);
+
+  const handleToggleBookmark = useCallback((questionId) => {
+    setBookmarkedQuestions(prev => {
+        let newList;
+        if (prev.includes(questionId)) {
+            newList = prev.filter(id => id !== questionId);
+        } else {
+            newList = [...prev, questionId];
+        }
+        localStorage.setItem(`exam_bookmarks_${examTakenId}`, JSON.stringify(newList));
+        return newList;
+    });
+  }, [examTakenId]);
+
+  const answeredCount = useMemo(() => {
+    return Object.values(selectedAnswers).filter((a) => a && a.length > 0).length;
+  }, [selectedAnswers]);
+
+  const NavigationBoardContent = useMemo(() => (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: isDark ? theme.palette.background.paper : theme.palette.common.white, borderRadius: isDesktop ? '16px' : 0, border: isDesktop ? `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.5)}` : 'none', overflow: 'hidden', boxShadow: isDesktop ? (isDark ? `0 0 20px ${alpha(theme.palette.primary.main, 0.05)}` : `0 4px 24px ${alpha(theme.palette.common.black, 0.03)}`) : 'none' }}>
+      <Box sx={{ p: 2.5, borderBottom: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.5)}`, bgcolor: isDark ? alpha(theme.palette.background.default, 0.4) : theme.palette.common.white }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+          <Box>
+            <Typography variant="subtitle1" fontWeight={700} color="text.primary" lineHeight={1.2}>
+              Tiến độ làm bài
+            </Typography>
+            <Typography variant="caption" color="text.secondary" fontWeight={700}>
+              Đã làm {answeredCount} / {questions.length} câu
+            </Typography>
+          </Box>
+          {!isDesktop && (
+            <IconButton onClick={() => setIsDrawerOpen(false)} color="inherit" size="small" sx={{ bgcolor: alpha(theme.palette.divider, 0.1), borderRadius: '8px' }}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Chip
+            icon={<AccessTimeIcon sx={{ fontSize: 20 }} />}
+            label={formatTime(timeLeft)}
+            color={timeLeft < 300 ? "error" : "primary"}
+            sx={{ fontWeight: 700, fontSize: "1.1rem", py: 2.5, px: 2, borderRadius: '12px', width: '100%', display: 'flex', justifyContent: 'center' }}
+          />
+        </Box>
+      </Box>
       
-      // Gọi API Nộp bài (isDone: true)
-      const res = await submitExam(examTakenId, actClassId || 'no-class-id', payload, true, token); 
-      
-      // Xóa nháp
-      localStorage.removeItem(`exam_draft_${examTakenId}`);
-      localStorage.removeItem(`exam_expire_${examTakenId}`);
-      localStorage.removeItem(`exam_class_${examTakenId}`);
+      <Box sx={{ overflowY: "auto", flexGrow: 1, p: 2.5, maxHeight: isDesktop ? 'calc(100vh - 260px)' : 'none', "&::-webkit-scrollbar": { width: "4px" }, "&::-webkit-scrollbar-thumb": { backgroundColor: alpha(theme.palette.divider, 0.3), borderRadius: "4px" } }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(36px, 1fr))", gap: 1.5 }}>
+          {questions.map((q, index) => {
+            const isAnswered = (selectedAnswers[q.ques_id] || []).length > 0;
+            const isActive = index === activeStep;
+            const isBookmarked = bookmarkedQuestions.includes(q.ques_id);
 
-      setSnackbar({ open: true, message: isAutoSubmit ? 'Hết giờ! Đã nộp bài tự động.' : 'Nộp bài thành công!', severity: 'success' });
-      
-      // Chuyển hướng sang trang Kết Quả, đính kèm kết quả trả về
-      setTimeout(() => {
-        navigate(`/student/assignment/result/${examTakenId}`, { state: { resultData: res.data } });
-      }, 1000);
+            let btnColor = alpha(theme.palette.divider, 0.08);
+            let btnTextColor = theme.palette.text.primary;
+            let borderColor = alpha(theme.palette.divider, 0.2);
 
-    } catch (error) {
-      console.error("Lỗi nộp bài:", error);
-      setSnackbar({ open: true, message: 'Lỗi nộp bài. Vui lòng thử lại!', severity: 'error' });
-      setIsSubmitting(false);
-    }
-  };
+            if (isActive) {
+              btnColor = alpha(theme.palette.primary.main, 0.1);
+              btnTextColor = theme.palette.primary.main;
+              borderColor = theme.palette.primary.main;
+            } else if (isAnswered) {
+              btnColor = theme.palette.primary.main;
+              btnTextColor = theme.palette.common.white;
+              borderColor = theme.palette.primary.main;
+            }
 
-  // Render Loading & Lỗi
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f6f8' }}><CircularProgress size={60} thickness={4} /></Box>;
-  if (!questions.length) return <Container><Typography variant="h5" color="error" align="center" mt={5}>Không tải được dữ liệu đề thi.</Typography></Container>;
+            return (
+              <Button
+                key={q.ques_id}
+                onClick={() => {
+                  handleStepClick(index);
+                  if (!isDesktop) setIsDrawerOpen(false);
+                }}
+                sx={{ 
+                  width: 36, height: 36, minWidth: 36, p: 0, fontWeight: 700, fontSize: "0.9rem", borderRadius: '8px', 
+                  bgcolor: btnColor, 
+                  color: btnTextColor, 
+                  border: "2px solid", borderColor: borderColor, 
+                  transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                  "&:hover": { opacity: 0.8, bgcolor: btnColor },
+                  transition: 'all 0.2s ease-in-out',
+                  position: 'relative' 
+                }}
+              >
+                {index + 1}
+                {isBookmarked && (
+                  <Box sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper', borderRadius: '50%', p: 0.25, display: 'flex', boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.1)}` }}>
+                      <FlagIcon sx={{ fontSize: '14px', color: theme.palette.warning.main }} />
+                  </Box>
+                )}
+              </Button>
+            );
+          })}
+        </Box>
+      </Box>
+
+      <Box sx={{ p: 2.5, borderTop: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.5)}`, bgcolor: isDark ? alpha(theme.palette.background.default, 0.4) : theme.palette.common.white }}>
+        <Button
+          fullWidth
+          variant="contained"
+          color="success"
+          size="large"
+          startIcon={<SendIcon />}
+          onClick={() => {
+            if (!isDesktop) setIsDrawerOpen(false);
+            setOpenSubmitConfirm(true);
+          }}
+          disabled={isSubmitting}
+          disableElevation
+          sx={{ borderRadius: '12px', py: 1.5, fontWeight: 700 }}
+        >
+          Nộp bài thi
+        </Button>
+      </Box>
+    </Box>
+  ), [isDesktop, isDark, theme, answeredCount, questions, timeLeft, selectedAnswers, activeStep, isSubmitting, handleStepClick, formatTime, bookmarkedQuestions]);
+
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: isDark ? theme.palette.background.default : alpha(theme.palette.background.default, 0.6) }}><CircularProgress size={60} thickness={4} /></Box>;
+  
+  // Tránh render nếu bị redirect
+  if (!questions.length) return <PageWrapper><Typography variant="h5" color="error" align="center" mt={5}>Đang xử lý dữ liệu...</Typography></PageWrapper>;
 
   const currentQuestion = questions[activeStep];
   const isMultiChoice = currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'MULTIPLE_CHOICE';
   const displayTitle = examData?.exam_session?.exam?.title || examData?.exam?.title || examData?.title || 'Bài thi';
-  const displaySubject = examData?.exam_session?.exam?.category?.subject || examData?.exam?.category?.subject || examData?.category?.subject || 'Bài tập';
+  const isCurrentBookmarked = bookmarkedQuestions.includes(currentQuestion?.ques_id);
 
   return (
-    <Container
-      maxWidth="lg"
-      sx={{
-        pt: 3,
-        pb: 2,
-        px: { xs: 2, sm: 3 },
-        backgroundColor: "#f4f6f8",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* Nút bật/tắt Bảng tiến độ */}
-      <Draggable>
-        <Box sx={{ position: 'fixed', bottom: 32, right: { xs: 16, md: 32 }, zIndex: 1000, cursor: 'grab', '&:active': { cursor: 'grabbing' } }}> 
-          <Fab 
-            color="primary" variant="extended" aria-label="open-navigation"
+    <PageWrapper>
+      {!isDesktop && (
+        <Box sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000 }}>
+          <Fab
+            color="primary"
+            variant="extended"
             onClick={() => setIsDrawerOpen(true)}
-            sx={{ fontWeight: 700, px: 3, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+            size="medium"
+            sx={{ fontWeight: 700, px: 2.5, borderRadius: '12px', boxShadow: isDark ? `0 4px 16px ${alpha(theme.palette.primary.main, 0.4)}` : `0 6px 20px ${alpha(theme.palette.common.black, 0.12)}`, textTransform: 'none', fontSize: '0.95rem' }}
           >
-            <FormatListBulletedIcon sx={{ mr: 1 }} />
-            Bảng tiến độ
+            <FormatListBulletedIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
+            Tiến độ
           </Fab>
         </Box>
-      </Draggable>
+      )}
 
-      {/* Header bài thi */}
-      <Box sx={{ mb: 3 }}>
-        <Typography
-          variant="h4"
-          fontWeight={700}
-          color="text.primary"
-          gutterBottom
-        >
+      <Box sx={{ mb: 4, px: 1 }}>
+        <Typography variant="h4" fontWeight={700} color="text.primary">
           {displayTitle}
         </Typography>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            color: "text.secondary",
-          }}
-        >
-          <MenuBookIcon fontSize="small" sx={{ mr: 1 }} />
-          <Typography variant="body1" fontWeight={500}>
-            {displaySubject}
-          </Typography>
-        </Box>
       </Box>
 
-      {/* Vùng câu hỏi */}
-      <Box
-        sx={{
-          flexGrow: 1,
-          display: "flex",
-          flexDirection: "column",
-          pb: 2,
-          width: "100%",
-        }}
-      >
-        <Paper
-          elevation={0}
-          sx={{
-            flexGrow: 1,
-            overflow: "hidden",
-            borderRadius: 4,
-            border: "1px solid",
-            borderColor: "grey.200",
-            display: "flex",
-            flexDirection: "column",
-            backgroundColor: "#fff",
-          }}
-        >
-          {/* Header Câu hỏi & Timer */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              p: { xs: 2, md: 3 },
-              borderBottom: "1px solid #eee",
-            }}
-          >
-            <Box>
-              <Typography
-                variant="h5"
-                fontWeight={700}
-                color="primary.main"
-                component="span"
-              >
-                Câu {activeStep + 1}{" "}
-              </Typography>
-              <Typography
-                component="span"
-                color="text.secondary"
-                variant="h6"
-                fontWeight={600}
-              >
-                {" "}
-                / {questions.length}
-              </Typography>
-              <Chip
-                label={isMultiChoice ? "Nhiều đáp án" : "Một đáp án"}
-                variant="outlined"
-                size="small"
-                sx={{ ml: 2, fontWeight: 600 }}
-              />
-            </Box>
-            <Chip
-              icon={<AccessTimeIcon sx={{ fontSize: 20 }} />}
-              label={timeLeft !== null ? formatTime(timeLeft) : "00:00"}
-              color={timeLeft < 300 ? "error" : "primary"}
-              sx={{
-                fontWeight: 800,
-                fontSize: "1.1rem",
-                py: 2.5,
-                px: 1,
-                borderRadius: 2,
-              }}
-            />
-          </Box>
-
-          {/* Nội dung câu hỏi */}
-          <Box
+      <Grid container spacing={3} alignItems="flex-start">
+        <Grid size={{ xs: 12, lg: 8, xl: 9 }} sx={{ display: "flex", flexDirection: "column" }}>
+          <Paper
+            elevation={0}
             sx={{
               flexGrow: 1,
-              overflowY: "auto",
-              overflowX: "hidden",
-              p: { xs: 2, md: 4, lg: 5 },
+              borderRadius: '16px',
+              border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
+              display: "flex",
+              flexDirection: "column",
+              backgroundColor: isDark ? theme.palette.background.paper : theme.palette.common.white,
+              overflow: 'hidden'
             }}
           >
-            <Box
-              sx={{
-                fontSize: "1.2rem",
-                lineHeight: 1.8,
-                mb: 4,
-                color: "text.primary",
-                fontWeight: 500,
-                width: "100%",
-              }}
-            >
-              <HtmlContentRenderer htmlContent={currentQuestion.content} />
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: { xs: 2.5, md: 3.5 }, borderBottom: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.2)}` }}>
+              <Box display="flex" alignItems="center">
+                <Typography variant="h6" fontWeight={700} color="primary.main" component="span">
+                  Câu {activeStep + 1}
+                </Typography>
+                <Typography component="span" color="text.secondary" variant="body1" fontWeight={700} sx={{ ml: 0.5 }}>
+                  / {questions.length}
+                </Typography>
+                
+                {saveStatus === 'saving' && <CircularProgress size={16} sx={{ ml: 2, color: 'text.secondary' }} />}
+                {saveStatus === 'saved' && (
+                  <Box display="flex" alignItems="center" ml={2} sx={{ opacity: 0.7 }}>
+                    <CloudDoneIcon color="success" sx={{ fontSize: 20 }} />
+                    <Typography variant="caption" color="success.main" sx={{ ml: 0.5, fontWeight: 700 }}>Đã lưu</Typography>
+                  </Box>
+                )}
+
+                <Tooltip title={isCurrentBookmarked ? "Bỏ đánh dấu" : "Đánh dấu xem lại"} placement="top">
+                    <IconButton 
+                        onClick={() => handleToggleBookmark(currentQuestion.ques_id)} 
+                        sx={{ ml: 1.5, color: isCurrentBookmarked ? theme.palette.warning.main : 'text.disabled' }}
+                    >
+                        {isCurrentBookmarked ? <FlagIcon /> : <OutlinedFlagIcon />}
+                    </IconButton>
+                </Tooltip>
+
+                <Chip label={isMultiChoice ? "Nhiều đáp án" : "Một đáp án"} variant="outlined" color="primary" size="small" sx={{ ml: 1, fontWeight: 700, borderRadius: '8px', display: { xs: 'none', sm: 'flex' } }} />
+              </Box>
+              
+              {!isDesktop && (
+                <Chip icon={<AccessTimeIcon sx={{ fontSize: 16 }} />} label={formatTime(timeLeft)} color={timeLeft < 300 ? "error" : "primary"} size="small" sx={{ fontWeight: 700, borderRadius: '8px' }} />
+              )}
             </Box>
 
-            <FormGroup sx={{ width: "100%" }}>
-              {currentQuestion.answers?.map((answer, index) => {
-                const isSelected = (
-                  selectedAnswers[currentQuestion.ques_id] || []
-                ).includes(answer.aid);
-                return (
-                  <FormControlLabel
-                    key={answer.aid}
-                    value={answer.aid}
-                    control={
-                      isMultiChoice ? (
-                        <Checkbox checked={isSelected} size="large" />
-                      ) : (
-                        <Radio checked={isSelected} size="large" />
-                      )
-                    }
-                    label={
-                      <Box
-                        sx={{
-                          display: "flex",
-                          width: "100%",
-                          alignItems: "flex-start",
-                          py: 1,
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            mr: 2,
-                            fontWeight: 700,
-                            fontSize: "1.1rem",
-                            color: isSelected
-                              ? "primary.main"
-                              : "text.secondary",
-                            mt: "2px",
-                          }}
-                        >
-                          {getAnswerPrefix(index)}.
-                        </Typography>
-                        <Box
-                          sx={{
-                            flexGrow: 1,
-                            fontSize: "1.1rem",
-                            lineHeight: 1.6,
-                            width: "100%",
-                          }}
-                        >
-                          <HtmlContentRenderer htmlContent={answer.content} />
+            <Box sx={{ flexGrow: 1, p: { xs: 2.5, md: 4 } }}>
+              <Box sx={{ fontSize: "1.1rem", lineHeight: 1.8, mb: 4, color: "text.primary", fontWeight: 500, width: "100%" }}>
+                <HtmlContentRenderer htmlContent={currentQuestion.content} />
+              </Box>
+
+              <FormGroup sx={{ width: "100%" }}>
+                {currentQuestion.answers?.map((answer, index) => {
+                  const isSelected = (selectedAnswers[currentQuestion.ques_id] || []).includes(answer.aid);
+                  return (
+                    <FormControlLabel
+                      key={answer.aid}
+                      value={answer.aid}
+                      control={isMultiChoice ? <Checkbox checked={isSelected} size="medium" /> : <Radio checked={isSelected} size="medium" />}
+                      label={
+                        <Box sx={{ display: "flex", width: "100%", alignItems: "flex-start", py: 0.5 }}>
+                          <Typography sx={{ mr: 1.5, fontWeight: 700, fontSize: "1rem", color: isSelected ? "primary.main" : "text.secondary", mt: "2px" }}>
+                            {getAnswerPrefix(index)}.
+                          </Typography>
+                          <Box sx={{ flexGrow: 1, fontSize: "1rem", lineHeight: 1.6, width: "100%" }}>
+                            <HtmlContentRenderer htmlContent={answer.content} />
+                          </Box>
                         </Box>
-                      </Box>
-                    }
-                    onChange={() =>
-                      handleAnswerChange(
-                        currentQuestion.ques_id,
-                        answer.aid,
-                        isMultiChoice,
-                      )
-                    }
-                    sx={{
-                      m: 0,
-                      mb: 2,
-                      pr: 3,
-                      pl: 1,
-                      py: 1,
-                      width: "100%",
-                      borderRadius: 3,
-                      border: "2px solid",
-                      borderColor: isSelected ? "primary.main" : "grey.200",
-                      backgroundColor: isSelected
-                        ? "primary.50"
-                        : "transparent",
-                      alignItems: "flex-start",
-                      "&:hover": {
-                        borderColor: isSelected ? "primary.main" : "grey.300",
-                        backgroundColor: isSelected ? "primary.50" : "grey.50",
-                      },
-                      "& .MuiFormControlLabel-label": { width: "100%" },
-                    }}
-                  />
-                );
-              })}
-            </FormGroup>
-          </Box>
+                      }
+                      onChange={() => handleAnswerChange(currentQuestion.ques_id, answer.aid, isMultiChoice)}
+                      sx={{
+                        m: 0, mb: 1.5, pr: 2, pl: 1, py: 1, width: "100%", borderRadius: '12px',
+                        border: "2px solid", borderColor: isSelected ? "primary.main" : isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3),
+                        backgroundColor: isSelected ? alpha(theme.palette.primary.main, 0.05) : "transparent",
+                        alignItems: "flex-start",
+                        transition: 'all 0.2s',
+                        "&:hover": { borderColor: isSelected ? "primary.main" : alpha(theme.palette.primary.main, 0.5), backgroundColor: isSelected ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.02) },
+                        "& .MuiFormControlLabel-label": { width: "100%" },
+                      }}
+                    />
+                  );
+                })}
+              </FormGroup>
+            </Box>
 
-          {/* Nút Điều hướng */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: { xs: "center", sm: "space-between" },
-              gap: { xs: 2, sm: 0 },
-              p: { xs: 2, md: 3 },
-              borderTop: "1px solid #eee",
-            }}
-          >
-            <Button
-              variant="outlined"
+            <Box sx={{ display: "flex", justifyContent: "space-between", p: { xs: 2.5, md: 3.5 }, borderTop: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.2)}`, bgcolor: isDark ? alpha(theme.palette.background.default, 0.4) : alpha(theme.palette.background.default, 0.6) }}>
+              <Button variant="outlined" onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowBackIcon />} sx={{ borderRadius: '10px', fontWeight: 700, px: { xs: 2, sm: 3 } }}>
+                Câu trước
+              </Button>
               
-              onClick={handleBack}
-              disabled={activeStep === 0}
-              startIcon={<ArrowBackIcon />}
-              sx={{
-                borderRadius: 2,
-                fontWeight: 700,
-                px: { xs: 1.5, sm: 2 },
-                py: { xs: 0.8, sm: 1 },
-                fontSize: { xs: "0.85rem", sm: "1rem" },
-              }}
-            >
-              Câu trước
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              disabled={activeStep === questions.length - 1}
-              endIcon={<ArrowForwardIcon />}
-              disableElevation
-              sx={{
-                borderRadius: 2,
-                fontWeight: 700,
-                px: { xs: 1.5, sm: 4 },
-                py: { xs: 0.8, sm: 1 },
-                fontSize: { xs: "0.85rem", sm: "1rem" },
-              }}
-            >
-              Câu tiếp
-            </Button>
-          </Box>
-        </Paper>
-      </Box>
-
-      {/* Drawer Bảng tiến độ  */}
-      <Drawer
-        anchor="right"
-        open={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        PaperProps={{
-          sx: {
-            width: { xs: "85vw", sm: 400 },
-            p: 3,
-            borderTopLeftRadius: 16,
-            borderBottomLeftRadius: 16,
-            display: "flex",
-            flexDirection: "column",
-          },
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 2,
-          }}
-        >
-          <Typography variant="h5" fontWeight={700} color="text.primary">
-            Tiến độ làm bài
-          </Typography>
-          <IconButton onClick={() => setIsDrawerOpen(false)} color="inherit">
-            <CloseIcon />
-          </IconButton>
-        </Box>
-
-        <Box sx={{ flexGrow: 1, overflowY: "auto", pr: 1 }}>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(5, 1fr)",
-              gap: 1.5,
-            }}
-          >
-            {questions.map((q, index) => {
-              const isAnswered = (selectedAnswers[q.ques_id] || []).length > 0;
-              const isActive = index === activeStep;
-
-              return (
-                <Button
-                  key={q.ques_id}
-                  variant={isAnswered ? "contained" : "outlined"}
+              {activeStep === questions.length - 1 ? (
+                <Button 
+                  variant="contained" 
+                  color="success"
                   onClick={() => {
-                    handleStepClick(index);
-                    setIsDrawerOpen(false);
-                  }}
-                  sx={{
-                    minWidth: 0,
-                    height: 48,
-                    borderRadius: 2,
-                    fontWeight: 800,
-                    fontSize: "1.1rem",
-                    p: 0,
-                    bgcolor: isAnswered
-                      ? "primary.main"
-                      : isActive
-                        ? "secondary.light"
-                        : "grey.100",
-                    color: isAnswered
-                      ? "#fff"
-                      : isActive
-                        ? "#fff"
-                        : "text.primary",
-                    border: "2px solid",
-                    borderColor: isActive
-                      ? "secondary.main"
-                      : isAnswered
-                        ? "primary.main"
-                        : "grey.300",
-                    "&:hover": {
-                      bgcolor: isAnswered ? "primary.dark" : "grey.200",
-                    },
-                  }}
+                    if (!isDesktop) setIsDrawerOpen(false);
+                    setOpenSubmitConfirm(true);
+                  }} 
+                  endIcon={<SendIcon />} 
+                  disableElevation 
+                  sx={{ borderRadius: '10px', fontWeight: 700, px: { xs: 2, sm: 4 } }}
                 >
-                  {index + 1}
+                  Nộp bài
                 </Button>
-              );
-            })}
-          </Box>
-        </Box>
+              ) : (
+                <Button 
+                  variant="contained" 
+                  onClick={handleNext} 
+                  endIcon={<ArrowForwardIcon />} 
+                  disableElevation 
+                  sx={{ borderRadius: '10px', fontWeight: 700, px: { xs: 2, sm: 4 } }}
+                >
+                  Câu tiếp
+                </Button>
+              )}
+            </Box>
+          </Paper>
+        </Grid>
 
-        <Box sx={{ pt: 2, borderTop: "1px solid #eee", mt: 2 }}>
-          <Button
-            fullWidth
-            variant="contained"
-            color="success"
-            size="large"
-            startIcon={<SendIcon />}
-            onClick={() => {
-              setIsDrawerOpen(false);
-              setOpenSubmitConfirm(true);
-            }}
-            disabled={isSubmitting}
-            disableElevation
-            sx={{
-              borderRadius: 3,
-              py: 1.5,
-              fontWeight: 700,
-              fontSize: "1.2rem",
-            }}
-          >
-            Nộp bài thi
-          </Button>
-        </Box>
-      </Drawer>
+        <Grid size={{ xs: 12, lg: 4, xl: 3 }} sx={{ display: { xs: 'none', lg: 'block' }, position: 'sticky', top: 24, zIndex: 10 }}>
+          {NavigationBoardContent}
+        </Grid>
+      </Grid>
 
-      {/* Dialog xác nhận nộp bài */}
-      <Dialog
-        open={openSubmitConfirm}
-        onClose={() => setOpenSubmitConfirm(false)}
-        PaperProps={{ sx: { borderRadius: 4, p: 1, minWidth: 400 } }}
-      >
-        <DialogTitle
-          sx={{
-            fontWeight: 700,
-            fontSize: "1.6rem",
-            textAlign: "center",
-            pb: 1,
-          }}
-        >
+      {!isDesktop && (
+        <Drawer anchor="right" open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} PaperProps={{ sx: { width: { xs: "85vw", sm: 320 }, borderTopLeftRadius: '16px', borderBottomLeftRadius: '16px', display: "flex", flexDirection: "column", backgroundColor: isDark ? theme.palette.background.paper : theme.palette.common.white, backgroundImage: 'none' } }}>
+          {NavigationBoardContent}
+        </Drawer>
+      )}
+
+      <Dialog open={openSubmitConfirm} onClose={() => setOpenSubmitConfirm(false)} PaperProps={{ sx: { borderRadius: '16px', p: 1, minWidth: { xs: '90vw', sm: 400 }, backgroundImage: 'none' } }}>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: "1.4rem", textAlign: "center", pb: 1 }}>
           Xác nhận nộp bài
         </DialogTitle>
         <DialogContent>
-          <DialogContentText
-            sx={{
-              fontSize: "1.1rem",
-              textAlign: "center",
-              color: "text.primary",
-            }}
-          >
-            Bạn đã trả lời{" "}
-            <Typography
-              component="span"
-              fontWeight={800}
-              color="primary"
-              fontSize="1.3rem"
-            >
-              {
-                Object.values(selectedAnswers).filter((a) => a && a.length > 0)
-                  .length
-              }
-            </Typography>{" "}
-            / {questions.length} câu hỏi. <br />
-            <br />
-            Bạn có chắc chắn muốn nộp ngay?
+          <DialogContentText sx={{ fontSize: "1rem", textAlign: "center", color: "text.primary" }}>
+            Bạn đã trả lời <Typography component="span" fontWeight={700} color="primary.main" fontSize="1.2rem">{answeredCount}</Typography> / {questions.length} câu hỏi. <br /><br />Bạn có chắc chắn muốn nộp ngay?
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0, justifyContent: "center", gap: 2 }}>
-          <Button
-            onClick={() => setOpenSubmitConfirm(false)}
-            variant="outlined"
-            color="inherit"
-            size="large"
-            sx={{ borderRadius: 2, fontWeight: 700 }}
-          >
+          <Button onClick={() => setOpenSubmitConfirm(false)} variant="outlined" color="inherit" sx={{ borderRadius: '10px', fontWeight: 700 }}>
             Kiểm tra lại
           </Button>
-          <Button
-            onClick={() => handleFinalSubmit(false)}
-            variant="contained"
-            color="success"
-            size="large"
-            disableElevation
-            sx={{ borderRadius: 2, fontWeight: 700 }}
-          >
+          <Button onClick={() => handleFinalSubmit(false)} variant="contained" color="success" disableElevation sx={{ borderRadius: '10px', fontWeight: 700 }}>
             Nộp bài ngay
           </Button>
         </DialogActions>
       </Dialog>
 
-      <AppSnackbar
-        open={snackbar.open}
-        message={snackbar.message}
-        severity={snackbar.severity}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      />
-    </Container>
+      <AppSnackbar open={snackbar.open} message={snackbar.message} severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })} />
+    </PageWrapper>
   );
 }
