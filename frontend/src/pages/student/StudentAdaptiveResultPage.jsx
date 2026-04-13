@@ -25,7 +25,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 // --- MAIN COMPONENT ---
 // ======================================================
 
-export default function StudentPracticeResultPage() {
+export default function StudentAdaptiveResultPage() {
   // --- FIX LỖI Ở ĐÂY ---
   // Trong AppRoutes đặt là path="practice/result/:resultId"
   // Nên ở đây phải lấy "resultId", không phải "sessionId"

@@ -47,7 +47,7 @@ const menuConfigByRole = {
   student: [
     { label: "Góc học tập", to: "/student/dashboard", Icon: DashboardIcon },
     { label: "Lớp học của tôi", to: "/student/classes", Icon: GroupOutlined },
-    { label: "Luyện tập", to: "/student/practice", Icon: LibraryIcon },
+    { label: "Luyện tập", to: "/student/adaptive", Icon: LibraryIcon },
     { label: "Bài tập", to: "/student/assignment", Icon: HomeWorkOutlinedIcon },
     { label: "Đăng ký lớp học", to: "/student/enroll", Icon: AccountBoxIcon },
   ],

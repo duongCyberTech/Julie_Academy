@@ -222,3 +222,26 @@ export const getAllAssignmentsForStudent = async (token, params = {}) => {
         throw error;
     }
 };
+
+// Bắt đầu luồng Adaptive
+export const takeAdaptiveExam = async (categoryId) => {
+  const token = localStorage.getItem('token');
+  return apiClient.post(`/exam/adaptive/take/${categoryId}`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+};
+
+// Lấy câu hỏi Adaptive tiếp theo
+export const getNextAdaptiveQuestion = async (categoryId, payload) => {
+  const token = localStorage.getItem('token');
+  return apiClient.post(`/exam/adaptive/next-question/${categoryId}`, payload, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+};
+
+export const submitAdaptiveExam = async (etId) => {
+  const token = localStorage.getItem('token');
+  return apiClient.post(`/exam/adaptive/submit/${etId}`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+};

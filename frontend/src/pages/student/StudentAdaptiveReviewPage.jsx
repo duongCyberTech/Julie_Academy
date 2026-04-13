@@ -77,7 +77,7 @@ const isQuestionCorrect = (q, selectedAnswers) => {
 // --- COMPONENT CHÍNH ---
 // ======================================================
 
-export default function StudentPracticeReviewPage() {
+export default function StudentAdaptiveReviewPage() {
   // --- FIX LỖI QUAN TRỌNG Ở ĐÂY ---
   // AppRoutes định nghĩa là :reviewId, nên ta phải lấy reviewId và gán nó vào biến sessionId
   const { reviewId } = useParams(); 

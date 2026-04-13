@@ -222,6 +222,7 @@ export class ExamTakenService {
     }
 
     async getNextAdaptiveQuestion(student_id: string, category_id: string, cur_ques: CurrentQuestionDto) {
+        // Kiểm tra đáp án hiện tại
         const ans = await this.prisma.answers.findMany({
             where: {
                 question: {ques_id: cur_ques.question_id},
@@ -235,6 +236,7 @@ export class ExamTakenService {
 
         const checkCorrect = ans[0]?.is_correct || false;
 
+        // Cập nhật trạng thái câu hỏi vào lịch sử thi
         await this.prisma.question_for_exam_taken.upsert({
             where: {
                 et_id_ques_id: {
@@ -259,11 +261,14 @@ export class ExamTakenService {
                 chosen_answer_at: new Date(),
             }
         })
+        
+        // Kiểm tra điều kiện kết thúc bài thi
 
         if (cur_ques.index >= this.MAX_ADAPTIVE_QUESTIONS) {
             return this.submitAdaptiveExam(cur_ques.et_id, student_id)
         }
 
+        // Lấy lịch sử 10 câu gần nhất để đánh giá năng lực
         const question_dons_list = await this.prisma.question_for_exam_taken.findMany({
             where: {
                 exam_taken: {
@@ -301,6 +306,7 @@ export class ExamTakenService {
         const next_level = p_l > 0.8 ? (cur_ques.level == DifficultyLevel.easy ? DifficultyLevel.medium : DifficultyLevel.hard) : 
                             (p_l <= 0.8 && p_l > 0.5 ? cur_ques.level : (cur_ques.level == DifficultyLevel.hard ? DifficultyLevel.medium : DifficultyLevel.easy))
 
+        // Truy vấn câu hỏi tiếp theo dựa trên năng lực đánh giá được
         const question = await this.prisma.questions.findFirst({
             where: {
                 exam_takens: {none: {et_id: cur_ques.et_id}},
@@ -587,7 +593,6 @@ export class ExamTakenService {
 
             score += currentQuesScore;
         }
-
         // nếu cần fix sai số
         score = Number(score.toFixed(6));
 

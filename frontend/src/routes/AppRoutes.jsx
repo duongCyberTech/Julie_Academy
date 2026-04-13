@@ -36,16 +36,16 @@ const QuestionDetailPage = React.lazy(() => import("../pages/tutor/QuestionDetai
 const TutorProfilePage = React.lazy(() => import("../pages/tutor/TutorProfilePage.jsx"));
 const QuestionEditor = React.lazy(() => import("../pages/tutor/QuestionEditor.jsx"));
 
-// --- STUDENT (Lazy Load) ---
+// --- STUDENT  ---
 const StudentDashboard = React.lazy(() => import("../pages/student/StudentDashboard"));
 const StudentProfilePage = React.lazy(() => import("../pages/student/StudentProfilePage"));
 const StudentMyClassPage = React.lazy(() => import("../pages/student/StudentMyClassPage"));
 const StudentClassDetailPage = React.lazy(() => import("../pages/student/StudentClassDetailPage"));
 const StudentThreadDetailPage = React.lazy(() => import("../pages/student/StudentThreadDetailPage"));
-const StudentPracticePage = React.lazy(() => import("../pages/student/StudentPracticePage"));
-const StudentPracticeSessionPage = React.lazy(() => import("../pages/student/StudentPracticeSessionPage"));
-const StudentPracticeResultPage = React.lazy(() => import("../pages/student/StudentPracticeResultPage"));
-const StudentPracticeReviewPage = React.lazy(() => import("../pages/student/StudentPracticeReviewPage"));
+const StudentAdaptivePage = React.lazy(() => import("../pages/student/StudentAdaptivePage"));
+const StudentAdaptiveSessionPage = React.lazy(() => import("../pages/student/StudentAdaptiveSessionPage.jsx"));
+const StudentAdaptiveResultPage = React.lazy(() => import("../pages/student/StudentAdaptiveResultPage"));
+const StudentAdaptiveReviewPage = React.lazy(() => import("../pages/student/StudentAdaptiveReviewPage"));
 const StudentAssignmentPage = React.lazy(() => import("../pages/student/StudentAssignmentPage"));
 const StudentAssignmentSessionPage = React.lazy(() => import("../pages/student/StudentAssignmentSessionPage"));
 const StudentAssignmentResultPage = React.lazy(() => import("../pages/student/StudentAssignmentResultPage"));
@@ -140,18 +140,15 @@ function AppRoutes(props) {
               path="classes/:classId/:threadId"
               element={<StudentThreadDetailPage />}
             />
-            <Route path="practice" element={<StudentPracticePage />} />
+            <Route path="adaptive" element={<StudentAdaptivePage />} />
+            <Route path="adaptive/take/:categoryId" element={<StudentAdaptiveSessionPage />} />
             <Route
-              path="practice/session/:sessionId"
-              element={<StudentPracticeSessionPage />}
+              path="adaptive/result/:resultId"
+              element={<StudentAdaptiveResultPage />}
             />
             <Route
-              path="practice/result/:resultId"
-              element={<StudentPracticeResultPage />}
-            />
-            <Route
-              path="practice/review/:reviewId"
-              element={<StudentPracticeReviewPage />}
+              path="adaptive/review/:reviewId"
+              element={<StudentAdaptiveReviewPage />}
             />
 
             <Route
