@@ -155,7 +155,7 @@ async function main() {
 
   console.log(`Bắt đầu seeding Questions và Answers cho Toán 9...`);
 
-  const tutor = await prisma.user.findFirstOrThrow({
+  const tutor = await prisma.user.findFirst({
     where: { email: 'tutor@gmail.com' },
   });
 
@@ -163,48 +163,48 @@ async function main() {
   // === CÁNH DIỀU ===
   // ======================================================
   // === CHƯƠNG 1: Phương trình và hệ phương trình bậc nhất ===
-  // SỬA: Dùng findFirstOrThrow thay vì findUnique
-  const cd_cat1_s1 = await prisma.categories.findFirstOrThrow({
+  // SỬA: Dùng findFirst thay vì findUnique
+  const cd_cat1_s1 = await prisma.categories.findFirst({
     where: {
       category_name: '§1. Phương trình quy về phương trình bậc nhất một ẩn',
     },
   });
-  const cd_cat1_s2 = await prisma.categories.findFirstOrThrow({
+  const cd_cat1_s2 = await prisma.categories.findFirst({
     where: {
       category_name:
         '§2. Phương trình bậc nhất hai ẩn. Hệ hai phương trình bậc nhất hai ẩn',
     },
   });
-  const cd_cat1_s3 = await prisma.categories.findFirstOrThrow({
+  const cd_cat1_s3 = await prisma.categories.findFirst({
     where: { category_name: '§3. Giải hệ hai phương trình bậc nhất hai ẩn' },
   });
 
   // === CHƯƠNG 2: Bất đẳng thức. Bất phương trình bậc nhất một ẩn ===
-  const cd_cat2_s1 = await prisma.categories.findFirstOrThrow({
+  const cd_cat2_s1 = await prisma.categories.findFirst({
     where: { category_name: '§1. Bất đẳng thức' },
   });
-  const cd_cat2_s2 = await prisma.categories.findFirstOrThrow({
+  const cd_cat2_s2 = await prisma.categories.findFirst({
     where: { category_name: '§2. Bất phương trình bậc nhất một ẩn' },
   });
 
   // === CHƯƠNG 3: CĂN THỨC ===
-  const cd_cat3_s1 = await prisma.categories.findFirstOrThrow({
+  const cd_cat3_s1 = await prisma.categories.findFirst({
     where: {
       category_name: '§1. Căn bậc hai và căn bậc ba của số thực',
     },
   });
-  const cd_cat3_s2 = await prisma.categories.findFirstOrThrow({
+  const cd_cat3_s2 = await prisma.categories.findFirst({
     where: {
       category_name: '§2. Một số phép tính về căn bậc hai của số thực',
     },
   });
-  const cd_cat3_s3 = await prisma.categories.findFirstOrThrow({
+  const cd_cat3_s3 = await prisma.categories.findFirst({
     where: {
       category_name:
         '§3. Căn thức bậc hai và căn thức bậc ba của biểu thức đại số',
     },
   });
-  const cd_cat3_s4 = await prisma.categories.findFirstOrThrow({
+  const cd_cat3_s4 = await prisma.categories.findFirst({
     where: {
       category_name:
         '§4. Một số phép biến đổi căn thức bậc hai của biểu thức đại số',
@@ -212,36 +212,36 @@ async function main() {
   });
 
   // === CHƯƠNG 4: HỆ THỨC LƯỢNG ===
-  const cd_cat4_s1 = await prisma.categories.findFirstOrThrow({
+  const cd_cat4_s1 = await prisma.categories.findFirst({
     where: { category_name: '§1. Tỉ số lượng giác của góc nhọn' },
   });
-  const cd_cat4_s2 = await prisma.categories.findFirstOrThrow({
+  const cd_cat4_s2 = await prisma.categories.findFirst({
     where: {
       category_name: '§2. Một số hệ thức về cạnh và góc trong tam giác vuông',
     },
   });
-  const cd_cat4_s3 = await prisma.categories.findFirstOrThrow({
+  const cd_cat4_s3 = await prisma.categories.findFirst({
     where: { category_name: '§3. Ứng dụng của tỉ số lượng giác của góc nhọn' },
   });
 
   // === CHƯƠNG 5: ĐƯỜNG TRÒN ===
-  const cd_cat5_s1 = await prisma.categories.findFirstOrThrow({
+  const cd_cat5_s1 = await prisma.categories.findFirst({
     where: {
       category_name: '§1. Đường tròn. Vị trí tương đối của hai đường tròn',
     },
   });
-  const cd_cat5_s2 = await prisma.categories.findFirstOrThrow({
+  const cd_cat5_s2 = await prisma.categories.findFirst({
     where: {
       category_name: '§2. Vị trí tương đối của đường thẳng và đường tròn',
     },
   });
-  const cd_cat5_s3 = await prisma.categories.findFirstOrThrow({
+  const cd_cat5_s3 = await prisma.categories.findFirst({
     where: { category_name: '§3. Tiếp tuyến của đường tròn' },
   });
-  const cd_cat5_s4 = await prisma.categories.findFirstOrThrow({
+  const cd_cat5_s4 = await prisma.categories.findFirst({
     where: { category_name: '§4. Góc ở tâm. Góc nội tiếp' },
   });
-  const cd_cat5_s5 = await prisma.categories.findFirstOrThrow({
+  const cd_cat5_s5 = await prisma.categories.findFirst({
     where: {
       category_name:
         '§5. Độ dài cung tròn, diện tích hình quạt tròn, diện tích hình vành khuyên',
@@ -249,20 +249,20 @@ async function main() {
   });
 
   // === CHƯƠNG 6: THỐNG KÊ VÀ XÁC SUẤT ===
-  const cd_cat6_s1 = await prisma.categories.findFirstOrThrow({
+  const cd_cat6_s1 = await prisma.categories.findFirst({
     where: {
       category_name: '§1. Mô tả và biểu diễn dữ liệu trên các bảng, biểu đồ',
     },
   });
-  const cd_cat6_s2 = await prisma.categories.findFirstOrThrow({
+  const cd_cat6_s2 = await prisma.categories.findFirst({
     where: { category_name: '§2. Tần số. Tần số tương đối' },
   });
-  const cd_cat6_s3 = await prisma.categories.findFirstOrThrow({
+  const cd_cat6_s3 = await prisma.categories.findFirst({
     where: {
       category_name: '§3. Tần số ghép nhóm. Tần số tương đối ghép nhóm',
     },
   });
-  const cd_cat6_s4 = await prisma.categories.findFirstOrThrow({
+  const cd_cat6_s4 = await prisma.categories.findFirst({
     where: {
       category_name:
         '§4. Phép thử ngẫu nhiên và không gian mẫu. Xác suất của biến cố',
@@ -270,45 +270,45 @@ async function main() {
   });
 
   // === CHƯƠNG 7: HÀM SỐ VÀ PHƯƠNG TRÌNH BẬC HAI ===
-  const cd_cat7_s1 = await prisma.categories.findFirstOrThrow({
+  const cd_cat7_s1 = await prisma.categories.findFirst({
     where: { category_name: '§1. Hàm số y = ax^2 (a \\ne 0)' },
   });
-  const cd_cat7_s2 = await prisma.categories.findFirstOrThrow({
+  const cd_cat7_s2 = await prisma.categories.findFirst({
     where: { category_name: '§2. Phương trình bậc hai một ẩn' },
   });
-  const cd_cat7_s3 = await prisma.categories.findFirstOrThrow({
+  const cd_cat7_s3 = await prisma.categories.findFirst({
     where: { category_name: '§3. Định lí Viète' },
   });
 
   // === CHƯƠNG 8: ĐƯỜNG TRÒN NGOẠI TIẾP/NỘI TIẾP ===
-  const cd_cat8_s1 = await prisma.categories.findFirstOrThrow({
+  const cd_cat8_s1 = await prisma.categories.findFirst({
     where: {
       category_name:
         '§1. Đường tròn ngoại tiếp tam giác. Đường tròn nội tiếp tam giác',
     },
   });
-  const cd_cat8_s2 = await prisma.categories.findFirstOrThrow({
+  const cd_cat8_s2 = await prisma.categories.findFirst({
     where: { category_name: '§2. Tứ giác nội tiếp đường tròn' },
   });
 
   // === CHƯƠNG 9: ĐA GIÁC ĐỀU ===
-  const cd_cat9_s1 = await prisma.categories.findFirstOrThrow({
+  const cd_cat9_s1 = await prisma.categories.findFirst({
     where: {
       category_name: '§1. Đa giác đều. Hình đa giác đều trong thực tiễn',
     },
   });
-  const cd_cat9_s2 = await prisma.categories.findFirstOrThrow({
+  const cd_cat9_s2 = await prisma.categories.findFirst({
     where: { category_name: '§2. Phép quay' },
   });
 
   // === CHƯƠNG 10: HÌNH HỌC TRỰC QUAN ===
-  const cd_cat10_s1 = await prisma.categories.findFirstOrThrow({
+  const cd_cat10_s1 = await prisma.categories.findFirst({
     where: { category_name: '§1. Hình trụ' },
   });
-  const cd_cat10_s2 = await prisma.categories.findFirstOrThrow({
+  const cd_cat10_s2 = await prisma.categories.findFirst({
     where: { category_name: '§2. Hình nón' },
   });
-  const cd_cat10_s3 = await prisma.categories.findFirstOrThrow({
+  const cd_cat10_s3 = await prisma.categories.findFirst({
     where: { category_name: '§3. Hình cầu' },
   });
 
@@ -317,68 +317,68 @@ async function main() {
   // ======================================================
 
   // --- CHƯƠNG 1: PHƯƠNG TRÌNH VÀ HỆ PHƯƠNG TRÌNH ---
-  const ctst_cat1_s1 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat1_s1 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 1. Phương trình quy về phương trình bậc nhất một ẩn',
     },
   });
-  const ctst_cat1_s2 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat1_s2 = await prisma.categories.findFirst({
     where: {
       category_name:
         'Bài 2. Phương trình bậc nhất hai ẩn và hệ hai phương trình bậc nhất hai ẩn',
     },
   });
-  const ctst_cat1_s3 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat1_s3 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 3. Giải hệ hai phương trình bậc nhất hai ẩn',
     },
   });
 
   // --- CHƯƠNG 2: BẤT ĐẲNG THỨC. BẤT PHƯƠNG TRÌNH BẬC NHẤT MỘT ẨN ---
-  const ctst_cat2_s1 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat2_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 1. Bất đẳng thức' },
   });
-  const ctst_cat2_s2 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat2_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 2. Bất phương trình bậc nhất một ẩn' },
   });
 
   // --- CHƯƠNG 3: CĂN THỨC ---
-  const ctst_cat3_s1 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat3_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 1. Căn bậc hai' },
   });
-  const ctst_cat3_s2 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat3_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 2. Căn bậc ba' },
   });
-  const ctst_cat3_s3 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat3_s3 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 3. Tính chất của phép khai phương' },
   });
-  const ctst_cat3_s4 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat3_s4 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 4. Biến đổi đơn giản biểu thức chứa căn thức bậc hai',
     },
   });
 
   // --- CHƯƠNG 4: HỆ THỨC LƯỢNG TRONG TAM GIÁC VUÔNG ---
-  const ctst_cat4_s1 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat4_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 1. Tỉ số lượng giác của góc nhọn' },
   });
-  const ctst_cat4_s2 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat4_s2 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 2. Hệ thức giữa cạnh và góc của tam giác vuông',
     },
   });
 
   // --- CHƯƠNG 5: ĐƯỜNG TRÒN ---
-  const ctst_cat5_s1 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat5_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 1. Đường tròn' },
   });
-  const ctst_cat5_s2 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat5_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 2. Tiếp tuyến của đường tròn' },
   });
-  const ctst_cat5_s3 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat5_s3 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 3. Góc ở tâm, góc nội tiếp' },
   });
-  const ctst_cat5_s4 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat5_s4 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 4. Hình quạt tròn và hình vành khuyên' },
   });
 
@@ -387,61 +387,61 @@ async function main() {
   // ======================================================
 
   // --- CHƯƠNG 6: HÀM SỐ y = ax^2 (a ≠ 0) VÀ PHƯƠNG TRÌNH BẬC HAI MỘT ẨN ---
-  const ctst_cat6_s1 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat6_s1 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 1. Hàm số và đồ thị của hàm số y = ax^2 (a ≠ 0)',
     },
   });
-  const ctst_cat6_s2 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat6_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 2. Phương trình bậc hai một ẩn' },
   });
-  const ctst_cat6_s3 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat6_s3 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 3. Định lí Viète' },
   });
 
   // --- CHƯƠNG 7: MỘT SỐ YẾU TỐ THỐNG KÊ ---
-  const ctst_cat7_s1 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat7_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 1. Bảng tần số và biểu đồ tần số' },
   });
-  const ctst_cat7_s2 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat7_s2 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 2. Bảng tần số tương đối và biểu đồ tần số tương đối',
     },
   });
-  const ctst_cat7_s3 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat7_s3 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 3. Biểu diễn số liệu ghép nhóm' },
   });
 
   // --- CHƯƠNG 8: MỘT SỐ YẾU TỐ XÁC SUẤT ---
-  const ctst_cat8_s1 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat8_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 1. Không gian mẫu và biến cố' },
   });
-  const ctst_cat8_s2 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat8_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 2. Xác suất của biến cố' },
   });
 
   // --- CHƯƠNG 9: TỨ GIÁC NỘI TIẾP. ĐA GIÁC ĐỀU ---
-  const ctst_cat9_s1 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat9_s1 = await prisma.categories.findFirst({
     where: {
       category_name:
         'Bài 1. Đường tròn ngoại tiếp tam giác. Đường tròn nội tiếp tam giác',
     },
   });
-  const ctst_cat9_s2 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat9_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 2. Tứ giác nội tiếp' },
   });
-  const ctst_cat9_s3 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat9_s3 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 3. Đa giác đều và phép quay' },
   });
 
   // --- CHƯƠNG 10: CÁC HÌNH KHỐI TRONG THỰC TIỄN ---
-  const ctst_cat10_s1 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat10_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 1. Hình trụ' },
   });
-  const ctst_cat10_s2 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat10_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 2. Hình nón' },
   });
-  const ctst_cat10_s3 = await prisma.categories.findFirstOrThrow({
+  const ctst_cat10_s3 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 3. Hình cầu' },
   });
 
@@ -450,60 +450,60 @@ async function main() {
   // ======================================================
 
   // --- Chương 1. PHƯƠNG TRÌNH VÀ HỆ HAI PHƯƠNG TRÌNH BẬC NHẤT HAI ẨN ---
-  const kntt_cat1_s1 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat1_s1 = await prisma.categories.findFirst({
     where: {
       category_name:
         'Bài 1. Khái niệm phương trình và hệ hai phương trình bậc nhất hai ẩn',
     },
   });
-  const kntt_cat1_s2 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat1_s2 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 2. Giải hệ hai phương trình bậc nhất hai ẩn',
     },
   });
-  const kntt_cat1_s3 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat1_s3 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 3. Giải bài toán bằng cách lập hệ phương trình',
     },
   });
 
   // --- Chương II. PHƯƠNG TRÌNH VÀ BẤT PHƯƠNG TRÌNH BẬC NHẤT MỘT ẨN ---
-  const kntt_cat2_s1 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat2_s1 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 4. Phương trình quy về phương trình bậc nhất một ẩn',
     },
   });
-  const kntt_cat2_s2 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat2_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 5. Bất đẳng thức và tính chất' },
   });
-  const kntt_cat2_s3 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat2_s3 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 6. Bất phương trình bậc nhất một ẩn' },
   });
 
   // --- Chương III. CĂN BẬC HAI VÀ CĂN BẬC BA ---
-  const kntt_cat3_s1 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat3_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 7. Căn bậc hai và căn thức bậc hai' },
   });
-  const kntt_cat3_s2 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat3_s2 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 8. Khai căn bậc hai với phép nhân và phép chia',
     },
   });
-  const kntt_cat3_s3 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat3_s3 = await prisma.categories.findFirst({
     where: {
       category_name:
         'Bài 9. Biến đổi đơn giản và rút gọn biểu thức chứa căn thức bậc hai',
     },
   });
-  const kntt_cat3_s4 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat3_s4 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 10. Căn bậc ba và căn thức bậc ba' },
   });
 
   // --- Chương IV. HỆ THỨC LƯỢNG TRONG TAM GIÁC VUÔNG ---
-  const kntt_cat4_s1 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat4_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 11. Tỉ số lượng giác của góc nhọn' },
   });
-  const kntt_cat4_s2 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat4_s2 = await prisma.categories.findFirst({
     where: {
       category_name:
         'Bài 12. Một số hệ thức giữa cạnh, góc trong tam giác vuông và ứng dụng',
@@ -511,24 +511,24 @@ async function main() {
   });
 
   // --- Chương V. ĐƯỜNG TRÒN ---
-  const kntt_cat5_s1 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat5_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 13. Mở đầu về đường tròn' },
   });
-  const kntt_cat5_s2 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat5_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 14. Cung và dây của một đường tròn' },
   });
-  const kntt_cat5_s3 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat5_s3 = await prisma.categories.findFirst({
     where: {
       category_name:
         'Bài 15. Độ dài của cung tròn. Diện tích hình quạt tròn và hình vành khuyên',
     },
   });
-  const kntt_cat5_s4 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat5_s4 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 16. Vị trí tương đối của đường thẳng và đường tròn',
     },
   });
-  const kntt_cat5_s5 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat5_s5 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 17. Vị trí tương đối của hai đường tròn' },
   });
 
@@ -537,32 +537,32 @@ async function main() {
   // ======================================================
 
   // --- Chương VI. HÀM SỐ y = ax^2 (a ≠ 0). PHƯƠNG TRÌNH BẬC HAI MỘT ẨN ---
-  const kntt_cat6_s1 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat6_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 18. Hàm số y = ax^2 (a ≠ 0)' },
   });
-  const kntt_cat6_s2 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat6_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 19. Phương trình bậc hai một ẩn' },
   });
-  const kntt_cat6_s3 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat6_s3 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 20. Định lí Viète và ứng dụng' },
   });
-  const kntt_cat6_s4 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat6_s4 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 21. Giải bài toán bằng cách lập phương trình',
     },
   });
 
   // --- Chương VII. TẦN SỐ VÀ TẦN SỐ TƯƠNG ĐỐI ---
-  const kntt_cat7_s1 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat7_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 22. Bảng tần số và biểu đồ tần số' },
   });
-  const kntt_cat7_s2 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat7_s2 = await prisma.categories.findFirst({
     where: {
       category_name:
         'Bài 23. Bảng tần số tương đối và biểu đồ tần số tương đối',
     },
   });
-  const kntt_cat7_s3 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat7_s3 = await prisma.categories.findFirst({
     where: {
       category_name:
         'Bài 24. Bảng tần số, tần số tương đối ghép nhóm và biểu đồ',
@@ -570,37 +570,37 @@ async function main() {
   });
 
   // --- Chương VIII. XÁC SUẤT CỦA BIẾN CỐ TRONG MỘT SỐ MÔ HÌNH XÁC SUẤT ĐƠN GIẢN ---
-  const kntt_cat8_s1 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat8_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 25. Phép thử ngẫu nhiên và không gian mẫu' },
   });
-  const kntt_cat8_s2 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat8_s2 = await prisma.categories.findFirst({
     where: {
       category_name: 'Bài 26. Xác suất của biến cố liên quan tới phép thử',
     },
   });
 
   // --- Chương IX. ĐƯỜNG TRÒN NGOẠI TIẾP VÀ ĐƯỜNG TRÒN NỘI TIẾP ---
-  const kntt_cat9_s1 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat9_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 27. Góc nội tiếp' },
   });
-  const kntt_cat9_s2 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat9_s2 = await prisma.categories.findFirst({
     where: {
       category_name:
         'Bài 28. Đường tròn ngoại tiếp và đường tròn nội tiếp của một tam giác',
     },
   });
-  const kntt_cat9_s3 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat9_s3 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 29. Tứ giác nội tiếp' },
   });
-  const kntt_cat9_s4 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat9_s4 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 30. Đa giác đều' },
   });
 
   // --- Chương X. MỘT SỐ HÌNH KHỐI TRONG THỰC TIỄN ---
-  const kntt_cat10_s1 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat10_s1 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 31. Hình trụ và hình nón' },
   });
-  const kntt_cat10_s2 = await prisma.categories.findFirstOrThrow({
+  const kntt_cat10_s2 = await prisma.categories.findFirst({
     where: { category_name: 'Bài 32. Hình cầu' },
   });
 
