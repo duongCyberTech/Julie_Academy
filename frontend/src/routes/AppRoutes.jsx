@@ -27,7 +27,7 @@ const TutorDashboard = React.lazy(() => import("../pages/tutor/TutorDashboard"))
 const QuestionPage = React.lazy(() => import("../pages/tutor/QuestionPage"));
 const NewQuestion = React.lazy(() => import("../pages/tutor/NewQuestion.jsx"));
 const ClassPage = React.lazy(() => import("../pages/tutor/ClassPage"));
-const ClassDetailPage = React.lazy(() => import("../pages/tutor/ClassDetailPage"));
+const ClassDetailPage = React.lazy(() => import("../pages/tutor/ClassDetailPage.jsx"));
 const ExamPage = React.lazy(() => import("../pages/tutor/ExamPage"));
 const ExamDetailPage = React.lazy(() => import("../pages/tutor/ExamDetailPage"));
 const AssignmentPage = React.lazy(() => import("../pages/tutor/AssignmentPage"));
@@ -36,21 +36,23 @@ const TutorProfilePage = React.lazy(() => import("../pages/tutor/TutorProfilePag
 const QuestionEditor = React.lazy(() => import("../pages/tutor/QuestionEditor.jsx"));
 const EmailPage = React.lazy(() => import("../pages/tutor/EmailPage.jsx"));
 
-// --- STUDENT (Lazy Load) ---
+// --- STUDENT  ---
 const StudentDashboard = React.lazy(() => import("../pages/student/StudentDashboard"));
 const StudentProfilePage = React.lazy(() => import("../pages/student/StudentProfilePage"));
+const StudentEnrollPage = React.lazy(() => import("../pages/student/StudentEnrollPage.jsx"));
+
 const StudentMyClassPage = React.lazy(() => import("../pages/student/MyClassPage"));
 const StudentClassDetailPage = React.lazy(() => import("../pages/student/ClassDetailPage"));
-const StudentThreadDetailPage = React.lazy(() => import("../pages/student/ThreadDetailPage"));
-const StudentPracticePage = React.lazy(() => import("../pages/student/PracticePage"));
-const StudentPracticeSessionPage = React.lazy(() => import("../pages/student/PracticeSessionPage"));
-const StudentPracticeResultPage = React.lazy(() => import("../pages/student/PracticeResultPage"));
-const StudentPracticeReviewPage = React.lazy(() => import("../pages/student/PracticeReviewPage"));
+const ThreadDetailPage = React.lazy(() => import("../pages/student/ThreadDetailPage"));
+const StudentAdaptivePage = React.lazy(() => import("../pages/student/AdaptivePage"));
+const StudentAdaptiveSessionPage = React.lazy(() => import("../pages/student/AdaptiveSessionPage.jsx"));
+const StudentAdaptiveResultPage = React.lazy(() => import("../pages/student/AdaptiveResultPage"));
+const StudentAdaptiveReviewPage = React.lazy(() => import("../pages/student/AdaptiveReviewPage"));
+const StudentAssignmentPage = React.lazy(() => import("../pages/student/AssignmentPage"));
 const StudentAssignmentSessionPage = React.lazy(() => import("../pages/student/AssignmentSessionPage"));
 const StudentAssignmentResultPage = React.lazy(() => import("../pages/student/AssignmentResultPage"));
-const StudentEnrollPage = React.lazy(() => import("../pages/student/StudentEnrollPage.jsx"));
-const StudentGlobalAssignmentPage = React.lazy(() => import("../pages/student/AssignmentPage"));
 const StudentAssignmentHistoryPage = React.lazy(() => import("../pages/student/AssignmentHistoryPage.jsx"));
+
 // --- PARENT (Lazy Load) ---
 const ParentDashboard = React.lazy(() => import("../pages/parent/ParentDashboard.jsx"));
 const ParentEnrollPage = React.lazy(() => import("../pages/parent/ParentEnrollPage.jsx"));
@@ -116,7 +118,7 @@ function AppRoutes(props) {
             <Route path="email" element={<EmailPage />} />
             <Route
               path="classes/:classId/:threadId"
-              element={<StudentThreadDetailPage />}
+              element={<ThreadDetailPage />}
             />
           </Route>
         </Route>
@@ -135,25 +137,22 @@ function AppRoutes(props) {
             />
             <Route
               path="classes/:classId/:threadId"
-              element={<StudentThreadDetailPage />}
+              element={<ThreadDetailPage />}
             />
-            <Route path="practice" element={<StudentPracticePage />} />
+            <Route path="adaptive" element={<StudentAdaptivePage />} />
+            <Route path="adaptive/take/:categoryId" element={<StudentAdaptiveSessionPage />} />
             <Route
-              path="practice/session/:sessionId"
-              element={<StudentPracticeSessionPage />}
-            />
-            <Route
-              path="practice/result/:resultId"
-              element={<StudentPracticeResultPage />}
+              path="adaptive/result/:resultId"
+              element={<StudentAdaptiveResultPage />}
             />
             <Route
-              path="practice/review/:reviewId"
-              element={<StudentPracticeReviewPage />}
+              path="adaptive/review/:reviewId"
+              element={<StudentAdaptiveReviewPage />}
             />
 
             <Route
               path="assignment"
-              element={<StudentGlobalAssignmentPage />}
+              element={<StudentAssignmentPage />}
             />
 
 

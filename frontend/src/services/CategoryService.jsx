@@ -129,6 +129,7 @@ export const getAllCategories = async (params = {}, token) => {
     throw error.response?.data || error;
   }
 };
+
 export const createCategory = async (categoryData, token) => {
   try {
     const response = await apiClient.post(
@@ -179,3 +180,4 @@ export const getPlanDetail = async (planId, token) => {
     throw error.response?.data || error;
   }
 };
+

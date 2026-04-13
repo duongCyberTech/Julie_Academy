@@ -108,6 +108,10 @@ async function createChapterAndLessons(
 
 async function main() {
   console.log(`Bắt đầu seeding Books...`);
+  console.log('Đang xóa dữ liệu Structure và Categories cũ...');
+  await prisma.structure.deleteMany();
+  await prisma.categories.deleteMany();
+  console.log('Đã xóa xong dữ liệu cũ.');
 
   // ======================================================
   // 1. TẠO BOOKS
@@ -351,7 +355,7 @@ async function main() {
 
   await createChapterAndLessons(
     bookKNTT.plan_id,
-    'Chương 1. PHƯƠNG TRÌNH VÀ HỆ HAI PHƯƠNG TRÌNH BẬC NHẤT HAI ẨN',
+    'Chương I. PHƯƠNG TRÌNH VÀ HỆ HAI PHƯƠNG TRÌNH BẬC NHẤT HAI ẨN',
     [
       'Bài 1. Khái niệm phương trình và hệ hai phương trình bậc nhất hai ẩn',
       'Bài 2. Giải hệ hai phương trình bậc nhất hai ẩn',
