@@ -7,8 +7,8 @@ import { CreateNotificationDTO } from 'src/notifications/dto/notification.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { QueueService } from './bull-queue.service';
 import { AnalysisService } from 'src/analysis/analysis.service';
-import { AggregateType, BadgeType, ExamType, NotificationType, ValueType } from '@prisma/client';
-import { BadgeService } from 'src/badge/badge.service';
+import { AnalyticsDto } from 'src/analysis/dto/analysis.dto';
+import { ExamType, NotificationType } from '@prisma/client';
 
 @Injectable()
 export class BackgroundService {
@@ -19,7 +19,6 @@ export class BackgroundService {
     private prisma: PrismaService,
     private jobQueue: QueueService,
     private analysisService: AnalysisService,
-    private badgeService: BadgeService
   ){}
 
   @OnEvent('cloudinary.delete')
@@ -43,10 +42,10 @@ export class BackgroundService {
       if (parts.length > 1) {
         return parts[1];
       }
-      return null;
+      return "";
     };
 
-    const s3Keys = deleteFiles.map(item => extractS3Key(item))
+    const s3Keys = deleteFiles.map(item => extractS3Key(item)).filter(item => item != "")
 
     await this.s3.deleteFiles(s3Keys)
   }
@@ -215,7 +214,7 @@ export class BackgroundService {
 
         receivers.forEach(async (receiver) => {
           await this.notify.createNotification(receiver.uid, {
-            message: `Một bài tập mới được thêm tại lớp ${klass.classname}.`,
+            message: `Một bài tập mới được thêm tại lớp ${klass?.classname}.`,
             type: NotificationType.exam,
             link_wrapper_id: class_id,
             link_primary_id: newSession.exam_id,
@@ -244,26 +243,26 @@ export class BackgroundService {
   @OnEvent('exam_taken.submit')
   async handleExamSubmission(payload: {
     uid: string,
-    sum_exam: number,
-    total_questions: number,
-    total_correct_questions: number,
-    final_score: number,
-    exam_type: ExamType
+    exam_type?: ExamType
   }) {
     try {
-      await this.analysisService.createOrUpdateAnalytics(payload.uid, {
-        sum_exam: payload.sum_exam,
-        ...(payload.exam_type === ExamType.practice ? {max_score_practice: payload.final_score} : {}),
-        streak: 1,
-        last_exam_taken_date: new Date()
+      await this.prisma.$transaction(async (tx) => {
+        const water_drops = await this.prisma.actionConfig.findFirst({
+          where: { title: {contains: payload.exam_type ?? "exam_adaptive"} },
+          select: {drops_claim: true}
+        })
+        .then(res => res?.drops_claim)
+        .catch(err => {return 1}) ?? 1
+
+        const ana_payload: Partial<AnalyticsDto> = {
+          water_drops: water_drops,
+          streak_trigger: true
+        }
+
+        await this.analysisService.createOrUpdateAnalytics(payload.uid, ana_payload)
       })
     } catch (error) {
       return
     }
-  }
-
-  @OnEvent('badge.claim')
-  async handleBadgeClaim(payload: {uid: string, badge_type: BadgeType, func_type: AggregateType, value_type: ValueType, value: number}) {
-    await this.badgeService.checkBadge(payload.uid, payload.badge_type, payload.func_type, payload.value_type, payload.value)
   }
 }
