@@ -36,15 +36,31 @@ jobs:
           name: Build ứng dụng NestJS
           command: npm run build
 
-  # --- JOB 2: CHẠY CD (DEPLOY) ---
-  deploy-to-render:
-    docker:
-      - image: cimg/base:current # Dùng image base cực nhẹ chỉ để chạy curl
+  deploy-to-ec2:
+    # Dùng machine image thay vì docker image để thực thi các tác vụ mạng/SSH mượt hơn
+    machine:
+      image: ubuntu-2204:current
     steps:
+      # 1. Nạp chìa khóa vào môi trường chạy của CircleCI
+      - add_ssh_keys:
+          fingerprints:
+            - "SHA256:sBgr9p4HkKeDCbd+R7BpTu7P4V6S5HJbF/IdprWl2U0"
+            
+      # 2. Lưu IP của EC2 vào danh sách an toàn để lệnh SSH không bị chặn bởi câu hỏi "Are you sure you want to continue connecting (yes/no)?"
       - run:
-          name: Trigger Render Deploy
-          # Trong CircleCI, gọi biến môi trường bằng $TÊN_BIẾN thay vì ${{ secrets... }}
-          command: curl -X POST $RENDER_DEPLOY_HOOK
+          name: Bypass strict host checking
+          command: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
+
+      # 3. Đăng nhập và thực thi chuỗi lệnh Deploy
+      - run:
+          name: Deploy to EC2
+          command: |
+            ssh $EC2_USERNAME@$EC2_HOST \
+            "cd Julie_Academy && \
+             git pull origin main && \
+             docker compose up -d --build"
 
   # --- JOB MỚI CHO FRONTEND (REACT) ---
   build-and-test-frontend:
@@ -87,7 +103,7 @@ workflows:
               # CI sẽ chạy trên mọi nhánh để test code
               only: /.*/ 
               
-      - deploy-to-render:
+      - deploy-to-ec2:
           # Điều kiện 1: Bắt buộc job build-and-test phải Xanh (Pass) mới được chạy
           requires:
             - build-and-test-backend
