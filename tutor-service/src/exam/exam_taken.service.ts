@@ -334,6 +334,10 @@ export class ExamTakenService {
             index: cur_ques.index + 1
         }))
 
+        if (!question?.ques_id) {
+            return await this.submitAdaptiveExam(cur_ques.et_id, student_id)
+        }
+
         return question
     }
 
