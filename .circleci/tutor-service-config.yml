@@ -19,7 +19,7 @@ jobs:
   build-and-test-fastapi:
     docker:
       - image: cimg/python:3.11.8 # Sử dụng image Python chính thức của CircleCI
-    working_directory: ~/project/adaptive-app
+    working_directory: ~/project/adaptive-learning-service
     steps:
       - checkout:
           path: ~/project
