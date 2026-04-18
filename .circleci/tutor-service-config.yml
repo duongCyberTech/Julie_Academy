@@ -10,8 +10,82 @@ parameters:
   run-frontend: # KHAI BÁO THÊM BIẾN CHO FRONTEND
     type: boolean
     default: false
+  run-adaptive-app: # THÊM BIẾN NÀY CHO FASTAPI
+    type: boolean
+    default: false
 
 jobs:
+  # --- JOB TEST FASTAPI ---
+  build-and-test-fastapi:
+    docker:
+      - image: cimg/python:3.11.8 # Sử dụng image Python chính thức của CircleCI
+    working_directory: ~/project/adaptive-app
+    steps:
+      - checkout:
+          path: ~/project
+      
+      # Bộ nhớ đệm (Cache) giúp cài thư viện nhanh hơn ở các lần sau
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "requirements.txt" }}
+      - run:
+          name: Cài đặt thư viện Python (pip)
+          command: |
+            python -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+      # - run:
+      #     name: Chạy Linter (Flake8 / Black)
+      #     command: |
+      #       . venv/bin/activate
+      #       flake8 .
+      
+      # Bỏ comment nếu bạn có viết test case bằng Pytest
+      # - run:
+      #     name: Chạy Unit Tests (Pytest)
+      #     command: |
+      #       . venv/bin/activate
+      #       pytest
+            
+      - run:
+          name: Kiểm tra cú pháp cơ bản
+          # Thử biên dịch file main.py để bắt lỗi cú pháp gõ sai (Dry run)
+          command: |
+            . venv/bin/activate
+            python -m py_compile app/main.py
+
+  deploy-fastapi-to-ec2:
+    # Dùng machine image thay vì docker image để thực thi các tác vụ mạng/SSH mượt hơn
+    machine:
+      image: ubuntu-2204:current
+    steps:
+      # 1. Nạp chìa khóa vào môi trường chạy của CircleCI
+      - add_ssh_keys:
+          fingerprints:
+            - "SHA256:sBgr9p4HkKeDCbd+R7BpTu7P4V6S5HJbF/IdprWl2U0"
+            
+      # 2. Lưu IP của EC2 vào danh sách an toàn để lệnh SSH không bị chặn bởi câu hỏi "Are you sure you want to continue connecting (yes/no)?"
+      - run:
+          name: Bypass strict host checking
+          command: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
+
+      # 3. Đăng nhập và thực thi chuỗi lệnh Deploy
+      - run:
+          name: Deploy to EC2
+          command: |
+            ssh $EC2_USERNAME@$EC2_HOST \
+            "cd Julie_Academy && \
+             git pull origin main && \
+             docker compose up -d --build adaptive-service"
+          no_output_timeout: 30m
+
   # --- JOB 1: CHẠY CI ---
   build-and-test-backend:
     docker:
@@ -36,7 +110,7 @@ jobs:
           name: Build ứng dụng NestJS
           command: npm run build
 
-  deploy-to-ec2:
+  deploy-nest-to-ec2:
     # Dùng machine image thay vì docker image để thực thi các tác vụ mạng/SSH mượt hơn
     machine:
       image: ubuntu-2204:current
@@ -60,7 +134,7 @@ jobs:
             ssh $EC2_USERNAME@$EC2_HOST \
             "cd Julie_Academy && \
              git pull origin main && \
-             docker compose up -d --build"
+             docker compose up -d --build tutor-service"
           no_output_timeout: 30m
 
   # --- JOB MỚI CHO FRONTEND (REACT) ---
@@ -104,8 +178,8 @@ workflows:
               # CI sẽ chạy trên mọi nhánh để test code
               only: /.*/ 
               
-      - deploy-to-ec2:
-          # Điều kiện 1: Bắt buộc job build-and-test phải Xanh (Pass) mới được chạy
+      - deploy-nest-to-ec2:
+          # Điều kiện 1:x Bắt buộc job build-and-test phải Xanh (Pass) mới được chạy
           requires:
             - build-and-test-backend
           # Điều kiện 2: CHỈ kích hoạt deploy khi code nằm trên nhánh main
@@ -113,6 +187,23 @@ workflows:
             branches:
               only: 
                 - main
+
+  # --- WORKFLOW FASTAPI ---
+  fastapi-ci-cd-workflow:
+    when: << pipeline.parameters.run-adaptive-app >>
+    jobs:
+      - build-and-test-fastapi:
+          filters:
+            branches:
+              only: /.*/
+              
+      # Tái sử dụng luôn Job deploy xịn sò mà bạn đã làm!
+      - deploy-fastapi-to-ec2:
+          requires:
+            - build-and-test-fastapi # Chờ Python test xanh mới deploy
+          filters:
+            branches:
+              only: main
 
   # --- WORKFLOW FRONTEND (MỚI) ---
   react-ci-workflow:

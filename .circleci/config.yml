@@ -19,3 +19,4 @@ workflows:
           mapping: |
             tutor-service/.* run-tutor-service true
             frontend/.* run-frontend true
+            adaptive-learning-service/.* run-adaptive-app true
