@@ -61,6 +61,7 @@ jobs:
             "cd Julie_Academy && \
              git pull origin main && \
              docker compose up -d --build"
+          no_output_timeout: 30m
 
   # --- JOB MỚI CHO FRONTEND (REACT) ---
   build-and-test-frontend:
