@@ -144,9 +144,9 @@ export class StudentDashboard {
             take,
             skip
         }).then(res => res.map(ex => ({
-            title: ex.exam_session.exam.title,
-            subject: ex.exam_session.exam_open_in[0].class.subject,
-            exam_type: ex.exam_session.exam_type,
+            title: ex?.exam_session?.exam.title,
+            subject: ex?.exam_session?.exam_open_in[0].class.subject,
+            exam_type: ex?.exam_session?.exam_type,
             score: ex.final_score,
             doneAt: ex.doneAt
         })))
@@ -194,7 +194,7 @@ export class StudentDashboard {
         });
 
         const groupedScores = new Map();
-        const nullRecords = [];
+        const nullRecords: any[] = [];
 
         scoreSet.forEach(record => {
             const { exam_id, session_id, final_score } = record;

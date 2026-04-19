@@ -33,7 +33,7 @@ export class ResourceController {
         @Param('folder_id') folder_id: string,
         @Body() data: ResourceDto,
         @UploadedFile() file: Express.Multer.File,
-        @Request() req
+        @Request() req: any
     ){
         const tutor_id = req.user.userId
         return this.resource.createNewDocs(tutor_id, folder_id, data, file)
@@ -41,13 +41,13 @@ export class ResourceController {
 
     @Get()
     getAllDocs(
-        @Request() req
+        @Request() req: any
     ){
         const tutor_id = req.user.userId
         try {
             return this.resource.getAllDocs(tutor_id)
         } catch (error) {
-            return new ExceptionResponse().returnError(error)
+            return new ExceptionResponse().returnError(error as Error)
         }
     }
 
@@ -58,7 +58,7 @@ export class ResourceController {
         try {
             return this.resource.getAllDocsByFolder(folder_id)
         } catch (error) {
-            return new ExceptionResponse().returnError(error)
+            return new ExceptionResponse().returnError(error as Error)
         }
     }
 
@@ -70,51 +70,51 @@ export class ResourceController {
         try {
             return this.resource.updateDocs(did, data)
         } catch (error) {
-            return new ExceptionResponse().returnError(error)
+            return new ExceptionResponse().returnError(error as Error)
         }
     }
 
-    @Get('download/:file_id')
-    async downloadFile(
-        @Param('file_id') file_id: string,
-        @Response() res: Resp
-    ){
-        try {
-            const GGD_file = await this.prisma.resources.findUnique({
-                where: {did: file_id}
-            })
+    // @Get('download/:file_id')
+    // async downloadFile(
+    //     @Param('file_id') file_id: string,
+    //     @Response() res: Resp
+    // ){
+    //     try {
+    //         const GGD_file = await this.prisma.resources.findUnique({
+    //             where: {did: file_id}
+    //         })
 
-            const fileParsing = GGD_file.file_path.split("/")
+    //         const fileParsing = GGD_file.file_path.split("/")
 
-            const fileId = fileParsing[fileParsing.indexOf("d") + 1]
+    //         const fileId = fileParsing[fileParsing.indexOf("d") + 1]
 
-            const chunk = 1024
-            const maxSize = GGD_file.num_pages * 1024
-            let curr_window = 0
+    //         const chunk = 1024
+    //         const maxSize = GGD_file.num_pages * 1024
+    //         let curr_window = 0
 
-            while (curr_window + chunk - 1 <= maxSize){
-                const driveApiResponse = await this.drive.downloadFile(fileId, `bytes=${curr_window}-${curr_window+chunk-1}`)
+    //         while (curr_window + chunk - 1 <= maxSize){
+    //             const driveApiResponse = await this.drive.downloadFile(fileId, `bytes=${curr_window}-${curr_window+chunk-1}`)
 
-                res.status(driveApiResponse.status)
+    //             res.status(driveApiResponse.status)
 
-                const driveHeaders = driveApiResponse.hearders
+    //             const driveHeaders = driveApiResponse.hearders
 
-                if (driveHeaders['content-type']) res.setHeader('Content-Type', driveHeaders['content-type']);
-                if (driveHeaders['content-length']) res.setHeader('Content-Length', driveHeaders['content-length']);
-                if (driveHeaders['content-range']) res.setHeader('Content-Range', driveHeaders['content-range']);
+    //             if (driveHeaders['content-type']) res.setHeader('Content-Type', driveHeaders['content-type']);
+    //             if (driveHeaders['content-length']) res.setHeader('Content-Length', driveHeaders['content-length']);
+    //             if (driveHeaders['content-range']) res.setHeader('Content-Range', driveHeaders['content-range']);
 
-                res.setHeader('Accept-Ranges', 'bytes');
-                driveApiResponse.data.pipe(res);
-                curr_window += chunk
-            }
-        } catch (error) {
-            if (error.status) {
-                res.status(error.status).send(error.message);
-            } else {
-                res.status(500).send('Lỗi máy chủ nội bộ khi tải file.');
-            }
-        }
-    }
+    //             res.setHeader('Accept-Ranges', 'bytes');
+    //             driveApiResponse.data.pipe(res);
+    //             curr_window += chunk
+    //         }
+    //     } catch (error) {
+    //         if (error.status) {
+    //             res.status(error.status).send(error.message);
+    //         } else {
+    //             res.status(500).send('Lỗi máy chủ nội bộ khi tải file.');
+    //         }
+    //     }
+    // }
 
     @Get('view/:did')
     async viewFile(@Param('did') did: string, @Response() res: Resp) {
@@ -130,7 +130,7 @@ export class ResourceController {
             stream.pipe(res);
 
         } catch (error) {
-            res.status(404).json({ message: error.message });
+            res.status(404).json({ message: (error as Error).message });
         }
     }
 }
@@ -147,7 +147,7 @@ export class FolderController {
         @Param('category_id') category_id: string,
         @Param('class_id') class_id: string,
         @Body() data: FolderDto,
-        @Request() req
+        @Request() req: any
     ){
         const tutor_id = req.user.userId
         return this.folder.createFolder(tutor_id, category_id, class_id, data)
@@ -177,7 +177,7 @@ export class FolderController {
         try {
             return this.folder.updateFolder(folder_id, data)
         } catch (error) {
-            return new ExceptionResponse().returnError(error)
+            return new ExceptionResponse().returnError(error as Error)
         }
     }
 
@@ -188,7 +188,7 @@ export class FolderController {
         try {
             return this.folder.deleteFolder(folder_id)
         } catch (error) {
-            return new ExceptionResponse().returnError(error)
+            return new ExceptionResponse().returnError(error as Error)
         }
     }
 }
