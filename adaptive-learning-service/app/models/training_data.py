@@ -13,8 +13,8 @@ class TrainingData(Base):
   __tablename__ = "training_data"
 
   id = Column(String, primary_key=True, default=lambda: str(uuid7()))
+  user_id = Column(String, nullable=False)
   problem_id = Column(String, nullable=False) # -> ques_id
-  level = Column(Enum(LevelStatus, name="level_status"), nullable=False, default=LevelStatus.EASY)
   order_id = Column(DateTime, nullable=False, default=datetime.now()) # -> start_at
   correct = Column(Boolean, nullable=False, default=False) # -> is_correct
 

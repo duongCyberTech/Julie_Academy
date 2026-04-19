@@ -1,9 +1,8 @@
 import os
-import sys
 import gc
-import zipfile
 import numpy as np
 import pandas as pd
+from sqlalchemy.orm import Session
 from pyBKT.models import Model
 from sklearn.model_selection import GroupKFold
 from app.services.preprocessing_service import Preprocessing
@@ -13,6 +12,9 @@ NUM_FITS = 10
 DEFAULTS = {'order_id': 'order_id'}
 
 class BKTModelTraining:
+  def __init__(self, db: Session):
+    self.preprocessing = Preprocessing(db=db)
+
   def install_dependencies(self):
     """Tự động cài đặt thư viện pyBKT nếu chưa có."""
     try:
@@ -24,7 +26,11 @@ class BKTModelTraining:
 
   def load_dataset(self) -> pd.DataFrame:
     """Đọc file CSV và chuẩn hóa cột thời gian (timestamp)."""
-    return Preprocessing.process_pipeline()
+    return self.preprocessing.process_pipeline()
+  
+  def extract_skill_and_level(self, text: str):
+    # Convert the split list into a pandas Series
+    return pd.Series(text.rsplit('_', 1))
   
   def train_and_evaluate(self):
     """Chạy quy trình kiểm thử chéo 5-Fold (Cross Validation)."""
@@ -88,16 +94,24 @@ class BKTModelTraining:
       if values:
         print(f"  {m.upper()}: {sum(values)/len(values):.4f}")
 
-    return metrics
+    return {
+      'auc': round(float(np.mean(metrics['auc'])), 4),
+      'rmse': round(float(np.mean(metrics['rmse'])), 4),
+      'accuracy': round(float(np.mean(metrics['accuracy'])), 4)
+    }
 
   def train_master_model(self):
     """Huấn luyện Model cuối cùng trên toàn bộ dữ liệu để xuất bản."""
     print("\nĐang huấn luyện Master Model (Final)...")
-    
+
     # Gộp dữ liệu từ tất cả các fold
     full_data = self.load_dataset()
 
     final_model = Model(seed=SEED, num_fits=NUM_FITS)
     final_model.fit(data=full_data, defaults=DEFAULTS)
 
-    return final_model.params()
+    df_params = pd.DataFrame(final_model.params())
+    df_params[['skill', 'level']] = df_params['skill'].apply(self.extract_skill_and_level)
+    df_params['level'] = df_params['level'].str.lower()
+
+    return df_params

@@ -1,6 +1,6 @@
 # app/repositories/training_data_repository.py
-from sqlalchemy.orm import Session, aliased, contains_eager
-from sqlalchemy import select, func, and_
+from sqlalchemy.orm import Session
+from sqlalchemy import select
 import pandas as pd
 from app.models.training_data import TrainingData
 from app.models.sections import Sections
@@ -8,58 +8,47 @@ from app.models.sections import Sections
 BATCH_SIZE = 1000
 USER_SIZE = 100
 class TrainingDataRepository:
+  def __init__(self, db: Session):
+    self.db = db
 
-  def create(self, db: Session, data: dict):
+  def create(self, data: dict):
     obj = TrainingData(**data)
-    db.add(obj)
-    db.commit()
-    db.refresh(obj)
+    self.db.add(obj)
+    self.db.commit()
+    self.db.refresh(obj)
     return obj
   
-  def get_batch(self, db: Session, session_id: str, size: int = BATCH_SIZE):
-    return db.query(TrainingData).filter_by(session_id=session_id).limit(size).all()
+  def get_batch(self, session_id: str, size: int = BATCH_SIZE):
+    return self.db.query(TrainingData).filter_by(session_id=session_id).limit(size).all()
 
-  def get_many_batches(self, db: Session, nb_of_users: int = 10, size: int = 5) -> pd.DataFrame:
-    # 1. Subquery đánh số thứ tự cho TrainingData theo từng Section
-    subq = (
-      select(
-        TrainingData,
-        func.row_number().over(
-          partition_by=TrainingData.section_id,
-          order_by=TrainingData.order_id.desc()
-        ).label("rn")
-      )
-    ).subquery()
-
-    post_alias = aliased(TrainingData, subq)
-
-    # 2. Truy vấn lấy N Sections, mỗi Section kèm M TrainingData mới nhất
+  def get_many_batches(self) -> pd.DataFrame:
+  # 1. Map exactly to your provided schema
     stmt = (
-      select(Sections)
-      .join(subq, Sections.id == subq.c.section_id)
-      .where(subq.c.rn <= size)
-      .options(contains_eager(Sections.posts.of_type(post_alias)))
-      .order_by(Sections.id)
-      .limit(nb_of_users)
+      select(
+        Sections.id.label("section_id"),
+        Sections.level,          # Now pulling from Sections
+        Sections.skill,
+        Sections.grade,
+        Sections.subject,
+        TrainingData.id.label("training_id"),
+        TrainingData.user_id,    # Now pulling from TrainingData
+        TrainingData.problem_id,
+        TrainingData.order_id,
+        TrainingData.correct
+      )
+      .join(Sections, TrainingData.section_id == Sections.id)
+      .limit(BATCH_SIZE) 
     )
 
-    results = db.execute(stmt).scalars().unique().all()
+    # 2. Fetch data mapped to column names
+    results = self.db.execute(stmt).mappings().all()
 
-    # 3. Phẳng hóa dữ liệu (Flattening) để đưa vào DataFrame
-    rows = []
-    for sec in results:
-      for p in sec.posts:
-        rows.append({
-          "section_id": sec.id,
-          "user_id": sec.user_id,
-          "skill": sec.skill,
-          "grade": sec.grade,
-          "subject": sec.subject,
-          "training_id": p.id,
-          "problem_id": p.problem_id,
-          "level": p.level.value if p.level else None,
-          "order_id": p.order_id,
-          "correct": p.correct
-        })
+    # 3. Convert to DataFrame
+    df = pd.DataFrame(results)
+    
+    # 4. Handle the LevelStatus Enum correctly
+    if not df.empty and 'level' in df.columns:
+        # Extracts the string value (e.g., "easy") from the Enum object
+        df['level'] = df['level'].apply(lambda x: x.value if hasattr(x, 'value') else x)
 
-    return pd.DataFrame(rows)
+    return df
