@@ -1,17 +1,16 @@
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import KFold
-from app.repositories.training_data_repository import TrainingDataRepository as tdr
-from app.db.session import get_db
+from sqlalchemy.orm import Session
+from app.repositories.training_data_repository import TrainingDataRepository
 
 class Preprocessing:
-  def __init__(self):
+  def __init__(self, db: Session):
     self.N_FOLDS = 5
     self.TARGET_SKILLS = 100 
     self.MAX_USERS = 4000
     self.MIN_INTERACTIONS = 5
     self.THRESHOLD_HARD = 0.3  # Dưới 30% làm đúng -> KHÓ
     self.THRESHOLD_EASY = 0.7  # Trên 70% làm đúng -> DỄ
+    self.tdr = TrainingDataRepository(db)
 
   def get_difficulty_label(self, pass_rate):
     """Phân loại độ khó dựa trên Classical Test Theory"""
@@ -20,10 +19,10 @@ class Preprocessing:
     return 'MEDIUM'
   
   def get_df(self, session_id: str):
-    return tdr.get_batch(session_id=session_id)
+    return self.tdr.get_batch(session_id=session_id)
   
   def get_many_session_df(self):
-    return tdr.get_many_batches()
+    return self.tdr.get_many_batches()
   
   def process_pipeline(self):
     print(f"--- PREPROCESSING: PHÂN TẦNG ĐỘ KHÓ (STRATIFIED 30-70) ---")
