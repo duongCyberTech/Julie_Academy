@@ -184,6 +184,17 @@ export default function StudentAdaptiveSessionPage() {
     }
   };
 
+  const handleFinalize = async () => {
+    setStep('LOADING_NEXT');
+    try {
+      await apiClient.post(`/exam/adaptive/submit/${etId}`);
+      navigate(`/student/adaptive/result/${etId}`);
+    } catch (error) {
+      console.error("Lỗi khi nộp bài:", error);
+      navigate(`/student/adaptive/result/${etId}`);
+    }
+  };
+
   const getDifficultyColor = (level) => {
     switch (level?.toLowerCase()) {
       case 'easy': return 'success';
