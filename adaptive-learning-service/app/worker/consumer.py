@@ -12,6 +12,8 @@ def callback(ch, method, properties, body):
   data = json.loads(body)
 
   result = instant_computing_service.compute_instant_knowledge(data, {}).to_dict()
+  
+  print(f"--- KẾT QUẢ P(L) CUỐI CÙNG GỬI VỀ NESTJS: {result['p_l']} ---")
 
   if properties.reply_to:
     response = {

@@ -29,5 +29,7 @@ class InstantComputingService:
       else:
         posterior = (prior_n * slips) / ((prior_n * slips) + (1 - prior_n) * (1 - guesses))
       prior_n = posterior + learns * (1 - posterior)
+      
+      print(f"[BKT Log] Câu làm đúng: {question['is_correct']} -> P(L) cập nhật: {prior_n}")
     
     return InstantComputingResponse(p_l=prior_n)

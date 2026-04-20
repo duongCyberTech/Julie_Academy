@@ -15,6 +15,11 @@ import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';  
 
 // API Services
 import { takeAdaptiveExam, getNextAdaptiveQuestion } from '../../services/ExamService';
@@ -114,6 +119,8 @@ export default function StudentAdaptiveSessionPage() {
     const s = (seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
   };
+
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
   useEffect(() => {
     const startExam = async () => {
@@ -215,55 +222,65 @@ export default function StudentAdaptiveSessionPage() {
   return (
     <PageWrapper>
       {/* HEADER */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 4,
+        }}
+      >
         {/* Nhóm bên trái: Câu hỏi và Độ khó */}
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <Chip 
-            label={`Câu ${currentQuestion.index}`} 
-            color="primary" 
-            sx={{ fontWeight: 800, borderRadius: '8px', fontSize: '1rem' }} 
+        <Box sx={{ display: "flex", gap: 1.5 }}>
+          <Chip
+            label={`Câu ${currentQuestion.index}`}
+            color="primary"
+            sx={{ fontWeight: 800, borderRadius: "8px", fontSize: "1rem" }}
           />
-          <Chip 
-            label={currentQuestion.level?.toUpperCase() || 'NORMAL'} 
+          <Chip
+            label={currentQuestion.level?.toUpperCase() || "NORMAL"}
             color={getDifficultyColor(currentQuestion.level)}
             variant="outlined"
-            sx={{ fontWeight: 800, borderRadius: '8px', fontSize: '0.85rem' }} 
+            sx={{ fontWeight: 800, borderRadius: "8px", fontSize: "0.85rem" }}
           />
         </Box>
 
         {/* Nhóm bên phải: Đồng hồ ( */}
-        <Chip 
-          icon={<AccessTimeIcon sx={{ fontSize: '1.3rem !important' }} />}
-          label={formatTime(elapsedTime)} 
+        <Chip
+          icon={<AccessTimeIcon sx={{ fontSize: "1.3rem !important" }} />}
+          label={formatTime(elapsedTime)}
           variant="outlined"
-          sx={{ 
+          sx={{
             height: 42, // Tăng chiều cao để Chip to hơn
-            px: 2,      // Tăng padding ngang
-            fontSize: '1.1rem', // Chữ to hơn
-            fontWeight: 800, 
-            borderRadius: '10px', 
-            color: 'text.secondary', 
+            px: 2, // Tăng padding ngang
+            fontSize: "1.1rem", // Chữ to hơn
+            fontWeight: 800,
+            borderRadius: "10px",
+            color: "text.secondary",
             borderColor: alpha(theme.palette.divider, 0.5),
-            backgroundColor: alpha(theme.palette.action.hover, 0.2)
-          }} 
+            backgroundColor: alpha(theme.palette.action.hover, 0.2),
+          }}
         />
       </Box>
 
       {/* NỘI DUNG CÂU HỎI */}
-      <Box sx={{ 
-        mb: 3, 
-        fontSize: '1.05rem',
-        '& > div': { maxHeight: 'none !important', overflow: 'visible !important' } 
-      }}>
+      <Box
+        sx={{
+          mb: 3,
+          fontSize: "1.05rem",
+          "& > div": {
+            maxHeight: "none !important",
+            overflow: "visible !important",
+          },
+        }}
+      >
         <QuestionContentRenderer htmlContent={currentQuestion.content} />
       </Box>
 
-      <Box sx={{ maxWidth: '100%', mb: 2 }}>
+      <Box sx={{ maxWidth: "100%", mb: 2 }}>
         {currentQuestion.answers?.map((ans, idx) => {
           const isSelected = parseInt(selectedAnswer) === ans.aid;
-          const isReviewing = step === 'REVIEWING' || step === 'LOADING_NEXT';
-          
+          const isReviewing = step === "REVIEWING" || step === "LOADING_NEXT";
 
           const showAsCorrect = isReviewing && isSelected && ans.is_correct;
           const showAsWrong = isReviewing && isSelected && !ans.is_correct;
@@ -275,42 +292,100 @@ export default function StudentAdaptiveSessionPage() {
               isReviewing={isReviewing}
               showAsCorrect={showAsCorrect}
               showAsWrong={showAsWrong}
-              onClick={() => step === 'ANSWERING' && setSelectedAnswer(ans.aid.toString())}
+              onClick={() =>
+                step === "ANSWERING" && setSelectedAnswer(ans.aid.toString())
+              }
             >
-              <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                <Box sx={{ 
-                  width: 28, height: 28, borderRadius: '50%', 
-                  display: 'flex', justifyContent: 'center', alignItems: 'center',
-                  fontWeight: 700, mr: 2, mt: 0.2, fontSize: '0.85rem', flexShrink: 0,
-                  backgroundColor: showAsCorrect ? 'success.main' 
-                                 : showAsWrong ? 'error.main' 
-                                 : isSelected ? 'primary.main' 
-                                 : alpha(theme.palette.text.disabled, 0.15),
-                  color: (isSelected || showAsCorrect || showAsWrong) ? '#fff' : 'text.primary'
-                }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                <Box
+                  sx={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    fontWeight: 700,
+                    mr: 2,
+                    mt: 0.2,
+                    fontSize: "0.85rem",
+                    flexShrink: 0,
+                    backgroundColor: showAsCorrect
+                      ? "success.main"
+                      : showAsWrong
+                        ? "error.main"
+                        : isSelected
+                          ? "primary.main"
+                          : alpha(theme.palette.text.disabled, 0.15),
+                    color:
+                      isSelected || showAsCorrect || showAsWrong
+                        ? "#fff"
+                        : "text.primary",
+                  }}
+                >
                   {String.fromCharCode(65 + idx)}
                 </Box>
 
-                <Box sx={{ flexGrow: 1, '& > div': { maxHeight: 'none !important' }, pt: 0.3 }}>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    "& > div": { maxHeight: "none !important" },
+                    pt: 0.3,
+                  }}
+                >
                   <QuestionContentRenderer htmlContent={ans.content} />
                 </Box>
 
                 {/* Icon trạng thái nhỏ gọn bên phải */}
-                {showAsCorrect && <CheckCircleIcon color="success" sx={{ ml: 1, fontSize: 20, mt: 0.5 }} />}
-                {showAsWrong && <CancelIcon color="error" sx={{ ml: 1, fontSize: 20, mt: 0.5 }} />}
+                {showAsCorrect && (
+                  <CheckCircleIcon
+                    color="success"
+                    sx={{ ml: 1, fontSize: 20, mt: 0.5 }}
+                  />
+                )}
+                {showAsWrong && (
+                  <CancelIcon
+                    color="error"
+                    sx={{ ml: 1, fontSize: 20, mt: 0.5 }}
+                  />
+                )}
               </Box>
 
-              <Collapse in={isReviewing && isSelected && Boolean(ans.explaination)}>
+              <Collapse
+                in={isReviewing && isSelected && Boolean(ans.explaination)}
+              >
                 <SpecificExplanationBox>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary' }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 0.5,
+                      color: "text.secondary",
+                    }}
+                  >
                     <SubdirectoryArrowRightIcon fontSize="small" />
-                    <Typography variant="caption" fontWeight={700} textTransform="uppercase">
+                    <Typography
+                      variant="caption"
+                      fontWeight={700}
+                      textTransform="uppercase"
+                    >
                       Phân tích lựa chọn của bạn
                     </Typography>
                   </Box>
-                  <Box sx={{ '& > div': { maxHeight: 'none !important', fontSize: '0.9rem' } }}>
-                    <QuestionContentRenderer 
-                      htmlContent={ans.explaination || "<p>Chưa có phân tích cho lựa chọn này.</p>"} 
+                  <Box
+                    sx={{
+                      "& > div": {
+                        maxHeight: "none !important",
+                        fontSize: "0.9rem",
+                      },
+                    }}
+                  >
+                    <QuestionContentRenderer
+                      htmlContent={
+                        ans.explaination ||
+                        "<p>Chưa có phân tích cho lựa chọn này.</p>"
+                      }
                     />
                   </Box>
                 </SpecificExplanationBox>
@@ -321,74 +396,188 @@ export default function StudentAdaptiveSessionPage() {
       </Box>
 
       {/* GIẢI THÍCH CHUNG */}
-      <Collapse in={step === 'REVIEWING' || step === 'LOADING_NEXT'}>
-        <Accordion 
-          expanded={generalExpanded} 
+      <Collapse in={step === "REVIEWING" || step === "LOADING_NEXT"}>
+        <Accordion
+          expanded={generalExpanded}
           onChange={() => setGeneralExpanded(!generalExpanded)}
           elevation={0}
-          sx={{ 
+          sx={{
             backgroundColor: alpha(theme.palette.info.main, 0.05),
             border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-            borderRadius: '10px !important',
-            '&:before': { display: 'none' }
+            borderRadius: "10px !important",
+            "&:before": { display: "none" },
           }}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon color="info" />}>
-            <Box sx={{ display: 'flex', alignItems: 'center', color: 'info.main' }}>
+            <Box
+              sx={{ display: "flex", alignItems: "center", color: "info.main" }}
+            >
               <LightbulbOutlinedIcon sx={{ mr: 1, fontSize: 20 }} />
               <Typography variant="subtitle2" fontWeight={700}>
                 Hướng dẫn giải
               </Typography>
             </Box>
           </AccordionSummary>
-          <AccordionDetails sx={{ pt: 0, borderTop: `1px solid ${alpha(theme.palette.info.main, 0.1)}` }}>
-            <Box sx={{ '& > div': { maxHeight: 'none !important', mt: 2, fontSize: '0.95rem' } }}>
-              <QuestionContentRenderer 
-                htmlContent={currentQuestion.explaination || "<p>Hệ thống chưa có lời giải tổng quát cho câu này.</p>"} 
+          <AccordionDetails
+            sx={{
+              pt: 0,
+              borderTop: `1px solid ${alpha(theme.palette.info.main, 0.1)}`,
+            }}
+          >
+            <Box
+              sx={{
+                "& > div": {
+                  maxHeight: "none !important",
+                  mt: 2,
+                  fontSize: "0.95rem",
+                },
+              }}
+            >
+              <QuestionContentRenderer
+                htmlContent={
+                  currentQuestion.explaination ||
+                  "<p>Hệ thống chưa có lời giải tổng quát cho câu này.</p>"
+                }
               />
             </Box>
           </AccordionDetails>
         </Accordion>
       </Collapse>
 
-     {/* ACTIONS */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto', pt: 4 }}>
-        
-        {/* Nút Dừng luyện tập */}
-        <Button 
-          startIcon={<ArrowBackIcon />} 
-          onClick={() => navigate('/student/adaptive')}
-          sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'none', px: 2 }}
+      {/* ACTIONS */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mt: "auto",
+          pt: 4,
+        }}
+      >
+        {/* Nút Nộp bài & Dừng luyện tập */}
+        <Button
+          startIcon={<FactCheckIcon />}
+          onClick={() => setOpenConfirmDialog(true)}
+          sx={{
+            color: "text.secondary",
+            fontWeight: 700,
+            textTransform: "none",
+            px: 2,
+          }}
         >
-          Dừng luyện tập
+          Nộp bài
         </Button>
 
         {/* Cụm nút hành động chính */}
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {step === 'ANSWERING' && (
+        <Box sx={{ display: "flex", gap: 2 }}>
+          {step === "ANSWERING" && (
             <Button
-              variant="contained" 
+              variant="contained"
               onClick={handleCheckAnswer}
               disabled={!selectedAnswer}
-              sx={{ px: 4, py: 1.2, borderRadius: '8px', fontWeight: 700, textTransform: 'none', boxShadow: 'none' }}
+              sx={{
+                px: 4,
+                py: 1.2,
+                borderRadius: "8px",
+                fontWeight: 700,
+                textTransform: "none",
+                boxShadow: "none",
+              }}
             >
               Kiểm tra
             </Button>
           )}
 
-          {(step === 'REVIEWING' || step === 'LOADING_NEXT') && (
+          {(step === "REVIEWING" || step === "LOADING_NEXT") && (
             <Button
-              variant="contained" 
+              variant="contained"
               onClick={handleNextQuestion}
-              disabled={step === 'LOADING_NEXT'}
-              endIcon={step === 'LOADING_NEXT' ? <CircularProgress size={16} color="inherit" /> : <ArrowForwardIcon fontSize="small" />}
-              sx={{ px: 4, py: 1.2, borderRadius: '8px', fontWeight: 700, textTransform: 'none', boxShadow: 'none' }}
+              disabled={step === "LOADING_NEXT"}
+              endIcon={
+                step === "LOADING_NEXT" ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <ArrowForwardIcon fontSize="small" />
+                )
+              }
+              sx={{
+                px: 4,
+                py: 1.2,
+                borderRadius: "8px",
+                fontWeight: 700,
+                textTransform: "none",
+                boxShadow: "none",
+              }}
             >
-              {step === 'LOADING_NEXT' ? "Đang tải..." : "Câu tiếp theo"}
+              {step === "LOADING_NEXT" ? "Đang tải..." : "Câu tiếp theo"}
             </Button>
           )}
         </Box>
       </Box>
+
+      {/* Dialog xác nhận nộp bài */}
+      <Dialog
+        open={openConfirmDialog}
+        onClose={() => setOpenConfirmDialog(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            minWidth: { xs: "90%", sm: "400px" },
+            boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            pb: 1,
+          }}
+        >
+          <FactCheckIcon color="primary" />
+          Xác nhận nộp bài sớm
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+            Bạn có chắc chắn muốn nộp bài sớm và dừng luyện tập không?
+            <br />
+            <br />
+            Điểm số của bạn sẽ được tính dựa trên số câu bạn đã hoàn thành trên
+            tổng số câu mặc định của hệ thống.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={() => setOpenConfirmDialog(false)}
+            sx={{
+              color: "text.secondary",
+              fontWeight: 600,
+              textTransform: "none",
+            }}
+          >
+            Làm tiếp
+          </Button>
+          <Button
+            onClick={() => {
+              setOpenConfirmDialog(false);
+              handleFinalize(); 
+            }}
+            variant="contained"
+            color="primary"
+            sx={{
+              borderRadius: "8px",
+              fontWeight: 600,
+              textTransform: "none",
+              boxShadow: "none",
+              px: 3,
+            }}
+          >
+            Nộp bài ngay
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PageWrapper>
   );
 }
