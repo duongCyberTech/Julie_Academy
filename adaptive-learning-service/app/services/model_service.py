@@ -3,26 +3,15 @@ import gc
 import numpy as np
 import pandas as pd
 from sqlalchemy.orm import Session
-from pyBKT.models import Model
 from sklearn.model_selection import GroupKFold
 from app.services.preprocessing_service import Preprocessing
 
-SEED = 42           
-NUM_FITS = 10       
-DEFAULTS = {'order_id': 'order_id'}
-
 class BKTModelTraining:
   def __init__(self, db: Session):
+    self.SEED = 42           
+    self.NUM_FITS = 10       
+    self.DEFAULTS = {'order_id': 'order_id'} 
     self.preprocessing = Preprocessing(db=db)
-
-  def install_dependencies(self):
-    """Tự động cài đặt thư viện pyBKT nếu chưa có."""
-    try:
-      import pyBKT
-    except ImportError:
-      print("Đang cài đặt môi trường...")
-      os.system('pip install -q setuptools wheel numpy==1.23.5 cython pandas==1.5.3')
-      os.system('pip install -q git+https://github.com/CAHLR/pyBKT.git --no-build-isolation')
 
   def load_dataset(self) -> pd.DataFrame:
     """Đọc file CSV và chuẩn hóa cột thời gian (timestamp)."""
@@ -33,6 +22,7 @@ class BKTModelTraining:
     return pd.Series(text.rsplit('_', 1))
   
   def train_and_evaluate(self):
+    from pyBKT.models import Model
     """Chạy quy trình kiểm thử chéo 5-Fold (Cross Validation)."""
     metrics = {'auc': [], 'rmse': [], 'accuracy': []}
     
@@ -101,14 +91,15 @@ class BKTModelTraining:
     }
 
   def train_master_model(self):
+    from pyBKT.models import Model
     """Huấn luyện Model cuối cùng trên toàn bộ dữ liệu để xuất bản."""
     print("\nĐang huấn luyện Master Model (Final)...")
 
     # Gộp dữ liệu từ tất cả các fold
     full_data = self.load_dataset()
 
-    final_model = Model(seed=SEED, num_fits=NUM_FITS)
-    final_model.fit(data=full_data, defaults=DEFAULTS)
+    final_model = Model(seed=self.SEED, num_fits=self.NUM_FITS)
+    final_model.fit(data=full_data, defaults=self.DEFAULTS)
 
     df_params = pd.DataFrame(final_model.params())
     df_params[['skill', 'level']] = df_params['skill'].apply(self.extract_skill_and_level)
