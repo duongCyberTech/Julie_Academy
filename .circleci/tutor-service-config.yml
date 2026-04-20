@@ -83,7 +83,7 @@ jobs:
             ssh $EC2_USERNAME@$EC2_HOST \
             "cd Julie_Academy && \
              git pull origin main && \
-             docker compose up -d --build adaptive-service"
+             docker compose up -d --build adaptive-service worker beat"
           no_output_timeout: 30m
 
   # --- JOB 1: CHẠY CI ---
