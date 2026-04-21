@@ -123,11 +123,9 @@ export class SubmitAnswerDto {
     answers: number[]; 
 
     @IsNumber()
-    ms_first_response: number;
-
-    @IsNumber()
-    ms_total_response: number;
-
-    @IsNumber()
     index: number;
+
+    @IsOptional()
+    @IsDate()
+    chosen_answer_at?: Date | null;
 }

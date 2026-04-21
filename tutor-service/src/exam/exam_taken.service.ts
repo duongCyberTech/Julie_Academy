@@ -247,7 +247,7 @@ export class ExamTakenService {
                 index: cur_ques.index,
                 answer_set: cur_ques.answers,
                 isDone: true,
-                chosen_answer_at: new Date(),
+                chosen_answer_at: cur_ques.chosen_answer_at,
             },
             create: {
                 ques_id: cur_ques.question_id,
@@ -256,7 +256,7 @@ export class ExamTakenService {
                 index: cur_ques.index + 1,
                 answer_set: cur_ques.answers,
                 isDone: true,
-                chosen_answer_at: new Date(),
+                chosen_answer_at: cur_ques.chosen_answer_at,
             }
         })
 
@@ -343,13 +343,13 @@ export class ExamTakenService {
                 ques_id: true,
                 answer_set: true,
                 index: true,
+                chosen_answer_at: true
             }
         }).then((list) => list.map(item => ({
             ques_id: item.ques_id,
             answers: (item.answer_set as number[]) || [],
             index: item.index,
-            ms_first_response: 100,
-            ms_total_response: 1000
+            chosen_answer_at: item.chosen_answer_at
         })))
 
         return await this.prisma.$transaction(async(tx) => {
@@ -613,7 +613,7 @@ export class ExamTakenService {
                         ques_id: item.ques_id,
                         et_id,
                         index: item.index,
-                        chosen_answer_at: item.answers.length > 0 ? new Date() : null,
+                        chosen_answer_at: item.chosen_answer_at,
                         isDone: (item.answers.length > 0),
                         answer_set: item.answers
                     }
