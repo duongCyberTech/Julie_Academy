@@ -23,4 +23,8 @@ export class CurrentQuestionDto {
     @IsArray()
     @IsNumber({}, { each: true })
     answers: number[]; 
+
+    @IsOptional()
+    @IsDate()
+    chosen_answer_at?: Date | null;
 }
