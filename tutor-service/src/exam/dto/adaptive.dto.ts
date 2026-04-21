@@ -1,6 +1,6 @@
 import { DifficultyLevel, QuestionStatus, QuestionType } from "@prisma/client";
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsArray, IsBoolean, IsDate, IsEnum, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class CurrentQuestionDto {
     @IsUUID()
