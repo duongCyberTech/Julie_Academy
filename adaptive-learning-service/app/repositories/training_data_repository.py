@@ -25,18 +25,13 @@ class TrainingDataRepository:
   # 1. Map exactly to your provided schema
     stmt = (
       select(
-        Sections.id.label("section_id"),
-        Sections.level,          # Now pulling from Sections
         Sections.skill,
-        Sections.grade,
-        Sections.subject,
-        TrainingData.id.label("training_id"),
         TrainingData.user_id,    # Now pulling from TrainingData
         TrainingData.problem_id,
         TrainingData.order_id,
         TrainingData.correct
       )
-      .join(Sections, TrainingData.section_id == Sections.id)
+      .join(Sections, TrainingData.section_id == Sections.skill)
       .limit(BATCH_SIZE) 
     )
 
@@ -45,10 +40,5 @@ class TrainingDataRepository:
 
     # 3. Convert to DataFrame
     df = pd.DataFrame(results)
-    
-    # 4. Handle the LevelStatus Enum correctly
-    if not df.empty and 'level' in df.columns:
-        # Extracts the string value (e.g., "easy") from the Enum object
-        df['level'] = df['level'].apply(lambda x: x.value if hasattr(x, 'value') else x)
 
     return df
