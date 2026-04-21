@@ -90,6 +90,24 @@ class BKTModelTraining:
       'accuracy': round(float(np.mean(metrics['accuracy'])), 4)
     }
 
+  def transform_bkt_params(df_raw: pd.DataFrame) -> pd.DataFrame:
+    # 1. Thực hiện Pivot: biến các giá trị trong 'param' thành tên cột
+    df_pivot = df_raw.pivot(
+        index=['skill', 'level'], 
+        columns='param', 
+        values='value'
+    ).reset_index()
+    
+    # 2. Loại bỏ tên index của cột (thường là 'param') để DataFrame sạch đẹp
+    df_pivot.columns.name = None
+    
+    # 3. Sắp xếp lại thứ tự cột theo ý muốn
+    expected_cols = ['skill', 'level', 'prior', 'learns', 'guesses', 'slips', 'forgets']
+    # Chỉ lấy những cột tồn tại trong dữ liệu thực tế
+    final_cols = [c for c in expected_cols if c in df_pivot.columns]
+    
+    return df_pivot[final_cols].drop(columns=['forgets'])
+
   def train_master_model(self):
     from pyBKT.models import Model
     """Huấn luyện Model cuối cùng trên toàn bộ dữ liệu để xuất bản."""
@@ -102,7 +120,8 @@ class BKTModelTraining:
     final_model.fit(data=full_data, defaults=self.DEFAULTS)
 
     df_params = pd.DataFrame(final_model.params())
+    df_params = df_params.drop(columns=['class'])
     df_params[['skill', 'level']] = df_params['skill'].apply(self.extract_skill_and_level)
     df_params['level'] = df_params['level'].str.lower()
 
-    return df_params
+    return self.transform_bkt_params(df_params)

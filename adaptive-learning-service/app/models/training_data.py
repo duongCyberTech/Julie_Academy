@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Enum, Boolean, ForeignKey
+from sqlalchemy import Column, String, DateTime, Enum, Boolean, ForeignKey, Integer
 from datetime import datetime
 from app.core.database import Base
 from uuid6 import uuid7
@@ -17,5 +17,6 @@ class TrainingData(Base):
   problem_id = Column(String, nullable=False) # -> ques_id
   order_id = Column(DateTime, nullable=False, default=datetime.now()) # -> start_at
   correct = Column(Boolean, nullable=False, default=False) # -> is_correct
+  index = Column(Integer, nullable=False)
 
-  section_id = Column(String, ForeignKey("sections.id"), nullable=False)
+  section_id = Column(String, ForeignKey("sections.skill"), nullable=False)

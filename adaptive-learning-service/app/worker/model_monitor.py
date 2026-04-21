@@ -25,7 +25,7 @@ def run_daily_preprocessing():
     
     with SessionLocal() as db:
         service = MonitorService(db=db)
-        service.run_test()
+        service.trigger_retrain()
         
     print("Scheduled preprocessing complete!")
     return "Success"

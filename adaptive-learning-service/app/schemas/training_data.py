@@ -1,15 +1,21 @@
+from datetime import datetime
 from pydantic import BaseModel
 
 class TrainingDataCreate(BaseModel):
-  ques_id: str
-  is_correct: bool
-  is_done: bool
-  level: str
+  user_id: str
+  problem_id: str
+  correct: bool
+  order_id: datetime
+  index: int
+  section_id: str
 
 class TrainingDataResponse(BaseModel):
   id: str
-  ques_id: str
-  is_correct: bool
+  problem_id: str
+  correct: bool
+  order_id: datetime
+  index: int
+  section_id: str
 
   class Config:
     from_attributes = True
