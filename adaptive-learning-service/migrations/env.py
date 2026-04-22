@@ -64,17 +64,35 @@ def run_migrations_online() -> None:
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
-
     """
+    # 1. Get the configuration section from alembic.ini
+    config_section = config.get_section(config.config_ini_section)
+    
+    # 2. Retrieve the URL from the environment
+    db_url = os.environ.get("DATABASE_URL")
+    
+    # 3. Validation: Stop early if the URL is missing
+    if not db_url:
+        raise RuntimeError(
+            "DATABASE_URL environment variable is not set! "
+            "Check your docker-compose.yml environment section."
+        )
+
+    # 4. Inject the environment URL into the config dictionary
+    config_section["sqlalchemy.url"] = db_url 
+    
+    # 5. Create the engine
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config_section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
+    # 6. Establish connection and run migrations
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, 
+            target_metadata=target_metadata
         )
 
         with context.begin_transaction():
