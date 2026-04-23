@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # 1. Trạm trung chuyển tin nhắn Redis
+  redis_broker:
+    image: redis:latest
+    container_name: julie_redis
+    command: redis-server --port 6378
+    ports:
+      - "6378:6378"
+
+  # 2. Celery Worker (Người thực thi lệnh)
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: julie_worker
+    command: ["celery", "-A", "tasks.app", "worker", "--loglevel=info"]
+    restart: on-failure  # <--- THÊM DÒNG NÀY
+    env_file:
+      - .env  
+    depends_on:
+      redis_broker:
+        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # 3. Celery Beat (Đồng hồ báo thức Cronjob)
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: julie_beat
+    command: ["celery", "-A", "tasks.app", "beat", "--loglevel=info"]
+    restart: on-failure  # <--- THÊM DÒNG NÀY
+    depends_on:
+      redis_broker:
+        condition: service_started
