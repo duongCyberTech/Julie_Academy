@@ -11,7 +11,7 @@ import { CurrentQuestionDto } from "./dto/adaptive.dto";
 
 @Injectable()
 export class ExamTakenService {
-    private readonly MAX_ADAPTIVE_QUESTIONS = 5;
+    private readonly MAX_ADAPTIVE_QUESTIONS = 8;
 
     constructor(
         private prisma: PrismaService,
@@ -295,6 +295,8 @@ export class ExamTakenService {
         const payload = question_dons_list
 
         const p_l = await this.rabbitMQService.sendAndWait(payload)
+
+        console.log(`[NestJS - RabbitMQ] Đã nhận P(L) từ AI Python: ${p_l}`);
 
         if (!p_l) throw new NotFoundException("No more question available")
 

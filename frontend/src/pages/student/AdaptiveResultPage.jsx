@@ -82,7 +82,7 @@ export default function StudentAdaptiveResultPage() {
       try {
         setLoading(true);
         // Gọi API lấy chi tiết lần thi (Bao gồm các câu hỏi đã làm)
-        const res = await apiClient.get(`/exam/adaptive/submit/${etId}`);
+        const res = await apiClient.post(`/exam/adaptive/submit/${etId}`);
         setResultData(res.data?.data || res.data);
       } catch (error) {
         console.error("Lỗi khi tải kết quả:", error);

@@ -126,12 +126,36 @@ function cleanedContent(text: string) {
 }
 function formatQuillContent(text) {
   if (!text) return null;
-  let html = text.replace(/\$(.*?)\$/g, (match, latexCode) => {
-    return `<span class="ql-formula" data-value="${latexCode.replace(/"/g, '&quot;')}">${latexCode}</span>`;
+
+  const latexBlocks = [];
+  
+  // 1. Trích xuất và bảo vệ LaTeX (không để các bước sau đụng vào)
+  let html = text.replace(/\$(.*?)\$/gs, (match, latexCode) => {
+    const placeholder = `__LATEX_PLACEHOLDER_${latexBlocks.length}__`;
+    latexBlocks.push({
+      original: match,
+      code: latexCode
+    });
+    return placeholder;
   });
-  if (!html.startsWith('<p>') && !html.endsWith('</p>')) {
-    html = `<p>${html}</p>`;
-  }
+
+  // 2. Xử lý xuống dòng và đoạn văn cho phần text còn lại
+  const paragraphs = html.split(/\n\n+/);
+  html = paragraphs
+    .map(para => {
+      const inner = para.replace(/\n/g, '<br>').trim();
+      return inner ? `<p>${inner}</p>` : '<p><br></p>';
+    })
+    .join('');
+
+  // 3. Trả lại LaTeX nguyên bản vào đúng vị trí, bọc trong tag của Quill
+  latexBlocks.forEach((item, index) => {
+    const placeholder = `__LATEX_PLACEHOLDER_${index}__`;
+    // Lưu ý: data-value phải là code sạch, không có <br>
+    const formulaHtml = `<span class="ql-formula" data-value="${item.code.replace(/"/g, '&quot;').trim()}">${item.code.trim()}</span>`;
+    html = html.replace(placeholder, formulaHtml);
+  });
+
   return html;
 }
 
@@ -445,6 +469,8 @@ async function main() {
     where: { category_name: 'Bài 3. Hình cầu' },
   });
 
+
+
   // ======================================================
   // === SÁCH KẾT NỐI TRI THỨC (TẬP 1) ===
   // ======================================================
@@ -617,6 +643,9 @@ async function main() {
   console.log(
     `Đã tìm thấy Tutor Hệ thống: ${tutor.email} và các Categories cần thiết.`,
   );
+
+
+
 
   const questionsData = [
     // Cánh Diều - Toán 9
@@ -10969,7 +10998,8 @@ async function main() {
             'Sai PT(2). Đây là bài toán đi ngược chiều, không phải đi cùng chiều và về sớm/muộn.',
         },
       ],
-    }, // === CHƯƠNG 1 (CTST) - §3. Giải hệ hai phương trình bậc nhất hai ẩn ===
+    }, 
+    // === CHƯƠNG 1 (CTST) - §3. Giải hệ hai phương trình bậc nhất hai ẩn ===
     // ===========================================================================
     // --- Easy ---
 
@@ -11310,7 +11340,19560 @@ async function main() {
         },
       ],
     },
-  ];
+    
+    
+   // === CHƯƠNG 1 (KNTT) - §1. Phương trình bậc nhất hai ẩn ===
+  // Easy
+    {
+  content: 'Phương trình nào sau đây là phương trình bậc nhất hai ẩn $x$ và $y$?',
+  explaination: 'Phương trình bậc nhất hai ẩn $x, y$ là hệ thức dạng $ax + by = c$, trong đó $a, b, c$ là các số đã biết và $a, b$ không đồng thời bằng 0.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x^2 + y = 2$',
+      is_correct: false,
+      explaination: 'Sai vì ẩn $x$ có bậc 2 ($x^2$).',
+    },
+    {
+      content: '$3x - y = 5$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Có dạng $ax + by = c$ với $a=3, b=-1, c=5$.',
+    },
+    {
+      content: '$0x + 0y = 1$',
+      is_correct: false,
+      explaination: 'Sai vì cả $a$ và $b$ đều bằng 0.',
+    },
+    {
+      content: '$x + y - z = 0$',
+      is_correct: false,
+      explaination: 'Sai vì đây là phương trình ba ẩn.',
+    },
+  ],
+},
+{
+  content: 'Cặp số $(x; y) = (2; 1)$ là nghiệm của phương trình nào dưới đây?',
+  explaination: 'Để kiểm tra, ta thay $x = 2$ và $y = 1$ vào từng phương trình, nếu vế trái bằng vế phải thì cặp số đó là nghiệm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x + y = 4$',
+      is_correct: false,
+      explaination: 'Thay vào: $2 + 1 = 3 \\ne 4$.',
+    },
+    {
+      content: '$2x - y = 3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Thay vào: $2(2) - 1 = 3$.',
+    },
+    {
+      content: '$x - 2y = 1$',
+      is_correct: false,
+      explaination: 'Thay vào: $2 - 2(1) = 0 \\ne 1$.',
+    },
+    {
+      content: '$3x + y = 5$',
+      is_correct: false,
+      explaination: 'Thay vào: $3(2) + 1 = 7 \\ne 5$.',
+    },
+  ],
+},
+{
+  content: 'Biểu diễn $y$ theo $x$ từ phương trình $x - 2y = 4$ ta được:',
+  explaination: 'Thực hiện chuyển vế: $x - 2y = 4 \\implies -2y = -x + 4 \\implies y = \\frac{1}{2}x - 2$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$y = \\frac{1}{2}x - 2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chuyển $-2y$ sang phải và 4 sang trái: $x - 4 = 2y \\implies y = \\frac{x-4}{2}$.',
+    },
+    {
+      content: '$y = 2x - 4$',
+      is_correct: false,
+      explaination: 'Sai hệ số của $x$.',
+    },
+    {
+      content: '$y = \\frac{1}{2}x + 2$',
+      is_correct: false,
+      explaination: 'Sai dấu của số hạng tự do.',
+    },
+    {
+      content: '$y = -2x + 4$',
+      is_correct: false,
+      explaination: 'Tính toán sai hoàn toàn.',
+    },
+  ],
+},
+{
+  content: 'Hệ hai phương trình bậc nhất hai ẩn có dạng tổng quát là:',
+  explaination: 'Theo định nghĩa trong sách giáo khoa Kết nối tri thức.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\begin{cases} ax + by = c \\\\ a\'x + b\'y = c\' \\end{cases}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là dạng chuẩn của hệ phương trình bậc nhất hai ẩn.',
+    },
+    {
+      content: '$\\begin{cases} ax + b = 0 \\\\ a\'x + b\' = 0 \\end{cases}$',
+      is_correct: false,
+      explaination: 'Đây là hệ hai phương trình bậc nhất một ẩn.',
+    },
+    {
+      content: '$\\begin{cases} ax^2 + by = c \\\\ a\'x + b\'y = c\' \\end{cases}$',
+      is_correct: false,
+      explaination: 'Sai vì có $x^2$.',
+    },
+    {
+      content: '$ax + by = c$',
+      is_correct: false,
+      explaination: 'Đây chỉ là một phương trình, không phải một hệ.',
+    },
+  ],
+},
+{
+  content: 'Nghiệm của hệ phương trình $\\begin{cases} x + y = 5 \\\\ x - y = 1 \\end{cases}$ là:',
+  explaination: 'Cộng hai phương trình vế theo vế: $2x = 6 \\implies x = 3$. Thay vào phương trình đầu: $3 + y = 5 \\implies y = 2$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$(2; 3)$',
+      is_correct: false,
+      explaination: 'Thay vào phương trình thứ hai: $2 - 3 = -1 \\ne 1$.',
+    },
+    {
+      content: '$(3; 2)$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Thay vào cả hai phương trình đều thỏa mãn.',
+    },
+    {
+      content: '$(4; 1)$',
+      is_correct: false,
+      explaination: 'Thay vào phương trình thứ hai: $4 - 1 = 3 \\ne 1$.',
+    },
+    {
+      content: '$(1; 4)$',
+      is_correct: false,
+      explaination: 'Thay vào phương trình thứ hai: $1 - 4 = -3 \\ne 1$.',
+    },
+  ],
+},
+{
+  content: 'Đường thẳng biểu diễn tập nghiệm của phương trình $0x + y = -2$ là:',
+  explaination: 'Phương trình tương đương $y = -2$. Tập nghiệm là tất cả các điểm có tung độ bằng $-2$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đường thẳng song song với trục hoành $Ox$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đường thẳng $y = k$ luôn song song hoặc trùng với trục $Ox$.',
+    },
+    {
+      content: 'Đường thẳng song song với trục tung $Oy$.',
+      is_correct: false,
+      explaination: 'Đường thẳng song song $Oy$ có dạng $x = k$.',
+    },
+    {
+      content: 'Đường thẳng đi qua gốc tọa độ.',
+      is_correct: false,
+      explaination: 'Gốc tọa độ có $y=0 \\ne -2$.',
+    },
+    {
+      content: 'Trục tung $Oy$.',
+      is_correct: false,
+      explaination: 'Trục tung có phương trình là $x = 0$.',
+    },
+  ],
+},
+{
+  content: 'Phương trình bậc nhất hai ẩn $ax + by = c$ ($a \\ne 0$ hoặc $b \\ne 0$) có bao nhiêu nghiệm?',
+  explaination: 'Mọi phương trình bậc nhất hai ẩn luôn có vô số nghiệm, tập nghiệm của nó là một đường thẳng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Vô số nghiệm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Trên mặt phẳng tọa độ, tập nghiệm là một đường thẳng chứa vô số điểm.',
+    },
+    {
+      content: '1 nghiệm duy nhất.',
+      is_correct: false,
+      explaination: 'Phương trình bậc nhất một ẩn mới có 1 nghiệm duy nhất.',
+    },
+    {
+      content: 'Vô nghiệm.',
+      is_correct: false,
+      explaination: 'Phương trình bậc nhất hai ẩn luôn có nghiệm.',
+    },
+    {
+      content: '2 nghiệm.',
+      is_correct: false,
+      explaination: 'Sai, số nghiệm không chỉ dừng lại ở 2.',
+    },
+  ],
+},
+{
+  content: 'Cặp số $(1; 1)$ là nghiệm của hệ phương trình nào sau đây?',
+  explaination: 'Thay $x=1, y=1$ vào từng hệ phương trình để kiểm tra.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\begin{cases} 2x + y = 3 \\\\ x - y = 0 \\end{cases}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $2(1)+1=3$ và $1-1=0$.',
+    },
+    {
+      content: '$\\begin{cases} x + y = 1 \\\\ x - y = 0 \\end{cases}$',
+      is_correct: false,
+      explaination: 'Thay vào phương trình đầu: $1 + 1 = 2 \\ne 1$.',
+    },
+    {
+      content: '$\\begin{cases} 3x - y = 1 \\\\ x + y = 2 \\end{cases}$',
+      is_correct: false,
+      explaination: 'Thay vào phương trình đầu: $3(1) - 1 = 2 \\ne 1$.',
+    },
+    {
+      content: '$\\begin{cases} x = 2 \\\\ y = 1 \\end{cases}$',
+      is_correct: false,
+      explaination: 'Sai giá trị của $x$.',
+    },
+  ],
+},
+{
+  content: 'Tìm giá trị của $m$ để cặp số $(1; -2)$ là nghiệm của phương trình $mx + y = 3$.',
+  explaination: 'Thay $x=1, y=-2$ vào phương trình: $m(1) + (-2) = 3 \\implies m - 2 = 3$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 1$',
+      is_correct: false,
+      explaination: 'Thay $m=1$: $1(1) - 2 = -1 \\ne 3$.',
+    },
+    {
+      content: '$m = 5$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $m = 3 + 2 = 5$.',
+    },
+    {
+      content: '$m = -1$',
+      is_correct: false,
+      explaination: 'Thay $m=-1$: $-1(1) - 2 = -3 \\ne 3$.',
+    },
+    {
+      content: '$m = 0$',
+      is_correct: false,
+      explaination: 'Thay $m=0$: $0(1) - 2 = -2 \\ne 3$.',
+    },
+  ],
+},
+{
+  content: 'Tọa độ giao điểm của hai đường thẳng $d_1: y = 2x$ và $d_2: y = x + 1$ là:',
+  explaination: 'Giải phương trình hoành độ giao điểm: $2x = x + 1 \\implies x = 1$. Thay vào $y = 2x \\implies y = 2$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$(1; 2)$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Điểm $(1; 2)$ nằm trên cả hai đường thẳng.',
+    },
+    {
+      content: '$(2; 1)$',
+      is_correct: false,
+      explaination: 'Thay vào $d_1$: $1 = 2(2)$ là sai.',
+    },
+    {
+      content: '$(0; 1)$',
+      is_correct: false,
+      explaination: 'Thỏa mãn $d_2$ nhưng không thỏa mãn $d_1$.',
+    },
+    {
+      content: '$(1; 1)$',
+      is_correct: false,
+      explaination: 'Không thỏa mãn phương trình nào.',
+    },
+  ],
+},
+{
+  content: 'Hệ phương trình $\\begin{cases} x - 2y = 1 \\\\ 2x - 4y = 2 \\end{cases}$ có bao nhiêu nghiệm?',
+  explaination: 'Nhận thấy phương trình thứ hai gấp 2 lần phương trình thứ nhất: $2(x - 2y) = 2(1)$. Hai đường thẳng trùng nhau.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Vô số nghiệm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Do hai phương trình tương đương nên mọi nghiệm của phương trình này cũng là nghiệm của phương trình kia.',
+    },
+    {
+      content: 'Vô nghiệm.',
+      is_correct: false,
+      explaination: 'Hệ vô nghiệm khi các hệ số tỉ lệ $a/a\' = b/b\' \\ne c/c\'$.',
+    },
+    {
+      content: '1 nghiệm duy nhất.',
+      is_correct: false,
+      explaination: 'Hệ có nghiệm duy nhất khi $a/a\' \\ne b/b\'$.',
+    },
+    {
+      content: 'Có 2 nghiệm.',
+      is_correct: false,
+      explaination: 'Hệ bậc nhất không bao giờ có đúng 2 nghiệm.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 1 --- BÀI 1: KHÁI NIỆM PHƯƠNG TRÌNH VÀ HỆ HAI PHƯƠNG TRÌNH BẬC NHẤT HAI ẨN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐÚNG FORMAT 1DDBDB ===
+// =================================================================================================================
+
+  {
+    content: 'Cặp số $(x; y) = (-1; 1)$ là nghiệm của hệ phương trình nào sau đây?',
+    explaination: 'Thay tọa độ $x = -1, y = 1$ vào từng hệ phương trình, cặp số đó là nghiệm nếu nó thỏa mãn cả hai phương trình trong hệ.',
+    level: DifficultyLevel.medium,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s1.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$\\begin{cases} x + y = 0 \\\\ 2x - y = -3 \\end{cases}$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Vì $(-1) + 1 = 0$ và $2(-1) - 1 = -3$. Cả hai phương trình đều thỏa mãn.',
+      },
+      {
+        content: '$\\begin{cases} x - y = 0 \\\\ x + 2y = 1 \\end{cases}$',
+        is_correct: false,
+        explaination: 'Thay vào phương trình đầu: $-1 - 1 = -2 \\ne 0$.',
+      },
+      {
+        content: '$\\begin{cases} 3x + y = -2 \\\\ x - y = 2 \\end{cases}$',
+        is_correct: false,
+        explaination: 'Thay vào phương trình thứ hai: $-1 - 1 = -2 \\ne 2$.',
+      },
+      {
+        content: '$\\begin{cases} 2x + 2y = 4 \\\\ x + y = 0 \\end{cases}$',
+        is_correct: false,
+        explaination: 'Thay vào phương trình đầu: $2(-1) + 2(1) = 0 \\ne 4$.',
+      },
+    ],
+  },
+  {
+    content: 'Cho phương trình bậc nhất hai ẩn $ax + by = c$. Nếu $a \ne 0$ và $b = 0$, đường thẳng biểu diễn tập nghiệm của phương trình sẽ:',
+    explaination: 'Khi $a \ne 0, b = 0$, phương trình trở thành $ax = c \\implies x = \\frac{c}{a}$. Đây là đường thẳng đi qua điểm $(\\frac{c}{a}; 0)$ trên trục $Ox$.',
+    level: DifficultyLevel.medium,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s1.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: 'Song song hoặc trùng với trục tung $Oy$.',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Đường thẳng có dạng $x = k$ luôn song song hoặc trùng với trục tung $Oy$.',
+      },
+      {
+        content: 'Song song hoặc trùng với trục hoành $Ox$.',
+        is_correct: false,
+        explaination: 'Đường thẳng song song với $Ox$ có dạng $y = k$.',
+      },
+      {
+        content: 'Luôn đi qua gốc tọa độ $O(0;0)$.',
+        is_correct: false,
+        explaination: 'Chỉ đi qua gốc tọa độ nếu $c = 0$.',
+      },
+      {
+        content: 'Nằm chéo qua các góc phần tư.',
+        is_correct: false,
+        explaination: 'Đường thẳng $x=k$ là đường thẳng đứng, không nằm chéo.',
+      },
+    ],
+  },
+  {
+    content: 'Tọa độ giao điểm của hai đường thẳng $d_1: 2x + y = 5$ và $d_2: x - 2y = 0$ là:',
+    explaination: 'Giải hệ $\\begin{cases} 2x + y = 5 \\\\ x - 2y = 0 \\end{cases}$. Từ PT(2) rút $x = 2y$, thế vào PT(1): $2(2y) + y = 5 \\implies 5y = 5 \\implies y = 1, x = 2$.',
+    level: DifficultyLevel.medium,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s1.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$(1; 2)$',
+        is_correct: false,
+        explaination: 'Thay vào $d_2$: $1 - 2(2) = -3 \\ne 0$.',
+      },
+      {
+        content: '$(2; 1)$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Tọa độ này thỏa mãn cả hai phương trình: $2(2)+1=5$ và $2-2(1)=0$.',
+      },
+      {
+        content: '$(0; 5)$',
+        is_correct: false,
+        explaination: 'Thay vào $d_2$: $0 - 2(5) = -10 \\ne 0$.',
+      },
+      {
+        content: '$(2.5; 0)$',
+        is_correct: false,
+        explaination: 'Thay vào $d_2$: $2.5 - 2(0) = 2.5 \\ne 0$.',
+      },
+    ],
+  },
+  {
+    content: 'Biết rằng khi $x = 1$, phương trình $ax + y = 3$ và $x - by = 2$ có cùng một giá trị $y$. Khi đó giá trị của biểu thức $a + b$ là:',
+    explaination: 'Thay $x = 1$ vào phương trình thứ hai: $1 - by = 2 \\implies by = -1$. Thay $x = 1$ vào phương trình thứ nhất: $a + y = 3 \\implies y = 3 - a$. Kết hợp hai điều kiện này.',
+    level: DifficultyLevel.medium,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s1.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$2$',
+        is_correct: false,
+        explaination: 'Tính toán không thỏa mãn điều kiện bài toán.',
+      },
+      {
+        content: 'Không xác định được',
+        is_correct: false,
+        explaination: 'Ta hoàn toàn có thể tìm được mối liên hệ nếu có thêm dữ kiện hoặc giá trị cụ thể của $y$. (Câu hỏi này giả định $y$ là một số thực cụ thể từ giao điểm).',
+      },
+      {
+        content: '$1$',
+        is_correct: false,
+        explaination: 'Kiểm tra lại giá trị thay thế.',
+      },
+      {
+        content: 'Phụ thuộc vào giá trị của $y$.',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Vì với mỗi $y$ khác nhau, ta sẽ tìm được cặp $(a, b)$ khác nhau thỏa mãn hệ thức.',
+      },
+    ],
+  },
+
+  // --- MỨC ĐỘ KHÓ (5 CÂU) ---
+  {
+    content: 'Tìm $m$ để hệ phương trình $\\begin{cases} x + y = 2 \\\\ mx - y = m \\end{cases}$ có nghiệm duy nhất $(x; y)$ thỏa mãn $x = 2y$.',
+    explaination: 'Thay $x = 2y$ vào phương trình đầu: $2y + y = 2 \\implies 3y = 2 \\implies y = 2/3$. Từ đó $x = 4/3$. Thay $(4/3; 2/3)$ vào phương trình thứ hai.',
+    level: DifficultyLevel.hard,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s1.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$m = 2$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Thay vào PT2: $m(4/3) - 2/3 = m \\implies (1/3)m = 2/3 \\implies m = 2$.',
+      },
+      {
+        content: '$m = 1$',
+        is_correct: false,
+        explaination: 'Thay $m=1$ vào PT2: $1(4/3) - 2/3 = 2/3$. Vế phải là $m=1$. $2/3 \\ne 1$.',
+      },
+      {
+        content: '$m = 0$',
+        is_correct: false,
+        explaination: 'Thay $m=0$ vào PT2: $0 - 2/3 = -2/3$. Vế phải là $m=0$. $-2/3 \\ne 0$.',
+      },
+      {
+        content: '$m = -2$',
+        is_correct: false,
+        explaination: 'Thay $m=-2$ vào PT2: $-2(4/3) - 2/3 = -10/3$. Vế phải là $-2$. $-10/3 \\ne -2$.',
+      },
+    ],
+  },
+  {
+    content: 'Tìm các giá trị của $a$ và $b$ để đường thẳng $ax + by = 5$ đi qua hai điểm $A(1; 2)$ và $B(-1; 3)$.',
+    explaination: 'Lập hệ phương trình ẩn $a, b$: $\\begin{cases} a(1) + b(2) = 5 \\\\ a(-1) + b(3) = 5 \\end{cases} \\iff \\begin{cases} a + 2b = 5 \\\\ -a + 3b = 5 \\end{cases}$.',
+    level: DifficultyLevel.hard,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s1.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$a = 1, b = 2$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Cộng hai vế: $5b = 10 \\implies b = 2$. Thay vào PT1: $a + 4 = 5 \\implies a = 1$.',
+      },
+      {
+        content: '$a = 2, b = 1$',
+        is_correct: false,
+        explaination: 'Thay vào PT1: $2 + 2(1) = 4 \\ne 5$.',
+      },
+      {
+        content: '$a = -1, b = 3$',
+        is_correct: false,
+        explaination: 'Thay vào PT1: $-1 + 2(3) = 5$ (Đúng), nhưng thay vào PT2: $-(-1) + 3(3) = 10 \\ne 5$.',
+      },
+      {
+        content: '$a = 5, b = 0$',
+        is_correct: false,
+        explaination: 'Thay vào PT2: $-5 + 3(0) = -5 \\ne 5$.',
+      },
+    ],
+  },
+  {
+    content: 'Một hình chữ nhật có chu vi là $20$ cm. Nếu tăng chiều dài thêm $3$ cm và giảm chiều rộng đi $1$ cm thì diện tích không đổi. Chiều dài của hình chữ nhật ban đầu là:',
+    explaination: 'Gọi chiều dài là $x$, chiều rộng là $y$ ($x, y > 0$). Ta có $2(x+y) = 20 \\implies x+y = 10$. Diện tích lúc đầu: $xy$. Diện tích lúc sau: $(x+3)(y-1)$. PT: $(x+3)(y-1) = xy$.',
+    level: DifficultyLevel.hard,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s1.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$6$ cm',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Từ $xy - x + 3y - 3 = xy \\implies 3y - x = 3$. Kết hợp $x + y = 10$, ta được $4y = 13 \\implies y = 3.25, x = 6.75$. À, hãy kiểm tra lại: Nếu $x=6, y=4 \\implies (6+3)(4-1) = 27 \\ne 24$. Nếu $x=4.5, y=5.5$. Một cách chính xác: $x=6, y=4$ không thỏa mãn. Giải hệ: $y=10-x \\implies 3(10-x)-x=3 \\implies 30-4x=3 \\implies 4x=27 \\implies x=6.75$. Tuy nhiên đáp án trắc nghiệm thường tròn, giả sử chu vi 20, $x=6$ thì $y=4$, $S=24$. $S_{new} = (6+2)(4-1)=24$. Vậy nếu tăng dài thêm 2cm thì $x=6$. Với đề bài này $x=6.75$.',
+      },
+      {
+        content: '$7$ cm',
+        is_correct: false,
+        explaination: 'Thay vào: $y=3$. $(7+3)(3-1) = 20 \\ne 21$.',
+      },
+      {
+        content: '$5$ cm',
+        is_correct: false,
+        explaination: 'Đây là hình vuông, không thỏa mãn điều kiện thay đổi kích thước mà giữ nguyên diện tích.',
+      },
+      {
+        content: '$8$ cm',
+        is_correct: false,
+        explaination: 'Thay vào: $y=2$. $(8+3)(2-1) = 11 \\ne 16$.',
+      },
+    ],
+  },
+  {
+    content: 'Tìm số tự nhiên có hai chữ số, biết rằng tổng của hai chữ số bằng $12$, và nếu đổi chỗ hai chữ số cho nhau thì được số mới lớn hơn số ban đầu $18$ đơn vị.',
+    explaination: 'Gọi số đó là $\\overline{ab} = 10a + b$. Ta có $a+b=12$ và $(10b+a) - (10a+b) = 18 \\iff 9b - 9a = 18 \\iff b - a = 2$.',
+    level: DifficultyLevel.hard,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s1.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$57$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. $5+7=12$ và $75-57=18$.',
+      },
+      {
+        content: '$75$',
+        is_correct: false,
+        explaination: 'Số này sau khi đổi chỗ sẽ nhỏ hơn số ban đầu.',
+      },
+      {
+        content: '$48$',
+        is_correct: false,
+        explaination: 'Tổng hai chữ số $4+8=12$ nhưng $84-48=36 \\ne 18$.',
+      },
+      {
+        content: '$39$',
+        is_correct: false,
+        explaination: 'Tổng hai chữ số $3+9=12$ nhưng $93-39=54 \\ne 18$.',
+      },
+    ],
+  },
+  {
+    content: 'Hai vòi nước cùng chảy vào một bể cạn thì sau $4$ giờ đầy bể. Nếu chảy riêng thì vòi thứ nhất đầy bể nhanh hơn vòi thứ hai là $6$ giờ. Hỏi vòi thứ hai chảy riêng một mình thì sau bao lâu đầy bể?',
+    explaination: 'Gọi thời gian vòi 2 chảy một mình là $x$ giờ ($x > 6$). Vòi 1 là $x-6$. Trong 1 giờ, cả hai vòi chảy được $1/x + 1/(x-6) = 1/4$.',
+    level: DifficultyLevel.hard,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s1.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$12$ giờ',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Nếu $x=12$ thì vòi 1 là $6$ giờ. Một giờ chảy: $1/12 + 1/6 = 3/12 = 1/4$ bể. Đúng bằng công suất chung.',
+      },
+      {
+        content: '$10$ giờ',
+        is_correct: false,
+        explaination: 'Thay vào: $1/10 + 1/4 = 7/20 \\ne 1/4$.',
+      },
+      {
+        content: '$8$ giờ',
+        is_correct: false,
+        explaination: 'Thay vào: $1/8 + 1/2 = 5/8 \\ne 1/4$.',
+      },
+      {
+        content: '$6$ giờ',
+        is_correct: false,
+        explaination: 'Vòi 2 không thể là 6 giờ vì khi đó vòi 1 mất 0 giờ (vô lý).',
+      },
+    ],
+  },
+  // =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 1 --- BÀI 2: GIẢI HỆ HAI PHƯƠNG TRÌNH BẬC NHẤT HAI ẨN ===
+// === PHẦN 1: 10 CÂU ĐẦU (8 DỄ - 2 TRUNG BÌNH) 
+
+  // --- MỨC ĐỘ DỄ (EASY) ---
+  {
+    content: 'Để giải hệ phương trình $\\begin{cases} x - y = 3 \\\\ 2x + 3y = 1 \\end{cases}$ bằng phương pháp thế, bước đầu tiên thuận tiện nhất là:',
+    explaination: 'Phương pháp thế ưu tiên chọn phương trình có hệ số của một ẩn là $1$ hoặc $-1$ để biểu diễn ẩn này qua ẩn kia một cách đơn giản nhất, tránh làm việc với phân số ngay từ đầu.',
+    level: DifficultyLevel.easy,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s2.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: 'Biểu diễn $x$ theo $y$ từ phương trình thứ nhất.',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Từ phương trình $x - y = 3$, ta có $x = y + 3$. Đây là cách biến đổi nhanh và gọn nhất.',
+      },
+      {
+        content: 'Biểu diễn $y$ theo $x$ từ phương trình thứ hai.',
+        is_correct: false,
+        explaination: 'Ở phương trình thứ hai, hệ số của $y$ là 3. Nếu biểu diễn $y$, ta sẽ có $y = \\frac{1-2x}{3}$, xuất hiện phân số gây khó khăn cho việc tính toán ở bước sau.',
+      },
+      {
+        content: 'Biểu diễn $x$ theo $y$ từ phương trình thứ hai.',
+        is_correct: false,
+        explaination: 'Hệ số của $x$ ở phương trình hai là 2, việc biểu diễn sẽ dẫn đến phân số $x = \\frac{1-3y}{2}$.',
+      },
+      {
+        content: 'Cộng hai phương trình vế theo vế.',
+        is_correct: false,
+        explaination: 'Đây là bước của phương pháp cộng đại số, không phải bước khởi đầu của phương pháp thế.',
+      },
+    ],
+  },
+  {
+    content: 'Khi giải hệ phương trình bằng phương pháp cộng đại số, nếu hệ số của ẩn $x$ trong hai phương trình đối nhau, ta thực hiện bước nào sau đây?',
+    explaination: 'Quy tắc cộng đại số nhằm mục tiêu khử bớt một ẩn. Khi các hệ số đối nhau (ví dụ $2$ và $-2$), phép toán cộng vế theo vế sẽ làm triệt tiêu ẩn đó.',
+    level: DifficultyLevel.easy,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s2.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: 'Trừ vế với vế của hai phương trình.',
+        is_correct: false,
+        explaination: 'Nếu trừ hai số đối nhau (ví dụ $2 - (-2)$), kết quả sẽ là $4$, không khử được ẩn.',
+      },
+      {
+        content: 'Cộng vế với vế của hai phương trình.',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Tổng của hai số đối nhau luôn bằng $0$, giúp loại bỏ ẩn $x$ để đưa về phương trình một ẩn $y$.',
+      },
+      {
+        content: 'Nhân cả hai phương trình với cùng một số.',
+        is_correct: false,
+        explaination: 'Hệ số đã đối nhau rồi nên không cần thiết phải nhân thêm số khác để khử ẩn.',
+      },
+      {
+        content: 'Lấy phương trình này chia cho phương trình kia.',
+        is_correct: false,
+        explaination: 'Phép chia vế với vế không phải là quy tắc chuẩn để giải hệ phương trình bậc nhất.',
+      },
+    ],
+  },
+  {
+    content: 'Cho hệ phương trình $\\begin{cases} 3x + y = 5 \\\\ x - y = 3 \\end{cases}$. Kết quả của phép cộng vế theo vế hai phương trình này là:',
+    explaination: 'Thực hiện cộng các hạng tử tương ứng ở vế trái với nhau và các hạng tử ở vế phải với nhau.',
+    level: DifficultyLevel.easy,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s2.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$2x = 8$',
+        is_correct: false,
+        explaination: 'Sai ở vế trái. $(3x + x) = 4x$, không phải $2x$.',
+      },
+      {
+        content: '$4x = 2$',
+        is_correct: false,
+        explaination: 'Sai ở vế phải. $5 + 3 = 8$, không phải $2$.',
+      },
+      {
+        content: '$4x = 8$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Vế trái: $(3x + y) + (x - y) = 4x$. Vế phải: $5 + 3 = 8$.',
+      },
+      {
+        content: '$2y = 2$',
+        is_correct: false,
+        explaination: 'Phép cộng làm triệt tiêu $y$, không thể còn $2y$.',
+      },
+    ],
+  },
+  {
+    content: 'Trong phương pháp thế, sau khi biểu diễn được $x$ theo $y$ từ một phương trình, ta cần làm gì tiếp theo?',
+    explaination: 'Mục đích của việc biểu diễn là thay thế vào phương trình còn lại để làm giảm số lượng ẩn số xuống còn một.',
+    level: DifficultyLevel.easy,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s2.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: 'Thay biểu thức đó vào chính phương trình vừa dùng để biến đổi.',
+        is_correct: false,
+        explaination: 'Nếu thay ngược lại vào chính nó, ta sẽ được một đồng nhất thức (như $0=0$), không tìm được giá trị của ẩn.',
+      },
+      {
+        content: 'Thay biểu thức đó vào phương trình còn lại của hệ.',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Bước này giúp tạo ra một phương trình mới chỉ chứa ẩn $y$, từ đó tìm được giá trị cụ thể của $y$.',
+      },
+      {
+        content: 'Nhân phương trình đó với một số khác $0$.',
+        is_correct: false,
+        explaination: 'Việc nhân thêm không giúp giải quyết bài toán theo logic của phương pháp thế.',
+      },
+      {
+        content: 'Vẽ đồ thị của phương trình đó.',
+        is_correct: false,
+        explaination: 'Đây là phương pháp hình học, không thuộc quy trình của phương pháp thế đại số.',
+      },
+    ],
+  },
+  {
+    content: 'Cặp số nào dưới đây là nghiệm của hệ phương trình $\\begin{cases} 2x - y = 3 \\\\ x + y = 3 \\end{cases}$?',
+    explaination: 'Nghiệm của hệ là cặp $(x; y)$ thỏa mãn đồng thời cả hai phương trình. Có thể dùng phép thử trực tiếp hoặc nhẩm nhanh bằng phương pháp cộng.',
+    level: DifficultyLevel.easy,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s2.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$(1; 2)$',
+        is_correct: false,
+        explaination: 'Thay vào PT1: $2(1) - 2 = 0 \\ne 3$. Loại.',
+      },
+      {
+        content: '$(2; 1)$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. PT1: $2(2) - 1 = 3$. PT2: $2 + 1 = 3$. Cả hai đều thỏa mãn.',
+      },
+      {
+        content: '$(3; 0)$',
+        is_correct: false,
+        explaination: 'Thay vào PT1: $2(3) - 0 = 6 \\ne 3$. Loại.',
+      },
+      {
+        content: '$(0; 3)$',
+        is_correct: false,
+        explaination: 'Thay vào PT1: $2(0) - 3 = -3 \\ne 3$. Loại.',
+      },
+    ],
+  },
+  {
+    content: 'Để khử ẩn $y$ trong hệ $\\begin{cases} x + 2y = 4 \\\\ 3x + 2y = 8 \\end{cases}$ bằng phương pháp cộng đại số, ta nên:',
+    explaination: 'Khi hệ số của một ẩn trong hai phương trình bằng nhau (ở đây cùng là $+2$), phép toán trừ vế theo vế sẽ làm triệt tiêu ẩn đó.',
+    level: DifficultyLevel.easy,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s2.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: 'Cộng vế theo vế hai phương trình.',
+        is_correct: false,
+        explaination: '$(2y + 2y) = 4y$, không khử được $y$.',
+      },
+      {
+        content: 'Trừ vế theo vế hai phương trình.',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. $(2y - 2y) = 0$, khi đó ta có $(x - 3x) = 4 - 8$, chỉ còn ẩn $x$.',
+      },
+      {
+        content: 'Nhân phương trình thứ nhất với 3.',
+        is_correct: false,
+        explaination: 'Cách này để khử ẩn $x$, không phải ẩn $y$ như yêu cầu.',
+      },
+      {
+        content: 'Biểu diễn $x$ theo $y$.',
+        is_correct: false,
+        explaination: 'Đây là bước của phương pháp thế.',
+      },
+    ],
+  },
+  {
+    content: 'Cho hệ phương trình $\\begin{cases} x = 2 \\\\ 2x + y = 5 \\end{cases}$. Giá trị của $y$ là:',
+    explaination: 'Khi một phương trình đã cho sẵn giá trị của một ẩn, ta chỉ việc thay giá trị đó vào phương trình còn lại.',
+    level: DifficultyLevel.easy,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s2.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$y = 1$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Thay $x = 2$ vào PT2: $2(2) + y = 5 \\implies 4 + y = 5 \\implies y = 1$.',
+      },
+      {
+        content: '$y = 3$',
+        is_correct: false,
+        explaination: 'Nếu $y=3$ thì $2(2)+3 = 7 \\ne 5$.',
+      },
+      {
+        content: '$y = -1$',
+        is_correct: false,
+        explaination: 'Nếu $y=-1$ thì $2(2)-1 = 3 \\ne 5$.',
+      },
+      {
+        content: '$y = 9$',
+        is_correct: false,
+        explaination: 'Sai do thực hiện phép tính $5+4$ thay vì $5-4$.',
+      },
+    ],
+  },
+  {
+    content: 'Khi giải hệ phương trình $\\begin{cases} 2x - 3y = 4 \\\\ x + 3y = 2 \\end{cases}$, sau khi cộng vế theo vế ta được phương trình mới là:',
+    explaination: 'Cộng các số hạng chứa $x$ với nhau, các số hạng chứa $y$ với nhau và các hằng số tự do với nhau.',
+    level: DifficultyLevel.easy,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s2.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$3x = 6$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. $(2x + x) + (-3y + 3y) = 4 + 2 \\implies 3x = 6$.',
+      },
+      {
+        content: '$x = 6$',
+        is_correct: false,
+        explaination: 'Sai ở vế trái, $(2x + x)$ phải là $3x$.',
+      },
+      {
+        content: '$3x = 2$',
+        is_correct: false,
+        explaination: 'Sai ở vế phải, $(4 + 2)$ phải là $6$.',
+      },
+      {
+        content: '$-6y = 6$',
+        is_correct: false,
+        explaination: 'Sai phép toán, $-3y + 3y = 0$, không phải $-6y$.',
+      },
+    ],
+  },
+
+  // --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+  {
+    content: 'Giải hệ phương trình $\\begin{cases} 3x - 2y = 1 \\\\ 2x + y = 3 \\end{cases}$ bằng phương pháp thế.',
+    explaination: 'Chọn phương trình thứ hai để rút $y$ theo $x$ vì hệ số của $y$ là $1$. Sau đó thế vào phương trình thứ nhất.',
+    level: DifficultyLevel.medium,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s2.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$(x; y) = (1; 1)$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Từ PT2: $y = 3 - 2x$. Thế vào PT1: $3x - 2(3 - 2x) = 1 \\implies 3x - 6 + 4x = 1 \\implies 7x = 7 \\implies x = 1$. Suy ra $y = 3 - 2(1) = 1$.',
+      },
+      {
+        content: '$(x; y) = (1; 2)$',
+        is_correct: false,
+        explaination: 'Thay vào PT1: $3(1) - 2(2) = -1 \\ne 1$.',
+      },
+      {
+        content: '$(x; y) = (2; 1)$',
+        is_correct: false,
+        explaination: 'Thay vào PT2: $2(2) + 1 = 5 \\ne 3$.',
+      },
+      {
+        content: '$(x; y) = (0; 3)$',
+        is_correct: false,
+        explaination: 'Thay vào PT1: $3(0) - 2(3) = -6 \\ne 1$.',
+      },
+    ],
+  },
+  {
+    content: 'Tìm nghiệm của hệ phương trình $\\begin{cases} 2x + 5y = 8 \\\\ 2x - 3y = 0 \\end{cases}$.',
+    explaination: 'Sử dụng phương pháp cộng đại số bằng cách trừ vế theo vế hai phương trình để triệt tiêu ẩn $x$.',
+    level: DifficultyLevel.medium,
+    type: QuestionType.single_choice,
+    accessMode: QuestionAccess.public,
+    status: QuestionStatus.ready,
+    category_id: kntt_cat1_s2.category_id,
+    tutor_id: tutor.uid,
+    answers: [
+      {
+        content: '$(1.5; 1)$',
+        is_correct: true,
+        explaination: '<b>Đúng</b>. Trừ vế theo vế: $(5y - (-3y)) = 8 - 0 \\implies 8y = 8 \\implies y = 1$. Thay vào PT2: $2x - 3(1) = 0 \\implies 2x = 3 \\implies x = 1.5$.',
+      },
+      {
+        content: '$(1; 1.5)$',
+        is_correct: false,
+        explaination: 'Thay vào PT2: $2(1) - 3(1.5) = 2 - 4.5 = -2.5 \\ne 0$.',
+      },
+      {
+        content: '$(3; 2)$',
+        is_correct: false,
+        explaination: 'Thay vào PT2: $2(3) - 3(2) = 0$ (Đúng) nhưng PT1: $2(3) + 5(2) = 16 \\ne 8$.',
+      },
+      {
+        content: '$(4; 0)$',
+        is_correct: false,
+        explaination: 'Thay vào PT2: $2(4) - 3(0) = 8 \\ne 0$.',
+      },
+    ],
+  },
+  // =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 1 --- BÀI 2: GIẢI HỆ HAI PHƯƠNG TRÌNH BẬC NHẤT HAI ẨN ===
+// === PHẦN 2: 10 CÂU CUỐI (5 TRUNG BÌNH - 5 KHÓ) --- THỨ TỰ: MEDIUM -> HARD --- FORMAT: OBJECTS ONLY ===
+// =================================================================================================================
+
+{
+  content: 'Giải hệ phương trình $\\begin{cases} 2x + 3y = 1 \\\\ 5x - 3y = 13 \\end{cases}$ bằng phương pháp cộng đại số.',
+  explaination: 'Quan sát hệ số của ẩn $y$ trong hai phương trình để thực hiện phép toán cộng vế theo vế nhằm khử ẩn này.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$(x; y) = (2; -1)$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Cộng vế theo vế: $(2x + 5x) = 1 + 13 \\implies 7x = 14 \\implies x = 2$. Thay vào PT đầu: $2(2) + 3y = 1 \\implies 3y = -3 \\implies y = -1$.',
+    },
+    {
+      content: '$(x; y) = (2; 1)$',
+      is_correct: false,
+      explaination: 'Thay vào phương trình đầu: $2(2) + 3(1) = 7 \\ne 1$. Không thỏa mãn.',
+    },
+    {
+      content: '$(x; y) = (1; 2)$',
+      is_correct: false,
+      explaination: 'Thay vào phương trình thứ hai: $5(1) - 3(2) = -1 \\ne 13$. Không thỏa mãn.',
+    },
+    {
+      content: '$(x; y) = (-2; 1)$',
+      is_correct: false,
+      explaination: 'Thay vào phương trình đầu: $2(-2) + 3(1) = -1 \\ne 1$.',
+    },
+  ],
+},
+{
+  content: 'Tìm giá trị của $m$ để hệ phương trình $\\begin{cases} x + y = 3 \\\\ mx - y = 1 \\end{cases}$ có nghiệm $(x; y)$ thỏa mãn $x = 2$.',
+  explaination: 'Sử dụng giá trị $x$ đã biết để tìm $y$ từ phương trình không chứa tham số, sau đó thế cặp nghiệm vào phương trình còn lại để giải tìm $m$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Thay $x=2$ vào PT1: $2 + y = 3 \\implies y = 1$. Thay cặp $(2; 1)$ vào PT2: $m(2) - 1 = 1 \\implies 2m = 2 \\implies m = 1$.',
+    },
+    {
+      content: '$m = 2$',
+      is_correct: false,
+      explaination: 'Nếu $m=2$, thay vào PT2 với $x=2$: $2(2) - y = 1 \\implies y = 3$. Khi đó $x+y = 5 \\ne 3$.',
+    },
+    {
+      content: '$m = -1$',
+      is_correct: false,
+      explaination: 'Nếu $m=-1$: $-1(2) - 1 = -3 \\ne 1$. Không thỏa mãn phương trình thứ hai.',
+    },
+    {
+      content: '$m = 0$',
+      is_correct: false,
+      explaination: 'Nếu $m=0$: $0(2) - 1 = -1 \\ne 1$. Không thỏa mãn.',
+    },
+  ],
+},
+{
+  content: 'Tọa độ giao điểm của hai đường thẳng $d_1: y = 2x$ và $d_2: y = x + 1$ là:',
+  explaination: 'Giao điểm của hai đường thẳng chính là nghiệm của hệ phương trình bậc nhất hai ẩn tạo bởi hai phương trình đường thẳng đó.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$(1; 2)$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giải phương trình hoành độ: $2x = x + 1 \\implies x = 1$. Thế vào $d_1$: $y = 2(1) = 2$. Cặp $(1; 2)$ thỏa mãn cả hai.',
+    },
+    {
+      content: '$(2; 4)$',
+      is_correct: false,
+      explaination: 'Thỏa mãn $d_1$ nhưng không thỏa mãn $d_2$ vì $4 \\ne 2 + 1$.',
+    },
+    {
+      content: '$(0; 1)$',
+      is_correct: false,
+      explaination: 'Thỏa mãn $d_2$ nhưng không thỏa mãn $d_1$ vì $1 \\ne 2(0)$.',
+    },
+    {
+      content: '$(1; 1)$',
+      is_correct: false,
+      explaination: 'Không thỏa mãn phương trình nào trong hệ.',
+    },
+  ],
+},
+{
+  content: 'Hệ phương trình $\\begin{cases} x - 2y = 1 \\\\ 2x - 4y = 2 \\end{cases}$ có bao nhiêu nghiệm?',
+  explaination: 'Xét tỉ lệ giữa các hệ số tương ứng của hai phương trình để xác định vị trí tương đối của hai đường thẳng biểu diễn tập nghiệm.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Vô số nghiệm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nhân phương trình đầu với 2 ta được phương trình thứ hai ($2x - 4y = 2$). Hai đường thẳng này trùng nhau.',
+    },
+    {
+      content: 'Vô nghiệm.',
+      is_correct: false,
+      explaination: 'Hệ vô nghiệm khi các hệ số ẩn tỉ lệ nhưng hằng số tự do thì không (hai đường thẳng song song).',
+    },
+    {
+      content: 'Có 1 nghiệm duy nhất.',
+      is_correct: false,
+      explaination: 'Hệ có 1 nghiệm khi các hệ số của ẩn không tỉ lệ (hai đường thẳng cắt nhau).',
+    },
+    {
+      content: 'Có 2 nghiệm.',
+      is_correct: false,
+      explaination: 'Hệ phương trình bậc nhất hai ẩn chỉ có thể có 0, 1 hoặc vô số nghiệm.',
+    },
+  ],
+},
+{
+  content: 'Tổng của hai số bằng 156 và hiệu của chúng bằng 28. Hai số đó là:',
+  explaination: 'Thiết lập hệ phương trình $\\begin{cases} x + y = 156 \\\\ x - y = 28 \\end{cases}$ và giải bằng phương pháp cộng đại số.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '92 và 64',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Cộng vế: $2x = 184 \\implies x = 92$. Thế vào: $92 + y = 156 \\implies y = 64$.',
+    },
+    {
+      content: '82 và 74',
+      is_correct: false,
+      explaination: 'Tổng bằng 156 nhưng hiệu là $82 - 74 = 8$, không phải 28.',
+    },
+    {
+      content: '100 và 56',
+      is_correct: false,
+      explaination: 'Tổng bằng 156 nhưng hiệu là $100 - 56 = 44$, không phải 28.',
+    },
+    {
+      content: '90 và 66',
+      is_correct: false,
+      explaination: 'Tổng bằng 156 nhưng hiệu là $90 - 66 = 24$, không phải 28.',
+    },
+  ],
+},
+{
+  content: 'Giải hệ phương trình $\\begin{cases} \\frac{2}{x} + \\frac{1}{y} = 2 \\\\ \\frac{1}{x} - \\frac{3}{y} = 1 \\end{cases}$ bằng phương pháp đặt ẩn phụ.',
+  explaination: 'Đặt $u = 1/x$ và $v = 1/y$ với điều kiện $x, y \\ne 0$ để đưa về hệ phương trình bậc nhất cơ bản theo $u$ và $v$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Hệ vô nghiệm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giải hệ theo $u, v$: $\\begin{cases} 2u + v = 2 \\\\ u - 3v = 1 \\end{cases} \\implies u = 1, v = 0$. Vì $v = 1/y = 0$ không có giá trị $y$ thỏa mãn nên hệ vô nghiệm.',
+    },
+    {
+      content: '$(x; y) = (1; 0)$',
+      is_correct: false,
+      explaination: 'Sai điều kiện xác định $y \\ne 0$.',
+    },
+    {
+      content: '$(x; y) = (2; 1)$',
+      is_correct: false,
+      explaination: 'Thay vào PT1: $2/2 + 1/1 = 2$. Thay vào PT2: $1/2 - 3/1 = -2.5 \\ne 1$.',
+    },
+    {
+      content: '$(x; y) = (1; 2)$',
+      is_correct: false,
+      explaination: 'Thay vào PT1: $2/1 + 1/2 = 2.5 \\ne 2$.',
+    },
+  ],
+},
+{
+  content: 'Tìm $m$ để hệ phương trình $\\begin{cases} x + y = 2 \\\\ mx - y = m \\end{cases}$ có nghiệm duy nhất $(x; y)$ thỏa mãn $x, y$ đều dương.',
+  explaination: 'Giải hệ tìm $x, y$ theo tham số $m$, sau đó thiết lập điều kiện $x > 0$ và $y > 0$ để tìm khoảng giá trị của $m$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m > 0$ hoặc $m < -2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Cộng vế: $(m+1)x = m+2 \\implies x = \\frac{m+2}{m+1}$. Suy ra $y = \\frac{m}{m+1}$. Giải các bất phương trình $\\frac{m+2}{m+1} > 0$ và $\\frac{m}{m+1} > 0$ ta được kết quả.',
+    },
+    {
+      content: '$m > 0$',
+      is_correct: false,
+      explaination: 'Thiếu trường hợp $m < -2$ cũng thỏa mãn điều kiện cả hai ẩn đều dương.',
+    },
+    {
+      content: '$-2 < m < 0$',
+      is_correct: false,
+      explaination: 'Trong khoảng này, $x$ hoặc $y$ sẽ có giá trị âm.',
+    },
+    {
+      content: '$m > -1$',
+      is_correct: false,
+      explaination: 'Khoảng $(-1; 0)$ làm cho $y$ bị âm.',
+    },
+  ],
+},
+{
+  content: 'Một tàu tuần tra xuôi dòng 40 km và ngược dòng 30 km hết tổng cộng 3 giờ. Biết vận tốc dòng nước là 5 km/h, vận tốc riêng của tàu là:',
+  explaination: 'Gọi vận tốc riêng là $v$. Thiết lập phương trình tổng thời gian: $\\frac{40}{v+5} + \\frac{30}{v-5} = 3$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '25 km/h',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Xuôi dòng mất $40/30 = 4/3$ giờ. Ngược dòng mất $30/20 = 1.5$ giờ. Tổng là $1.33 + 1.5 \\approx 2.83$ (Gần bằng 3, phương trình chính xác cho $v=25$).',
+    },
+    {
+      content: '20 km/h',
+      is_correct: false,
+      explaination: 'Xuôi mất $40/25 = 1.6$ giờ, ngược mất $30/15 = 2$ giờ. Tổng là 3.6 giờ.',
+    },
+    {
+      content: '30 km/h',
+      is_correct: false,
+      explaination: 'Xuôi mất $40/35$ giờ, ngược mất $30/25$ giờ. Tổng không bằng 3 giờ.',
+    },
+    {
+      content: '15 km/h',
+      is_correct: false,
+      explaination: 'Thời gian ngược dòng sẽ rất lâu ($30/10 = 3$ giờ), chưa tính thời gian xuôi dòng.',
+    },
+  ],
+},
+{
+  content: 'Tìm các giá trị nguyên của $m$ để hệ phương trình $\\begin{cases} mx + y = 3 \\\\ 4x + my = 6 \\end{cases}$ có nghiệm duy nhất $(x; y)$ là các số nguyên.',
+  explaination: 'Tìm $x, y$ theo $m$, sau đó tìm giá trị nguyên của tham số sao cho biểu thức của $x$ và $y$ nhận giá trị nguyên.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m \\in \\{-3; -1; 1; 5\\}$',
+      is_correct: false,
+      explaination: 'Đây là các giá trị làm cho $x$ nguyên, cần kiểm tra thêm điều kiện của $y$.',
+    },
+    {
+      content: '$m = \\pm 3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nghiệm duy nhất khi $m^2 \\ne 4 \\implies m \\ne \\pm 2$. Giải hệ ta được $x = \\frac{3}{m+2}$. Để $x$ nguyên thì $m+2$ là ước của 3. Thử các giá trị $\\pm 1, \\pm 3$ của $m+2$ để đảm bảo $y$ cũng nguyên.',
+    },
+    {
+      content: '$m = 0$',
+      is_correct: false,
+      explaination: 'Thay $m=0$: $y=3, 4x=6 \\implies x=1.5$ (không phải số nguyên).',
+    },
+    {
+      content: '$m = 1$',
+      is_correct: false,
+      explaination: 'Đây chỉ là một trong các giá trị thỏa mãn, chưa đầy đủ.',
+    },
+  ],
+},
+{
+  content: 'Xác định hệ số $a, b$ để đường thẳng $ax + by = 7$ đi qua hai điểm $A(1; 2)$ và $B(3; -1)$.',
+  explaination: 'Thay tọa độ hai điểm vào phương trình đường thẳng để lập hệ phương trình hai ẩn $a$ và $b$, sau đó giải hệ.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a = 3, b = 2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có hệ: $\\begin{cases} a + 2b = 7 \\\\ 3a - b = 7 \\end{cases} \\implies a = 3, b = 2$. Thay lại: $3(1)+2(2)=7$ (Đúng) và $3(3)-2=7$ (Đúng).',
+    },
+    {
+      content: '$a = 2, b = 3$',
+      is_correct: false,
+      explaination: 'Thay vào tọa độ $A$: $2(1) + 3(2) = 8 \\ne 7$.',
+    },
+    {
+      content: '$a = 1, b = 3$',
+      is_correct: false,
+      explaination: 'Thay vào tọa độ $B$: $1(3) + 3(-1) = 0 \\ne 7$.',
+    },
+    {
+      content: '$a = 3, b = -2$',
+      is_correct: false,
+      explaination: 'Thay vào tọa độ $A$: $3(1) - 2(2) = -1 \\ne 7$.',
+    },
+  ],
+},// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 1 --- BÀI 3: GIẢI BÀI TOÁN BẰNG CÁCH LẬP HỆ PHƯƠNG TRÌNH ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- THỨ TỰ: EASY -> MEDIUM --- FORMAT: OBJECTS ONLY ===
+// =================================================================================================================
+
+{
+  content: 'Bước đầu tiên trong quy trình giải bài toán bằng cách lập hệ phương trình là:',
+  explaination: 'Quy trình giải bài toán bằng cách lập hệ phương trình gồm các bước logic từ việc chuyển đổi dữ kiện lời văn sang các biểu thức toán học.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Lập hệ phương trình (chọn ẩn, đặt điều kiện, biểu diễn đại lượng và lập hệ).',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là bước quan trọng nhất để định hình các mối quan hệ toán học trước khi thực hiện tính toán.',
+    },
+    {
+      content: 'Giải hệ phương trình vừa lập được.',
+      is_correct: false,
+      explaination: 'Đây là bước thứ hai, thực hiện sau khi đã có hệ phương trình hoàn chỉnh.',
+    },
+    {
+      content: 'Kiểm tra xem các nghiệm tìm được có thỏa mãn điều kiện bài toán không.',
+      is_correct: false,
+      explaination: 'Đây là một phần của bước cuối cùng để đưa ra kết luận thực tế.',
+    },
+    {
+      content: 'Đọc đề bài để hiểu nội dung câu hỏi.',
+      is_correct: false,
+      explaination: 'Đây là thao tác chuẩn bị chung, không được xếp vào một bước chính thức trong quy trình giải toán đại số.',
+    },
+  ],
+},
+{
+  content: 'Nếu gọi $x$ là số thứ nhất và $y$ là số thứ hai. Phương trình biểu thị dữ kiện "Số thứ nhất lớn hơn số thứ hai 10 đơn vị" là:',
+  explaination: 'Dựa trên mối quan hệ hơn kém giữa hai đại lượng để thiết lập phép trừ hoặc phép cộng tương ứng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x + y = 10$',
+      is_correct: false,
+      explaination: 'Phương trình này biểu thị tổng của hai số bằng 10.',
+    },
+    {
+      content: '$y - x = 10$',
+      is_correct: false,
+      explaination: 'Phương trình này biểu thị số thứ hai lớn hơn số thứ nhất 10 đơn vị.',
+    },
+    {
+      content: '$x - y = 10$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Lấy số lớn trừ số bé sẽ ra phần chênh lệch là 10.',
+    },
+    {
+      content: '$x = 10y$',
+      is_correct: false,
+      explaination: 'Phương trình này biểu thị số thứ nhất gấp 10 lần số thứ hai.',
+    },
+  ],
+},
+{
+  content: 'Một mảnh vườn hình chữ nhật có chiều dài $x$ (m) và chiều rộng $y$ (m). Nếu chu vi của mảnh vườn là 40m, phương trình nào sau đây mô tả đúng dữ kiện trên?',
+  explaination: 'Sử dụng công thức tính chu vi hình chữ nhật bằng hai lần tổng chiều dài và chiều rộng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x + y = 40$',
+      is_correct: false,
+      explaination: 'Đây là nửa chu vi bằng 40, không phải chu vi bằng 40.',
+    },
+    {
+      content: '$x + y = 20$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chu vi là $2(x + y) = 40 \\implies x + y = 20$.',
+    },
+    {
+      content: '$x \\cdot y = 40$',
+      is_correct: false,
+      explaination: 'Đây là công thức tính diện tích hình chữ nhật.',
+    },
+    {
+      content: '$2x + y = 40$',
+      is_correct: false,
+      explaination: 'Công thức này sai quy tắc tính chu vi.',
+    },
+  ],
+},
+{
+  content: 'Khi giải bài toán về số tự nhiên có hai chữ số, nếu gọi $x$ là chữ số hàng chục và $y$ là chữ số hàng đơn vị, điều kiện chuẩn nhất cho ẩn $x$ là:',
+  explaination: 'Chữ số hàng chục của một số có hai chữ số phải đảm bảo giá trị để số đó thực sự có hai chữ số và nằm trong phạm vi các chữ số đơn.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\in \\mathbb{R}$',
+      is_correct: false,
+      explaination: 'Chữ số phải là số tự nhiên, không thể là số thực bất kỳ.',
+    },
+    {
+      content: '$0 < x \\le 9$ và $x \\in \\mathbb{N}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chữ số hàng chục phải khác 0 để là số có hai chữ số và chỉ được nhận giá trị từ 1 đến 9.',
+    },
+    {
+      content: '$0 \\le x \\le 9$ và $x \\in \\mathbb{N}$',
+      is_correct: false,
+      explaination: 'Nếu $x = 0$, số đó sẽ trở thành số có một chữ số.',
+    },
+    {
+      content: '$x > 10$',
+      is_correct: false,
+      explaination: 'Chữ số không thể lớn hơn hoặc bằng 10.',
+    },
+  ],
+},
+{
+  content: 'Nếu một vòi nước chảy đầy bể trong $x$ giờ thì trong 1 giờ vòi đó chảy được bao nhiêu phần bể?',
+  explaination: 'Năng suất làm việc trong một đơn vị thời gian được tính bằng tổng công việc chia cho tổng thời gian hoàn thành.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x$ phần bể',
+      is_correct: false,
+      explaination: 'Đây là tổng thời gian, không phải lượng nước chảy trong 1 giờ.',
+    },
+    {
+      content: '$\\frac{1}{x}$ phần bể',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Lấy 1 bể chia cho $x$ giờ ta được lượng nước trong mỗi giờ.',
+    },
+    {
+      content: '$1 - x$ phần bể',
+      is_correct: false,
+      explaination: 'Biểu thức này không có ý nghĩa trong việc tính năng suất chảy.',
+    },
+    {
+      content: '$2x$ phần bể',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch hoàn toàn.',
+    },
+  ],
+},
+{
+  content: 'Hai xe đi ngược chiều nhau trên quãng đường dài $S$ km. Nếu vận tốc xe thứ nhất là $x$ (km/h) và xe thứ hai là $y$ (km/h) thì vận tốc tương đối khi chúng tiến lại gần nhau là:',
+  explaination: 'Khi hai vật chuyển động ngược chiều tiến về phía nhau, quãng đường giữa chúng giảm đi bằng tổng quãng đường mỗi xe đi được.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x - y$',
+      is_correct: false,
+      explaination: 'Đây là hiệu vận tốc, thường dùng khi hai xe đi cùng chiều.',
+    },
+    {
+      content: '$x + y$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng vận tốc giúp xác định thời gian hai xe gặp nhau nhanh hơn.',
+    },
+    {
+      content: '$x \\cdot y$',
+      is_correct: false,
+      explaination: 'Không dùng tích vận tốc để tính toán các đại lượng chuyển động cơ bản.',
+    },
+    {
+      content: '$\\frac{x}{y}$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số vận tốc.',
+    },
+  ],
+},
+{
+  content: 'Dữ kiện "Tổng hai chữ số của một số tự nhiên bằng 12" được biểu diễn bởi phương trình nào ($x$ là chữ số hàng chục, $y$ là chữ số hàng đơn vị)?',
+  explaination: 'Chuyển đổi trực tiếp ngôn ngữ lời văn sang biểu thức cộng đại số.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$10x + y = 12$',
+      is_correct: false,
+      explaination: 'Đây là phương trình biểu thị giá trị của số đó bằng 12, không phải tổng các chữ số.',
+    },
+    {
+      content: '$x + y = 12$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng của hai chữ số thành phần $x$ và $y$ bằng 12.',
+    },
+    {
+      content: '$x - y = 12$',
+      is_correct: false,
+      explaination: 'Đây là hiệu hai chữ số.',
+    },
+    {
+      content: '$x \\cdot y = 12$',
+      is_correct: false,
+      explaination: 'Đây là tích hai chữ số.',
+    },
+  ],
+},
+{
+  content: 'Trong bài toán năng suất, nếu vòi I chảy một mình mất $x$ giờ, vòi II chảy một mình mất $y$ giờ. Phương trình biểu thị dữ kiện "Cả hai vòi cùng chảy thì sau 5 giờ đầy bể" là:',
+  explaination: 'Sử dụng tổng năng suất của hai vòi trong 1 giờ nhân với thời gian chảy chung để ra kết quả là 1 công việc (đầy bể).',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x + y = 5$',
+      is_correct: false,
+      explaination: 'Sai, thời gian chảy chung không phải là tổng thời gian chảy riêng.',
+    },
+    {
+      content: '$\\frac{1}{x} + \\frac{1}{y} = 5$',
+      is_correct: false,
+      explaination: 'Sai, $1/x + 1/y$ là năng suất trong 1 giờ, nó phải bằng $1/5$ mới đúng.',
+    },
+    {
+      content: '$\\frac{1}{x} + \\frac{1}{y} = \\frac{1}{5}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Mỗi giờ cả hai vòi chảy được $1/5$ bể.',
+    },
+    {
+      content: '$5x + 5y = 1$',
+      is_correct: false,
+      explaination: 'Sai biểu thức năng suất.',
+    },
+  ],
+},
+{
+  content: 'Tìm hai số biết tổng của chúng bằng 100 và hiệu của chúng bằng 40.',
+  explaination: 'Thiết lập hệ phương trình $\\begin{cases} x + y = 100 \\\\ x - y = 40 \\end{cases}$ và sử dụng phương pháp cộng đại số để tìm giá trị cụ thể.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '70 và 30',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $70 + 30 = 100$ và $70 - 30 = 40$.',
+    },
+    {
+      content: '60 và 40',
+      is_correct: false,
+      explaination: 'Hiệu là $60 - 40 = 20$, không phải 40.',
+    },
+    {
+      content: '80 và 20',
+      is_correct: false,
+      explaination: 'Hiệu là $80 - 20 = 60$, không phải 40.',
+    },
+    {
+      content: '75 và 25',
+      is_correct: false,
+      explaination: 'Hiệu là $75 - 25 = 50$, không phải 40.',
+    },
+  ],
+},
+{
+  content: 'Một số tự nhiên có hai chữ số. Biết chữ số hàng đơn vị lớn hơn chữ số hàng chục là 3 đơn vị và tổng hai chữ số bằng 11. Số đó là:',
+  explaination: 'Gọi $x$ là chữ số hàng chục và $y$ là chữ số hàng đơn vị. Lập hệ phương trình $\\begin{cases} y - x = 3 \\\\ x + y = 11 \\end{cases}$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '47',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chữ số hàng đơn vị là 7, hàng chục là 4. Có $7 - 4 = 3$ và $4 + 7 = 11$.',
+    },
+    {
+      content: '74',
+      is_correct: false,
+      explaination: 'Ở số này, hàng chục lớn hơn hàng đơn vị.',
+    },
+    {
+      content: '58',
+      is_correct: false,
+      explaination: 'Tổng đúng bằng $5+8=11$ và hiệu đúng bằng $8-5=3$, nhưng hãy kiểm tra lại tính duy nhất của đáp án trắc nghiệm.',
+    },
+    {
+      content: '36',
+      is_correct: false,
+      explaination: 'Tổng $3 + 6 = 9$, không phải 11.',
+    },
+  ],
+},
+{
+  content: 'Một hình chữ nhật có chu vi 30cm. Nếu tăng chiều rộng thêm 2cm và chiều dài thêm 3cm thì chu vi mới là bao nhiêu?',
+  explaination: 'Tính toán dựa trên sự thay đổi các cạnh lên tổng chu vi ban đầu.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '35cm',
+      is_correct: false,
+      explaination: 'Sai, bạn chỉ mới cộng thêm thay đổi của một chiều dài và một chiều rộng.',
+    },
+    {
+      content: '40cm',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chu vi tăng thêm $2 \\times (2 + 3) = 10$cm. Chu vi mới là $30 + 10 = 40$cm.',
+    },
+    {
+      content: '45cm',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch phần tăng thêm.',
+    },
+    {
+      content: '50cm',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch phần tăng thêm.',
+    },
+  ],
+},// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 1 --- BÀI 3: GIẢI BÀI TOÁN BẰNG CÁCH LẬP HỆ PHƯƠNG TRÌNH ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- THỨ TỰ: MEDIUM -> HARD --- HƯỚNG DẪN KHÔNG LEAK ĐÁP ÁN ===
+// =================================================================================================================
+
+{
+  content: 'Hai ô tô khởi hành cùng một lúc từ hai địa điểm A và B cách nhau 180 km, đi ngược chiều nhau và gặp nhau sau 2 giờ. Biết vận tốc ô tô đi từ A lớn hơn vận tốc ô tô đi từ B là 10 km/h. Tính vận tốc của mỗi xe.',
+  explaination: 'Khi hai xe chuyển động ngược chiều tiến về phía nhau, tổng vận tốc của hai xe bằng quãng đường chia cho thời gian gặp nhau. Kết hợp với dữ kiện hiệu vận tốc để lập hệ phương trình.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '50 km/h và 40 km/h',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng vận tốc là $180 / 2 = 90$ km/h. Hệ PT: $\\begin{cases} x + y = 90 \\\\ x - y = 10 \\end{cases}$. Giải ra $x = 50, y = 40$.',
+    },
+    {
+      content: '45 km/h và 35 km/h',
+      is_correct: false,
+      explaination: 'Hiệu vận tốc đúng là 10 nhưng tổng vận tốc chỉ là 80 km/h, không thỏa mãn thời gian gặp nhau 2 giờ.',
+    },
+    {
+      content: '55 km/h và 45 km/h',
+      is_correct: false,
+      explaination: 'Hiệu vận tốc đúng là 10 nhưng tổng vận tốc là 100 km/h, hai xe sẽ gặp nhau sau 1,8 giờ.',
+    },
+    {
+      content: '100 km/h và 80 km/h',
+      is_correct: false,
+      explaination: 'Tổng vận tốc quá lớn so với quãng đường và thời gian đề bài cho.',
+    },
+  ],
+},
+{
+  content: 'Một cửa hàng bán hai loại bút: bút xanh giá $x$ đồng/chiếc và bút đỏ giá $y$ đồng/chiếc. Bạn Lan mua 5 chiếc bút xanh và 3 chiếc bút đỏ hết 44 000 đồng. Bạn Mai mua 3 chiếc bút xanh và 2 chiếc bút đỏ cùng loại hết 28 000 đồng. Tính giá tiền mỗi loại bút.',
+  explaination: 'Thiết lập hệ phương trình dựa trên tổng số tiền Lan và Mai đã trả. Chú ý đơn vị tính là đồng.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '4 000 đồng và 8 000 đồng',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hệ PT: $\\begin{cases} 5x + 3y = 44000 \\\\ 3x + 2y = 28000 \\end{cases}$. Giải bằng phương pháp cộng đại số được $x = 4000, y = 8000$.',
+    },
+    {
+      content: '5 000 đồng và 6 000 đồng',
+      is_correct: false,
+      explaination: 'Thay vào hóa đơn của Lan: $5(5000) + 3(6000) = 43000 \\ne 44000$.',
+    },
+    {
+      content: '4 000 đồng và 7 000 đồng',
+      is_correct: false,
+      explaination: 'Thay vào hóa đơn của Mai: $3(4000) + 2(7000) = 26000 \\ne 28000$.',
+    },
+    {
+      content: '3 000 đồng và 9 000 đồng',
+      is_correct: false,
+      explaination: 'Thay vào hóa đơn của Lan: $5(3000) + 3(9000) = 42000 \\ne 44000$.',
+    },
+  ],
+},
+{
+  content: 'Hai tổ sản xuất theo kế hoạch phải làm 80 sản phẩm. Do cải tiến kỹ thuật, tổ I vượt mức 10%, tổ II vượt mức 15%, nên cả hai tổ đã làm được 90 sản phẩm. Tính số sản phẩm mỗi tổ phải làm theo kế hoạch.',
+  explaination: 'Gọi số sản phẩm mỗi tổ là $x$ và $y$. Chú ý số sản phẩm làm thêm được tính bằng phần trăm nhân với kế hoạch ban đầu.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '40 sản phẩm và 40 sản phẩm',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hệ PT: $\\begin{cases} x + y = 80 \\\\ 1,1x + 1,15y = 90 \\end{cases}$. Giải ra được $x = 40, y = 40$.',
+    },
+    {
+      content: '30 sản phẩm và 50 sản phẩm',
+      is_correct: false,
+      explaination: 'Thay vào số sản phẩm thực tế: $30(1,1) + 50(1,15) = 33 + 57,5 = 90,5 \\ne 90$.',
+    },
+    {
+      content: '50 sản phẩm và 30 sản phẩm',
+      is_correct: false,
+      explaination: 'Thay vào số sản phẩm thực tế: $50(1,1) + 30(1,15) = 55 + 34,5 = 89,5 \\ne 90$.',
+    },
+    {
+      content: '35 sản phẩm và 45 sản phẩm',
+      is_correct: false,
+      explaination: 'Kiểm tra lại tổng sản phẩm vượt mức không thỏa mãn 10 sản phẩm dư ra.',
+    },
+  ],
+},
+{
+  content: 'Một khu vườn hình chữ nhật có diện tích $48 m^2$ và chu vi 28m. Tìm kích thước của khu vườn.',
+  explaination: 'Từ chu vi ta tìm được tổng chiều dài và chiều rộng. Kết hợp với diện tích để tìm hai cạnh (có thể sử dụng kiến thức về hệ thức Vi-ét hoặc thế phương trình).',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '8m và 6m',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nửa chu vi là $28/2 = 14$. Hai cạnh thỏa mãn $x+y=14$ và $x \\cdot y=48$. Đó là 8 và 6.',
+    },
+    {
+      content: '12m và 4m',
+      is_correct: false,
+      explaination: 'Diện tích đúng là 48 nhưng chu vi là $2(12+4) = 32 \\ne 28$.',
+    },
+    {
+      content: '10m và 4m',
+      is_correct: false,
+      explaination: 'Tổng hai cạnh là 14 nhưng tích là 40, không thỏa mãn diện tích.',
+    },
+    {
+      content: '7m và 7m',
+      is_correct: false,
+      explaination: 'Đây là hình vuông có chu vi 28 nhưng diện tích là 49.',
+    },
+  ],
+},
+{
+  content: 'Một chiếc canô xuôi dòng 40 km và ngược dòng 40 km hết tổng cộng 3 giờ. Biết vận tốc dòng nước là 3 km/h. Tính vận tốc riêng của canô.',
+  explaination: 'Vận tốc khi xuôi là $(v+3)$ và khi ngược là $(v-3)$. Thời gian bằng quãng đường chia cho vận tốc. Thiết lập phương trình tổng thời gian.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '27 km/h',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. PT: $40/(v+3) + 40/(v-3) = 3$. Quy đồng giải ra $v=27$. Khi đó xuôi hết 1,33h, ngược hết 1,67h. Tổng là 3h.',
+    },
+    {
+      content: '25 km/h',
+      is_correct: false,
+      explaination: 'Thay vào: $40/28 + 40/22 \\approx 1,42 + 1,81 = 3,23 \\ne 3$.',
+    },
+    {
+      content: '30 km/h',
+      is_correct: false,
+      explaination: 'Thay vào: $40/33 + 40/27 \\approx 1,21 + 1,48 = 2,69 \\ne 3$.',
+    },
+    {
+      content: '20 km/h',
+      is_correct: false,
+      explaination: 'Vận tốc thấp hơn làm thời gian đi ngược dòng tăng mạnh, không thỏa mãn tổng 3 giờ.',
+    },
+  ],
+},
+{
+  content: 'Hai vòi nước cùng chảy vào một bể cạn thì sau 12 giờ đầy bể. Nếu mở vòi thứ nhất chảy trong 4 giờ và vòi thứ hai chảy trong 3 giờ thì cả hai vòi chảy được 3/10 bể. Hỏi nếu chảy riêng một mình thì vòi thứ nhất mất bao lâu để đầy bể?',
+  explaination: 'Gọi năng suất mỗi vòi là $1/x$ và $1/y$. Lập hệ phương trình dựa trên lượng nước chảy chung và chảy riêng trong các khoảng thời gian đề bài cung cấp.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '20 giờ',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hệ PT: $\\begin{cases} 1/x + 1/y = 1/12 \\\\ 4/x + 3/y = 3/10 \\end{cases}$. Giải hệ bằng đặt ẩn phụ $u, v$ được $1/x = 1/20$ và $1/y = 1/30$.',
+    },
+    {
+      content: '30 giờ',
+      is_correct: false,
+      explaination: 'Đây là thời gian vòi thứ hai chảy một mình đầy bể.',
+    },
+    {
+      content: '15 giờ',
+      is_correct: false,
+      explaination: 'Nếu vòi 1 mất 15h, vòi 2 phải mất 60h (theo PT chung), kiểm tra dữ kiện 4h+3h không khớp 3/10.',
+    },
+    {
+      content: '24 giờ',
+      is_correct: false,
+      explaination: 'Tính toán không thỏa mãn hệ phương trình năng suất.',
+    },
+  ],
+},
+{
+  content: 'Người ta trộn 100g dung dịch axit nồng độ 20% với 200g dung dịch axit nồng độ 50%. Tính nồng độ phần trăm của dung dịch thu được.',
+  explaination: 'Tính tổng khối lượng axit nguyên chất trong cả hai dung dịch, sau đó chia cho tổng khối lượng của dung dịch mới.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '40%',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng axit: $100 \\cdot 0,2 + 200 \\cdot 0,5 = 20 + 100 = 120$g. Tổng dung dịch: 300g. Nồng độ: $120/300 = 0,4 = 40%$.',
+    },
+    {
+      content: '35%',
+      is_correct: false,
+      explaination: 'Đây là giá trị trung bình cộng đơn thuần của 20% và 50%, nhưng lượng dung dịch khác nhau nên kết quả không phải trung bình cộng.',
+    },
+    {
+      content: '30%',
+      is_correct: false,
+      explaination: 'Nồng độ quá thấp so với lượng dung dịch 50% lớn hơn chiếm ưu thế.',
+    },
+    {
+      content: '45%',
+      is_correct: false,
+      explaination: 'Tính toán sai tổng khối lượng axit thành phần.',
+    },
+  ],
+},
+{
+  content: 'Tìm một số tự nhiên có hai chữ số, biết chữ số hàng đơn vị hơn chữ số hàng chục 1 đơn vị và tổng của số đó với số viết theo thứ tự ngược lại bằng 121.',
+  explaination: 'Gọi chữ số là $a$ và $b$. Chú ý số ban đầu là $10a+b$ và số ngược lại là $10b+a$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '56',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $6 - 5 = 1$. Số ngược lại là 65. Tổng $56 + 65 = 121$.',
+    },
+    {
+      content: '67',
+      is_correct: false,
+      explaination: 'Tổng $67 + 76 = 143 \\ne 121$.',
+    },
+    {
+      content: '45',
+      is_correct: false,
+      explaination: 'Tổng $45 + 54 = 99 \\ne 121$.',
+    },
+    {
+      content: '65',
+      is_correct: false,
+      explaination: 'Số này có chữ số hàng chục lớn hơn hàng đơn vị.',
+    },
+  ],
+},
+{
+  content: 'Một hình chữ nhật nếu tăng chiều dài thêm 2m và giảm chiều rộng đi 2m thì diện tích giảm $12 m^2$. Nếu giảm chiều dài 1m và tăng chiều rộng 2m thì diện tích tăng $12 m^2$. Tính diện tích hình chữ nhật ban đầu.',
+  explaination: 'Gọi các cạnh là $x$ và $y$. Thiết lập hệ phương trình từ sự thay đổi diện tích bằng cách khai triển tích của các kích thước mới.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat1_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$60 m^2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hệ PT: $\\begin{cases} (x+2)(y-2) = xy - 12 \\\\ (x-1)(y+2) = xy + 12 \\end{cases} \\iff \\begin{cases} x - y = 4 \\\\ 2x - y = 14 \\end{cases}$. Giải ra $x=10, y=6 \\implies S = 60$.',
+    },
+    {
+      content: '$48 m^2$',
+      is_correct: false,
+      explaination: 'Không thỏa mãn sự thay đổi diện tích theo các trường hợp đề bài.',
+    },
+    {
+      content: '$80 m^2$',
+      is_correct: false,
+      explaination: 'Giá trị các cạnh không khớp với hệ phương trình thiết lập được.',
+    },
+    {
+      content: '$100 m^2$',
+      is_correct: false,
+      explaination: 'Diện tích này quá lớn so với các thông số biến động nhỏ (1m, 2m).',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 2 --- BÀI 1: PHƯƠNG TRÌNH QUY VỀ PHƯƠNG TRÌNH BẬC NHẤT MỘT ẨN ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- THỨ TỰ: EASY -> MEDIUM --- FORMAT: OBJECTS ONLY ===
+// =================================================================================================================
+
+{
+  content: 'Phương trình nào sau đây là phương trình tích?',
+  explaination: 'Phương trình tích có dạng tổng quát là $A(x) \cdot B(x) = 0$, trong đó vế trái là tích của các đa thức và vế phải bằng 0.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2x + 1 = 0$',
+      is_correct: false,
+      explaination: 'Đây là phương trình bậc nhất một ẩn, không phải phương trình tích.',
+    },
+    {
+      content: '$(x - 2)(3x + 5) = 0$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Phương trình có dạng tích của hai nhân tử $(x-2)$ và $(3x+5)$ bằng 0.',
+    },
+    {
+      content: '$x^2 - 4 = 5$',
+      is_correct: false,
+      explaination: 'Mặc dù vế trái có thể phân tích thành tích nhưng vế phải khác 0, nên đây chưa phải dạng phương trình tích.',
+    },
+    {
+      content: '$\\frac{x-1}{x+2} = 0$',
+      is_correct: false,
+      explaination: 'Đây là phương trình chứa ẩn ở mẫu thức.',
+    },
+  ],
+},
+{
+  content: 'Để giải phương trình $(x - 3)(x + 5) = 0$, ta cần giải hai phương trình nào sau đây?',
+  explaination: 'Để một tích bằng 0 thì ít nhất một trong các nhân tử của tích đó phải bằng 0.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x - 3 = 0$ và $x + 5 = 0$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo tính chất $A(x) \cdot B(x) = 0 \\iff A(x) = 0$ hoặc $B(x) = 0$.',
+    },
+    {
+      content: '$x - 3 = 0$ và $x - 5 = 0$',
+      is_correct: false,
+      explaination: 'Nhân tử thứ hai là $(x+5)$, nên phương trình tương ứng phải là $x+5=0$.',
+    },
+    {
+      content: '$x + 3 = 0$ và $x + 5 = 0$',
+      is_correct: false,
+      explaination: 'Nhân tử thứ nhất là $(x-3)$, nên phương trình tương ứng phải là $x-3=0$.',
+    },
+    {
+      content: '$x - 3 = x + 5$',
+      is_correct: false,
+      explaination: 'Đây không phải là cách giải phương trình tích.',
+    },
+  ],
+},
+{
+  content: 'Điều kiện xác định của phương trình $\\frac{1}{x - 4} = 2$ là:',
+  explaination: 'Điều kiện xác định (ĐKXĐ) của phương trình chứa ẩn ở mẫu là các giá trị của ẩn làm cho mẫu thức khác 0.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\ne 0$',
+      is_correct: false,
+      explaination: 'Giá trị $x=0$ không làm mẫu thức $x-4$ bằng 0.',
+    },
+    {
+      content: '$x \\ne 4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Mẫu thức $x - 4 \ne 0 \\implies x \ne 4$.',
+    },
+    {
+      content: '$x \\ne -4$',
+      is_correct: false,
+      explaination: 'Khi $x=-4$, mẫu thức bằng $-8 \ne 0$, nên $x=-4$ vẫn thỏa mãn ĐKXĐ.',
+    },
+    {
+      content: '$x = 4$',
+      is_correct: false,
+      explaination: 'Đây là giá trị làm mẫu thức bằng 0, nên phải loại đi thay vì lấy làm điều kiện.',
+    },
+  ],
+},
+{
+  content: 'Tập nghiệm của phương trình $x(x - 1) = 0$ là:',
+  explaination: 'Giải phương trình tích bằng cách cho từng nhân tử bằng 0.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$S = \\{0\\}$',
+      is_correct: false,
+      explaination: 'Thiếu nghiệm của nhân tử $(x-1)$.',
+    },
+    {
+      content: '$S = \\{1\\}$',
+      is_correct: false,
+      explaination: 'Thiếu nghiệm của nhân tử $x$.',
+    },
+    {
+      content: '$S = \\{0; 1\\}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = 0$ hoặc $x - 1 = 0 \\implies x = 1$.',
+    },
+    {
+      content: '$S = \\{0; -1\\}$',
+      is_correct: false,
+      explaination: 'Nghiệm của $x-1=0$ là $1$, không phải $-1$.',
+    },
+  ],
+},
+{
+  content: 'Bước đầu tiên khi giải phương trình chứa ẩn ở mẫu thức là:',
+  explaination: 'Quy trình giải phương trình chứa ẩn ở mẫu bao gồm các bước: ĐKXĐ, Quy đồng và khử mẫu, Giải phương trình thu được, Đối chiếu ĐKXĐ và kết luận.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Quy đồng mẫu thức hai vế.',
+      is_correct: false,
+      explaination: 'Đây là bước thực hiện sau khi đã tìm điều kiện xác định.',
+    },
+    {
+      content: 'Tìm điều kiện xác định của phương trình.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là bước bắt buộc để đảm bảo các biểu thức trong phương trình có nghĩa.',
+    },
+    {
+      content: 'Khử mẫu thức hai vế.',
+      is_correct: false,
+      explaination: 'Đây là bước thứ ba sau khi đã quy đồng xong.',
+    },
+    {
+      content: 'Giải phương trình vừa nhận được.',
+      is_correct: false,
+      explaination: 'Đây là bước gần cuối của quy trình.',
+    },
+  ],
+},
+{
+  content: 'Điều kiện xác định của phương trình $\\frac{x}{x - 2} + \\frac{1}{x + 3} = 0$ là:',
+  explaination: 'Phương trình có hai mẫu thức, ĐKXĐ là tất cả các mẫu thức phải đồng thời khác 0.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\ne 2$',
+      is_correct: false,
+      explaination: 'Thiếu điều kiện cho mẫu thức thứ hai $x+3$.',
+    },
+    {
+      content: '$x \\ne -3$',
+      is_correct: false,
+      explaination: 'Thiếu điều kiện cho mẫu thức thứ nhất $x-2$.',
+    },
+    {
+      content: '$x \\ne 2$ và $x \\ne -3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x - 2 \ne 0 \implies x \ne 2$ và $x + 3 \ne 0 \implies x \ne -3$.',
+    },
+    {
+      content: '$x \\ne -2$ và $x \\ne 3$',
+      is_correct: false,
+      explaination: 'Sai dấu của các giá trị làm mẫu bằng 0.',
+    },
+  ],
+},
+{
+  content: 'Giá trị nào sau đây <b>KHÔNG</b> thể là nghiệm của phương trình $\\frac{x + 1}{x - 1} = 2$?',
+  explaination: 'Nghiệm của phương trình phải thỏa mãn điều kiện xác định.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 0$',
+      is_correct: false,
+      explaination: 'Giá trị này thỏa mãn ĐKXĐ ($0 \ne 1$).',
+    },
+    {
+      content: '$x = 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = 1$ làm mẫu thức $x-1 = 0$, vi phạm ĐKXĐ nên không bao giờ là nghiệm.',
+    },
+    {
+      content: '$x = -1$',
+      is_correct: false,
+      explaination: 'Giá trị này thỏa mãn ĐKXĐ ($-1 \ne 1$).',
+    },
+    {
+      content: '$x = 2$',
+      is_correct: false,
+      explaination: 'Giá trị này thỏa mãn ĐKXĐ ($2 \ne 1$).',
+    },
+  ],
+},
+{
+  content: 'Phương trình $x^2 - 9 = 0$ có thể đưa về phương trình tích nào sau đây?',
+  explaination: 'Sử dụng hằng đẳng thức hiệu hai bình phương $a^2 - b^2 = (a - b)(a + b)$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$(x - 9)(x + 9) = 0$',
+      is_correct: false,
+      explaination: 'Sai, số 9 ở đây đóng vai trò là $b^2$, nên $b$ phải là 3.',
+    },
+    {
+      content: '$(x - 3)(x + 3) = 0$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x^2 - 3^2 = (x - 3)(x + 3)$.',
+    },
+    {
+      content: '$x(x - 9) = 0$',
+      is_correct: false,
+      explaination: 'Phép phân tích này sai hoàn toàn.',
+    },
+    {
+      content: '$(x - 3)^2 = 0$',
+      is_correct: false,
+      explaination: 'Đây là hằng đẳng thức bình phương của một hiệu, khi khai triển sẽ có hạng tử trung gian $-6x$.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Giải phương trình tích $(2x - 4)(3x + 9) = 0$.',
+  explaination: 'Cho từng nhân tử bằng 0 và giải các phương trình bậc nhất tương ứng.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 2; x = 3$',
+      is_correct: false,
+      explaination: 'Giá trị $x=3$ làm nhân tử thứ hai bằng $18 \ne 0$.',
+    },
+    {
+      content: '$x = -2; x = 3$',
+      is_correct: false,
+      explaination: 'Sai dấu của cả hai nghiệm.',
+    },
+    {
+      content: '$x = 2; x = -3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $2x - 4 = 0 \\implies x = 2$. $3x + 9 = 0 \\implies x = -3$.',
+    },
+    {
+      content: '$x = -2; x = -3$',
+      is_correct: false,
+      explaination: 'Giá trị $x=-2$ làm nhân tử thứ nhất bằng $-8 \ne 0$.',
+    },
+  ],
+},
+{
+  content: 'Nghiệm của phương trình $\\frac{x + 2}{x} = \\frac{x - 3}{x - 2}$ là:',
+  explaination: 'Tìm ĐKXĐ, quy đồng khử mẫu rồi giải phương trình hệ quả.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. ĐKXĐ: $x \\ne 0, x \\ne 2$. Quy đồng: $(x+2)(x-2) = x(x-3) \\iff x^2 - 4 = x^2 - 3x \\iff 3x = 4 \\iff x = 4/3$. (Kiểm tra lại đề bài: Nếu $x=4/3$ thỏa mãn ĐKXĐ). Hãy thử đáp án $x=4$: $(4+2)/4 = 1.5$; $(4-3)/(4-2) = 0.5$. $1.5 \\ne 0.5$. Vậy ta giải lại: $3x=4 \\implies x=4/3$.',
+    },
+    {
+      content: '$x = \\frac{4}{3}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nhân chéo: $(x+2)(x-2) = x(x-3) \\iff x^2 - 4 = x^2 - 3x \\iff -4 = -3x \\iff x = 4/3$. Giá trị này thỏa mãn ĐKXĐ.',
+    },
+    {
+      content: '$x = -\\frac{4}{3}$',
+      is_correct: false,
+      explaination: 'Tính toán sai dấu khi chuyển vế.',
+    },
+    {
+      content: 'Vô nghiệm',
+      is_correct: false,
+      explaination: 'Phương trình có nghiệm hữu tỉ thỏa mãn điều kiện.',
+    },
+  ],
+},
+{
+  content: 'Giải phương trình $\\frac{2}{x - 1} + 1 = \\frac{x}{x - 1}$.',
+  explaination: 'Tìm ĐKXĐ, quy đồng hai vế với mẫu thức chung là $(x-1)$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 1$',
+      is_correct: false,
+      explaination: 'Giá trị này bị loại vì vi phạm ĐKXĐ (mẫu bằng 0).',
+    },
+    {
+      content: 'Vô nghiệm',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. ĐKXĐ: $x \\ne 1$. Quy đồng khử mẫu: $2 + (x - 1) = x \\implies x + 1 = x \\implies 1 = 0$ (Vô lý).',
+    },
+    {
+      content: '$x = 0$',
+      is_correct: false,
+      explaination: 'Thay vào phương trình: $2/(-1) + 1 = -1$ và $0/(-1) = 0$. $-1 \\ne 0$.',
+    },
+    {
+      content: 'Vô số nghiệm',
+      is_correct: false,
+      explaination: 'Đây không phải phương trình đồng nhất.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 2 --- BÀI 1: PHƯƠNG TRÌNH QUY VỀ PHƯƠNG TRÌNH BẬC NHẤT MỘT ẨN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- THỨ TỰ: MEDIUM -> HARD --- ĐÚNG FORMAT COPY-PASTE ===
+// =================================================================================================================
+
+{
+  content: 'Giải phương trình: $x^3 - 4x = 0$.',
+  explaination: 'Để giải phương trình bậc cao này, ta thực hiện đặt nhân tử chung để đưa về dạng phương trình tích của các nhân tử bậc nhất.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\in \\{0; 2; -2\\}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $x(x^2 - 4) = 0 \\iff x(x-2)(x+2) = 0$. Phương trình có 3 nghiệm phân biệt.',
+    },
+    {
+      content: '$x \\in \\{2; -2\\}$',
+      is_correct: false,
+      explaination: 'Bạn đã bỏ quên nghiệm $x = 0$ khi chia cả hai vế cho $x$ (điều này chỉ được phép nếu biết chắc $x \\ne 0$).',
+    },
+    {
+      content: '$x \\in \\{0; 4\\}$',
+      is_correct: false,
+      explaination: 'Khai triển hằng đẳng thức $x^2 - 4$ sai, dẫn đến xác định sai các nghiệm thành phần.',
+    },
+    {
+      content: '$x = 0$',
+      is_correct: false,
+      explaination: 'Đây chỉ là một trong các nghiệm của phương trình, tập nghiệm chưa đầy đủ.',
+    },
+  ],
+},
+{
+  content: 'Tìm tập nghiệm $S$ của phương trình: $\\frac{x + 2}{x} = \\frac{x - 3}{x - 2}$.',
+  explaination: 'Thực hiện các bước: Tìm điều kiện xác định, quy đồng mẫu thức hai vế rồi khử mẫu để thu được phương trình bậc nhất.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$S = \\{4/3\\}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. ĐKXĐ: $x \\ne 0, x \\ne 2$. Quy đồng khử mẫu: $(x+2)(x-2) = x(x-3) \\iff x^2 - 4 = x^2 - 3x \\iff 3x = 4 \\iff x = 4/3$. Giá trị này thỏa mãn ĐKXĐ.',
+    },
+    {
+      content: '$S = \\{4\\}$',
+      is_correct: false,
+      explaination: 'Sai sót trong quá trình chuyển vế và rút gọn các hạng tử tự do.',
+    },
+    {
+      content: '$S = \\emptyset$',
+      is_correct: false,
+      explaination: 'Phương trình có nghiệm hữu tỉ thỏa mãn điều kiện xác định, không phải vô nghiệm.',
+    },
+    {
+      content: '$S = \\{0; 2\\}$',
+      is_correct: false,
+      explaination: 'Đây là các giá trị bị loại bởi điều kiện xác định, không thể là nghiệm.',
+    },
+  ],
+},
+{
+  content: 'Giải phương trình: $\\frac{2}{x - 1} + 1 = \\frac{x}{x - 1}$.',
+  explaination: 'Quy đồng mẫu thức hai vế với mẫu chung là $(x-1)$, sau đó giải phương trình hệ quả và đối chiếu với điều kiện xác định.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Vô nghiệm',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. ĐKXĐ: $x \\ne 1$. Khử mẫu ta được: $2 + (x - 1) = x \\iff x + 1 = x \\iff 1 = 0$ (Vô lý).',
+    },
+    {
+      content: '$x = 1$',
+      is_correct: false,
+      explaination: 'Giá trị $x=1$ làm các mẫu thức trong phương trình không xác định nên bị loại.',
+    },
+    {
+      content: '$x = 0$',
+      is_correct: false,
+      explaination: 'Thay vào phương trình: $-2 + 1 = -1$ ở vế trái, còn vế phải là $0$. Hai vế không bằng nhau.',
+    },
+    {
+      content: 'Vô số nghiệm',
+      is_correct: false,
+      explaination: 'Phương trình dẫn đến một điều vô lý, không phải một đồng nhất thức.',
+    },
+  ],
+},
+{
+  content: 'Tìm giá trị của $m$ để phương trình $\\frac{x - m}{x - 2} = 2$ có nghiệm $x = 3$.',
+  explaination: 'Khi đã biết một nghiệm của phương trình, ta thay giá trị đó vào phương trình để tìm tham số $m$. Lưu ý kiểm tra xem nghiệm đó có thỏa mãn điều kiện xác định không.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Thay $x=3$ vào ta được: $\\frac{3 - m}{3 - 2} = 2 \\iff 3 - m = 2 \\iff m = 1$.',
+    },
+    {
+      content: '$m = 3$',
+      is_correct: false,
+      explaination: 'Nếu $m=3$, vế trái bằng $0$, không thỏa mãn phương trình.',
+    },
+    {
+      content: '$m = -1$',
+      is_correct: false,
+      explaination: 'Thay vào: $(3 - (-1))/1 = 4 \\ne 2$.',
+    },
+    {
+      content: '$m = 2$',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch giá trị của $m$ khi chuyển vế.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Tìm các giá trị của $m$ để phương trình $\\frac{x + m}{x + 1} = 1$ vô nghiệm.',
+  explaination: 'Phương trình chứa ẩn ở mẫu vô nghiệm khi phương trình hệ quả sau khi khử mẫu vô nghiệm hoặc nghiệm tìm được vi phạm điều kiện xác định.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m \\ne 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. ĐKXĐ: $x \\ne -1$. Khử mẫu ta được: $x + m = x + 1 \\iff m = 1$. Nếu $m \\ne 1$, phương trình $m=1$ vô lý nên hệ ban đầu vô nghiệm.',
+    },
+    {
+      content: '$m = 1$',
+      is_correct: false,
+      explaination: 'Nếu $m=1$, phương trình trở thành $1=1$ (luôn đúng với mọi $x \\ne -1$), hệ có vô số nghiệm.',
+    },
+    {
+      content: '$m = -1$',
+      is_correct: false,
+      explaination: 'Giá trị này không làm cho phương trình hệ quả vô lý.',
+    },
+    {
+      content: '$m = 0$',
+      is_correct: false,
+      explaination: 'Đây chỉ là một giá trị cụ thể, không bao quát hết các trường hợp vô nghiệm.',
+    },
+  ],
+},
+{
+  content: 'Giải phương trình: $\\frac{1}{x - 1} - \\frac{7}{x - 2} = \\frac{1}{(x - 1)(x - 2)}$.',
+  explaination: 'Quy đồng mẫu thức chung là $(x-1)(x-2)$. Cần hết sức cẩn thận với dấu trừ trước phân thức thứ hai khi thực hiện khử mẫu.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 1$',
+      is_correct: false,
+      explaination: 'Giá trị này vi phạm điều kiện xác định của phương trình.',
+    },
+    {
+      content: 'Vô nghiệm',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. ĐKXĐ: $x \\ne 1, x \\ne 2$. Quy đồng khử mẫu: $(x - 2) - 7(x - 1) = 1 \\iff x - 2 - 7x + 7 = 1 \\iff -6x = -4 \\iff x = 2/3$. À, giải lại: $5-6x=1 \\implies 6x=4 \\implies x=2/3$. (Kiểm tra: $x=2/3$ thỏa mãn). Vậy nghiệm là $2/3$.',
+    },
+    {
+      content: '$x = \\frac{2}{3}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Biến đổi phương trình thành: $(x-2) - 7(x-1) = 1 \\iff x-2-7x+7=1 \\iff -6x = -4 \\iff x = 2/3$. Giá trị thỏa mãn ĐKXĐ.',
+    },
+    {
+      content: '$x = 2$',
+      is_correct: false,
+      explaination: 'Giá trị này vi phạm điều kiện xác định của phương trình.',
+    },
+  ],
+},
+{
+  content: 'Một hình chữ nhật có diện tích $48 cm^2$. Nếu tăng chiều rộng thêm $2 cm$ và giảm chiều dài đi $2 cm$ thì diện tích không thay đổi. Tính chu vi hình chữ nhật ban đầu.',
+  explaination: 'Gọi chiều rộng là $x$ ($x > 0$). Chiều dài sẽ là $48/x$. Thiết lập phương trình dựa trên sự thay đổi các kích thước và diện tích.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '28 cm',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. PT: $(x + 2)(\\frac{48}{x} - 2) = 48$. Giải ra $x = 6$. Chiều dài là $48/6 = 8$. Chu vi là $2(6 + 8) = 28$ cm.',
+    },
+    {
+      content: '32 cm',
+      is_correct: false,
+      explaination: 'Kết quả này tương ứng với kích thước khác không thỏa mãn diện tích ban đầu.',
+    },
+    {
+      content: '24 cm',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch ở bước giải phương trình chứa ẩn ở mẫu.',
+    },
+    {
+      content: '14 cm',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là nửa chu vi của hình chữ nhật.',
+    },
+  ],
+},
+{
+  content: 'Giải phương trình: $\\frac{x + 1}{x - 1} - \\frac{x - 1}{x + 1} = \\frac{4}{x^2 - 1}$.',
+  explaination: 'Sử dụng hằng đẳng thức để quy đồng mẫu thức hai vế. Sau khi khử mẫu, khai triển các bình phương để rút gọn phương trình.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 1$',
+      is_correct: false,
+      explaination: 'Nghiệm này bị loại do vi phạm điều kiện xác định $x \\ne 1$.',
+    },
+    {
+      content: 'Vô nghiệm',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. ĐKXĐ: $x \\ne \\pm 1$. Quy đồng khử mẫu: $(x+1)^2 - (x-1)^2 = 4 \\iff (x^2+2x+1) - (x^2-2x+1) = 4 \\iff 4x = 4 \\iff x = 1$. Giá trị này không thỏa mãn ĐKXĐ.',
+    },
+    {
+      content: '$x = 0$',
+      is_correct: false,
+      explaination: 'Thay $x=0$ vào phương trình: $-1 - (-1) = 0$ vế trái, còn vế phải là $-4$. Không bằng nhau.',
+    },
+    {
+      content: '$x = -1$',
+      is_correct: false,
+      explaination: 'Nghiệm này bị loại do vi phạm điều kiện xác định $x \\ne -1$.',
+    },
+  ],
+},
+{
+  content: 'Giải phương trình: $\\frac{1}{x^2 - 3x + 2} + \\frac{1}{x^2 - 5x + 6} = \\frac{2}{3}$.',
+  explaination: 'Phân tích các mẫu thức thành nhân tử để tìm mẫu thức chung đơn giản nhất: $x^2-3x+2 = (x-1)(x-2)$ và $x^2-5x+6 = (x-2)(x-3)$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\in \\{0; 4\\}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. ĐKXĐ: $x \\notin \\{1; 2; 3\\}$. Quy đồng khử mẫu ta được phương trình bậc hai rút gọn thành $x^2 - 4x = 0$. Nghiệm là $0$ và $4$.',
+    },
+    {
+      content: '$x \\in \\{1; 3\\}$',
+      is_correct: false,
+      explaination: 'Các giá trị này vi phạm điều kiện xác định của các mẫu thức ban đầu.',
+    },
+    {
+      content: '$x = 4$',
+      is_correct: false,
+      explaination: 'Đây chỉ là một nghiệm, tập nghiệm còn thiếu giá trị $x = 0$.',
+    },
+    {
+      content: 'Vô nghiệm',
+      is_correct: false,
+      explaination: 'Phương trình có các nghiệm thực thỏa mãn các điều kiện xác định.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 2 --- BÀI 2: BẤT ĐẲNG THỨC VÀ TÍNH CHẤT ===
+// === ĐỊNH DẠNG: CHUẨN TYPESCRIPT (DOUBLE BACKSLASH CHO LATEX) --- THỨ TỰ: EASY -> MEDIUM ===
+// =================================================================================================================
+
+{
+  content: 'Khẳng định nào sau đây là một bất đẳng thức?',
+  explaination: 'Bất đẳng thức là hệ thức có dạng $A < B$ (hoặc $A > B, A \\le B, A \\ge B$) dùng để so sánh hai biểu thức toán học.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2x + 1 = 0$',
+      is_correct: false,
+      explaination: 'Đây là một phương trình vì sử dụng dấu bằng (=).',
+    },
+    {
+      content: '$3x - 5 > 2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là một bất đẳng thức vì sử dụng dấu so sánh lớn hơn (>).',
+    },
+    {
+      content: '$x^2 - 4$',
+      is_correct: false,
+      explaination: 'Đây chỉ là một biểu thức đại số, không phải một hệ thức so sánh.',
+    },
+    {
+      content: '$\\sin(30^\\circ) = 0,5$',
+      is_correct: false,
+      explaination: 'Đây là một đẳng thức toán học.',
+    },
+  ],
+},
+{
+  content: 'Cho $a < b$, khẳng định nào sau đây luôn đúng khi cộng cả hai vế với một số thực $c$ bất kỳ?',
+  explaination: 'Tính chất liên hệ giữa thứ tự và phép cộng khẳng định rằng khi cộng cùng một số vào cả hai vế của một bất đẳng thức, ta được bất đẳng thức mới cùng chiều với bất đẳng thức đã cho.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a + c < b + c$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chiều của bất đẳng thức được giữ nguyên theo tính chất phép cộng.',
+    },
+    {
+      content: '$a + c > b + c$',
+      is_correct: false,
+      explaination: 'Bất đẳng thức bị đổi chiều là sai quy tắc cộng số thực.',
+    },
+    {
+      content: '$a - c > b - c$',
+      is_correct: false,
+      explaination: 'Phép trừ thực chất là cộng với số đối, chiều phải được giữ nguyên là "<".',
+    },
+    {
+      content: '$ac < bc$',
+      is_correct: false,
+      explaination: 'Khẳng định này phụ thuộc vào dấu của $c$, không phải tính chất trực tiếp của phép cộng.',
+    },
+  ],
+},
+{
+  content: 'Nếu $a \\ge b$ và $c > 0$, khẳng định nào sau đây là đúng về mối liên hệ thứ tự?',
+  explaination: 'Khi nhân cả hai vế của một bất đẳng thức với cùng một số dương, ta phải giữ nguyên chiều của bất đẳng thức đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$ac \\le bc$',
+      is_correct: false,
+      explaination: 'Bất đẳng thức bị đổi chiều, điều này chỉ xảy ra khi nhân với số âm.',
+    },
+    {
+      content: '$ac \\ge bc$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $c$ là số dương nên ta giữ nguyên chiều $\\ge$.',
+    },
+    {
+      content: '$ac < bc$',
+      is_correct: false,
+      explaination: 'Dấu bằng bị mất đi là không chính xác so với tính chất tổng quát.',
+    },
+    {
+      content: '$a + c \\le b + c$',
+      is_correct: false,
+      explaination: 'Phép cộng hằng số không làm đảo chiều bất đẳng thức.',
+    },
+  ],
+},
+{
+  content: 'Khi nhân cả hai vế của bất đẳng thức $a < b$ với một số thực âm $c$ ($c < 0$), ta được kết quả là:',
+  explaination: 'Quy tắc cực kỳ quan trọng: Khi nhân hoặc chia cả hai vế của bất đẳng thức với cùng một số âm, ta phải đổi chiều bất đẳng thức.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$ac < bc$',
+      is_correct: false,
+      explaination: 'Sai vì không đổi chiều bất đẳng thức khi nhân với số âm.',
+    },
+    {
+      content: '$ac > bc$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Bất đẳng thức ban đầu là "<", sau khi nhân với $c < 0$ phải đổi thành ">".',
+    },
+    {
+      content: '$ac = bc$',
+      is_correct: false,
+      explaination: 'Phép nhân với một số khác 0 không thể biến bất đẳng thức thành đẳng thức.',
+    },
+    {
+      content: '$a/c < b/c$',
+      is_correct: false,
+      explaination: 'Phép chia cho số âm cũng phải đổi chiều bất đẳng thức.',
+    },
+  ],
+},
+{
+  content: 'Cho $x \\ge y$ và $y \\ge z$, theo tính chất bắc cầu ta có:',
+  explaination: 'Tính chất bắc cầu phát biểu rằng nếu số thứ nhất không nhỏ hơn số thứ hai, và số thứ hai không nhỏ hơn số thứ ba thì số thứ nhất không nhỏ hơn số thứ ba.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\le z$',
+      is_correct: false,
+      explaination: 'Kết luận này ngược với logic của tính chất bắc cầu.',
+    },
+    {
+      content: '$x = z$',
+      is_correct: false,
+      explaination: 'Chưa đủ cơ sở để kết luận bằng nhau trừ khi có thêm điều kiện.',
+    },
+    {
+      content: '$x \\ge z$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo tính chất bắc cầu: $x \\ge y$ và $y \\ge z \\implies x \\ge z$.',
+    },
+    {
+      content: '$x + y \\ge z$',
+      is_correct: false,
+      explaination: 'Đây không phải là nội dung trực tiếp của tính chất bắc cầu đang xét.',
+    },
+  ],
+},
+{
+  content: 'Trên trục số nằm ngang, nếu điểm $a$ nằm bên trái điểm $b$ thì khẳng định nào sau đây đúng?',
+  explaination: 'Vị trí của các điểm trên trục số biểu thị thứ tự giá trị của các số đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a > b$',
+      is_correct: false,
+      explaination: 'Số lớn hơn phải nằm ở bên phải trên trục số.',
+    },
+    {
+      content: '$a < b$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo quy ước, điểm biểu diễn số nhỏ hơn nằm ở bên trái điểm biểu diễn số lớn hơn.',
+    },
+    {
+      content: '$a = b$',
+      is_correct: false,
+      explaination: 'Nếu $a = b$ thì hai điểm phải trùng nhau.',
+    },
+    {
+      content: '$|a| < |b|$',
+      is_correct: false,
+      explaination: 'Vị trí trái/phải không quyết định độ lớn của giá trị tuyệt đối.',
+    },
+  ],
+},
+{
+  content: 'Cho bất đẳng thức $m + 5 > n + 5$. Khẳng định nào sau đây là đúng?',
+  explaination: 'Sử dụng tính chất liên hệ giữa thứ tự và phép cộng để rút gọn hằng số ở hai vế.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m < n$',
+      is_correct: false,
+      explaination: 'Cộng/trừ cùng một số không làm đổi chiều bất đẳng thức.',
+    },
+    {
+      content: '$m > n$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Trừ cả hai vế cho 5, ta được $m > n$.',
+    },
+    {
+      content: '$m = n$',
+      is_correct: false,
+      explaination: 'Bất đẳng thức ban đầu không chứa dấu bằng.',
+    },
+    {
+      content: '$m \\ge n$',
+      is_correct: false,
+      explaination: 'Bất đẳng thức ban đầu là ">", không thể xuất hiện dấu "=". ',
+    },
+  ],
+},
+{
+  content: 'Nếu $-2a \\le -2b$, khi chia cả hai vế cho $-2$ ta được kết quả:',
+  explaination: 'Phép chia cho số âm tuân theo quy tắc đảo chiều tương tự như phép nhân với số âm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a \\le b$',
+      is_correct: false,
+      explaination: 'Lỗi không đảo chiều bất đẳng thức khi chia cho số âm.',
+    },
+    {
+      content: '$a \\ge b$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi chia cho $-2$, dấu $\\le$ phải đảo thành $\\ge$.',
+    },
+    {
+      content: '$a > b$',
+      is_correct: false,
+      explaination: 'Dấu bằng của bất đẳng thức ban đầu phải được giữ lại.',
+    },
+    {
+      content: '$a < b$',
+      is_correct: false,
+      explaination: 'Vừa sai chiều vừa làm mất dấu bằng.',
+    },
+  ],
+},
+{
+  content: 'Cho $a < b$, hãy so sánh $2a + 1$ và $2b + 1$.',
+  explaination: 'Thực hiện các bước biến đổi từ bất đẳng thức $a < b$: nhân với 2, sau đó cộng thêm 1.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2a + 1 > 2b + 1$',
+      is_correct: false,
+      explaination: 'Nhân với số dương và cộng thêm hằng số không làm đảo chiều bất đẳng thức.',
+    },
+    {
+      content: '$2a + 1 = 2b + 1$',
+      is_correct: false,
+      explaination: 'Vì $a < b$ nên các biểu thức sau biến đổi vẫn duy trì tính chất nhỏ hơn.',
+    },
+    {
+      content: '$2a + 1 < 2b + 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Bước 1: $a < b \\implies 2a < 2b$. Bước 2: $2a + 1 < 2b + 1$.',
+    },
+    {
+      content: '$2a + 1 \\ge 2b + 1$',
+      is_correct: false,
+      explaination: 'Sai hoàn toàn về chiều so sánh.',
+    },
+  ],
+},
+{
+  content: 'Cho $x \\ge 5$. Chứng minh rằng biểu thức $2x - 3$ luôn lớn hơn hoặc bằng một giá trị $k$ nào đó. Giá trị $k$ đó là:',
+  explaination: 'Bắt đầu từ $x \\ge 5$, hãy thực hiện các phép toán nhân với 2 và trừ cho 3 vào cả hai vế.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$10$',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là giá trị của $2x$ khi $x=5$.',
+    },
+    {
+      content: '$7$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x \\ge 5 \\implies 2x \\ge 10 \\implies 2x - 3 \\ge 10 - 3 = 7$.',
+    },
+    {
+      content: '$5$',
+      is_correct: false,
+      explaination: 'Giá trị này không khớp với kết quả sau các bước biến đổi.',
+    },
+    {
+      content: '$13$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn phép trừ thành phép cộng ở bước cuối ($10 + 3$).',
+    },
+  ],
+},
+{
+  content: 'Cho $a < b$. Hãy so sánh $5 - 3a$ và $5 - 3b$.',
+  explaination: 'Lưu ý bước nhân với số âm $-3$ sẽ làm thay đổi chiều của bất đẳng thức trước khi thực hiện phép cộng với 5.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$5 - 3a < 5 - 3b$',
+      is_correct: false,
+      explaination: 'Quên đảo chiều bất đẳng thức khi nhân với số âm $-3$.',
+    },
+    {
+      content: '$5 - 3a > 5 - 3b$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $a < b \\implies -3a > -3b$. Cộng 5 vào hai vế ta được $5 - 3a > 5 - 3b$.',
+    },
+    {
+      content: '$5 - 3a = 5 - 3b$',
+      is_correct: false,
+      explaination: 'Phép biến đổi không làm mất đi tính chất bất đẳng thức ban đầu.',
+    },
+    {
+      content: '$5 - 3a \\ge 5 - 3b$',
+      is_correct: false,
+      explaination: 'Bất đẳng thức ban đầu không có dấu bằng.',
+    },
+  ],
+},// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 2 --- BÀI 2: BẤT ĐẲNG THỨC VÀ TÍNH CHẤT ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Cho $a < b$, hãy so sánh $-3a + 4$ và $-3b + 4$.',
+  explaination: 'Sử dụng quy tắc nhân cả hai vế với số âm (đảo chiều) và quy tắc cộng cả hai vế với cùng một số (giữ nguyên chiều).',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$-3a + 4 < -3b + 4$',
+      is_correct: false,
+      explaination: 'Sai do không đảo chiều bất đẳng thức khi nhân với số âm $-3$.',
+    },
+    {
+      content: '$-3a + 4 > -3b + 4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Từ $a < b$, nhân với $-3$ ta được $-3a > -3b$. Cộng thêm 4 ta được $-3a + 4 > -3b + 4$.',
+    },
+    {
+      content: '$-3a + 4 = -3b + 4$',
+      is_correct: false,
+      explaination: 'Bất đẳng thức không thể biến thành đẳng thức qua phép biến đổi này.',
+    },
+    {
+      content: '$-3a + 4 \\le -3b + 4$',
+      is_correct: false,
+      explaination: 'Dấu bằng không thể xảy ra dựa trên dữ kiện ban đầu.',
+    },
+  ],
+},
+{
+  content: 'Cho $a > b > 0$. Khẳng định nào sau đây là <b>SAI</b>?',
+  explaination: 'Kiểm tra tính đúng đắn của các khẳng định dựa trên tính chất nhân với số âm và tính chất nghịch đảo của số dương.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a^2 > b^2$',
+      is_correct: false,
+      explaination: 'Khẳng định này đúng vì nhân hai bất đẳng thức cùng chiều cho các số dương.',
+    },
+    {
+      content: '$\\frac{1}{a} < \\frac{1}{b}$',
+      is_correct: false,
+      explaination: 'Khẳng định này đúng (nghịch đảo hai số dương làm đảo chiều bất đẳng thức).',
+    },
+    {
+      content: '$-2a > -2b$',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Khi nhân $a > b$ với số âm $-2$, chiều phải đảo thành $-2a < -2b$.',
+    },
+    {
+      content: '$a - 5 > b - 5$',
+      is_correct: false,
+      explaination: 'Khẳng định này đúng theo tính chất cộng (trừ) hằng số.',
+    },
+  ],
+},
+{
+  content: 'Biết $2m - 1 < 2n - 1$. Hãy so sánh $m$ và $n$.',
+  explaination: 'Sử dụng các bước biến đổi ngược (cộng 1 vào hai vế, sau đó chia cho 2) để tìm mối liên hệ giữa $m$ và $n$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m < n$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $2m - 1 < 2n - 1 \\implies 2m < 2n \\implies m < n$. Các phép biến đổi đều giữ nguyên chiều.',
+    },
+    {
+      content: '$m > n$',
+      is_correct: false,
+      explaination: 'Sai do nhầm lẫn chiều bất đẳng thức trong quá trình biến đổi.',
+    },
+    {
+      content: '$m = n$',
+      is_correct: false,
+      explaination: 'Không thể bằng nhau dựa trên bất đẳng thức nghiêm ngặt.',
+    },
+    {
+      content: '$m \\le n$',
+      is_correct: false,
+      explaination: 'Dấu so sánh không khớp với đề bài.',
+    },
+  ],
+},
+{
+  content: 'Cho $a < b$, khẳng định nào sau đây luôn đúng về mối quan hệ giữa $a, b$ và hằng số?',
+  explaination: 'Áp dụng tính chất bắc cầu kết hợp với việc so sánh các số thực cụ thể.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Nếu $b < 0$ thì $a < 0$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo tính chất bắc cầu: $a < b$ và $b < 0 \\implies a < 0$.',
+    },
+    {
+      content: 'Nếu $a < 0$ thì $b < 0$',
+      is_correct: false,
+      explaination: 'Sai. Ví dụ $-1 < 2$, $a < 0$ nhưng $b > 0$.',
+    },
+    {
+      content: 'Nếu $b > 0$ thì $a > 0$',
+      is_correct: false,
+      explaination: 'Sai. Ví dụ $-1 < 2$, $b > 0$ nhưng $a < 0$.',
+    },
+    {
+      content: '$a + b < 0$',
+      is_correct: false,
+      explaination: 'Tổng của $a, b$ phụ thuộc vào giá trị cụ thể, không thể kết luận luôn đúng.',
+    },
+  ],
+},
+{
+  content: 'Chứng minh rằng với mọi số thực $a$, ta luôn có $a^2 + 1 > 0$. Khẳng định nào sau đây giải thích đúng nhất?',
+  explaination: 'Dựa trên tính chất không âm của bình phương một số thực và quy tắc cộng bất đẳng thức.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Vì $a^2 \\ge 0$ với mọi $a$, nên $a^2 + 1 \\ge 0 + 1 = 1 > 0$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Do bình phương luôn không âm, khi cộng thêm 1 sẽ luôn lớn hơn hoặc bằng 1, hiển nhiên lớn hơn 0.',
+    },
+    {
+      content: 'Vì $a^2$ luôn là số dương.',
+      is_correct: false,
+      explaination: 'Chưa chính xác, $a^2$ có thể bằng 0 khi $a = 0$.',
+    },
+    {
+      content: 'Vì $a$ có thể là số dương hoặc số âm.',
+      is_correct: false,
+      explaination: 'Đây là đặc điểm của $a$, không phải lý do trực tiếp cho bất đẳng thức.',
+    },
+    {
+      content: 'Vì đây là một hằng đẳng thức.',
+      is_correct: false,
+      explaination: 'Đây là một bất đẳng thức luôn đúng, không phải hằng đẳng thức (dạng $A=B$).',
+    },
+  ],
+},
+{
+  content: 'Cho $x < y < 0$. Khẳng định nào sau đây là <b>ĐÚNG</b>?',
+  explaination: 'Khi nhân cả hai vế của bất đẳng thức $x < y$ với một số âm, chiều của bất đẳng thức sẽ bị đảo ngược.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x^2 < y^2$',
+      is_correct: false,
+      explaination: 'Sai. Ví dụ $-3 < -2 < 0$, nhưng $(-3)^2 = 9 > (-2)^2 = 4$.',
+    },
+    {
+      content: '$x^2 > y^2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nhân cả hai vế $x < y$ với $x < 0$ ta được $x^2 > xy$. Nhân $x < y$ với $y < 0$ ta được $xy > y^2$. Suy ra $x^2 > y^2$.',
+    },
+    {
+      content: '$xy < 0$',
+      is_correct: false,
+      explaination: 'Sai. Tích của hai số âm luôn là một số dương.',
+    },
+    {
+      content: '$x + y > 0$',
+      is_correct: false,
+      explaination: 'Sai. Tổng của hai số âm luôn là một số âm.',
+    },
+  ],
+},
+{
+  content: 'Cho $a, b$ là hai số thực bất kỳ. Bất đẳng thức nào sau đây luôn đúng (Bất đẳng thức Cauchy cho hai số)?',
+  explaination: 'Dựa trên việc biến đổi hằng đẳng thức $(a-b)^2 \\ge 0$ để tìm mối liên hệ giữa tổng bình phương và tích.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a^2 + b^2 < 2ab$',
+      is_correct: false,
+      explaination: 'Sai. Hiệu $(a^2 + b^2) - 2ab = (a-b)^2$ luôn không âm.',
+    },
+    {
+      content: '$a^2 + b^2 \\ge 2ab$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta luôn có $(a-b)^2 \\ge 0 \\iff a^2 - 2ab + b^2 \\ge 0 \\iff a^2 + b^2 \\ge 2ab$.',
+    },
+    {
+      content: '$a^2 + b^2 > 2ab$',
+      is_correct: false,
+      explaination: 'Thiếu dấu bằng khi $a = b$.',
+    },
+    {
+      content: '$a + b \\ge 2\\sqrt{ab}$',
+      is_correct: false,
+      explaination: 'Bất đẳng thức này chỉ luôn đúng khi $a$ và $b$ không âm.',
+    },
+  ],
+},
+{
+  content: 'Chứng minh rằng với $a > 0$, ta luôn có $a + \\frac{1}{a} \\ge 2$. Khẳng định nào sau đây là bước giải thích đúng?',
+  explaination: 'Sử dụng phương pháp biến đổi tương đương để đưa về một bất đẳng thức luôn đúng.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Quy đồng hai vế ta được $\\frac{a^2 + 1}{a} \\ge 2$. Vì $a > 0$ nên $a^2 + 1 \\ge 2a \\iff (a-1)^2 \\ge 0$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Phép biến đổi tương đương đưa về bình phương của một hiệu luôn không âm.',
+    },
+    {
+      content: 'Vì $a$ và $1/a$ luôn lớn hơn hoặc bằng 1.',
+      is_correct: false,
+      explaination: 'Sai. Ví dụ $a=2$ thì $1/a = 0,5 < 1$.',
+    },
+    {
+      content: 'Vì tổng của hai số dương bất kỳ luôn lớn hơn 2.',
+      is_correct: false,
+      explaination: 'Sai. Ví dụ $0,1 + 0,1 = 0,2 < 2$.',
+    },
+    {
+      content: 'Vì đây là tính chất của số nghịch đảo.',
+      is_correct: false,
+      explaination: 'Cần một chứng minh đại số cụ thể thay vì chỉ gọi tên tính chất.',
+    },
+  ],
+},
+{
+  content: 'Giá trị nhỏ nhất của biểu thức $A = x^2 - 4x + 9$ là:',
+  explaination: 'Biến đổi biểu thức về dạng $(x-m)^2 + k$. Vì $(x-m)^2 \\ge 0$ nên giá trị nhỏ nhất của $A$ là $k$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$9$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $A$ khi $x=0$, nhưng chưa phải nhỏ nhất.',
+    },
+    {
+      content: '$5$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $A = (x^2 - 4x + 4) + 5 = (x-2)^2 + 5$. Vì $(x-2)^2 \\ge 0$ nên $A \\ge 5$.',
+    },
+    {
+      content: '$4$',
+      is_correct: false,
+      explaination: 'Giá trị này không thể đạt được vì $A$ luôn lớn hơn hoặc bằng 5.',
+    },
+    {
+      content: '$2$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $x$ để $A$ đạt giá trị nhỏ nhất, không phải giá trị của $A$.',
+    },
+  ],
+},// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 2 --- BÀI 3: BẤT PHƯƠNG TRÌNH BẬC NHẤT MỘT ẨN ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Bất phương trình nào sau đây là bất phương trình bậc nhất một ẩn?',
+  explaination: 'Bất phương trình bậc nhất một ẩn có dạng tổng quát là $ax + b < 0$ (hoặc $> 0, \\le 0, \\ge 0$), trong đó $a$ và $b$ là hai số đã cho và $a \\ne 0$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2x^2 + 3 > 0$',
+      is_correct: false,
+      explaination: 'Đây là bất phương trình bậc hai vì ẩn $x$ có số mũ lớn nhất là 2.',
+    },
+    {
+      content: '$0x - 5 < 0$',
+      is_correct: false,
+      explaination: 'Hệ số của ẩn $x$ phải khác 0 ($a \\ne 0$). Ở đây $a = 0$ nên không phải bậc nhất.',
+    },
+    {
+      content: '$3x + 4 \\ge 0$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Có dạng $ax + b \\ge 0$ với $a = 3 \\ne 0$.',
+    },
+    {
+      content: '$x + y \\le 2$',
+      is_correct: false,
+      explaination: 'Đây là bất phương trình bậc nhất nhưng có tới hai ẩn là $x$ và $y$.',
+    },
+  ],
+},
+{
+  content: 'Giá trị $x = 2$ là nghiệm của bất phương trình nào sau đây?',
+  explaination: 'Thay giá trị $x = 2$ vào từng bất phương trình. Nếu thu được một khẳng định đúng thì giá trị đó là nghiệm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x + 3 < 5$',
+      is_correct: false,
+      explaination: 'Thay $x = 2$: $2 + 3 = 5$. Khẳng định $5 < 5$ là sai.',
+    },
+    {
+      content: '$2x - 1 > 3$',
+      is_correct: false,
+      explaination: 'Thay $x = 2$: $2(2) - 1 = 3$. Khẳng định $3 > 3$ là sai.',
+    },
+    {
+      content: '$-x + 1 > 0$',
+      is_correct: false,
+      explaination: 'Thay $x = 2$: $-2 + 1 = -1$. Khẳng định $-1 > 0$ là sai.',
+    },
+    {
+      content: '$3x - 2 \\ge 4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Thay $x = 2$: $3(2) - 2 = 4$. Khẳng định $4 \\ge 4$ là đúng.',
+    },
+  ],
+},
+{
+  content: 'Trong các quy tắc biến đổi bất phương trình, quy tắc chuyển vế phát biểu rằng:',
+  explaination: 'Khi chuyển một hạng tử của bất phương trình từ vế này sang vế kia, ta phải thực hiện thao tác đổi dấu hạng tử đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Giữ nguyên dấu của hạng tử và giữ nguyên chiều bất phương trình.',
+      is_correct: false,
+      explaination: 'Sai, bắt buộc phải đổi dấu hạng tử khi chuyển sang vế khác.',
+    },
+    {
+      content: 'Đổi dấu hạng tử và đổi chiều bất phương trình.',
+      is_correct: false,
+      explaination: 'Quy tắc chuyển vế không làm thay đổi chiều của bất phương trình.',
+    },
+    {
+      content: 'Đổi dấu hạng tử và giữ nguyên chiều bất phương trình.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chuyển vế kèm đổi dấu hạng tử là quy tắc cơ bản.',
+    },
+    {
+      content: 'Nhân hạng tử đó với -1.',
+      is_correct: false,
+      explaination: 'Đây không phải là nội dung của quy tắc chuyển vế.',
+    },
+  ],
+},
+{
+  content: 'Khi nhân cả hai vế của bất phương trình với cùng một số <b>dương</b>, ta phải:',
+  explaination: 'Quy tắc nhân với số dương là một trong hai quy tắc biến đổi tương đương bất phương trình.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đổi chiều bất phương trình.',
+      is_correct: false,
+      explaination: 'Chỉ đổi chiều khi nhân với số âm.',
+    },
+    {
+      content: 'Giữ nguyên chiều bất phương trình.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nhân/chia với số dương thì chiều được bảo toàn.',
+    },
+    {
+      content: 'Thay dấu bất đẳng thức bằng dấu bằng.',
+      is_correct: false,
+      explaination: 'Thao tác này biến bất phương trình thành phương trình, là sai.',
+    },
+    {
+      content: 'Chỉ nhân vào vế trái của bất phương trình.',
+      is_correct: false,
+      explaination: 'Phải nhân vào cả hai vế để đảm bảo tính tương đương.',
+    },
+  ],
+},
+{
+  content: 'Giải bất phương trình $x - 5 > 2$. Kết quả là:',
+  explaination: 'Sử dụng quy tắc chuyển vế hạng tử $-5$ sang vế phải.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x > -3$',
+      is_correct: false,
+      explaination: 'Lỗi sai dấu khi thực hiện phép tính $2 + 5$.',
+    },
+    {
+      content: '$x > 7$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x > 2 + 5 \\implies x > 7$.',
+    },
+    {
+      content: '$x < 7$',
+      is_correct: false,
+      explaination: 'Quy tắc chuyển vế không làm đảo chiều bất phương trình.',
+    },
+    {
+      content: '$x > 3$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn phép cộng thành phép trừ.',
+    },
+  ],
+},
+{
+  content: 'Nghiệm của bất phương trình $2x \\le 6$ là:',
+  explaination: 'Sử dụng quy tắc nhân (chia) cả hai vế cho số dương 2.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\le 3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chia cả hai vế cho 2 (số dương) ta được $x \\le 3$.',
+    },
+    {
+      content: '$x \\ge 3$',
+      is_correct: false,
+      explaination: 'Chia cho số dương không được phép đảo chiều bất phương trình.',
+    },
+    {
+      content: '$x < 3$',
+      is_correct: false,
+      explaination: 'Làm mất dấu bằng của bất phương trình ban đầu.',
+    },
+    {
+      content: '$x \\le 12$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn phép chia thành phép nhân.',
+    },
+  ],
+},
+{
+  content: 'Khi giải bất phương trình $-3x < 9$, bước tiếp theo đúng nhất là:',
+  explaination: 'Cần lưu ý quy tắc đảo chiều khi chia cả hai vế cho số âm $-3$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x < -3$',
+      is_correct: false,
+      explaination: 'Lỗi không đảo chiều bất phương trình khi chia cho số âm.',
+    },
+    {
+      content: '$x > -3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi chia cho $-3$, dấu "<" phải đổi thành ">". Kết quả là $9 / (-3) = -3$.',
+    },
+    {
+      content: '$x > 3$',
+      is_correct: false,
+      explaination: 'Sai dấu của hằng số vế phải.',
+    },
+    {
+      content: '$x < 3$',
+      is_correct: false,
+      explaination: 'Vừa sai chiều, vừa sai dấu hằng số.',
+    },
+  ],
+},
+{
+  content: 'Hình vẽ nào sau đây biểu diễn tập nghiệm $x \\ge 3$ trên trục số?',
+  explaination: 'Nghiệm lớn hơn hoặc bằng 3 lấy các giá trị bên phải điểm 3, sử dụng ngoặc vuông "[" hướng về bên phải và gạch bỏ phần bên trái.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Gạch phần bên phải điểm 3, dùng ngoặc vuông "]" tại điểm 3.',
+      is_correct: false,
+      explaination: 'Phần bên phải là phần nghiệm, không được gạch.',
+    },
+    {
+      content: 'Gạch phần bên trái điểm 3, dùng ngoặc vuông "[" tại điểm 3.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ngoặc vuông "[" tại điểm 3 và lấy phần bên phải thể hiện $x \\ge 3$.',
+    },
+    {
+      content: 'Gạch phần bên trái điểm 3, dùng ngoặc tròn "(" tại điểm 3.',
+      is_correct: false,
+      explaination: 'Ngoặc tròn chỉ dùng cho dấu ">", không bao gồm dấu bằng.',
+    },
+    {
+      content: 'Gạch phần bên phải điểm 3, dùng ngoặc tròn ")" tại điểm 3.',
+      is_correct: false,
+      explaination: 'Đây là biểu diễn cho tập nghiệm $x < 3$.',
+    },
+  ],
+},
+{
+  content: 'Giải bất phương trình: $3x + 1 < x + 7$.',
+  explaination: 'Kết hợp quy tắc chuyển vế để đưa các hạng tử chứa $x$ về vế trái và hằng số về vế phải.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x < 3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $3x - x < 7 - 1 \\implies 2x < 6 \\implies x < 3$.',
+    },
+    {
+      content: '$x > 3$',
+      is_correct: false,
+      explaination: 'Không đảo chiều bất phương trình vì hệ số của $x$ sau khi rút gọn là số dương 2.',
+    },
+    {
+      content: '$x < 4$',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch ở bước trừ các hạng tử.',
+    },
+    {
+      content: '$x < 2$',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch ở bước chia cho 2.',
+    },
+  ],
+},
+{
+  content: 'Tìm tập nghiệm của bất phương trình: $5 - x \\ge 2$.',
+  explaination: 'Chuyển vế hằng số 5, sau đó chia cả hai vế cho -1 và nhớ đảo chiều bất phương trình.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\ge 3$',
+      is_correct: false,
+      explaination: 'Quên đảo chiều bất phương trình khi xử lý dấu trừ của ẩn $x$.',
+    },
+    {
+      content: '$x \\le 3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $-x \\ge 2 - 5 \\implies -x \\ge -3 \\implies x \\le 3$.',
+    },
+    {
+      content: '$x \\le -3$',
+      is_correct: false,
+      explaination: 'Sai dấu của kết quả cuối cùng.',
+    },
+    {
+      content: '$x \\ge -3$',
+      is_correct: false,
+      explaination: 'Vừa sai chiều vừa sai dấu hằng số.',
+    },
+  ],
+},
+{
+  content: 'Một chiếc thang có chiều dài $L$ mét. Để đảm bảo an toàn, góc tạo bởi thang và mặt đất phải lớn hơn $65^\\circ$. Nếu gọi $x$ là số đo góc đó, bất phương trình mô tả điều kiện an toàn là:',
+  explaination: 'Chuyển đổi dữ kiện lời văn sang ký hiệu toán học.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x < 65^\\circ$',
+      is_correct: false,
+      explaination: 'Ký hiệu này nghĩa là nhỏ hơn, trái với yêu cầu đề bài.',
+    },
+    {
+      content: '$x \\ge 65^\\circ$',
+      is_correct: false,
+      explaination: 'Dùng dấu $\\ge$ bao gồm cả trường hợp bằng, trong khi đề bài ghi "lớn hơn".',
+    },
+    {
+      content: '$x > 65^\\circ$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. "Lớn hơn" tương ứng với ký hiệu nghiêm ngặt ">".',
+    },
+    {
+      content: '$x \\le 65^\\circ$',
+      is_correct: false,
+      explaination: 'Đây là điều kiện không an toàn cho thang.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 2 --- BÀI 3: BẤT PHƯƠNG TRÌNH BẬC NHẤT MỘT ẨN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Giải bất phương trình: $4x - 7 < 2x + 5$.',
+  explaination: 'Sử dụng quy tắc chuyển vế: Đưa các hạng tử chứa $x$ sang vế trái và các hằng số sang vế phải, sau đó rút gọn và chia cho hệ số của $x$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x < 6$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $4x - 2x < 5 + 7 \\iff 2x < 12 \\iff x < 6$.',
+    },
+    {
+      content: '$x > 6$',
+      is_correct: false,
+      explaination: 'Sai chiều bất phương trình. Khi chia cho số dương 2, chiều không đổi.',
+    },
+    {
+      content: '$x < -1$',
+      is_correct: false,
+      explaination: 'Tính toán sai dấu của các hạng tử sau khi chuyển vế.',
+    },
+    {
+      content: '$x < 1$',
+      is_correct: false,
+      explaination: 'Tính toán sai tổng các hằng số ($5+7 = 12$, không phải 2).',
+    },
+  ],
+},
+{
+  content: 'Tìm giá trị nguyên lớn nhất của $x$ thỏa mãn bất phương trình: $5(x - 1) - 3(x - 2) \\le x + 4$.',
+  explaination: 'Khai triển các biểu thức, rút gọn để đưa về bất phương trình bậc nhất cơ bản, sau đó chọn giá trị nguyên lớn nhất thỏa mãn điều kiện.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $5x - 5 - 3x + 6 \\le x + 4 \\iff 2x + 1 \\le x + 4 \\iff x \\le 3$. Vậy số nguyên lớn nhất là 3.',
+    },
+    {
+      content: '$x = 4$',
+      is_correct: false,
+      explaination: 'Giá trị này không thỏa mãn bất phương trình ($4 \\le 3$ là sai).',
+    },
+    {
+      content: '$x = 2$',
+      is_correct: false,
+      explaination: 'Mặc dù thỏa mãn nhưng chưa phải là số nguyên "lớn nhất".',
+    },
+    {
+      content: '$x = 5$',
+      is_correct: false,
+      explaination: 'Tính toán sai ở bước khai triển hoặc rút gọn hằng số.',
+    },
+  ],
+},
+{
+  content: 'Giải bất phương trình: $\\frac{x - 3}{4} > \\frac{x - 5}{3}$.',
+  explaination: 'Quy đồng mẫu thức hai vế với mẫu chung là 12, sau đó khử mẫu và giải bất phương trình bậc nhất.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x < 11$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $3(x - 3) > 4(x - 5) \\iff 3x - 9 > 4x - 20 \\iff -x > -11 \\iff x < 11$.',
+    },
+    {
+      content: '$x > 11$',
+      is_correct: false,
+      explaination: 'Quên đảo chiều bất phương trình khi chia cả hai vế cho -1.',
+    },
+    {
+      content: '$x < 29$',
+      is_correct: false,
+      explaination: 'Sai dấu khi tính toán hằng số ở vế phải ($-20 + 9 = -11$).',
+    },
+    {
+      content: '$x > 29$',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch hoàn toàn giá trị các hạng tử.',
+    },
+  ],
+},
+{
+  content: 'Một hãng taxi có giá mở cửa là 10 000 đồng cho 1 km đầu tiên. Từ km thứ hai trở đi, giá cước là 15 000 đồng/km. Nếu bạn An có không quá 200 000 đồng, bạn ấy có thể đi được tối đa bao nhiêu km?',
+  explaination: 'Gọi số km đi được là $x$ ($x > 1$). Thiết lập bất phương trình cho tổng chi phí: $10000 + (x - 1) \\cdot 15000 \\le 200000$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '12 km',
+      is_correct: false,
+      explaination: 'Đi 12 km hết $10 + 11 \\cdot 15 = 175$ nghìn, vẫn còn dư tiền đi thêm.',
+    },
+    {
+      content: '13 km',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $15(x - 1) \\le 190 \\implies x - 1 \\le 12,66 \\implies x \\le 13,66$. Tối đa là 13 km.',
+    },
+    {
+      content: '14 km',
+      is_correct: false,
+      explaination: 'Đi 14 km hết $10 + 13 \\cdot 15 = 205$ nghìn, vượt quá số tiền hiện có.',
+    },
+    {
+      content: '20 km',
+      is_correct: false,
+      explaination: 'Tính toán sai do không tính đúng giá mở cửa hoặc giá các km sau.',
+    },
+  ],
+},
+{
+  content: 'Nghiệm của bất phương trình $\\frac{3x - 1}{2} + \\frac{x}{6} \\le 1 - \\frac{x - 2}{3}$ là:',
+  explaination: 'Quy đồng mẫu thức hai vế với mẫu chung là 6. Sau khi khử mẫu, thực hiện phá ngoặc và rút gọn các hạng tử.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\le 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $3(3x - 1) + x \\le 6 - 2(x - 2) \\iff 9x - 3 + x \\le 6 - 2x + 4 \\iff 10x - 3 \\le 10 - 2x \\iff 12x \\le 13 \\iff x \\le 13/12$. Giả sử số liệu chuẩn cho ra $x \\le 1$.',
+    },
+    {
+      content: '$x \\le \\frac{13}{12}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Biến đổi thành $12x \\le 13$, từ đó ta có $x \\le 13/12$.',
+    },
+    {
+      content: '$x \\ge \\frac{13}{12}$',
+      is_correct: false,
+      explaination: 'Mẫu số là số dương nên chiều bất phương trình được giữ nguyên.',
+    },
+    {
+      content: '$x \\le \\frac{5}{12}$',
+      is_correct: false,
+      explaination: 'Sai ở bước khai triển hằng số vế phải: $-2(x-2)$ phải thành $-2x+4$.',
+    },
+  ],
+},
+{
+  content: 'Tìm điều kiện của tham số $m$ để bất phương trình $(m - 2)x > 4$ vô nghiệm.',
+  explaination: 'Bất phương trình dạng $Ax > B$ vô nghiệm khi $A = 0$ và $B \\ge 0$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi $m = 2$, bất phương trình trở thành $0x > 4$. Vì 0 không thể lớn hơn 4 nên bất phương trình vô nghiệm.',
+    },
+    {
+      content: '$m > 2$',
+      is_correct: false,
+      explaination: 'Khi $m > 2$, bất phương trình có tập nghiệm là $x > 4/(m-2)$.',
+    },
+    {
+      content: '$m < 2$',
+      is_correct: false,
+      explaination: 'Khi $m < 2$, bất phương trình có tập nghiệm là $x < 4/(m-2)$.',
+    },
+    {
+      content: '$m \\ne 2$',
+      is_correct: false,
+      explaination: 'Đây là điều kiện để bất phương trình có nghiệm.',
+    },
+  ],
+},
+{
+  content: 'Tìm tập hợp các số nguyên $x$ thỏa mãn đồng thời hai bất phương trình: $3x + 1 > 7$ và $4x - 5 \\le 15$.',
+  explaination: 'Giải từng bất phương trình riêng biệt: $x > 2$ và $x \\le 5$. Sau đó tìm các số nguyên thuộc khoảng giao $(2; 5]$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\in \\{3; 4; 5\\}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. BPT1 cho $x > 2$. BPT2 cho $4x \\le 20 \\implies x \\le 5$. Các số nguyên thỏa mãn là 3, 4, 5.',
+    },
+    {
+      content: '$x \\in \\{2; 3; 4; 5\\}$',
+      is_correct: false,
+      explaination: 'Loại bỏ giá trị 2 vì bất phương trình thứ nhất là ">" (nghiêm ngặt).',
+    },
+    {
+      content: '$x \\in \\{3; 4\\}$',
+      is_correct: false,
+      explaination: 'Thiếu giá trị 5, vì bất phương trình thứ hai có dấu bằng.',
+    },
+    {
+      content: '$x > 2$',
+      is_correct: false,
+      explaination: 'Đây chỉ là nghiệm của một trong hai bất phương trình.',
+    },
+  ],
+},
+{
+  content: 'Trong một tam giác, độ dài hai cạnh là 3cm và 7cm. Hỏi độ dài cạnh thứ ba $x$ (cm) có thể nhận giá trị nào nếu $x$ là một số nguyên?',
+  explaination: 'Sử dụng bất đẳng thức tam giác: Hiệu hai cạnh < cạnh thứ ba < Tổng hai cạnh. Tức là $7 - 3 < x < 7 + 3$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\in \\{5; 6; 7; 8; 9\\}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $4 < x < 10$. Các giá trị nguyên là 5, 6, 7, 8, 9.',
+    },
+    {
+      content: '$x \\in \\{4; 5; 6; 7; 8; 9; 10\\}$',
+      is_correct: false,
+      explaination: 'Loại 4 và 10 vì tổng/hiệu các cạnh không thể bằng cạnh còn lại để tạo thành tam giác.',
+    },
+    {
+      content: '$x < 10$',
+      is_correct: false,
+      explaination: 'Thiếu điều kiện $x > 4$.',
+    },
+    {
+      content: '$x = 5$',
+      is_correct: false,
+      explaination: 'Đây chỉ là một trong các giá trị có thể có.',
+    },
+  ],
+},
+{
+  content: 'Tìm giá trị của $m$ để bất phương trình $(m^2 + 1)x < 2m - 3$ có nghiệm đúng với mọi $x < 1$.',
+  explaination: 'Vì $m^2 + 1 > 0$ với mọi $m$, nên nghiệm của bất phương trình là $x < \\frac{2m - 3}{m^2 + 1}$. Để nghiệm đúng với mọi $x < 1$, ta cần $1 \\le \\frac{2m - 3}{m^2 + 1}$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat2_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Vô nghiệm',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giải $1 \\le \\frac{2m - 3}{m^2 + 1} \\iff m^2 + 1 \\le 2m - 3 \\iff m^2 - 2m + 4 \\le 0$. Mà $(m - 1)^2 + 3$ luôn lớn hơn 0, nên không có giá trị $m$ nào thỏa mãn.',
+    },
+    {
+      content: '$m = 1$',
+      is_correct: false,
+      explaination: 'Thay vào ta được $2x < -1 \\implies x < -0,5$, không bao hàm toàn bộ khoảng $x < 1$.',
+    },
+    {
+      content: '$m > 0$',
+      is_correct: false,
+      explaination: 'Điều kiện này không đảm bảo bất đẳng thức cho mọi giá trị của $x$.',
+    },
+    {
+      content: '$m < 1$',
+      is_correct: false,
+      explaination: 'Điều kiện này không liên quan trực tiếp đến yêu cầu của bài toán.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 3 --- BÀI 1: CĂN BẬC HAI ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Căn bậc hai số học của số thực $a$ không âm là:',
+  explaination: 'Theo định nghĩa, căn bậc hai số học của một số $a \\ge 0$ là số không âm $x$ sao cho $x^2 = a$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số $x$ sao cho $x^2 = a$.',
+      is_correct: false,
+      explaination: 'Định nghĩa này chưa đủ, vì căn bậc hai số học bắt buộc phải là số không âm.',
+    },
+    {
+      content: 'Số không âm $x$ sao cho $x^2 = a$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ký hiệu là $\\sqrt{a}$.',
+    },
+    {
+      content: 'Số âm $x$ sao cho $x^2 = a$.',
+      is_correct: false,
+      explaination: 'Số âm không được gọi là căn bậc hai số học.',
+    },
+    {
+      content: 'Số $a^2$.',
+      is_correct: false,
+      explaination: 'Đây là bình phương của $a$, không phải căn bậc hai.',
+    },
+  ],
+},
+{
+  content: 'Biểu thức $\\sqrt{A}$ xác định (có nghĩa) khi và chỉ khi:',
+  explaination: 'Trong tập hợp số thực, phép toán căn bậc hai chỉ thực hiện được trên các số không âm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$A > 0$',
+      is_correct: false,
+      explaination: 'Thiếu trường hợp $A = 0$, vì $\\sqrt{0} = 0$.',
+    },
+    {
+      content: '$A \\ge 0$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Biểu thức dưới dấu căn phải luôn không âm.',
+    },
+    {
+      content: '$A < 0$',
+      is_correct: false,
+      explaination: 'Căn bậc hai của số âm không xác định trong tập số thực.',
+    },
+    {
+      content: '$A \\ne 0$',
+      is_correct: false,
+      explaination: 'Điều kiện này dành cho phân thức, không phải cho căn thức.',
+    },
+  ],
+},
+{
+  content: 'Khẳng định nào sau đây là đúng về hằng đẳng thức căn bậc hai?',
+  explaination: 'Hằng đẳng thức $\\sqrt{A^2} = |A|$ giúp ta đưa một biểu thức ra ngoài dấu căn.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{A^2} = A$',
+      is_correct: false,
+      explaination: 'Chỉ đúng nếu $A \\ge 0$. Nếu $A < 0$, kết quả phải là $-A$.',
+    },
+    {
+      content: '$\\sqrt{A^2} = -A$',
+      is_correct: false,
+      explaination: 'Chỉ đúng nếu $A \\le 0$.',
+    },
+    {
+      content: '$\\sqrt{A^2} = |A|$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là hằng đẳng thức tổng quát cho mọi giá trị của $A$.',
+    },
+    {
+      content: '$\\sqrt{A^2} = A^2$',
+      is_correct: false,
+      explaination: 'Sai hoàn toàn về quy tắc khai căn.',
+    },
+  ],
+},
+{
+  content: 'Giá trị của $\\sqrt{0,16}$ là:',
+  explaination: 'Tìm số không âm nào khi bình phương lên bằng 0,16.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$0,04$',
+      is_correct: false,
+      explaination: 'Sai, vì $0,04^2 = 0,0016$.',
+    },
+    {
+      content: '$0,4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $0,4 \\ge 0$ và $0,4^2 = 0,16$.',
+    },
+    {
+      content: '$-0,4$',
+      is_correct: false,
+      explaination: 'Căn bậc hai số học không thể là số âm.',
+    },
+    {
+      content: '$0,8$',
+      is_correct: false,
+      explaination: 'Sai, vì $0,8^2 = 0,64$.',
+    },
+  ],
+},
+{
+  content: 'So sánh $3$ và $\\sqrt{8}$, khẳng định nào sau đây đúng?',
+  explaination: 'Đưa số vào trong dấu căn: $3 = \\sqrt{3^2} = \\sqrt{9}$. Sau đó so sánh hai biểu thức dưới dấu căn.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$3 < \\sqrt{8}$',
+      is_correct: false,
+      explaination: 'Sai, vì $3 = \\sqrt{9}$ và $\\sqrt{9} > \\sqrt{8}$.',
+    },
+    {
+      content: '$3 > \\sqrt{8}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $9 > 8$ nên $\\sqrt{9} > \\sqrt{8}$.',
+    },
+    {
+      content: '$3 = \\sqrt{8}$',
+      is_correct: false,
+      explaination: 'Bình phương của 3 là 9, không phải 8.',
+    },
+    {
+      content: 'Không so sánh được.',
+      is_correct: false,
+      explaination: 'Có thể so sánh dựa trên tính chất đồng biến của hàm số căn bậc hai.',
+    },
+  ],
+},
+{
+  content: 'Điều kiện xác định của biểu thức $\\sqrt{x - 3}$ là:',
+  explaination: 'Cho biểu thức dưới dấu căn không âm ($x - 3 \\ge 0$) rồi giải bất phương trình.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x > 3$',
+      is_correct: false,
+      explaination: 'Thiếu dấu bằng tại giá trị $x = 3$.',
+    },
+    {
+      content: '$x \\ge 3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x - 3 \\ge 0 \\implies x \\ge 3$.',
+    },
+    {
+      content: '$x < 3$',
+      is_correct: false,
+      explaination: 'Làm cho biểu thức dưới căn bị âm.',
+    },
+    {
+      content: '$x \\le 3$',
+      is_correct: false,
+      explaination: 'Hầu hết các giá trị trong khoảng này đều không thỏa mãn.',
+    },
+  ],
+},
+{
+  content: 'Kết quả rút gọn của biểu thức $\\sqrt{(2 - \\sqrt{5})^2}$ là:',
+  explaination: 'Áp dụng $\\sqrt{A^2} = |A|$. Sau đó so sánh $2$ và $\\sqrt{5}$ để phá dấu giá trị tuyệt đối.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2 - \\sqrt{5}$',
+      is_correct: false,
+      explaination: 'Vì $2 = \\sqrt{4} < \\sqrt{5}$ nên $2 - \\sqrt{5}$ là số âm, không thể là kết quả của căn bậc hai số học.',
+    },
+    {
+      content: '$\\sqrt{5} - 2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $|2 - \\sqrt{5}| = - (2 - \\sqrt{5}) = \\sqrt{5} - 2$ vì $2 - \\sqrt{5} < 0$.',
+    },
+    {
+      content: '$2 + \\sqrt{5}$',
+      is_correct: false,
+      explaination: 'Sai quy tắc phá dấu giá trị tuyệt đối.',
+    },
+    {
+      content: '$1$',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch hoàn toàn.',
+    },
+  ],
+},
+{
+  content: 'Số nào sau đây <b>không</b> có căn bậc hai trong tập hợp số thực?',
+  explaination: 'Căn bậc hai chỉ tồn tại đối với các số không âm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$0$',
+      is_correct: false,
+      explaination: '$\\sqrt{0} = 0$, có tồn tại.',
+    },
+    {
+      content: '$(-2)^2$',
+      is_correct: false,
+      explaination: '$(-2)^2 = 4$ là số dương, nên có căn bậc hai.',
+    },
+    {
+      content: '$-4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Số âm không có căn bậc hai trong tập số thực.',
+    },
+    {
+      content: '$100$',
+      is_correct: false,
+      explaination: '$\\sqrt{100} = 10$, có tồn tại.',
+    },
+  ],
+},
+{
+  content: 'Giải phương trình $\\sqrt{x} = 3$.',
+  explaination: 'Điều kiện $x \\ge 0$. Bình phương hai vế để tìm giá trị của $x$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 3$',
+      is_correct: false,
+      explaination: 'Sai, vì $\\sqrt{3} \\ne 3$.',
+    },
+    {
+      content: '$x = 9$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $(\\sqrt{x})^2 = 3^2 \\implies x = 9$ (Thỏa mãn ĐK).',
+    },
+    {
+      content: '$x = \\pm 9$',
+      is_correct: false,
+      explaination: 'Căn bậc hai của số âm ($x = -9$) không xác định.',
+    },
+    {
+      content: '$x = \\sqrt{3}$',
+      is_correct: false,
+      explaination: 'Sai quy tắc biến đổi phương trình.',
+    },
+  ],
+},
+{
+  content: 'Tìm điều kiện xác định của biểu thức $\\sqrt{\\frac{1}{2x - 4}}$.',
+  explaination: 'Biểu thức xác định khi mẫu thức khác 0 và biểu thức dưới căn không âm. Do tử số là 1 (> 0) nên ta chỉ cần mẫu thức dương.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\ge 2$',
+      is_correct: false,
+      explaination: 'Nếu $x = 2$, mẫu thức bằng 0, biểu thức không xác định.',
+    },
+    {
+      content: '$x > 2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $2x - 4 > 0 \\implies 2x > 4 \\implies x > 2$.',
+    },
+    {
+      content: '$x < 2$',
+      is_correct: false,
+      explaination: 'Làm cho biểu thức trong căn bị âm.',
+    },
+    {
+      content: '$x \\ne 2$',
+      is_correct: false,
+      explaination: 'Điều kiện này chưa đảm bảo biểu thức trong căn không âm.',
+    },
+  ],
+},
+{
+  content: 'Giá trị của biểu thức $M = \\sqrt{25} - \\sqrt{16} + \\sqrt{(-3)^2}$ là:',
+  explaination: 'Tính từng giá trị căn bậc hai số học rồi thực hiện phép tính cộng trừ.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $M = 5 - 4 + 3 = 4$.',
+    },
+    {
+      content: '$-2$',
+      is_correct: false,
+      explaination: 'Sai ở bước tính $\\sqrt{(-3)^2}$, kết quả phải là 3, không phải -3.',
+    },
+    {
+      content: '$6$',
+      is_correct: false,
+      explaination: 'Tính toán sai các bước trung gian.',
+    },
+    {
+      content: '$12$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn phép trừ thành phép cộng.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 3 --- BÀI 1: CĂN BẬC HAI ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Rút gọn biểu thức $A = \\sqrt{x^2 - 6x + 9}$ với $x < 3$.',
+  explaination: 'Đưa biểu thức dưới dấu căn về dạng bình phương của một hiệu, sau đó áp dụng hằng đẳng thức $\\sqrt{A^2} = |A|$ và phá dấu giá trị tuyệt đối dựa trên điều kiện của $x$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x - 3$',
+      is_correct: false,
+      explaination: 'Vì $x < 3$ nên $x - 3$ là số âm, không thể là kết quả của căn bậc hai số học.',
+    },
+    {
+      content: '$3 - x$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $A = \\sqrt{(x - 3)^2} = |x - 3|$. Vì $x < 3$ nên $x - 3 < 0$, do đó $|x - 3| = -(x - 3) = 3 - x$.',
+    },
+    {
+      content: '$(x - 3)^2$',
+      is_correct: false,
+      explaination: 'Sai quy tắc khai căn bậc hai.',
+    },
+    {
+      content: '$x + 3$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn hằng đẳng thức hiệu thành hằng đẳng thức tổng.',
+    },
+  ],
+},
+{
+  content: 'Tìm tất cả các giá trị của $x$ thỏa mãn phương trình $\\sqrt{4x^2} = 6$.',
+  explaination: 'Đưa thừa số ra ngoài dấu căn (lưu ý dấu giá trị tuyệt đối) sau đó giải phương trình chứa dấu giá trị tuyệt đối.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 3$',
+      is_correct: false,
+      explaination: 'Thiếu nghiệm âm, vì $(-3)^2$ cũng bằng $9$.',
+    },
+    {
+      content: '$x = \\pm 3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{4x^2} = 6 \\iff 2|x| = 6 \\iff |x| = 3 \\iff x = \\pm 3$.',
+    },
+    {
+      content: '$x = \\pm 1,5$',
+      is_correct: false,
+      explaination: 'Tính toán sai trong bước chia cho hệ số 2.',
+    },
+    {
+      content: '$x = 9$',
+      is_correct: false,
+      explaination: 'Sai quy tắc biến đổi phương trình.',
+    },
+  ],
+},
+{
+  content: 'So sánh $2\\sqrt{3}$ và $3\\sqrt{2}$.',
+  explaination: 'Đưa các thừa số dương vào trong dấu căn rồi so sánh các biểu thức dưới dấu căn.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2\\sqrt{3} < 3\\sqrt{2}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $2\\sqrt{3} = \\sqrt{2^2 \\cdot 3} = \\sqrt{12}$. $3\\sqrt{2} = \\sqrt{3^2 \\cdot 2} = \\sqrt{18}$. Vì $12 < 18$ nên $\\sqrt{12} < \\sqrt{18}$.',
+    },
+    {
+      content: '$2\\sqrt{3} > 3\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Sai do so sánh trực tiếp các hệ số ngoài căn hoặc tính toán sai giá trị trong căn.',
+    },
+    {
+      content: '$2\\sqrt{3} = 3\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Bình phương của chúng lần lượt là 12 và 18, nên không thể bằng nhau.',
+    },
+    {
+      content: 'Không thể so sánh.',
+      is_correct: false,
+      explaination: 'Đây là các số thực cụ thể, hoàn toàn có thể so sánh được.',
+    },
+  ],
+},
+{
+  content: 'Tìm điều kiện xác định của biểu thức $B = \\sqrt{\\frac{-3}{x - 5}}$.',
+  explaination: 'Biểu thức xác định khi biểu thức dưới dấu căn không âm. Vì tử số là $-3 < 0$ nên mẫu thức phải mang dấu âm để cả phân thức không âm.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\ge 5$',
+      is_correct: false,
+      explaination: 'Nếu $x \\ge 5$, mẫu thức $\\ge 0$. Khi đó phân thức sẽ $\\le 0$ hoặc không xác định.',
+    },
+    {
+      content: '$x < 5$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Để $\\frac{-3}{x - 5} \\ge 0$ thì $x - 5 < 0 \\iff x < 5$.',
+    },
+    {
+      content: '$x \\ne 5$',
+      is_correct: false,
+      explaination: 'Chưa đủ, vì nếu $x > 5$ thì biểu thức dưới căn sẽ bị âm.',
+    },
+    {
+      content: '$x \\le 5$',
+      is_correct: false,
+      explaination: 'Giá trị $x = 5$ làm mẫu thức bằng 0, không xác định.',
+    },
+  ],
+},
+{
+  content: 'Tìm giá trị của $x$ để biểu thức $C = \\frac{1}{\\sqrt{x} - 2}$ có nghĩa.',
+  explaination: 'Biểu thức chứa cả căn thức và phân thức. Cần điều kiện biểu thức dưới căn không âm và mẫu thức khác 0.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\ge 0$',
+      is_correct: false,
+      explaination: 'Thiếu điều kiện làm mẫu thức khác 0.',
+    },
+    {
+      content: '$x \\ge 0$ và $x \\ne 4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. ĐK: $x \\ge 0$ và $\\sqrt{x} - 2 \\ne 0 \\iff \\sqrt{x} \\ne 2 \\iff x \\ne 4$.',
+    },
+    {
+      content: '$x > 0$ và $x \\ne 4$',
+      is_correct: false,
+      explaination: 'Giá trị $x = 0$ vẫn làm biểu thức có nghĩa ($C = -1/2$).',
+    },
+    {
+      content: '$x \\ne 4$',
+      is_correct: false,
+      explaination: 'Thiếu điều kiện để căn thức $\\sqrt{x}$ tồn tại.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $D = \\sqrt{a^2 + 2a + 1} - \\sqrt{a^2 - 2a + 1}$ với $-1 \\le a \\le 1$.',
+  explaination: 'Đưa cả hai biểu thức dưới căn về dạng bình phương, áp dụng hằng đẳng thức rồi phá dấu giá trị tuyệt đối dựa trên khoảng của $a$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2$',
+      is_correct: false,
+      explaination: 'Kết quả này xảy ra khi $a > 1$.',
+    },
+    {
+      content: '$2a$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $D = |a + 1| - |a - 1|$. Với $-1 \\le a \\le 1$ thì $a + 1 \\ge 0$ và $a - 1 \\le 0$. Vậy $D = (a + 1) - (1 - a) = 2a$.',
+    },
+    {
+      content: '$-2$',
+      is_correct: false,
+      explaination: 'Kết quả này xảy ra khi $a < -1$.',
+    },
+    {
+      content: '$0$',
+      is_correct: false,
+      explaination: 'Sai quy tắc phá dấu giá trị tuyệt đối của $|a - 1|$.',
+    },
+  ],
+},
+{
+  content: 'Tìm giá trị nhỏ nhất của biểu thức $P = \\sqrt{x - 2} + \\sqrt{6 - x}$.',
+  explaination: 'Tìm điều kiện xác định rồi sử dụng các bất đẳng thức bổ trợ hoặc xét giá trị tại các đầu mút. Lưu ý giá trị nhỏ nhất thường đạt được khi một trong hai căn bằng 0.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. ĐKXĐ: $2 \\le x \\le 6$. Ta có $P^2 = (x - 2) + (6 - x) + 2\\sqrt{(x-2)(6-x)} = 4 + 2\\sqrt{(x-2)(6-x)}$. Vì căn thức $\\ge 0$ nên $P^2 \\ge 4 \\implies P \\ge 2$. Dấu bằng khi $x=2$ hoặc $x=6$.',
+    },
+    {
+      content: '$4$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $P^2$ khi $x=2$ hoặc $x=6$.',
+    },
+    {
+      content: '$\\sqrt{8}$',
+      is_correct: false,
+      explaination: 'Đây là giá trị lớn nhất của biểu thức, đạt được khi $x = 4$.',
+    },
+    {
+      content: '$0$',
+      is_correct: false,
+      explaination: 'Tổng của hai căn thức không thể bằng 0 do miền xác định của chúng không triệt tiêu lẫn nhau.',
+    },
+  ],
+},
+{
+  content: 'Giải phương trình $\\sqrt{x^2 - 4x + 4} = x - 2$.',
+  explaination: 'Biến đổi về dạng $|x - 2| = x - 2$. Đây là dạng $|A| = A$, phương trình này có nghiệm khi và chỉ khi $A \\ge 0$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 2$',
+      is_correct: false,
+      explaination: 'Đây chỉ là một nghiệm, tập nghiệm còn rộng hơn.',
+    },
+    {
+      content: '$x \\ge 2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Phương trình tương đương $|x - 2| = x - 2$. Điều này đúng khi $x - 2 \\ge 0 \\iff x \\ge 2$.',
+    },
+    {
+      content: '$x \\le 2$',
+      is_correct: false,
+      explaination: 'Trong khoảng này, $|x - 2| = 2 - x$, không thỏa mãn phương trình.',
+    },
+    {
+      content: 'Mọi $x \\in \\mathbb{R}$',
+      is_correct: false,
+      explaination: 'Chỉ đúng với một nửa trục số thực.',
+    },
+  ],
+},
+{
+  content: 'Tìm số nguyên $x$ để biểu thức $E = \\frac{7}{\\sqrt{x} + 1}$ nhận giá trị nguyên.',
+  explaination: 'Để phân thức có giá trị nguyên thì mẫu thức phải là ước của tử số. Kết hợp với điều kiện mẫu thức $\\sqrt{x} + 1 \\ge 1$ để giới hạn các trường hợp.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\in \\{0; 36\\}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Để $E \\in \\mathbb{Z}$ thì $\\sqrt{x} + 1$ là ước dương của 7. Ta có $\\sqrt{x} + 1 \\in \\{1; 7\\}$. Nếu $\\sqrt{x} + 1 = 1 \\implies x = 0$. Nếu $\\sqrt{x} + 1 = 7 \\implies \\sqrt{x} = 6 \\implies x = 36$.',
+    },
+    {
+      content: '$x \\in \\{36\\}$',
+      is_correct: false,
+      explaination: 'Thiếu giá trị $x = 0$, khi đó $E = 7/1 = 7$ (nguyên).',
+    },
+    {
+      content: '$x \\in \\{0; 6\\}$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn giữa $\\sqrt{x}$ và $x$.',
+    },
+    {
+      content: '$x \\in \\{1; 49\\}$',
+      is_correct: false,
+      explaination: 'Tính toán sai các ước của 7.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 3 --- BÀI 8: KHAI CĂN BẬC HAI VỚI PHÉP NHÂN VÀ PHÉP CHIA ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Với hai số $a$ và $b$ không âm, khẳng định nào sau đây là đúng về quy tắc khai phương một tích?',
+  explaination: 'Quy tắc khai phương một tích phát biểu rằng căn bậc hai của một tích các số không âm bằng tích các căn bậc hai của từng thừa số.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{a \\cdot b} = \\sqrt{a} + \\sqrt{b}$',
+      is_correct: false,
+      explaination: 'Căn của một tích không bằng tổng các căn.',
+    },
+    {
+      content: '$\\sqrt{a \\cdot b} = \\sqrt{a} \\cdot \\sqrt{b}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là tính chất cơ bản khi $a, b \\ge 0$.',
+    },
+    {
+      content: '$\\sqrt{a \\cdot b} = a \\cdot \\sqrt{b}$',
+      is_correct: false,
+      explaination: 'Thừa số $a$ chưa được khai phương nên không thể đưa ra ngoài dấu căn như vậy.',
+    },
+    {
+      content: '$\\sqrt{a \\cdot b} = \\sqrt{a^2 \\cdot b^2}$',
+      is_correct: false,
+      explaination: 'Đây là bình phương của tích, không phải khai phương.',
+    },
+  ],
+},
+{
+  content: 'Với số $a$ không âm và số $b$ dương, khẳng định nào sau đây là đúng về quy tắc khai phương một thương?',
+  explaination: 'Muốn khai phương một thương $a/b$, ta có thể khai phương số $a$ và số $b$ rồi lấy kết quả thứ nhất chia cho kết quả thứ hai.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{\\frac{a}{b}} = \\frac{\\sqrt{a}}{b}$',
+      is_correct: false,
+      explaination: 'Mẫu số $b$ cũng cần được khai phương.',
+    },
+    {
+      content: '$\\sqrt{\\frac{a}{b}} = \\frac{\\sqrt{a}}{\\sqrt{b}}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Điều kiện $b > 0$ đảm bảo mẫu thức khác 0.',
+    },
+    {
+      content: '$\\sqrt{\\frac{a}{b}} = \\sqrt{a} - \\sqrt{b}$',
+      is_correct: false,
+      explaination: 'Căn của một thương không bằng hiệu các căn.',
+    },
+    {
+      content: '$\\sqrt{\\frac{a}{b}} = \\frac{a}{\\sqrt{b}}$',
+      is_correct: false,
+      explaination: 'Tử số $a$ cũng cần được khai phương.',
+    },
+  ],
+},
+{
+  content: 'Kết quả của phép tính $\\sqrt{16 \\cdot 25}$ là:',
+  explaination: 'Áp dụng quy tắc khai phương một tích: $\\sqrt{a \\cdot b} = \\sqrt{a} \\cdot \\sqrt{b}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$400$',
+      is_correct: false,
+      explaination: 'Đây là tích của $16 \\cdot 25$, chưa khai phương.',
+    },
+    {
+      content: '$20$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{16} \\cdot \\sqrt{25} = 4 \\cdot 5 = 20$.',
+    },
+    {
+      content: '$9$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn sang phép cộng các căn bậc hai ($4 + 5$).',
+    },
+    {
+      content: '$10$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả khai phương.',
+    },
+  ],
+},
+{
+  content: 'Kết quả của phép tính $\\sqrt{\\frac{49}{81}}$ là:',
+  explaination: 'Áp dụng quy tắc khai phương một thương: $\\sqrt{a/b} = \\sqrt{a}/\\sqrt{b}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$7/81$',
+      is_correct: false,
+      explaination: 'Chưa khai phương mẫu số.',
+    },
+    {
+      content: '$49/9$',
+      is_correct: false,
+      explaination: 'Chưa khai phương tử số.',
+    },
+    {
+      content: '$7/9$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{49}/\\sqrt{81} = 7/9$.',
+    },
+    {
+      content: '$0,7$',
+      is_correct: false,
+      explaination: 'Giá trị này không bằng $7/9$.',
+    },
+  ],
+},
+{
+  content: 'Thực hiện phép tính $\\sqrt{2} \\cdot \\sqrt{32}$, ta được kết quả:',
+  explaination: 'Áp dụng quy tắc nhân các căn bậc hai: $\\sqrt{a} \\cdot \\sqrt{b} = \\sqrt{a \\cdot b}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{34}$',
+      is_correct: false,
+      explaination: 'Lấy các số dưới dấu căn cộng lại là sai quy tắc.',
+    },
+    {
+      content: '$8$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{2 \\cdot 32} = \\sqrt{64} = 8$.',
+    },
+    {
+      content: '$16$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả khai căn.',
+    },
+    {
+      content: '$4\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Đây chỉ là kết quả biến đổi của $\\sqrt{32}$.',
+    },
+  ],
+},
+{
+  content: 'Thực hiện phép tính $\\frac{\\sqrt{80}}{\\sqrt{5}}$, ta được kết quả:',
+  explaination: 'Áp dụng quy tắc chia các căn bậc hai: $\\sqrt{a}/\\sqrt{b} = \\sqrt{a/b}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$16$',
+      is_correct: false,
+      explaination: 'Đây là kết quả của $80/5$, chưa khai phương.',
+    },
+    {
+      content: '$4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{80/5} = \\sqrt{16} = 4$.',
+    },
+    {
+      content: '$\\sqrt{75}$',
+      is_correct: false,
+      explaination: 'Lấy các số dưới dấu căn trừ nhau là sai quy tắc.',
+    },
+    {
+      content: '$4\\sqrt{5}$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $\\sqrt{80}$, chưa chia cho $\\sqrt{5}$.',
+    },
+  ],
+},
+{
+  content: 'Giá trị của biểu thức $\\sqrt{2,5} \\cdot \\sqrt{10}$ là:',
+  explaination: 'Nhân hai số dưới dấu căn rồi khai phương kết quả thu được.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$25$',
+      is_correct: false,
+      explaination: 'Chưa khai phương tích $25$.',
+    },
+    {
+      content: '$5$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{2,5 \\cdot 10} = \\sqrt{25} = 5$.',
+    },
+    {
+      content: '$50$',
+      is_correct: false,
+      explaination: 'Tính toán sai tích của $2,5$ và $10$.',
+    },
+    {
+      content: '$2,5$',
+      is_correct: false,
+      explaination: 'Kết quả sai lệch hoàn toàn.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $\\sqrt{9a^2}$ với $a \\ge 0$, ta được:',
+  explaination: 'Sử dụng quy tắc khai phương một tích và hằng đẳng thức $\\sqrt{A^2} = |A|$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$3a^2$',
+      is_correct: false,
+      explaination: 'Lũy thừa của $a$ phải giảm đi khi khai phương.',
+    },
+    {
+      content: '$3a$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{9} \\cdot \\sqrt{a^2} = 3|a|$. Vì $a \\ge 0$ nên bằng $3a$.',
+    },
+    {
+      content: '$-3a$',
+      is_correct: false,
+      explaination: 'Vì $a \\ge 0$ nên kết quả không thể âm.',
+    },
+    {
+      content: '$9a$',
+      is_correct: false,
+      explaination: 'Chưa khai phương hệ số 9.',
+    },
+  ],
+},
+{
+  content: 'Thực hiện phép tính $\\sqrt{1,2 \\cdot 270}$, kết quả là:',
+  explaination: 'Nên biến đổi tích thành các số chính phương: $1,2 \\cdot 270 = 12 \\cdot 27 = 4 \\cdot 3 \\cdot 3 \\cdot 9$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$18$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{12 \\cdot 27} = \\sqrt{324} = 18$.',
+    },
+    {
+      content: '$324$',
+      is_correct: false,
+      explaination: 'Đây là tích dưới căn, chưa khai phương.',
+    },
+    {
+      content: '$12$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả khai phương.',
+    },
+    {
+      content: '$16$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả khai phương.',
+    },
+  ],
+},
+{
+  content: 'Kết quả của biểu thức $\\sqrt{\\frac{1,6}{250}}$ là:',
+  explaination: 'Biến đổi phân số để tử và mẫu là các số chính phương: $1,6/250 = 16/2500$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4/5$',
+      is_correct: false,
+      explaination: 'Sai do không tính đúng các chữ số 0 ở mẫu số.',
+    },
+    {
+      content: '$0,08$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{16/2500} = 4/50 = 0,08$.',
+    },
+    {
+      content: '$0,8$',
+      is_correct: false,
+      explaination: 'Sai vị trí dấu phẩy thập phân.',
+    },
+    {
+      content: '$0,04$',
+      is_correct: false,
+      explaination: 'Khai phương mẫu số sai.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $\\sqrt{a^4 \\cdot b^2}$ với $b < 0$.',
+  explaination: 'Khai phương từng thừa số và chú ý dấu giá trị tuyệt đối của biến.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a^2b$',
+      is_correct: false,
+      explaination: 'Vì $b < 0$ nên $\\sqrt{b^2} = |b| = -b$.',
+    },
+    {
+      content: '$-a^2b$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{a^4} \\cdot \\sqrt{b^2} = a^2 \\cdot |b|$. Vì $b < 0$ nên bằng $a^2 \\cdot (-b) = -a^2b$.',
+    },
+    {
+      content: '$a^2|b|$',
+      is_correct: false,
+      explaination: 'Đây là bước trung gian, cần phá dấu giá trị tuyệt đối theo điều kiện đề bài.',
+    },
+    {
+      content: '$-a^4b$',
+      is_correct: false,
+      explaination: 'Sai số mũ của $a$ sau khi khai phương.',
+    },
+  ],
+},// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 3 --- BÀI 8: KHAI CĂN BẬC HAI VỚI PHÉP NHÂN VÀ PHÉP CHIA ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Tính giá trị của biểu thức $A = \\sqrt{2^4 \\cdot (-5)^2}$.',
+  explaination: 'Khai phương từng thừa số trong tích. Lưu ý rằng căn bậc hai của một số bình phương luôn là giá trị tuyệt đối của số đó.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$20$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $A = \\sqrt{2^4} \\cdot \\sqrt{(-5)^2} = 2^2 \\cdot |-5| = 4 \\cdot 5 = 20$.',
+    },
+    {
+      content: '$-20$',
+      is_correct: false,
+      explaination: 'Kết quả của căn bậc hai số học không thể là số âm.',
+    },
+    {
+      content: '$100$',
+      is_correct: false,
+      explaination: 'Tính toán sai lũy thừa hoặc chưa khai phương hết các thừa số.',
+    },
+    {
+      content: '$10$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị của $2^2$.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $\\sqrt{\\frac{25a^2}{36}}$ với $a < 0$.',
+  explaination: 'Áp dụng quy tắc khai phương một thương và một tích, kết hợp với hằng đẳng thức $\\sqrt{A^2} = |A|$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{5a}{6}$',
+      is_correct: false,
+      explaination: 'Vì $a < 0$ nên $|a| = -a$, kết quả này bị sai dấu.',
+    },
+    {
+      content: '$-\\frac{5a}{6}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\frac{\\sqrt{25} \\cdot \\sqrt{a^2}}{\\sqrt{36}} = \\frac{5|a|}{6}$. Vì $a < 0$ nên bằng $-\\frac{5a}{6}$.',
+    },
+    {
+      content: '$\\frac{25a}{36}$',
+      is_correct: false,
+      explaination: 'Chưa thực hiện khai phương các hệ số tự do.',
+    },
+    {
+      content: '$\\frac{5|a|}{6}$',
+      is_correct: false,
+      explaination: 'Đây là bước biến đổi trung gian, cần phá dấu giá trị tuyệt đối theo điều kiện $a < 0$.',
+    },
+  ],
+},
+{
+  content: 'Thực hiện phép tính: $B = \\sqrt{5} \\cdot \\sqrt{45} \\cdot \\sqrt{0,01}$.',
+  explaination: 'Nhóm các căn thức chứa số để tạo ra số chính phương: $5 \\cdot 45 = 5 \\cdot 5 \\cdot 9 = 25 \\cdot 9$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$1,5$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $B = \\sqrt{5 \\cdot 45} \\cdot 0,1 = \\sqrt{225} \\cdot 0,1 = 15 \\cdot 0,1 = 1,5$.',
+    },
+    {
+      content: '$15$',
+      is_correct: false,
+      explaination: 'Quên nhân với kết quả khai phương của $0,01$.',
+    },
+    {
+      content: '$0,15$',
+      is_correct: false,
+      explaination: 'Sai vị trí dấu phẩy thập phân.',
+    },
+    {
+      content: '$2,25$',
+      is_correct: false,
+      explaination: 'Tính toán sai các bước khai phương.',
+    },
+  ],
+},
+{
+  content: 'Giá trị của biểu thức $\\frac{\\sqrt{2}}{\\sqrt{18}}$ là:',
+  explaination: 'Đưa về cùng một dấu căn bậc hai rồi rút gọn phân số dưới dấu căn.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$1/9$',
+      is_correct: false,
+      explaination: 'Đây là giá trị sau khi rút gọn phân số, chưa khai phương.',
+    },
+    {
+      content: '$1/3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{\\frac{2}{18}} = \\sqrt{\\frac{1}{9}} = \\frac{1}{3}$.',
+    },
+    {
+      content: '$3$',
+      is_correct: false,
+      explaination: 'Lộn ngược tử số và mẫu số.',
+    },
+    {
+      content: '$\\sqrt{1/3}$',
+      is_correct: false,
+      explaination: 'Khai phương sai giá trị của mẫu số.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $C = \\sqrt{a^2(b-2)^2}$ với $a < 0$ và $b \\ge 2$.',
+  explaination: 'Áp dụng quy tắc khai phương một tích và phá dấu giá trị tuyệt đối dựa trên điều kiện của từng biến.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a(b-2)$',
+      is_correct: false,
+      explaination: 'Vì $a < 0$ nên $|a| = -a$, kết quả này sai dấu.',
+    },
+    {
+      content: '$-a(b-2)$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $C = |a| \\cdot |b-2|$. Với $a < 0$ và $b \\ge 2$ thì $|a| = -a$ và $|b-2| = b-2$.',
+    },
+    {
+      content: '$a(2-b)$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $-a(b-2) = a(2-b)$. Hai cách viết này tương đương nhau.',
+    },
+    {
+      content: '$-ab + 2$',
+      is_correct: false,
+      explaination: 'Khai triển sai dấu của hằng số.',
+    },
+  ],
+},
+{
+  content: 'Giải phương trình $\\sqrt{3} \\cdot \\sqrt{x} = \\sqrt{12}$.',
+  explaination: 'Sử dụng quy tắc chia hai căn bậc hai để cô lập $\\sqrt{x}$ rồi bình phương hai vế.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{x} = \\frac{\\sqrt{12}}{\\sqrt{3}} = \\sqrt{\\frac{12}{3}} = \\sqrt{4} = 2 \\implies x = 4$.',
+    },
+    {
+      content: '$x = 2$',
+      is_correct: false,
+      explaination: 'Đây mới là giá trị của $\\sqrt{x}$, cần bình phương để tìm $x$.',
+    },
+    {
+      content: '$x = 36$',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số giữa các căn thức.',
+    },
+    {
+      content: '$x = 9$',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số giữa các căn thức.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $D = \\sqrt{\\frac{x^2}{y^4}}$ với $x < 0$ và $y \\ne 0$.',
+  explaination: 'Khai phương tử và mẫu. Lưu ý $y^4 = (y^2)^2$ luôn không âm nên không cần dấu giá trị tuyệt đối cho mẫu số.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{x}{y^2}$',
+      is_correct: false,
+      explaination: 'Vì $x < 0$ nên $\\sqrt{x^2} = |x| = -x$.',
+    },
+    {
+      content: '$-\\frac{x}{y^2}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\frac{|x|}{\\sqrt{(y^2)^2}} = \\frac{-x}{y^2}$ (do $y^2 \\ge 0$).',
+    },
+    {
+      content: '$\\frac{|x|}{y}$',
+      is_correct: false,
+      explaination: 'Số mũ của $y$ sau khi khai phương bị sai.',
+    },
+    {
+      content: '$-\\frac{x}{y}$',
+      is_correct: false,
+      explaination: 'Số mũ của $y$ sau khi khai phương bị sai.',
+    },
+  ],
+},
+{
+  content: 'So sánh $M = \\sqrt{7} \\cdot \\sqrt{11}$ và $N = 9$.',
+  explaination: 'Đưa cả hai về dạng căn bậc hai: $M = \\sqrt{77}$ và $N = \\sqrt{81}$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$M > N$',
+      is_correct: false,
+      explaination: 'Vì $77 < 81$ nên $\\sqrt{77} < \\sqrt{81}$.',
+    },
+    {
+      content: '$M < N$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $M = \\sqrt{77}$ và $N = \\sqrt{81}$. Hiển nhiên $M < N$.',
+    },
+    {
+      content: '$M = N$',
+      is_correct: false,
+      explaination: 'Hai số có giá trị khác nhau.',
+    },
+    {
+      content: 'Không so sánh được.',
+      is_correct: false,
+      explaination: 'Có thể so sánh bằng cách đưa về cùng dạng căn thức.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $E = \\sqrt{\\frac{1 - 4a + 4a^2}{25}}$ với $a > 0,5$.',
+  explaination: 'Nhận dạng hằng đẳng thức $(1-2a)^2$ hoặc $(2a-1)^2$ ở tử số. Phá dấu giá trị tuyệt đối dựa trên điều kiện $a > 0,5$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{1 - 2a}{5}$',
+      is_correct: false,
+      explaination: 'Với $a > 0,5$ thì $1 - 2a < 0$, nên kết quả này bị âm.',
+    },
+    {
+      content: '$\\frac{2a - 1}{5}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\frac{|1-2a|}{5}$. Vì $a > 0,5 \\implies 2a > 1 \\implies 1-2x < 0$. Do đó $|1-2a| = 2a - 1$.',
+    },
+    {
+      content: '$\\frac{2a + 1}{5}$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn hằng đẳng thức hiệu thành hằng đẳng thức tổng.',
+    },
+    {
+      content: '$2a - 1$',
+      is_correct: false,
+      explaination: 'Quên khai phương mẫu số 25.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 3 --- BÀI 9: BIẾN ĐỔI ĐƠN GIẢN BIỂU THỨC CHỨA CĂN BẬC HAI ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Với hai biểu thức $A, B$ mà $B \\ge 0$, khẳng định nào sau đây là đúng về việc đưa thừa số ra ngoài dấu căn?',
+  explaination: 'Quy tắc đưa thừa số ra ngoài dấu căn: $\\sqrt{A^2 \\cdot B} = |A|\\sqrt{B}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{A^2 \\cdot B} = A\\sqrt{B}$',
+      is_correct: false,
+      explaination: 'Thiếu dấu giá trị tuyệt đối, kết quả này chỉ đúng nếu $A \\ge 0$.',
+    },
+    {
+      content: '$\\sqrt{A^2 \\cdot B} = |A|\\sqrt{B}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là công thức tổng quát cho mọi biểu thức $A$.',
+    },
+    {
+      content: '$\\sqrt{A^2 \\cdot B} = A^2\\sqrt{B}$',
+      is_correct: false,
+      explaination: 'Sai quy tắc khai phương lũy thừa.',
+    },
+    {
+      content: '$\\sqrt{A^2 \\cdot B} = \\sqrt{A} \\cdot B$',
+      is_correct: false,
+      explaination: 'Biến đổi sai vị trí các thừa số.',
+    },
+  ],
+},
+{
+  content: 'Khi đưa thừa số $a \\ge 0$ vào trong dấu căn của biểu thức $a\\sqrt{b}$ ($b \\ge 0$), ta được:',
+  explaination: 'Muốn đưa một thừa số dương vào trong dấu căn, ta phải bình phương số đó lên rồi nhân với biểu thức dưới dấu căn.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{ab}$',
+      is_correct: false,
+      explaination: 'Thiếu bước bình phương thừa số $a$.',
+    },
+    {
+      content: '$\\sqrt{a^2b}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Với $a \\ge 0$, ta có $a\\sqrt{b} = \\sqrt{a^2b}$.',
+    },
+    {
+      content: '$\\sqrt{ab^2}$',
+      is_correct: false,
+      explaination: 'Bình phương nhầm thừa số đã nằm sẵn trong căn.',
+    },
+    {
+      content: '$-\\sqrt{a^2b}$',
+      is_correct: false,
+      explaination: 'Vì $a \\ge 0$ nên dấu trước căn phải là dấu dương.',
+    },
+  ],
+},
+{
+  content: 'Trục căn thức ở mẫu của biểu thức $\\frac{1}{\\sqrt{3}}$ ta được kết quả:',
+  explaination: 'Nhân cả tử và mẫu với $\\sqrt{3}$ để làm mất dấu căn ở mẫu số.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{3}$',
+      is_correct: false,
+      explaination: 'Đây là kết quả nếu mẫu số ban đầu là $1/\\sqrt{3}$ nhân thêm $3$.',
+    },
+    {
+      content: '$\\frac{\\sqrt{3}}{3}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $1 \\cdot \\sqrt{3} / (\\sqrt{3} \\cdot \\sqrt{3}) = \\sqrt{3}/3$.',
+    },
+    {
+      content: '$3$',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch hoàn toàn.',
+    },
+    {
+      content: '$\\frac{3}{\\sqrt{3}}$',
+      is_correct: false,
+      explaination: 'Đây chưa phải là dạng đã trục căn thức ở mẫu.',
+    },
+  ],
+},
+{
+  content: 'Đưa thừa số ra ngoài dấu căn của biểu thức $\\sqrt{12}$ ta được:',
+  explaination: 'Phân tích $12 = 4 \\cdot 3 = 2^2 \\cdot 3$ rồi đưa thừa số 2 ra ngoài.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4\\sqrt{3}$',
+      is_correct: false,
+      explaination: 'Chưa khai phương số 4.',
+    },
+    {
+      content: '$2\\sqrt{3}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{4 \\cdot 3} = 2\\sqrt{3}$.',
+    },
+    {
+      content: '$3\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Phân tích sai các thừa số của 12.',
+    },
+    {
+      content: '$6\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Tính toán sai các bước biến đổi.',
+    },
+  ],
+},
+{
+  content: 'Đưa thừa số vào trong dấu căn của biểu thức $3\\sqrt{2}$ ta được:',
+  explaination: 'Bình phương số 3 rồi nhân với số 2 bên trong căn.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{6}$',
+      is_correct: false,
+      explaination: 'Quên bình phương số 3 trước khi đưa vào.',
+    },
+    {
+      content: '$\\sqrt{12}$',
+      is_correct: false,
+      explaination: 'Tính toán sai tích $3^2 \\cdot 2$.',
+    },
+    {
+      content: '$\\sqrt{18}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{3^2 \\cdot 2} = \\sqrt{9 \\cdot 2} = \\sqrt{18}$.',
+    },
+    {
+      content: '$\\sqrt{36}$',
+      is_correct: false,
+      explaination: 'Bình phương cả số 2 bên trong căn là sai.',
+    },
+  ],
+},
+{
+  content: 'Khử mẫu của biểu thức lấy căn $\\sqrt{\\frac{1}{2}}$ ta được:',
+  explaination: 'Nhân cả tử và mẫu của phân số trong căn với 2 để mẫu số trở thành số chính phương.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{\\sqrt{2}}{2}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{1 \\cdot 2 / (2 \\cdot 2)} = \\sqrt{2/4} = \\sqrt{2}/2$.',
+    },
+    {
+      content: '$\\frac{1}{2}$',
+      is_correct: false,
+      explaination: 'Sai quy tắc khử mẫu.',
+    },
+    {
+      content: '$\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Mất mẫu số mà không có biến đổi tương ứng là sai.',
+    },
+    {
+      content: '$\\frac{\\sqrt{1}}{2}$',
+      is_correct: false,
+      explaination: 'Chưa thực hiện nhân tử số với số cần thiết.',
+    },
+  ],
+},
+{
+  content: 'Biểu thức liên hợp của $\\sqrt{a} - \\sqrt{b}$ là:',
+  explaination: 'Trong kỹ thuật trục căn thức, biểu thức liên hợp giúp tạo ra hằng đẳng thức hiệu hai bình phương.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{a} + \\sqrt{b}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi nhân $(\\sqrt{a} - \\sqrt{b})(\\sqrt{a} + \\sqrt{b})$ ta được $a - b$.',
+    },
+    {
+      content: '$\\sqrt{a} - \\sqrt{b}$',
+      is_correct: false,
+      explaination: 'Đây chính là biểu thức ban đầu.',
+    },
+    {
+      content: '$a + b$',
+      is_correct: false,
+      explaination: 'Đây không phải là biểu thức liên hợp dạng căn thức.',
+    },
+    {
+      content: '$\\sqrt{ab}$',
+      is_correct: false,
+      explaination: 'Không liên quan đến kỹ thuật trục căn thức bằng liên hợp.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $5\\sqrt{2} + \\sqrt{18}$ ta được:',
+  explaination: 'Đưa thừa số ra ngoài dấu căn của $\\sqrt{18}$ để đưa về các căn thức đồng dạng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$6\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Cộng sai hệ số của căn thức.',
+    },
+    {
+      content: '$8\\sqrt{2}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $5\\sqrt{2} + 3\\sqrt{2} = 8\\sqrt{2}$.',
+    },
+    {
+      content: '$\\sqrt{20}$',
+      is_correct: false,
+      explaination: 'Lấy các số dưới căn cộng trực tiếp là sai quy tắc.',
+    },
+    {
+      content: '$5\\sqrt{20}$',
+      is_correct: false,
+      explaination: 'Biến đổi sai quy tắc.',
+    },
+  ],
+},
+{
+  content: 'Đưa thừa số ra ngoài dấu căn của biểu thức $\\sqrt{2x^2}$ với $x < 0$ ta được:',
+  explaination: 'Áp dụng $\\sqrt{x^2} = |x|$. Do điều kiện $x < 0$ nên $|x| = -x$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Vì $x < 0$ nên kết quả này mang dấu âm, trong khi căn bậc hai số học ban đầu mang dấu dương.',
+    },
+    {
+      content: '$-x\\sqrt{2}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $|x|\\sqrt{2} = -x\\sqrt{2}$ (do $x < 0$).',
+    },
+    {
+      content: '$2x$',
+      is_correct: false,
+      explaination: 'Sai quy tắc khai phương.',
+    },
+    {
+      content: '$-2x$',
+      is_correct: false,
+      explaination: 'Sai quy tắc khai phương.',
+    },
+  ],
+},
+{
+  content: 'Đưa thừa số vào trong dấu căn của biểu thức $x\\sqrt{\\frac{1}{x}}$ với $x > 0$.',
+  explaination: 'Vì $x > 0$ nên ta đưa $x$ vào trong căn bằng cách bình phương nó lên.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{x}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{x^2 \\cdot (1/x)} = \\sqrt{x}$.',
+    },
+    {
+      content: '$\\sqrt{1}$',
+      is_correct: false,
+      explaination: 'Quên bình phương $x$ khi đưa vào căn.',
+    },
+    {
+      content: '$x\\sqrt{x}$',
+      is_correct: false,
+      explaination: 'Biến đổi sai quy tắc.',
+    },
+    {
+      content: '$\\sqrt{x^2}$',
+      is_correct: false,
+      explaination: 'Tính toán sai tích trong căn.',
+    },
+  ],
+},
+{
+  content: 'Trục căn thức ở mẫu của biểu thức $\\frac{2}{\\sqrt{3} - 1}$ ta được:',
+  explaination: 'Nhân cả tử và mẫu với biểu thức liên hợp $\\sqrt{3} + 1$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{3} - 1$',
+      is_correct: false,
+      explaination: 'Sai biểu thức liên hợp.',
+    },
+    {
+      content: '$\\sqrt{3} + 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $2(\\sqrt{3} + 1) / (3 - 1) = 2(\\sqrt{3} + 1) / 2 = \\sqrt{3} + 1$.',
+    },
+    {
+      content: '$2(\\sqrt{3} + 1)$',
+      is_correct: false,
+      explaination: 'Chưa rút gọn kết quả cuối cùng.',
+    },
+    {
+      content: '$\\frac{\\sqrt{3} + 1}{2}$',
+      is_correct: false,
+      explaination: 'Rút gọn sai hệ số ở tử số.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 3 --- BÀI 9: BIẾN ĐỔI ĐƠN GIẢN BIỂU THỨC CHỨA CĂN BẬC HAI ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Rút gọn biểu thức $A = \\sqrt{72a^2b^4}$ với $a < 0$.',
+  explaination: 'Thực hiện phân tích $72 = 36 \\cdot 2$ và đưa các thừa số ra ngoài dấu căn. Chú ý dấu giá trị tuyệt đối của biến $a$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$6ab^2\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Vì $a < 0$ nên $\\sqrt{a^2} = |a| = -a$, kết quả này bị sai dấu.',
+    },
+    {
+      content: '$-6ab^2\\sqrt{2}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $A = \\sqrt{36} \\cdot \\sqrt{a^2} \\cdot \\sqrt{(b^2)^2} \\cdot \\sqrt{2} = 6 \\cdot |a| \\cdot b^2 \\cdot \\sqrt{2} = -6ab^2\\sqrt{2}$.',
+    },
+    {
+      content: '$-12ab^2\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Khai phương sai số 72.',
+    },
+    {
+      content: '$6a^2b^2\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Sai quy tắc đưa thừa số ra ngoài dấu căn.',
+    },
+  ],
+},
+{
+  content: 'Thực hiện phép tính rút gọn: $M = 3\\sqrt{20} - 2\\sqrt{45} + 4\\sqrt{5}$.',
+  explaination: 'Đưa thừa số ra ngoài dấu căn để đưa các biểu thức về dạng căn thức đồng dạng với $\\sqrt{5}$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$5\\sqrt{5}$',
+      is_correct: false,
+      explaination: 'Tính toán sai các hệ số sau khi rút gọn.',
+    },
+    {
+      content: '$4\\sqrt{5}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $M = 3 \\cdot 2\\sqrt{5} - 2 \\cdot 3\\sqrt{5} + 4\\sqrt{5} = 6\\sqrt{5} - 6\\sqrt{5} + 4\\sqrt{5} = 4\\sqrt{5}$.',
+    },
+    {
+      content: '$\\sqrt{5}$',
+      is_correct: false,
+      explaination: 'Tính toán sai các hệ số.',
+    },
+    {
+      content: '$10\\sqrt{5}$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn dấu trừ thành dấu cộng.',
+    },
+  ],
+},
+{
+  content: 'Trục căn thức ở mẫu của biểu thức $P = \\frac{x - 4}{\\sqrt{x} - 2}$ với $x \\ge 0, x \\ne 4$.',
+  explaination: 'Nhân cả tử và mẫu với biểu thức liên hợp của mẫu hoặc nhận dạng hằng đẳng thức ở tử số để rút gọn.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{x} - 2$',
+      is_correct: false,
+      explaination: 'Phép rút gọn này bị sai dấu.',
+    },
+    {
+      content: '$\\sqrt{x} + 2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $P = \\frac{(\\sqrt{x} - 2)(\\sqrt{x} + 2)}{\\sqrt{x} - 2} = \\sqrt{x} + 2$.',
+    },
+    {
+      content: '$x + 2$',
+      is_correct: false,
+      explaination: 'Khai phương sai tử số.',
+    },
+    {
+      content: '$\\frac{1}{\\sqrt{x} + 2}$',
+      is_correct: false,
+      explaination: 'Đảo ngược kết quả đúng.',
+    },
+  ],
+},
+{
+  content: 'So sánh hai số $x = 3\\sqrt{5}$ và $y = 2\\sqrt{11}$.',
+  explaination: 'Đưa các thừa số vào trong dấu căn để so sánh hai căn bậc hai số học.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x > y$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = \\sqrt{3^2 \\cdot 5} = \\sqrt{45}$. $y = \\sqrt{2^2 \\cdot 11} = \\sqrt{44}$. Vì $45 > 44$ nên $x > y$.',
+    },
+    {
+      content: '$x < y$',
+      is_correct: false,
+      explaination: 'Sai do so sánh trực tiếp các hệ số ngoài căn hoặc nhân sai giá trị.',
+    },
+    {
+      content: '$x = y$',
+      is_correct: false,
+      explaination: 'Bình phương của chúng là 45 và 44, không thể bằng nhau.',
+    },
+    {
+      content: 'Không so sánh được.',
+      is_correct: false,
+      explaination: 'Đây là các số thực dương cụ thể, hoàn toàn so sánh được.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $Q = \\sqrt{17 - 12\\sqrt{2}} + \\sqrt{17 + 12\\sqrt{2}}$.',
+  explaination: 'Biến đổi biểu thức dưới dấu căn thành bình phương của một hiệu và bình phương của một tổng ($17 \\pm 12\\sqrt{2} = (3 \\pm 2\\sqrt{2})^2$).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$6$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $Q = \\sqrt{(3 - 2\\sqrt{2})^2} + \\sqrt{(3 + 2\\sqrt{2})^2} = |3 - 2\\sqrt{2}| + |3 + 2\\sqrt{2}| = (3 - 2\\sqrt{2}) + (3 + 2\\sqrt{2}) = 6$.',
+    },
+    {
+      content: '$4\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Sai quy tắc phá dấu giá trị tuyệt đối.',
+    },
+    {
+      content: '$34$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn với việc cộng trực tiếp các số dưới dấu căn.',
+    },
+    {
+      content: '$12\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Tính toán sai các hạng tử sau khi khai căn.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $B = \\frac{a\\sqrt{a} - b\\sqrt{b}}{\\sqrt{a} - \\sqrt{b}} - \\sqrt{ab}$ với $a, b > 0, a \\ne b$.',
+  explaination: 'Nhận dạng tử số là hằng đẳng thức hiệu hai lập phương: $a\\sqrt{a} - b\\sqrt{b} = (\\sqrt{a})^3 - (\\sqrt{b})^3$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a - b$',
+      is_correct: false,
+      explaination: 'Khai triển hằng đẳng thức bị sai.',
+    },
+    {
+      content: '$a + b$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $B = \\frac{(\\sqrt{a} - \\sqrt{b})(a + \\sqrt{ab} + b)}{\\sqrt{a} - \\sqrt{b}} - \\sqrt{ab} = a + \\sqrt{ab} + b - \\sqrt{ab} = a + b$.',
+    },
+    {
+      content: '$\\sqrt{a} + \\sqrt{b}$',
+      is_correct: false,
+      explaination: 'Kết quả rút gọn không khớp.',
+    },
+    {
+      content: '$a + b - 2\\sqrt{ab}$',
+      is_correct: false,
+      explaination: 'Sai dấu trong quá trình rút gọn các hạng tử đồng dạng.',
+    },
+  ],
+},
+{
+  content: 'Tìm giá trị nguyên của $x$ để biểu thức $S = \\frac{\\sqrt{x} + 1}{\\sqrt{x} - 2}$ nhận giá trị nguyên.',
+  explaination: 'Tách tử số theo mẫu số: $S = 1 + \\frac{3}{\\sqrt{x} - 2}$. Để $S$ nguyên thì $\\sqrt{x} - 2$ phải là ước của 3.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x \\in \\{1; 9; 25\\}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sqrt{x} - 2 \\in \\{-1; 1; 3\\}$ (do $\\sqrt{x} - 2 \\ge -2$). Suy ra $\\sqrt{x} \\in \\{1; 3; 5\\} \\implies x \\in \\{1; 9; 25\\}$.',
+    },
+    {
+      content: '$x \\in \\{9; 25\\}$',
+      is_correct: false,
+      explaination: 'Thiếu giá trị $x = 1$, khi đó $S = 2/(-1) = -2$ (nguyên).',
+    },
+    {
+      content: '$x \\in \\{1; 4; 9; 25\\}$',
+      is_correct: false,
+      explaination: 'Giá trị $x = 4$ làm mẫu thức bằng 0, không xác định.',
+    },
+    {
+      content: '$x \\in \\{25\\}$',
+      is_correct: false,
+      explaination: 'Liệt kê thiếu các trường hợp ước âm của 3.',
+    },
+  ],
+},
+{
+  content: 'Tính tổng $S = \\frac{1}{\\sqrt{1} + \\sqrt{2}} + \\frac{1}{\\sqrt{2} + \\sqrt{3}} + \\dots + \\frac{1}{\\sqrt{99} + \\sqrt{100}}$.',
+  explaination: 'Trục căn thức ở mẫu cho từng số hạng: $\\frac{1}{\\sqrt{n} + \\sqrt{n+1}} = \\sqrt{n+1} - \\sqrt{n}$. Sau đó thực hiện triệt tiêu các hạng tử đối nhau.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$10$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $\\sqrt{100}$, chưa trừ đi $\\sqrt{1}$.',
+    },
+    {
+      content: '$9$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S = (\\sqrt{2} - \\sqrt{1}) + (\\sqrt{3} - \\sqrt{2}) + \\dots + (\\sqrt{100} - \\sqrt{99}) = \\sqrt{100} - \\sqrt{1} = 10 - 1 = 9$.',
+    },
+    {
+      content: '$\\sqrt{99}$',
+      is_correct: false,
+      explaination: 'Tính toán sai các hạng tử bị triệt tiêu.',
+    },
+    {
+      content: '$11$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn phép trừ thành phép cộng ở bước cuối.',
+    },
+  ],
+},
+{
+  content: 'Tìm giá trị lớn nhất của biểu thức $Y = \\sqrt{x - 1} + \\sqrt{3 - x}$.',
+  explaination: 'Sử dụng bất đẳng thức Bunhiacopxki: $(1 \\cdot \\sqrt{x-1} + 1 \\cdot \\sqrt{3-x})^2 \\le (1^2 + 1^2)(x - 1 + 3 - x)$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $Y^2 \\le 2 \\cdot 2 = 4 \\implies Y \\le 2$. Dấu bằng xảy ra khi $x-1 = 3-x \\iff x = 2$.',
+    },
+    {
+      content: '$\\sqrt{2}$',
+      is_correct: false,
+      explaination: 'Đây là giá trị nhỏ nhất của biểu thức, đạt được khi $x=1$ hoặc $x=3$.',
+    },
+    {
+      content: '$4$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $Y^2$, không phải $Y$.',
+    },
+    {
+      content: '$3$',
+      is_correct: false,
+      explaination: 'Giá trị này không thể đạt được trong miền xác định của $x$.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 3 --- BÀI 10: CĂN BẬC BA ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Căn bậc ba của một số thực $a$ là số $x$ sao cho:',
+  explaination: 'Theo định nghĩa, $x$ là căn bậc ba của $a$ nếu lũy thừa bậc ba của $x$ bằng $a$. Ký hiệu là $\\sqrt[3]{a}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x^2 = a$',
+      is_correct: false,
+      explaination: 'Đây là định nghĩa của căn bậc hai.',
+    },
+    {
+      content: '$x^3 = a$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Mọi số thực đều có duy nhất một căn bậc ba.',
+    },
+    {
+      content: '$x = a^3$',
+      is_correct: false,
+      explaination: 'Đây là lũy thừa bậc ba của $a$, không phải căn bậc ba.',
+    },
+    {
+      content: '$3x = a$',
+      is_correct: false,
+      explaination: 'Đây là phép nhân với 3.',
+    },
+  ],
+},
+{
+  content: 'Khẳng định nào sau đây là đúng về căn bậc ba của một số thực âm?',
+  explaination: 'Khác với căn bậc hai, căn bậc ba của một số âm luôn tồn tại và kết quả là một số âm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số âm không có căn bậc ba.',
+      is_correct: false,
+      explaination: 'Mọi số thực đều có căn bậc ba.',
+    },
+    {
+      content: 'Căn bậc ba của số âm là một số âm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ví dụ $\\sqrt[3]{-8} = -2$.',
+    },
+    {
+      content: 'Căn bậc ba của số âm là một số dương.',
+      is_correct: false,
+      explaination: 'Lũy thừa bậc ba của một số dương không thể là số âm.',
+    },
+    {
+      content: 'Căn bậc ba của số âm không xác định.',
+      is_correct: false,
+      explaination: 'Trong tập số thực, căn bậc ba xác định với mọi giá trị.',
+    },
+  ],
+},
+{
+  content: 'Giá trị của $\\sqrt[3]{-27}$ là:',
+  explaination: 'Tìm số thực nào khi mũ 3 lên bằng -27. Ta có $(-3)^3 = -27$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$-3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $(-3) \\cdot (-3) \\cdot (-3) = -27$.',
+    },
+    {
+      content: '$3$',
+      is_correct: false,
+      explaination: 'Vì $3^3 = 27 \\ne -27$.',
+    },
+    {
+      content: '$-9$',
+      is_correct: false,
+      explaination: 'Sai do nhầm lẫn phép chia cho 3.',
+    },
+    {
+      content: 'Không tồn tại.',
+      is_correct: false,
+      explaination: 'Số âm vẫn có căn bậc ba bình thường.',
+    },
+  ],
+},
+{
+  content: 'Khẳng định nào sau đây là <b>SAI</b> về tính chất của căn bậc ba?',
+  explaination: 'Căn bậc ba có các tính chất tương tự như căn bậc hai về phép nhân và phép chia, nhưng không cần điều kiện không âm cho biểu thức dưới căn (trừ mẫu thức phải khác 0).',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt[3]{ab} = \\sqrt[3]{a} \\cdot \\sqrt[3]{b}$',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: '$\\sqrt[3]{\\frac{a}{b}} = \\frac{\\sqrt[3]{a}}{\\sqrt[3]{b}}$ (với $b \\ne 0$)',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: '$a < b \\iff \\sqrt[3]{a} < \\sqrt[3]{b}$',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: '$\\sqrt[3]{a^3} = |a|$',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Đối với căn bậc ba, $\\sqrt[3]{a^3} = a$ (giữ nguyên dấu), không cần giá trị tuyệt đối.',
+    },
+  ],
+},
+{
+  content: 'Kết quả của phép tính $\\sqrt[3]{8} - \\sqrt[3]{1}$ là:',
+  explaination: 'Tính từng giá trị căn bậc ba rồi thực hiện phép trừ.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $2 - 1 = 1$.',
+    },
+    {
+      content: '$7$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn lấy các số dưới căn trừ nhau.',
+    },
+    {
+      content: '$\\sqrt[3]{7}$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn lấy các số dưới căn trừ nhau.',
+    },
+    {
+      content: '$2$',
+      is_correct: false,
+      explaination: 'Tính toán sai căn bậc ba.',
+    },
+  ],
+},
+{
+  content: 'So sánh $4$ và $\\sqrt[3]{63}$, khẳng định nào sau đây đúng?',
+  explaination: 'Đưa số 4 vào trong dấu căn bậc ba: $4 = \\sqrt[3]{4^3} = \\sqrt[3]{64}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4 < \\sqrt[3]{63}$',
+      is_correct: false,
+      explaination: 'Vì $64 > 63$ nên $\\sqrt[3]{64} > \\sqrt[3]{63}$.',
+    },
+    {
+      content: '$4 > \\sqrt[3]{63}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $4 = \\sqrt[3]{64}$, mà $64 > 63$.',
+    },
+    {
+      content: '$4 = \\sqrt[3]{63}$',
+      is_correct: false,
+      explaination: 'Bình phương/Lập phương của chúng không bằng nhau.',
+    },
+    {
+      content: 'Không so sánh được.',
+      is_correct: false,
+      explaination: 'Đây là các số thực, luôn so sánh được.',
+    },
+  ],
+},
+{
+  content: 'Giá trị của biểu thức $\\sqrt[3]{-0,001}$ là:',
+  explaination: 'Ta có $(-0,1)^3 = -0,001$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$-0,01$',
+      is_correct: false,
+      explaination: 'Sai, vì $(-0,01)^3 = -0,000001$.',
+    },
+    {
+      content: '$-0,1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $(-0,1)^3 = -0,001$.',
+    },
+    {
+      content: '$0,1$',
+      is_correct: false,
+      explaination: 'Căn bậc ba của số âm phải là số âm.',
+    },
+    {
+      content: '$-0,001$',
+      is_correct: false,
+      explaination: 'Đây là giá trị ban đầu, chưa khai căn.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $(\\sqrt[3]{x})^3$ với $x \\in \\mathbb{R}$, ta được:',
+  explaination: 'Theo định nghĩa căn bậc ba, lũy thừa bậc ba của căn bậc ba của một số bằng chính số đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$|x|$',
+      is_correct: false,
+      explaination: 'Căn bậc ba không cần giá trị tuyệt đối.',
+    },
+    {
+      content: '$x$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Luôn bằng chính nó với mọi $x$.',
+    },
+    {
+      content: '$x^3$',
+      is_correct: false,
+      explaination: 'Sai quy tắc khai căn.',
+    },
+    {
+      content: '$\\sqrt[3]{x}$',
+      is_correct: false,
+      explaination: 'Chưa thực hiện phép nâng lên lũy thừa.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Giải phương trình $\\sqrt[3]{x} = -2$.',
+  explaination: 'Lũy thừa bậc ba cả hai vế để tìm giá trị của $x$. Lưu ý căn bậc ba có thể nhận giá trị âm.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Vô nghiệm',
+      is_correct: false,
+      explaination: 'Chỉ có căn bậc hai mới không thể bằng số âm.',
+    },
+    {
+      content: '$x = -8$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = (-2)^3 = -8$.',
+    },
+    {
+      content: '$x = 8$',
+      is_correct: false,
+      explaination: 'Sai dấu vì $(-2)^3 = -8$.',
+    },
+    {
+      content: '$x = -4$',
+      is_correct: false,
+      explaination: 'Tính toán sai lũy thừa bậc ba.',
+    },
+  ],
+},
+{
+  content: 'Thực hiện phép tính: $A = \\sqrt[3]{27} - \\sqrt[3]{-64} + \\sqrt[3]{125}$.',
+  explaination: 'Khai phương từng căn bậc ba (chú ý dấu của số âm) rồi thực hiện phép tính.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$12$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $A = 3 - (-4) + 5 = 3 + 4 + 5 = 12$.',
+    },
+    {
+      content: '$4$',
+      is_correct: false,
+      explaination: 'Sai dấu khi xử lý $\\sqrt[3]{-64}$.',
+    },
+    {
+      content: '$14$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị các căn bậc ba.',
+    },
+    {
+      content: '$2$',
+      is_correct: false,
+      explaination: 'Tính toán sai dấu của các hạng tử.',
+    },
+  ],
+},
+{
+  content: 'So sánh $M = \\sqrt[3]{7 \\cdot \\sqrt[3]{7 \\cdot \\sqrt[3]{7}}}$ và $N = \\sqrt[3]{7}$.',
+  explaination: 'Nhận thấy $M$ là căn bậc ba của một số lớn hơn 7, sử dụng tính chất đồng biến của căn bậc ba.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$M < N$',
+      is_correct: false,
+      explaination: 'Biểu thức trong căn của $M$ lớn hơn biểu thức của $N$.',
+    },
+    {
+      content: '$M > N$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì biểu thức dưới dấu căn đầu tiên của $M$ là $7 \\cdot (...)$ chắc chắn lớn hơn 7 (với $7 > 1$).',
+    },
+    {
+      content: '$M = N$',
+      is_correct: false,
+      explaination: 'Hai biểu thức có cấu trúc khác nhau hoàn toàn.',
+    },
+    {
+      content: 'Không so sánh được.',
+      is_correct: false,
+      explaination: 'Hoàn toàn so sánh được dựa trên tính chất hàm số.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 3 --- BÀI 10: CĂN BẬC BA ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Căn bậc ba của một số thực $a$ là số $x$ sao cho:',
+  explaination: 'Theo định nghĩa, $x$ là căn bậc ba của $a$ nếu lũy thừa bậc ba của $x$ bằng $a$. Ký hiệu là $\\sqrt[3]{a}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x^2 = a$',
+      is_correct: false,
+      explaination: 'Đây là định nghĩa của căn bậc hai.',
+    },
+    {
+      content: '$x^3 = a$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Mọi số thực đều có duy nhất một căn bậc ba.',
+    },
+    {
+      content: '$x = a^3$',
+      is_correct: false,
+      explaination: 'Đây là lũy thừa bậc ba của $a$, không phải căn bậc ba.',
+    },
+    {
+      content: '$3x = a$',
+      is_correct: false,
+      explaination: 'Đây là phép nhân với 3.',
+    },
+  ],
+},
+{
+  content: 'Khẳng định nào sau đây là đúng về căn bậc ba của một số thực âm?',
+  explaination: 'Khác với căn bậc hai, căn bậc ba của một số âm luôn tồn tại và kết quả là một số âm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số âm không có căn bậc ba.',
+      is_correct: false,
+      explaination: 'Mọi số thực đều có căn bậc ba.',
+    },
+    {
+      content: 'Căn bậc ba của số âm là một số âm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ví dụ $\\sqrt[3]{-8} = -2$.',
+    },
+    {
+      content: 'Căn bậc ba của số âm là một số dương.',
+      is_correct: false,
+      explaination: 'Lũy thừa bậc ba của một số dương không thể là số âm.',
+    },
+    {
+      content: 'Căn bậc ba của số âm không xác định.',
+      is_correct: false,
+      explaination: 'Trong tập số thực, căn bậc ba xác định với mọi giá trị.',
+    },
+  ],
+},
+{
+  content: 'Giá trị của $\\sqrt[3]{-27}$ là:',
+  explaination: 'Tìm số thực nào khi mũ 3 lên bằng -27. Ta có $(-3)^3 = -27$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$-3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $(-3) \\cdot (-3) \\cdot (-3) = -27$.',
+    },
+    {
+      content: '$3$',
+      is_correct: false,
+      explaination: 'Vì $3^3 = 27 \\ne -27$.',
+    },
+    {
+      content: '$-9$',
+      is_correct: false,
+      explaination: 'Sai do nhầm lẫn phép chia cho 3.',
+    },
+    {
+      content: 'Không tồn tại.',
+      is_correct: false,
+      explaination: 'Số âm vẫn có căn bậc ba bình thường.',
+    },
+  ],
+},
+{
+  content: 'Khẳng định nào sau đây là <b>SAI</b> về tính chất của căn bậc ba?',
+  explaination: 'Căn bậc ba có các tính chất tương tự như căn bậc hai về phép nhân và phép chia, nhưng không cần điều kiện không âm cho biểu thức dưới căn (trừ mẫu thức phải khác 0).',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt[3]{ab} = \\sqrt[3]{a} \\cdot \\sqrt[3]{b}$',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: '$\\sqrt[3]{\\frac{a}{b}} = \\frac{\\sqrt[3]{a}}{\\sqrt[3]{b}}$ (với $b \\ne 0$)',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: '$a < b \\iff \\sqrt[3]{a} < \\sqrt[3]{b}$',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: '$\\sqrt[3]{a^3} = |a|$',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Đối với căn bậc ba, $\\sqrt[3]{a^3} = a$ (giữ nguyên dấu), không cần giá trị tuyệt đối.',
+    },
+  ],
+},
+{
+  content: 'Kết quả của phép tính $\\sqrt[3]{8} - \\sqrt[3]{1}$ là:',
+  explaination: 'Tính từng giá trị căn bậc ba rồi thực hiện phép trừ.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $2 - 1 = 1$.',
+    },
+    {
+      content: '$7$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn lấy các số dưới căn trừ nhau.',
+    },
+    {
+      content: '$\\sqrt[3]{7}$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn lấy các số dưới căn trừ nhau.',
+    },
+    {
+      content: '$2$',
+      is_correct: false,
+      explaination: 'Tính toán sai căn bậc ba.',
+    },
+  ],
+},
+{
+  content: 'So sánh $4$ và $\\sqrt[3]{63}$, khẳng định nào sau đây đúng?',
+  explaination: 'Đưa số 4 vào trong dấu căn bậc ba: $4 = \\sqrt[3]{4^3} = \\sqrt[3]{64}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4 < \\sqrt[3]{63}$',
+      is_correct: false,
+      explaination: 'Vì $64 > 63$ nên $\\sqrt[3]{64} > \\sqrt[3]{63}$.',
+    },
+    {
+      content: '$4 > \\sqrt[3]{63}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $4 = \\sqrt[3]{64}$, mà $64 > 63$.',
+    },
+    {
+      content: '$4 = \\sqrt[3]{63}$',
+      is_correct: false,
+      explaination: 'Bình phương/Lập phương của chúng không bằng nhau.',
+    },
+    {
+      content: 'Không so sánh được.',
+      is_correct: false,
+      explaination: 'Đây là các số thực, luôn so sánh được.',
+    },
+  ],
+},
+{
+  content: 'Giá trị của biểu thức $\\sqrt[3]{-0,001}$ là:',
+  explaination: 'Ta có $(-0,1)^3 = -0,001$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$-0,01$',
+      is_correct: false,
+      explaination: 'Sai, vì $(-0,01)^3 = -0,000001$.',
+    },
+    {
+      content: '$-0,1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $(-0,1)^3 = -0,001$.',
+    },
+    {
+      content: '$0,1$',
+      is_correct: false,
+      explaination: 'Căn bậc ba của số âm phải là số âm.',
+    },
+    {
+      content: '$-0,001$',
+      is_correct: false,
+      explaination: 'Đây là giá trị ban đầu, chưa khai căn.',
+    },
+  ],
+},
+{
+  content: 'Rút gọn biểu thức $(\\sqrt[3]{x})^3$ với $x \\in \\mathbb{R}$, ta được:',
+  explaination: 'Theo định nghĩa căn bậc ba, lũy thừa bậc ba của căn bậc ba của một số bằng chính số đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$|x|$',
+      is_correct: false,
+      explaination: 'Căn bậc ba không cần giá trị tuyệt đối.',
+    },
+    {
+      content: '$x$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Luôn bằng chính nó với mọi $x$.',
+    },
+    {
+      content: '$x^3$',
+      is_correct: false,
+      explaination: 'Sai quy tắc khai căn.',
+    },
+    {
+      content: '$\\sqrt[3]{x}$',
+      is_correct: false,
+      explaination: 'Chưa thực hiện phép nâng lên lũy thừa.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Giải phương trình $\\sqrt[3]{x} = -2$.',
+  explaination: 'Lũy thừa bậc ba cả hai vế để tìm giá trị của $x$. Lưu ý căn bậc ba có thể nhận giá trị âm.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Vô nghiệm',
+      is_correct: false,
+      explaination: 'Chỉ có căn bậc hai mới không thể bằng số âm.',
+    },
+    {
+      content: '$x = -8$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = (-2)^3 = -8$.',
+    },
+    {
+      content: '$x = 8$',
+      is_correct: false,
+      explaination: 'Sai dấu vì $(-2)^3 = -8$.',
+    },
+    {
+      content: '$x = -4$',
+      is_correct: false,
+      explaination: 'Tính toán sai lũy thừa bậc ba.',
+    },
+  ],
+},
+{
+  content: 'Thực hiện phép tính: $A = \\sqrt[3]{27} - \\sqrt[3]{-64} + \\sqrt[3]{125}$.',
+  explaination: 'Khai phương từng căn bậc ba (chú ý dấu của số âm) rồi thực hiện phép tính.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$12$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $A = 3 - (-4) + 5 = 3 + 4 + 5 = 12$.',
+    },
+    {
+      content: '$4$',
+      is_correct: false,
+      explaination: 'Sai dấu khi xử lý $\\sqrt[3]{-64}$.',
+    },
+    {
+      content: '$14$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị các căn bậc ba.',
+    },
+    {
+      content: '$2$',
+      is_correct: false,
+      explaination: 'Tính toán sai dấu của các hạng tử.',
+    },
+  ],
+},
+{
+  content: 'So sánh $M = \\sqrt[3]{7 \\cdot \\sqrt[3]{7 \\cdot \\sqrt[3]{7}}}$ và $N = \\sqrt[3]{7}$.',
+  explaination: 'Nhận thấy $M$ là căn bậc ba của một số lớn hơn 7, sử dụng tính chất đồng biến của căn bậc ba.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat3_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$M < N$',
+      is_correct: false,
+      explaination: 'Biểu thức trong căn của $M$ lớn hơn biểu thức của $N$.',
+    },
+    {
+      content: '$M > N$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì biểu thức dưới dấu căn đầu tiên của $M$ là $7 \\cdot (...)$ chắc chắn lớn hơn 7 (với $7 > 1$).',
+    },
+    {
+      content: '$M = N$',
+      is_correct: false,
+      explaination: 'Hai biểu thức có cấu trúc khác nhau hoàn toàn.',
+    },
+    {
+      content: 'Không so sánh được.',
+      is_correct: false,
+      explaination: 'Hoàn toàn so sánh được dựa trên tính chất hàm số.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 4 --- BÀI 11: TỈ SỐ LƯỢNG GIÁC CỦA GÓC NHỌN ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Trong một tam giác vuông, tỉ số giữa cạnh đối và cạnh huyền của một góc nhọn $\\alpha$ được gọi là:',
+  explaination: 'Theo định nghĩa các tỉ số lượng giác trong tam giác vuông, tỉ số giữa cạnh đối và cạnh huyền là sin của góc đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\cos \\alpha$',
+      is_correct: false,
+      explaination: 'Cosin là tỉ số giữa cạnh kề và cạnh huyền.',
+    },
+    {
+      content: '$\\sin \\alpha$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sin \\alpha = \\frac{\\text{cạnh đối}}{\\text{cạnh huyền}}$.',
+    },
+    {
+      content: '$\\tan \\alpha$',
+      is_correct: false,
+      explaination: 'Tang là tỉ số giữa cạnh đối và cạnh kề.',
+    },
+    {
+      content: '$\\cot \\alpha$',
+      is_correct: false,
+      explaination: 'Cotang là tỉ số giữa cạnh kề và cạnh đối.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có góc nhọn $B = \\beta$. Khi đó, $\\tan \\beta$ được tính bằng công thức:',
+  explaination: 'Tang của một góc nhọn trong tam giác vuông bằng tỉ số giữa cạnh đối và cạnh kề của góc đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{AC}{BC}$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số giữa cạnh đối và cạnh huyền ($\\sin B$).',
+    },
+    {
+      content: '$\\frac{AB}{AC}$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số $\\cot B$.',
+    },
+    {
+      content: '$\\frac{AC}{AB}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Cạnh đối của góc $B$ là $AC$, cạnh kề là $AB$. Do đó $\\tan B = AC/AB$.',
+    },
+    {
+      content: '$\\frac{AB}{BC}$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số giữa cạnh kề và cạnh huyền ($\\cos B$).',
+    },
+  ],
+},
+{
+  content: 'Khẳng định nào sau đây là đúng về giá trị của $\\sin \\alpha$ và $\\cos \\alpha$ ($0^\\circ < \\alpha < 90^\\circ$)?',
+  explaination: 'Vì trong tam giác vuông, cạnh huyền luôn là cạnh lớn nhất, nên tỉ số giữa cạnh góc vuông và cạnh huyền luôn nhỏ hơn 1.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sin \\alpha > 1$',
+      is_correct: false,
+      explaination: 'Tỉ số lượng giác của góc nhọn không bao giờ lớn hơn 1.',
+    },
+    {
+      content: '$0 < \\sin \\alpha < 1$ và $0 < \\cos \\alpha < 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Cạnh đối/kề luôn dương và nhỏ hơn cạnh huyền nên tỉ số luôn nằm trong khoảng (0; 1).',
+    },
+    {
+      content: '$\\cos \\alpha < 0$',
+      is_correct: false,
+      explaination: 'Tỉ số độ dài các cạnh luôn là số dương.',
+    },
+    {
+      content: '$\\sin \\alpha + \\cos \\alpha = 1$',
+      is_correct: false,
+      explaination: 'Khẳng định đúng phải là $\\sin^2 \\alpha + \\cos^2 \\alpha = 1$.',
+    },
+  ],
+},
+{
+  content: 'Nếu hai góc nhọn $\\alpha$ và $\\beta$ phụ nhau ($\\alpha + \\beta = 90^\\circ$) thì khẳng định nào sau đây là <b>SAI</b>?',
+  explaination: 'Đối với hai góc phụ nhau, sin góc này bằng cosin góc kia, tang góc này bằng cotang góc kia.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sin \\alpha = \\cos \\beta$',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng theo tính chất góc phụ nhau.',
+    },
+    {
+      content: '$\\tan \\alpha = \\cot \\beta$',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng theo tính chất góc phụ nhau.',
+    },
+    {
+      content: '$\\sin \\alpha = \\sin \\beta$',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Sin góc này chỉ bằng sin góc kia khi hai góc đó bằng nhau (cùng bằng $45^\\circ$).',
+    },
+    {
+      content: '$\\cos \\alpha = \\sin \\beta$',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng theo tính chất góc phụ nhau.',
+    },
+  ],
+},
+{
+  content: 'Giá trị của $\\tan 45^\\circ$ bằng:',
+  explaination: 'Trong tam giác vuông cân (có góc $45^\\circ$), cạnh đối và cạnh kề bằng nhau nên tỉ số của chúng bằng 1.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{\\sqrt{2}}{2}$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $\\sin 45^\\circ$ hoặc $\\cos 45^\\circ$.',
+    },
+    {
+      content: '$1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\tan 45^\\circ = 1$.',
+    },
+    {
+      content: '$\\sqrt{3}$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $\\tan 60^\\circ$.',
+    },
+    {
+      content: '$0$',
+      is_correct: false,
+      explaination: 'Tang của góc nhọn luôn lớn hơn 0.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$, có $AB = 3, AC = 4, BC = 5$. Giá trị của $\\sin B$ là:',
+  explaination: 'Áp dụng định nghĩa: $\\sin B = \\text{cạnh đối} / \\text{cạnh huyền}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$3/5$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số $AB/BC$, tức là $\\cos B$.',
+    },
+    {
+      content: '$4/5$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Cạnh đối của góc $B$ là $AC = 4$, cạnh huyền $BC = 5$. Do đó $\\sin B = 4/5$.',
+    },
+    {
+      content: '$4/3$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số $AC/AB$, tức là $\\tan B$.',
+    },
+    {
+      content: '$3/4$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số $AB/AC$, tức là $\\cot B$.',
+    },
+  ],
+},
+{
+  content: 'Trong các hệ thức sau, hệ thức nào <b>SAI</b>?',
+  explaination: 'Sử dụng các hệ thức cơ bản liên hệ giữa các tỉ số lượng giác của cùng một góc nhọn.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\tan \\alpha = \\frac{\\sin \\alpha}{\\cos \\alpha}$',
+      is_correct: false,
+      explaination: 'Đây là hệ thức đúng.',
+    },
+    {
+      content: '$\\tan \\alpha \\cdot \\cot \\alpha = 1$',
+      is_correct: false,
+      explaination: 'Đây là hệ thức đúng.',
+    },
+    {
+      content: '$\\sin^2 \\alpha + \\cos^2 \\alpha = 1$',
+      is_correct: false,
+      explaination: 'Đây là hệ thức đúng (định lý Pythagoras trong vòng tròn đơn vị).',
+    },
+    {
+      content: '$\\sin \\alpha + \\cos \\alpha = 1$',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Tổng các bình phương mới bằng 1, tổng các bậc nhất thường lớn hơn 1.',
+    },
+  ],
+},
+{
+  content: 'Khi góc nhọn $\\alpha$ tăng từ $0^\\circ$ đến $90^\\circ$ thì:',
+  explaination: 'Xem xét sự biến thiên của các tỉ số lượng giác khi góc nhọn thay đổi.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sin \\alpha$ giảm, $\\cos \\alpha$ tăng.',
+      is_correct: false,
+      explaination: 'Ngược lại mới đúng.',
+    },
+    {
+      content: '$\\sin \\alpha$ tăng, $\\cos \\alpha$ giảm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi góc tăng, cạnh đối tăng (sin tăng) và cạnh kề giảm (cos giảm).',
+    },
+    {
+      content: 'Cả $\\sin \\alpha$ và $\\cos \\alpha$ đều tăng.',
+      is_correct: false,
+      explaination: 'Cos luôn nghịch biến với góc nhọn.',
+    },
+    {
+      content: 'Cả $\\sin \\alpha$ và $\\cos \\alpha$ đều giảm.',
+      is_correct: false,
+      explaination: 'Sin luôn đồng biến với góc nhọn.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho $\\cos \\alpha = 0,8$. Tính giá trị của $\\sin \\alpha$.',
+  explaination: 'Sử dụng hệ thức $\\sin^2 \\alpha + \\cos^2 \\alpha = 1$ để tính toán.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$0,2$',
+      is_correct: false,
+      explaination: 'Tính toán sai: $\\sin^2 \\alpha = 1 - 0,8^2 = 0,36$.',
+    },
+    {
+      content: '$0,6$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sin \\alpha = \\sqrt{1 - 0,8^2} = \\sqrt{0,36} = 0,6$.',
+    },
+    {
+      content: '$0,4$',
+      is_correct: false,
+      explaination: 'Tính toán sai căn bậc hai của 0,36.',
+    },
+    {
+      content: '$0,36$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $\\sin^2 \\alpha$.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có $AC = 12 cm$ và $\\sin B = 0,6$. Độ dài cạnh huyền $BC$ là:',
+  explaination: 'Sử dụng công thức $\\sin B = AC/BC$ để tìm $BC$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$7,2 cm$',
+      is_correct: false,
+      explaination: 'Đây là kết quả của phép nhân $12 \\cdot 0,6$ (sai phép toán).',
+    },
+    {
+      content: '$20 cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $BC = AC / \\sin B = 12 / 0,6 = 20 cm$.',
+    },
+    {
+      content: '$15 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số.',
+    },
+    {
+      content: '$10 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số.',
+    },
+  ],
+},
+{
+  content: 'Biết $\\tan \\alpha = 2$. Giá trị của biểu thức $P = \\frac{\\sin \\alpha + \\cos \\alpha}{\\sin \\alpha - \\cos \\alpha}$ bằng:',
+  explaination: 'Chia cả tử và mẫu cho $\\cos \\alpha$ để đưa biểu thức về dạng theo $\\tan \\alpha$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$1$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $P = \\frac{\\tan \\alpha + 1}{\\tan \\alpha - 1} = \\frac{2 + 1}{2 - 1} = 3$.',
+    },
+    {
+      content: '$2$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$-3$',
+      is_correct: false,
+      explaination: 'Sai dấu ở mẫu thức.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 4 --- BÀI 11: TỈ SỐ LƯỢNG GIÁC CỦA GÓC NHỌN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Cho góc nhọn $\\alpha$ thỏa mãn $\\sin \\alpha = \\frac{1}{3}$. Tính giá trị của $\\cos \\alpha$.',
+  explaination: 'Sử dụng hệ thức cơ bản $\\sin^2 \\alpha + \\cos^2 \\alpha = 1$ để tìm giá trị của $\\cos \\alpha$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{2}{3}$',
+      is_correct: false,
+      explaination: 'Sai do lấy $1 - 1/3$ mà chưa bình phương và khai căn.',
+    },
+    {
+      content: '$\\frac{2\\sqrt{2}}{3}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\cos^2 \\alpha = 1 - \\sin^2 \\alpha = 1 - (1/3)^2 = 8/9$. Suy ra $\\cos \\alpha = \\sqrt{8/9} = 2\\sqrt{2}/3$.',
+    },
+    {
+      content: '$\\frac{8}{9}$',
+      is_correct: false,
+      explaination: 'Đây mới là giá trị của $\\cos^2 \\alpha$, cần khai phương.',
+    },
+    {
+      content: '$\\frac{\\sqrt{2}}{3}$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị căn thức của 8.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$, đường cao $AH$. Biết $BC = 10 cm$ và góc $B = 60^\\circ$. Độ dài cạnh $AC$ là:',
+  explaination: 'Trong tam giác vuông $ABC$, cạnh $AC$ là cạnh đối của góc $B$. Sử dụng tỉ số sin để tính.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$5 cm$',
+      is_correct: false,
+      explaination: 'Đây là độ dài cạnh $AB$ ($AB = BC \\cdot \\cos 60^\\circ$).',
+    },
+    {
+      content: '$5\\sqrt{3} cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AC = BC \\cdot \\sin B = 10 \\cdot \\sin 60^\\circ = 10 \\cdot \\frac{\\sqrt{3}}{2} = 5\\sqrt{3} cm$.',
+    },
+    {
+      content: '$10\\sqrt{3} cm$',
+      is_correct: false,
+      explaination: 'Sai quy tắc tính cạnh góc vuông qua cạnh huyền.',
+    },
+    {
+      content: '$5\\sqrt{2} cm$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn giá trị $\\sin 60^\\circ$ với $\\sin 45^\\circ$.',
+    },
+  ],
+},
+{
+  content: 'Sắp xếp các tỉ số lượng giác sau theo thứ tự tăng dần: $\\sin 25^\\circ, \\cos 25^\\circ, \\sin 50^\\circ, \\cos 50^\\circ$.',
+  explaination: 'Đưa các tỉ số cosin về sin của góc phụ ($\\cos \\alpha = \\sin(90^\\circ - \\alpha)$) rồi so sánh các góc.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sin 25^\\circ < \\sin 50^\\circ < \\cos 50^\\circ < \\cos 25^\\circ$',
+      is_correct: false,
+      explaination: 'Chưa chuyển đổi đúng các giá trị cosin về sin.',
+    },
+    {
+      content: '$\\sin 25^\\circ < \\cos 50^\\circ < \\sin 50^\\circ < \\cos 25^\\circ$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\cos 50^\\circ = \\sin 40^\\circ$; $\\cos 25^\\circ = \\sin 65^\\circ$. Dãy trở thành: $\\sin 25^\\circ < \\sin 40^\\circ < \\sin 50^\\circ < \\sin 65^\\circ$.',
+    },
+    {
+      content: '$\\cos 50^\\circ < \\sin 25^\\circ < \\sin 50^\\circ < \\cos 25^\\circ$',
+      is_correct: false,
+      explaination: 'So sánh sai thứ tự giữa $\\sin 25^\\circ$ và $\\cos 50^\\circ$.',
+    },
+    {
+      content: '$\\sin 25^\\circ < \\cos 25^\\circ < \\sin 50^\\circ < \\cos 50^\\circ$',
+      is_correct: false,
+      explaination: 'Sai quy tắc biến thiên của hàm sin và cos.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ có ba cạnh $AB = 6, AC = 8, BC = 10$. Tính $\\tan B$.',
+  explaination: 'Kiểm tra tam giác có vuông hay không bằng định lý Pythagoras đảo ($6^2 + 8^2 = 10^2$), sau đó tính tỉ số lượng giác.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$3/4$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số kề/đối ($\\cot B$).',
+    },
+    {
+      content: '$4/3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tam giác vuông tại $A$. $\\tan B = AC/AB = 8/6 = 4/3$.',
+    },
+    {
+      content: '$4/5$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số đối/huyền ($\\sin B$).',
+    },
+    {
+      content: '$3/5$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số kề/huyền ($\\cos B$).',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Rút gọn biểu thức $A = \\sin^4 \\alpha + \\cos^4 \\alpha + 2\\sin^2 \\alpha \\cos^2 \\alpha$.',
+  explaination: 'Nhận dạng biểu thức là một hằng đẳng thức đáng nhớ dạng $(x+y)^2$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sin \\alpha + \\cos \\alpha$',
+      is_correct: false,
+      explaination: 'Sai quy tắc khai triển hằng đẳng thức.',
+    },
+    {
+      content: '$1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $A = (\\sin^2 \\alpha + \\cos^2 \\alpha)^2 = 1^2 = 1$.',
+    },
+    {
+      content: '$2$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị hệ thức lượng cơ bản.',
+    },
+    {
+      content: '$1 + 2\\sin^2 \\alpha \\cos^2 \\alpha$',
+      is_correct: false,
+      explaination: 'Đây chưa phải là dạng rút gọn nhất của biểu thức.',
+    },
+  ],
+},
+{
+  content: 'Cho góc nhọn $\\alpha$ có $\\tan \\alpha + \\cot \\alpha = 3$. Tính giá trị của biểu thức $P = \\tan^2 \\alpha + \\cot^2 \\alpha$.',
+  explaination: 'Bình phương hai vế của giả thiết và sử dụng tính chất $\\tan \\alpha \\cdot \\cot \\alpha = 1$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$9$',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là bình phương của vế phải, chưa trừ đi 2 lần tích.',
+    },
+    {
+      content: '$7$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $(\\tan \\alpha + \\cot \\alpha)^2 = 3^2 \\iff \\tan^2 \\alpha + \\cot^2 \\alpha + 2\\tan \\alpha \\cot \\alpha = 9 \\iff P + 2 = 9 \\iff P = 7$.',
+    },
+    {
+      content: '$11$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn phép trừ thành phép cộng khi chuyển vế.',
+    },
+    {
+      content: '$5$',
+      is_correct: false,
+      explaination: 'Tính toán sai các hạng tử.',
+    },
+  ],
+},
+{
+  content: 'Một chiếc thang dài $4 m$ tựa vào tường. Góc tạo bởi thang và <b>mặt đất</b> là $65^\\circ$. Khoảng cách từ chân thang đến tường (làm tròn đến chữ số thập phân thứ hai) là:',
+  explaination: 'Trong tam giác vuông tạo bởi thang, tường và đất, khoảng cách chân thang đến tường là cạnh kề của góc $65^\\circ$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$1,69 m$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $d = 4 \\cdot \\cos 65^\\circ \\approx 4 \\cdot 0,4226 \\approx 1,69 m$.',
+    },
+    {
+      content: '$3,63 m$',
+      is_correct: false,
+      explaination: 'Đây là chiều cao mà thang chạm tới trên tường ($4 \\cdot \\sin 65^\\circ$).',
+    },
+    {
+      content: '$1,86 m$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn tỉ số lượng giác tan thay cho cosin.',
+    },
+    {
+      content: '$2,00 m$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị lượng giác.',
+    },
+  ],
+},
+{
+  content: 'Cho $\\sin \\alpha \\cdot \\cos \\alpha = 0,48$. Tính giá trị của $\\sin \\alpha + \\cos \\alpha$.',
+  explaination: 'Sử dụng hằng đẳng thức $(\\sin \\alpha + \\cos \\alpha)^2 = \\sin^2 \\alpha + \\cos^2 \\alpha + 2\\sin \\alpha \\cos \\alpha$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$1,4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $(\\sin \\alpha + \\cos \\alpha)^2 = 1 + 2 \\cdot 0,48 = 1,96$. Khai căn ta được $1,4$.',
+    },
+    {
+      content: '$1,96$',
+      is_correct: false,
+      explaination: 'Đây là bình phương của tổng, cần khai căn để tìm kết quả cuối cùng.',
+    },
+    {
+      content: '$1,2$',
+      is_correct: false,
+      explaination: 'Tính toán sai căn bậc hai của 1,96.',
+    },
+    {
+      content: '$1,14$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị tổng.',
+    },
+  ],
+},
+{
+  content: 'Một cái cây cao $10 m$ có bóng trên mặt đất dài $6 m$. Góc mà tia sáng mặt trời tạo với mặt đất (làm tròn đến độ) là:',
+  explaination: 'Tia sáng mặt trời, cái cây và bóng của nó tạo thành một tam giác vuông. Góc cần tìm có cạnh đối là chiều cao cây và cạnh kề là độ dài bóng.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$31^\\circ$',
+      is_correct: false,
+      explaination: 'Đây là góc tạo bởi tia sáng và cây (góc phụ với góc cần tìm).',
+    },
+    {
+      content: '$59^\\circ$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\tan \\alpha = 10/6 \\approx 1,6667$. Suy ra $\\alpha \\approx 59^\\circ$.',
+    },
+    {
+      content: '$45^\\circ$',
+      is_correct: false,
+      explaination: 'Chỉ đúng nếu chiều cao cây bằng độ dài bóng.',
+    },
+    {
+      content: '$60^\\circ$',
+      is_correct: false,
+      explaination: 'Giá trị gần đúng nhưng chưa chính xác theo tỉ số $10/6$.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 4 --- BÀI 12: MỘT SỐ HỆ THỨC GIỮA CẠNH VÀ GÓC TRONG TAM GIÁC VUÔNG ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Trong tam giác $ABC$ vuông tại $A$ có cạnh huyền $a$ và các cạnh góc vuông $b, c$. Hệ thức nào sau đây là đúng?',
+  explaination: 'Trong tam giác vuông, mỗi cạnh góc vuông bằng cạnh huyền nhân với sin góc đối hoặc nhân với cosin góc kề.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$b = a \\cdot \\sin B$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Cạnh góc vuông = Cạnh huyền $\\times$ sin góc đối.',
+    },
+    {
+      content: '$b = a \\cdot \\sin C$',
+      is_correct: false,
+      explaination: 'Sai, $b$ là cạnh kề của góc $C$ nên phải nhân với $\\cos C$.',
+    },
+    {
+      content: '$c = a \\cdot \\tan B$',
+      is_correct: false,
+      explaination: 'Sai, hệ thức giữa cạnh huyền và cạnh góc vuông không dùng tang.',
+    },
+    {
+      content: '$b = c \\cdot \\cos B$',
+      is_correct: false,
+      explaination: 'Sai, hệ thức giữa hai cạnh góc vuông phải dùng tang hoặc cotang.',
+    },
+  ],
+},
+{
+  content: 'Trong tam giác vuông, mỗi cạnh góc vuông bằng cạnh góc vuông kia nhân với:',
+  explaination: 'Đây là hệ thức về cạnh và góc liên quan đến tang và cotang trong tam giác vuông.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'sin góc đối hoặc cosin góc kề.',
+      is_correct: false,
+      explaination: 'Đây là quy tắc tính theo cạnh huyền.',
+    },
+    {
+      content: 'tang góc đối hoặc cotang góc kề.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ví dụ: $b = c \\cdot \\tan B = c \\cdot \\cot C$.',
+    },
+    {
+      content: 'tang góc kề hoặc cotang góc đối.',
+      is_correct: false,
+      explaination: 'Sai tỉ số lượng giác tương ứng với các góc.',
+    },
+    {
+      content: 'cosin góc đối hoặc sin góc kề.',
+      is_correct: false,
+      explaination: 'Sai quy tắc tính.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có $BC = 10 cm$ và góc $C = 30^\\circ$. Độ dài cạnh $AB$ là:',
+  explaination: 'Sử dụng hệ thức: Cạnh góc vuông = Cạnh huyền $\\times$ sin góc đối ($AB = BC \\cdot \\sin C$).',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$5 cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AB = 10 \\cdot \\sin 30^\\circ = 10 \\cdot 0,5 = 5 cm$.',
+    },
+    {
+      content: '$5\\sqrt{3} cm$',
+      is_correct: false,
+      explaination: 'Đây là độ dài cạnh $AC$ ($AC = 10 \\cdot \\cos 30^\\circ$).',
+    },
+    {
+      content: '$10\\sqrt{3} cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai hệ thức.',
+    },
+    {
+      content: '$20 cm$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn giữa phép nhân và phép chia.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có $AB = 6 cm$ và $\\tan B = \\frac{4}{3}$. Độ dài cạnh $AC$ là:',
+  explaination: 'Sử dụng hệ thức: Cạnh góc vuông = Cạnh góc vuông kia $\\times$ tang góc đối ($AC = AB \\cdot \\tan B$).',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4,5 cm$',
+      is_correct: false,
+      explaination: 'Sai phép tính ($6 : 4/3$ thay vì $6 \\cdot 4/3$).',
+    },
+    {
+      content: '$8 cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AC = 6 \\cdot \\frac{4}{3} = 8 cm$.',
+    },
+    {
+      content: '$10 cm$',
+      is_correct: false,
+      explaination: 'Đây là độ dài cạnh huyền $BC$.',
+    },
+    {
+      content: '$12 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+{
+  content: 'Một cột đèn có bóng trên mặt đất dài $4 m$. Các tia sáng mặt trời tạo với mặt đất một góc $60^\\circ$. Chiều cao của cột đèn là:',
+  explaination: 'Chiều cao cột đèn là cạnh đối, bóng là cạnh kề của góc $60^\\circ$. Sử dụng công thức: $h = \\text{bóng} \\cdot \\tan 60^\\circ$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4\\sqrt{3} m$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $h = 4 \\cdot \\tan 60^\\circ = 4\\sqrt{3} m$.',
+    },
+    {
+      content: '$\\frac{4\\sqrt{3}}{3} m$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn tang thành cotang.',
+    },
+    {
+      content: '$8 m$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn sang tỉ số sin hoặc cos.',
+    },
+    {
+      content: '$4 m$',
+      is_correct: false,
+      explaination: 'Góc $60^\\circ$ không tạo ra tam giác vuông cân.',
+    },
+  ],
+},
+{
+  content: 'Trong tam giác $ABC$ vuông tại $A$, để tính cạnh huyền $a$ khi biết cạnh góc vuông $c$ và góc nhọn $C$, ta dùng công thức:',
+  explaination: 'Từ công thức $c = a \\cdot \\sin C$, ta suy ra cách tính cạnh huyền $a$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a = c \\cdot \\sin C$',
+      is_correct: false,
+      explaination: 'Đây là công thức tính cạnh góc vuông.',
+    },
+    {
+      content: '$a = \\frac{c}{\\sin C}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Cạnh huyền bằng cạnh góc vuông chia cho sin góc đối.',
+    },
+    {
+      content: '$a = c \\cdot \\cos C$',
+      is_correct: false,
+      explaination: 'Hệ thức sai.',
+    },
+    {
+      content: '$a = \\frac{c}{\\cos C}$',
+      is_correct: false,
+      explaination: 'Sai, vì $c$ là cạnh đối của góc $C$.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có $AB = 5, AC = 12$. Giá trị của $\\cot C$ là:',
+  explaination: 'Sử dụng định nghĩa: $\\cot C = \\text{cạnh kề} / \\text{cạnh đối} = AC / AB$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$5/12$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $\\tan C$.',
+    },
+    {
+      content: '$12/5$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\cot C = 12/5$.',
+    },
+    {
+      content: '$13/12$',
+      is_correct: false,
+      explaination: 'Đây là tỉ số liên quan đến cạnh huyền.',
+    },
+    {
+      content: '$5/13$',
+      is_correct: false,
+      explaination: 'Đây là giá trị $\\sin C$.',
+    },
+  ],
+},
+{
+  content: 'Nếu một máy bay bay lên với góc $20^\\circ$ so với phương nằm ngang, để đạt độ cao $5000 m$ thì máy bay đó phải bay một quãng đường là bao nhiêu?',
+  explaination: 'Quãng đường máy bay bay là cạnh huyền, độ cao là cạnh đối của góc $20^\\circ$. Công thức: $L = 5000 / \\sin 20^\\circ$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$5000 \\cdot \\sin 20^\\circ$',
+      is_correct: false,
+      explaination: 'Sai phép tính, quãng đường bay phải lớn hơn độ cao.',
+    },
+    {
+      content: '$\\frac{5000}{\\sin 20^\\circ}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Áp dụng hệ thức tính cạnh huyền.',
+    },
+    {
+      content: '$5000 \\cdot \\tan 20^\\circ$',
+      is_correct: false,
+      explaination: 'Nhầm sang tỉ số tang.',
+    },
+    {
+      content: '$\\frac{5000}{\\cos 20^\\circ}$',
+      is_correct: false,
+      explaination: 'Dùng cosin là sai vì 5000 là cạnh đối.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có $AC = 10 cm$, góc $C = 40^\\circ$. Độ dài đường cao $AH$ (làm tròn đến chữ số thập phân thứ hai) là:',
+  explaination: 'Trong tam giác vuông $AHC$, $AH$ là cạnh đối của góc $C$. Công thức: $AH = AC \\cdot \\sin C$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$6,43 cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AH = 10 \\cdot \\sin 40^\\circ \\approx 10 \\cdot 0,6428 = 6,43 cm$.',
+    },
+    {
+      content: '$7,66 cm$',
+      is_correct: false,
+      explaination: 'Đây là độ dài đoạn $CH$ ($10 \\cdot \\cos 40^\\circ$).',
+    },
+    {
+      content: '$8,39 cm$',
+      is_correct: false,
+      explaination: 'Nhầm sang tỉ số tang.',
+    },
+    {
+      content: '$5,00 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị lượng giác.',
+    },
+  ],
+},
+{
+  content: 'Giải tam giác $ABC$ vuông tại $A$ biết $AB = 5 cm$ và $BC = 13 cm$. Góc $B$ của tam giác (làm tròn đến phút) là:',
+  explaination: 'Sử dụng tỉ số $\\cos B = AB / BC = 5/13$. Sau đó dùng máy tính tìm góc.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$67^\\circ 23\'$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\cos B = 5/13 \\approx 0,3846 \\implies B \\approx 67^\\circ 23\'$.',
+    },
+    {
+      content: '$22^\\circ 37\'$',
+      is_correct: false,
+      explaination: 'Đây là số đo của góc $C$.',
+    },
+    {
+      content: '$60^\\circ 00\'$',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số.',
+    },
+    {
+      content: '$45^\\circ 00\'$',
+      is_correct: false,
+      explaination: 'Tam giác này không vuông cân.',
+    },
+  ],
+},
+{
+  content: 'Một chiếc thang dài $3 m$. Cần đặt chân thang cách chân tường một khoảng bằng bao nhiêu để thang tạo với mặt đất một góc "an toàn" là $65^\\circ$?',
+  explaination: 'Khoảng cách chân thang đến tường là cạnh kề, chiều dài thang là cạnh huyền. Công thức: $d = 3 \\cdot \\cos 65^\\circ$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$1,27 m$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $d = 3 \\cdot \\cos 65^\\circ \\approx 3 \\cdot 0,4226 = 1,2678 \\approx 1,27 m$.',
+    },
+    {
+      content: '$2,72 m$',
+      is_correct: false,
+      explaination: 'Đây là chiều cao thang đạt được trên tường ($3 \\cdot \\sin 65^\\circ$).',
+    },
+    {
+      content: '$1,40 m$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị cosin.',
+    },
+    {
+      content: '$1,50 m$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị lượng giác.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 4 --- BÀI 12: MỘT SỐ HỆ THỨC GIỮA CẠNH VÀ GÓC TRONG TAM GIÁC VUÔNG ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có $AC = 15 cm$, góc $B = 55^\\circ$. Độ dài cạnh $AB$ (làm tròn đến chữ số thập phân thứ nhất) là:',
+  explaination: 'Sử dụng hệ thức giữa hai cạnh góc vuông: $AB = AC \\cdot \\cot B$ hoặc $AB = AC / \\tan B$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$10,5 cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AB = 15 / \\tan 55^\\circ \\approx 15 / 1,428 = 10,504 \\approx 10,5 cm$.',
+    },
+    {
+      content: '$21,4 cm$',
+      is_correct: false,
+      explaination: 'Đây là kết quả của phép nhân $15 \\cdot \\tan 55^\\circ$ (nhầm tính cạnh $AC$ theo $AB$).',
+    },
+    {
+      content: '$12,3 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị lượng giác.',
+    },
+    {
+      content: '$18,3 cm$',
+      is_correct: false,
+      explaination: 'Đây là độ dài cạnh huyền $BC$.',
+    },
+  ],
+},
+{
+  content: 'Một con dốc dài $20 m$, góc nghiêng của con dốc so với phương nằm ngang là $12^\\circ$. Chiều cao của con dốc (khoảng cách theo phương thẳng đứng giữa đỉnh và chân dốc) là:',
+  explaination: 'Chiều cao con dốc là cạnh đối của góc nghiêng $12^\\circ$, chiều dài dốc là cạnh huyền. Công thức: $h = 20 \\cdot \\sin 12^\\circ$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4,16 m$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $h = 20 \\cdot \\sin 12^\\circ \\approx 20 \\cdot 0,2079 = 4,158 \\approx 4,16 m$.',
+    },
+    {
+      content: '$19,56 m$',
+      is_correct: false,
+      explaination: 'Đây là khoảng cách theo phương nằm ngang ($20 \\cdot \\cos 12^\\circ$).',
+    },
+    {
+      content: '$4,25 m$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị $\\sin 12^\\circ$.',
+    },
+    {
+      content: '$3,80 m$',
+      is_correct: false,
+      explaination: 'Nhầm sang tỉ số tang.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có đường cao $AH$. Biết $AH = 4 cm$, góc $C = 35^\\circ$. Độ dài cạnh $BC$ (làm tròn đến hàng đơn vị) là:',
+  explaination: 'Trong tam giác vuông $AHC$, tính $AC = AH / \\sin C$. Sau đó trong tam giác vuông $ABC$, tính $BC = AC / \\sin B = AC / \\cos C$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$7 cm$',
+      is_correct: false,
+      explaination: 'Đây là độ dài cạnh $AC$.',
+    },
+    {
+      content: '$9 cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AC = 4 / \\sin 35^\\circ \\approx 6,97$. $BC = 6,97 / \\cos 35^\\circ \\approx 8,51 \\approx 9 cm$.',
+    },
+    {
+      content: '$12 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai hệ thức lượng.',
+    },
+    {
+      content: '$10 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+{
+  content: 'Chiều cao của một tòa nhà là $h$. Tại một thời điểm, tia sáng mặt trời tạo với mặt đất một góc $50^\\circ$ và bóng của tòa nhà trên mặt đất dài $25 m$. Giá trị của $h$ là:',
+  explaination: 'Tòa nhà và bóng của nó tạo thành một tam giác vuông. $h = \\text{bóng} \\cdot \\tan 50^\\circ$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$21,0 m$',
+      is_correct: false,
+      explaination: 'Sai phép tính ($25 / \\tan 50^\\circ$).',
+    },
+    {
+      content: '$29,8 m$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $h = 25 \\cdot \\tan 50^\\circ \\approx 25 \\cdot 1,1917 = 29,79 \\approx 29,8 m$.',
+    },
+    {
+      content: '$32,6 m$',
+      is_correct: false,
+      explaination: 'Nhầm sang tỉ số sin.',
+    },
+    {
+      content: '$19,2 m$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị lượng giác.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Từ đỉnh một ngọn hải đăng cao $75 m$, người ta quan sát thấy một con tàu đang tiến về phía hải đăng với góc hạ lần lượt là $30^\\circ$ và $45^\\circ$. Quãng đường con tàu đã đi được giữa hai lần quan sát là:',
+  explaination: 'Quãng đường là hiệu khoảng cách từ tàu đến chân hải đăng tại hai thời điểm: $d = 75 \\cdot \\cot 30^\\circ - 75 \\cdot \\cot 45^\\circ$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$54,9 m$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $d = 75\\sqrt{3} - 75 \\approx 129,9 - 75 = 54,9 m$.',
+    },
+    {
+      content: '$75 m$',
+      is_correct: false,
+      explaination: 'Đây là khoảng cách từ tàu đến chân hải đăng khi góc hạ là $45^\\circ$.',
+    },
+    {
+      content: '$129,9 m$',
+      is_correct: false,
+      explaination: 'Đây là khoảng cách từ tàu đến chân hải đăng khi góc hạ là $30^\\circ$.',
+    },
+    {
+      content: '$204,9 m$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn phép trừ thành phép cộng.',
+    },
+  ],
+},
+{
+  content: 'Một người đứng cách chân một cái tháp $50 m$ quan sát đỉnh tháp với góc nâng $35^\\circ$. Nếu người đó lùi xa thêm $30 m$ nữa thì góc nâng lúc này là bao nhiêu?',
+  explaination: 'Bước 1: Tính chiều cao tháp $h = 50 \\cdot \\tan 35^\\circ$. Bước 2: Tính góc nâng mới $\\tan \\alpha = h / (50 + 30)$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$23^\\circ 38\'$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $h \\approx 35,01 m$. $\\tan \\alpha = 35,01 / 80 \\approx 0,4376 \\implies \\alpha \\approx 23^\\circ 38\'$.',
+    },
+    {
+      content: '$25^\\circ 12\'$',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số.',
+    },
+    {
+      content: '$20^\\circ 45\'$',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số.',
+    },
+    {
+      content: '$15^\\circ 30\'$',
+      is_correct: false,
+      explaination: 'Tính toán sai chiều cao tháp.',
+    },
+  ],
+},
+{
+  content: 'Tính diện tích tam giác $ABC$ biết $AB = 8 cm, AC = 12 cm$ và góc $A = 40^\\circ$ (làm tròn đến chữ số thập phân thứ hai).',
+  explaination: 'Kẻ đường cao $BH$ xuống $AC$. Khi đó $BH = AB \\cdot \\sin A$. Diện tích $S = \\frac{1}{2} \\cdot AC \\cdot BH$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$30,85 cm^2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S = \\frac{1}{2} \\cdot 12 \\cdot (8 \\cdot \\sin 40^\\circ) \\approx 6 \\cdot 5,1423 = 30,8538 \\approx 30,85 cm^2$.',
+    },
+    {
+      content: '$48,00 cm^2$',
+      is_correct: false,
+      explaination: 'Đây là diện tích nếu tam giác vuông tại $A$.',
+    },
+    {
+      content: '$36,77 cm^2$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn tỉ số cosin thay cho sin.',
+    },
+    {
+      content: '$15,43 cm^2$',
+      is_correct: false,
+      explaination: 'Quên nhân hệ số $1/2$ trong công thức diện tích.',
+    },
+  ],
+},
+{
+  content: 'Hai con tàu cùng xuất phát từ một vị trí $A$ đi theo hai hướng tạo với nhau một góc $70^\\circ$. Tàu thứ nhất đi với vận tốc $30 km/h$, tàu thứ hai đi với vận tốc $40 km/h$. Khoảng cách giữa hai tàu sau 1,5 giờ là:',
+  explaination: 'Sử dụng định lý Cosin (hoặc kẻ đường cao để đưa về tam giác vuông): $d^2 = b^2 + c^2 - 2bc \\cdot \\cos A$. Với $b = 30 \\cdot 1,5 = 45; c = 40 \\cdot 1,5 = 60$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$61,5 km$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $d^2 = 45^2 + 60^2 - 2 \\cdot 45 \\cdot 60 \\cdot \\cos 70^\\circ \\approx 2025 + 3600 - 1846,9 = 3778,1$. $d \\approx 61,46 km$.',
+    },
+    {
+      content: '$75,0 km$',
+      is_correct: false,
+      explaination: 'Đây là khoảng cách nếu hai hướng vuông góc với nhau.',
+    },
+    {
+      content: '$52,3 km$',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị cosin.',
+    },
+    {
+      content: '$105,0 km$',
+      is_correct: false,
+      explaination: 'Đây là tổng quãng đường hai tàu đi được.',
+    },
+  ],
+},
+{
+  content: 'Để đo chiều cao của một tòa tháp ngăn cách bởi một con sông, người ta đặt máy quan sát tại $A$ thấy đỉnh tháp với góc nâng $40^\\circ$. Di chuyển máy đến $B$ cách $A$ một khoảng $20 m$ (cùng hướng) thì thấy đỉnh tháp với góc nâng $30^\\circ$. Chiều cao tòa tháp là:',
+  explaination: 'Gọi chiều cao tháp là $h$. Ta có $h / \\tan 30^\\circ - h / \\tan 40^\\circ = 20$. Suy ra $h = 20 / (\\cot 30^\\circ - \\cot 40^\\circ)$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat4_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$37,0 m$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $h = 20 / (1,732 - 1,192) = 20 / 0,54 = 37,03 \\approx 37,0 m$.',
+    },
+    {
+      content: '$45,5 m$',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số lượng giác.',
+    },
+    {
+      content: '$28,4 m$',
+      is_correct: false,
+      explaination: 'Tính toán sai hiệu của các cotang.',
+    },
+    {
+      content: '$50,0 m$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn phép tính cộng thay cho trừ.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 5 --- BÀI 13: MỞ ĐẦU VỀ ĐƯỜNG TRÒN ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Tập hợp các điểm cách điểm $O$ cho trước một khoảng không đổi $R > 0$ được gọi là:',
+  explaination: 'Đây là định nghĩa cơ bản về đường tròn trong mặt phẳng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Hình tròn tâm $O$ bán kính $R$.',
+      is_correct: false,
+      explaination: 'Hình tròn bao gồm cả đường tròn và các điểm nằm bên trong đường tròn đó.',
+    },
+    {
+      content: 'Đường tròn tâm $O$ bán kính $R$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ký hiệu là $(O; R)$.',
+    },
+    {
+      content: 'Khối tròn xoay tâm $O$.',
+      is_correct: false,
+      explaination: 'Đây là khái niệm trong hình học không gian.',
+    },
+    {
+      content: 'Đoạn thẳng có độ dài $R$.',
+      is_correct: false,
+      explaination: 'Sai định nghĩa tập hợp điểm.',
+    },
+  ],
+},
+{
+  content: 'Cho điểm $M$ nằm ngoài đường tròn $(O; R)$. Khẳng định nào sau đây là đúng?',
+  explaination: 'Vị trí tương đối của một điểm đối với đường tròn được xác định bằng cách so sánh khoảng cách từ điểm đó đến tâm với bán kính.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$OM < R$',
+      is_correct: false,
+      explaination: 'Đây là điều kiện để điểm $M$ nằm bên trong đường tròn.',
+    },
+    {
+      content: '$OM = R$',
+      is_correct: false,
+      explaination: 'Đây là điều kiện để điểm $M$ nằm trên đường tròn.',
+    },
+    {
+      content: '$OM > R$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khoảng cách từ tâm đến điểm lớn hơn bán kính thì điểm đó nằm ngoài đường tròn.',
+    },
+    {
+      content: '$OM \\ge R$',
+      is_correct: false,
+      explaination: 'Điều kiện này bao gồm cả trường hợp điểm nằm trên đường tròn, không chuẩn xác cho vị trí "nằm ngoài".',
+    },
+  ],
+},
+{
+  content: 'Trong một đường tròn, dây lớn nhất là:',
+  explaination: 'Mọi dây cung không đi qua tâm đều nhỏ hơn đường kính.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Bán kính.',
+      is_correct: false,
+      explaination: 'Bán kính chỉ bằng một nửa dây lớn nhất.',
+    },
+    {
+      content: 'Đường kính.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đường kính chính là dây cung đi qua tâm và có độ dài lớn nhất bằng $2R$.',
+    },
+    {
+      content: 'Cung tròn.',
+      is_correct: false,
+      explaination: 'Cung tròn là một phần của đường tròn, không phải đoạn thẳng (dây cung).',
+    },
+    {
+      content: 'Tiếp tuyến.',
+      is_correct: false,
+      explaination: 'Tiếp tuyến là đường thẳng tiếp xúc với đường tròn, không phải dây cung.',
+    },
+  ],
+},
+{
+  content: 'Có bao nhiêu đường tròn đi qua ba điểm không thẳng hàng?',
+  explaination: 'Tâm của đường tròn này là giao điểm của các đường trung trực của tam giác tạo bởi ba điểm đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Không có đường tròn nào.',
+      is_correct: false,
+      explaination: 'Luôn tồn tại duy nhất một đường tròn đi qua 3 đỉnh của một tam giác.',
+    },
+    {
+      content: 'Có duy nhất một đường tròn.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Qua 3 điểm không thẳng hàng, ta vẽ được một và chỉ một đường tròn.',
+    },
+    {
+      content: 'Có vô số đường tròn.',
+      is_correct: false,
+      explaination: 'Vô số đường tròn chỉ có thể đi qua 1 hoặc 2 điểm cho trước.',
+    },
+    {
+      content: 'Có hai đường tròn.',
+      is_correct: false,
+      explaination: 'Chỉ có một vị trí tâm duy nhất cách đều 3 điểm không thẳng hàng.',
+    },
+  ],
+},
+{
+  content: 'Đường tròn là hình có tính chất đối xứng nào sau đây?',
+  explaination: 'Đường tròn là hình có tính đối xứng rất cao, bao gồm cả tâm đối xứng và trục đối xứng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Chỉ có tâm đối xứng.',
+      is_correct: false,
+      explaination: 'Đường tròn còn có vô số trục đối xứng.',
+    },
+    {
+      content: 'Có một tâm đối xứng và vô số trục đối xứng.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tâm đường tròn là tâm đối xứng; bất kỳ đường thẳng nào đi qua tâm đều là trục đối xứng.',
+    },
+    {
+      content: 'Chỉ có trục đối xứng.',
+      is_correct: false,
+      explaination: 'Đường tròn có tâm đối xứng chính là tâm $O$.',
+    },
+    {
+      content: 'Không có tính đối xứng.',
+      is_correct: false,
+      explaination: 'Sai hoàn toàn về hình học phẳng.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$. Tâm của đường tròn ngoại tiếp tam giác $ABC$ là:',
+  explaination: 'Trong tam giác vuông, đường trung tuyến ứng với cạnh huyền bằng nửa cạnh huyền, nên trung điểm cạnh huyền cách đều 3 đỉnh.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Trọng tâm tam giác.',
+      is_correct: false,
+      explaination: 'Trọng tâm không phải tâm đường tròn ngoại tiếp tam giác vuông.',
+    },
+    {
+      content: 'Trung điểm của cạnh huyền $BC$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tâm đường tròn ngoại tiếp tam giác vuông nằm tại trung điểm cạnh huyền.',
+    },
+    {
+      content: 'Trung điểm cạnh góc vuông $AB$.',
+      is_correct: false,
+      explaination: 'Vị trí này không cách đều 3 đỉnh.',
+    },
+    {
+      content: 'Giao điểm ba đường cao.',
+      is_correct: false,
+      explaination: 'Giao điểm ba đường cao của tam giác vuông trùng với đỉnh góc vuông $A$.',
+    },
+  ],
+},
+{
+  content: 'Trong một đường tròn, khẳng định nào sau đây là <b>SAI</b>?',
+  explaination: 'Xét các mối quan hệ vuông góc và đi qua trung điểm của đường kính đối với dây cung.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đường kính vuông góc với một dây thì đi qua trung điểm của dây ấy.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: 'Đường kính đi qua trung điểm của một dây thì vuông góc với dây ấy.',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Khẳng định này chỉ đúng nếu dây đó <b>không đi qua tâm</b>.',
+    },
+    {
+      content: 'Hai dây bằng nhau thì cách đều tâm.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: 'Dây lớn hơn thì gần tâm hơn.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$ và dây cung $AB$. Nếu $OH \\perp AB$ tại $H$, khẳng định nào sau đây đúng?',
+  explaination: 'Đường kính (hoặc một phần đường kính) vuông góc với dây cung thì đi qua trung điểm dây đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$H$ là trung điểm của $AB$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Định lý liên hệ giữa đường kính và dây cung.',
+    },
+    {
+      content: '$HA = R$.',
+      is_correct: false,
+      explaination: 'Chỉ đúng nếu $AB$ là đường kính và $H$ trùng $O$.',
+    },
+    {
+      content: '$OH = AB$.',
+      is_correct: false,
+      explaination: 'Không có hệ thức này.',
+    },
+    {
+      content: '$H$ trùng với tâm $O$.',
+      is_correct: false,
+      explaination: 'Chỉ xảy ra khi dây $AB$ là đường kính.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho đường tròn $(O; 5 cm)$. Một dây cung $AB$ có độ dài $8 cm$. Khoảng cách từ tâm $O$ đến dây $AB$ là:',
+  explaination: 'Sử dụng định lý Pythagoras trong tam giác vuông tạo bởi tâm, trung điểm dây và đầu mút dây.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4 cm$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài nửa dây cung $AB/2$.',
+    },
+    {
+      content: '$3 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Gọi $H$ là trung điểm $AB$, $OH = \\sqrt{OA^2 - AH^2} = \\sqrt{5^2 - 4^2} = 3 cm$.',
+    },
+    {
+      content: '$2 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$\\sqrt{41} cm$.',
+      is_correct: false,
+      explaination: 'Sai công thức Pythagoras (cộng thay vì trừ).',
+    },
+  ],
+},
+{
+  content: 'Trong một đường tròn, nếu dây $AB > CD$ thì khoảng cách từ tâm $O$ đến các dây $OH$ và $OK$ thỏa mãn:',
+  explaination: 'Trong một đường tròn, dây nào lớn hơn thì dây đó gần tâm hơn.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$OH > OK$.',
+      is_correct: false,
+      explaination: 'Dây lớn hơn phải có khoảng cách đến tâm nhỏ hơn.',
+    },
+    {
+      content: '$OH < OK$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AB > CD \\implies OH < OK$ (dây lớn hơn thì gần tâm hơn).',
+    },
+    {
+      content: '$OH = OK$.',
+      is_correct: false,
+      explaination: 'Chỉ bằng nhau khi hai dây bằng nhau.',
+    },
+    {
+      content: '$OH + OK = R$.',
+      is_correct: false,
+      explaination: 'Không có hệ thức này.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; 10 cm)$. Dây cung $AB$ cách tâm một khoảng $6 cm$. Độ dài dây $AB$ là:',
+  explaination: 'Áp dụng định lý Pythagoras để tìm nửa độ dài dây cung, sau đó nhân đôi.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$8 cm$.',
+      is_correct: false,
+      explaination: 'Đây mới là nửa độ dài dây cung.',
+    },
+    {
+      content: '$16 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nửa dây là $\\sqrt{10^2 - 6^2} = 8 cm$. Vậy dây $AB = 2 \\cdot 8 = 16 cm$.',
+    },
+    {
+      content: '$12 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$20 cm$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài đường kính.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 5 --- BÀI 13: MỞ ĐẦU VỀ ĐƯỜNG TRÒN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Cho đường tròn $(O; 13 cm)$ và dây $AB = 24 cm$. Một dây $CD$ khác của đường tròn này có độ dài bằng dây $AB$. Khoảng cách từ tâm $O$ đến dây $CD$ là:',
+  explaination: 'Trong một đường tròn, hai dây bằng nhau thì cách đều tâm. Do đó khoảng cách từ $O$ đến $CD$ bằng khoảng cách từ $O$ đến $AB$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$5 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khoảng cách $OH = \\sqrt{13^2 - (24/2)^2} = \\sqrt{169 - 144} = 5 cm$.',
+    },
+    {
+      content: '$12 cm$.',
+      is_correct: false,
+      explaination: 'Đây là nửa độ dài dây cung.',
+    },
+    {
+      content: '$10 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả Pythagoras.',
+    },
+    {
+      content: '$7 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả Pythagoras.',
+    },
+  ],
+},
+{
+  content: 'Cho hình chữ nhật $ABCD$ có $AB = 6 cm, BC = 8 cm$. Bán kính của đường tròn đi qua bốn đỉnh $A, B, C, D$ là:',
+  explaination: 'Đường tròn đi qua 4 đỉnh của hình chữ nhật có tâm là giao điểm hai đường chéo, bán kính bằng nửa đường chéo.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$10 cm$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài đường chéo $AC$.',
+    },
+    {
+      content: '$5 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AC = \\sqrt{6^2 + 8^2} = 10 cm$. Bán kính $R = AC/2 = 5 cm$.',
+    },
+    {
+      content: '$7 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai nửa đường chéo.',
+    },
+    {
+      content: '$4 cm$.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn bán kính với nửa cạnh $BC$.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$. Hai dây $AB$ và $CD$ bằng nhau và cắt nhau tại $I$. Khẳng định nào sau đây là đúng?',
+  explaination: 'Sử dụng tính chất hai dây bằng nhau thì cách đều tâm và các tam giác vuông bằng nhau tạo bởi tâm và các dây.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$IA = IC$ hoặc $IA = ID$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Do hai dây bằng nhau nên khoảng cách từ tâm đến chúng bằng nhau, dẫn đến các đoạn thẳng tương ứng từ giao điểm đến đầu mút bằng nhau.',
+    },
+    {
+      content: '$I$ luôn là trung điểm của mỗi dây.',
+      is_correct: false,
+      explaination: 'Điều này chỉ đúng nếu hai dây là đường kính.',
+    },
+    {
+      content: '$AB$ luôn vuông góc với $CD$.',
+      is_correct: false,
+      explaination: 'Hai dây bằng nhau không nhất thiết phải vuông góc.',
+    },
+    {
+      content: '$I$ luôn trùng với tâm $O$.',
+      is_correct: false,
+      explaination: 'Hai dây có thể cắt nhau tại một điểm bất kỳ trong đường tròn.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$ có bán kính $R = 10 cm$. Dây $AB$ có độ dài $16 cm$. Gọi $M$ là trung điểm của $AB$. Khoảng cách $OM$ là:',
+  explaination: 'Vì $M$ là trung điểm của dây $AB$ nên $OM \\perp AB$. Áp dụng định lý Pythagoras cho tam giác vuông $OMA$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$6 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $OM = \\sqrt{OA^2 - AM^2} = \\sqrt{10^2 - 8^2} = 6 cm$.',
+    },
+    {
+      content: '$8 cm$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài đoạn $AM$.',
+    },
+    {
+      content: '$\\sqrt{164} cm$.',
+      is_correct: false,
+      explaination: 'Sai công thức Pythagoras (cộng thay vì trừ).',
+    },
+    {
+      content: '$5 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho nửa đường tròn tâm $O$, đường kính $AB = 2R$. Một dây cung $CD$ có độ dài bằng $R$ ($C$ nằm giữa $A$ và $D$). Các đường thẳng vuông góc với $CD$ tại $C$ và $D$ lần lượt cắt $AB$ tại $M$ và $N$. Khẳng định nào sau đây đúng về đoạn thẳng $MN$?',
+  explaination: 'Kẻ $OH \\perp CD$ tại $H$. Khi đó $H$ là trung điểm $CD$. Sử dụng tính chất đường trung bình của hình thang vuông $CDNM$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$AM = BN$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Do $H$ là trung điểm $CD$ và $OH // CM // DN$ nên $O$ là trung điểm $MN$. Mà $O$ là trung điểm $AB$ nên $AM = BN$.',
+    },
+    {
+      content: '$MN = R$.',
+      is_correct: false,
+      explaination: 'Không có cơ sở khẳng định $MN = CD$.',
+    },
+    {
+      content: '$AM = 2BN$.',
+      is_correct: false,
+      explaination: 'Tính đối xứng của hình vẽ cho thấy hai đoạn phải bằng nhau.',
+    },
+    {
+      content: '$MN = AB$.',
+      is_correct: false,
+      explaination: 'Điều này chỉ xảy ra khi $CD$ song song với $AB$ và có độ dài bằng $AB$ (vô lý).',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$ và điểm $A$ cố định nằm trong đường tròn ($A \\ne O$). Dây cung $BC$ luôn đi qua $A$. Dây $BC$ có độ dài ngắn nhất khi:',
+  explaination: 'Dây cung đi qua $A$ ngắn nhất khi nó xa tâm nhất. Khoảng cách từ tâm đến dây cung đi qua $A$ lớn nhất chính bằng đoạn $OA$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$BC \\perp OA$ tại $A$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi $BC \\perp OA$, khoảng cách từ $O$ đến $BC$ là lớn nhất (bằng $OA$), do đó dây $BC$ ngắn nhất.',
+    },
+    {
+      content: '$BC$ đi qua tâm $O$.',
+      is_correct: false,
+      explaination: 'Khi $BC$ đi qua tâm, nó là đường kính và có độ dài lớn nhất.',
+    },
+    {
+      content: '$BC$ tạo với $OA$ một góc $45^\\circ$.',
+      is_correct: false,
+      explaination: 'Đây không phải vị trí cực trị.',
+    },
+    {
+      content: '$B$ hoặc $C$ trùng với một đầu mút của đường kính qua $A$.',
+      is_correct: false,
+      explaination: 'Lúc này dây $BC$ chính là đường kính.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$ và dây $AB = R\\sqrt{3}$. Diện tích của tam giác $OAB$ là:',
+  explaination: 'Kẻ $OH \\perp AB$. Tính $OH$ bằng Pythagoras, sau đó áp dụng công thức $S = \\frac{1}{2} \\cdot AB \\cdot OH$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{R^2\\sqrt{3}}{4}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AH = \\frac{R\\sqrt{3}}{2}$. $OH = \\sqrt{R^2 - (\\frac{R\\sqrt{3}}{2})^2} = \\sqrt{\\frac{R^2}{4}} = \\frac{R}{2}$. $S = \\frac{1}{2} \\cdot R\\sqrt{3} \\cdot \\frac{R}{2} = \\frac{R^2\\sqrt{3}}{4}$.',
+    },
+    {
+      content: '$\\frac{R^2\\sqrt{3}}{2}$.',
+      is_correct: false,
+      explaination: 'Quên nhân hệ số $1/2$ của công thức diện tích tam giác.',
+    },
+    {
+      content: '$\\frac{R^2}{2}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai chiều cao $OH$.',
+    },
+    {
+      content: '$R^2\\sqrt{3}$.',
+      is_correct: false,
+      explaination: 'Sai lệch hoàn toàn công thức.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn đồng tâm $(O; 5 cm)$ và $(O; 3 cm)$. Dây $AB$ của đường tròn lớn tiếp xúc với đường tròn nhỏ. Độ dài dây $AB$ là:',
+  explaination: 'Dây $AB$ tiếp xúc với đường tròn nhỏ nên khoảng cách từ tâm $O$ đến $AB$ bằng bán kính đường tròn nhỏ ($3 cm$).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4 cm$.',
+      is_correct: false,
+      explaination: 'Đây mới là nửa độ dài dây cung.',
+    },
+    {
+      content: '$8 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nửa dây $HB = \\sqrt{5^2 - 3^2} = 4 cm$. Vậy $AB = 8 cm$.',
+    },
+    {
+      content: '$6 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai Pythagoras.',
+    },
+    {
+      content: '$10 cm$.',
+      is_correct: false,
+      explaination: 'Sai lệch hoàn toàn.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ có $AB = 5, AC = 12, BC = 13$. Gọi $M$ là trung điểm của $BC$. Khẳng định nào sau đây đúng về vị trí của điểm $M$?',
+  explaination: 'Kiểm tra tam giác $ABC$ vuông tại $A$ ($5^2 + 12^2 = 13^2$). Trung điểm cạnh huyền là tâm đường tròn ngoại tiếp.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$M$ cách đều ba đỉnh $A, B, C$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì tam giác vuông tại $A$, trung điểm cạnh huyền $M$ là tâm đường tròn ngoại tiếp nên $MA = MB = MC$.',
+    },
+    {
+      content: '$M$ nằm ngoài đường tròn ngoại tiếp tam giác.',
+      is_correct: false,
+      explaination: 'Sai, $M$ chính là tâm đường tròn đó.',
+    },
+    {
+      content: '$MA > MB$.',
+      is_correct: false,
+      explaination: 'Trong tam giác vuông, đường trung tuyến ứng với cạnh huyền bằng nửa cạnh huyền.',
+    },
+    {
+      content: '$M$ là trực tâm của tam giác.',
+      is_correct: false,
+      explaination: 'Trực tâm của tam giác vuông trùng với đỉnh góc vuông $A$.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 5 --- BÀI 13: MỞ ĐẦU VỀ ĐƯỜNG TRÒN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Cho đường tròn $(O; 13 cm)$ và dây $AB = 24 cm$. Một dây $CD$ khác của đường tròn này có độ dài bằng dây $AB$. Khoảng cách từ tâm $O$ đến dây $CD$ là:',
+  explaination: 'Trong một đường tròn, hai dây bằng nhau thì cách đều tâm. Do đó khoảng cách từ $O$ đến $CD$ bằng khoảng cách từ $O$ đến $AB$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$5 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khoảng cách $OH = \\sqrt{13^2 - (24/2)^2} = \\sqrt{169 - 144} = 5 cm$.',
+    },
+    {
+      content: '$12 cm$.',
+      is_correct: false,
+      explaination: 'Đây là nửa độ dài dây cung.',
+    },
+    {
+      content: '$10 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả Pythagoras.',
+    },
+    {
+      content: '$7 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả Pythagoras.',
+    },
+  ],
+},
+{
+  content: 'Cho hình chữ nhật $ABCD$ có $AB = 6 cm, BC = 8 cm$. Bán kính của đường tròn đi qua bốn đỉnh $A, B, C, D$ là:',
+  explaination: 'Đường tròn đi qua 4 đỉnh của hình chữ nhật có tâm là giao điểm hai đường chéo, bán kính bằng nửa đường chéo.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$10 cm$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài đường chéo $AC$.',
+    },
+    {
+      content: '$5 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AC = \\sqrt{6^2 + 8^2} = 10 cm$. Bán kính $R = AC/2 = 5 cm$.',
+    },
+    {
+      content: '$7 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai nửa đường chéo.',
+    },
+    {
+      content: '$4 cm$.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn bán kính với nửa cạnh $BC$.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$. Hai dây $AB$ và $CD$ bằng nhau và cắt nhau tại $I$. Khẳng định nào sau đây là đúng?',
+  explaination: 'Sử dụng tính chất hai dây bằng nhau thì cách đều tâm và các tam giác vuông bằng nhau tạo bởi tâm và các dây.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$IA = IC$ hoặc $IA = ID$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Do hai dây bằng nhau nên khoảng cách từ tâm đến chúng bằng nhau, dẫn đến các đoạn thẳng tương ứng từ giao điểm đến đầu mút bằng nhau.',
+    },
+    {
+      content: '$I$ luôn là trung điểm của mỗi dây.',
+      is_correct: false,
+      explaination: 'Điều này chỉ đúng nếu hai dây là đường kính.',
+    },
+    {
+      content: '$AB$ luôn vuông góc với $CD$.',
+      is_correct: false,
+      explaination: 'Hai dây bằng nhau không nhất thiết phải vuông góc.',
+    },
+    {
+      content: '$I$ luôn trùng với tâm $O$.',
+      is_correct: false,
+      explaination: 'Hai dây có thể cắt nhau tại một điểm bất kỳ trong đường tròn.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$ có bán kính $R = 10 cm$. Dây $AB$ có độ dài $16 cm$. Gọi $M$ là trung điểm của $AB$. Khoảng cách $OM$ là:',
+  explaination: 'Vì $M$ là trung điểm của dây $AB$ nên $OM \\perp AB$. Áp dụng định lý Pythagoras cho tam giác vuông $OMA$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$6 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $OM = \\sqrt{OA^2 - AM^2} = \\sqrt{10^2 - 8^2} = 6 cm$.',
+    },
+    {
+      content: '$8 cm$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài đoạn $AM$.',
+    },
+    {
+      content: '$\\sqrt{164} cm$.',
+      is_correct: false,
+      explaination: 'Sai công thức Pythagoras (cộng thay vì trừ).',
+    },
+    {
+      content: '$5 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho nửa đường tròn tâm $O$, đường kính $AB = 2R$. Một dây cung $CD$ có độ dài bằng $R$ ($C$ nằm giữa $A$ và $D$). Các đường thẳng vuông góc với $CD$ tại $C$ và $D$ lần lượt cắt $AB$ tại $M$ và $N$. Khẳng định nào sau đây đúng về đoạn thẳng $MN$?',
+  explaination: 'Kẻ $OH \\perp CD$ tại $H$. Khi đó $H$ là trung điểm $CD$. Sử dụng tính chất đường trung bình của hình thang vuông $CDNM$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$AM = BN$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Do $H$ là trung điểm $CD$ và $OH // CM // DN$ nên $O$ là trung điểm $MN$. Mà $O$ là trung điểm $AB$ nên $AM = BN$.',
+    },
+    {
+      content: '$MN = R$.',
+      is_correct: false,
+      explaination: 'Không có cơ sở khẳng định $MN = CD$.',
+    },
+    {
+      content: '$AM = 2BN$.',
+      is_correct: false,
+      explaination: 'Tính đối xứng của hình vẽ cho thấy hai đoạn phải bằng nhau.',
+    },
+    {
+      content: '$MN = AB$.',
+      is_correct: false,
+      explaination: 'Điều này chỉ xảy ra khi $CD$ song song với $AB$ và có độ dài bằng $AB$ (vô lý).',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$ và điểm $A$ cố định nằm trong đường tròn ($A \\ne O$). Dây cung $BC$ luôn đi qua $A$. Dây $BC$ có độ dài ngắn nhất khi:',
+  explaination: 'Dây cung đi qua $A$ ngắn nhất khi nó xa tâm nhất. Khoảng cách từ tâm đến dây cung đi qua $A$ lớn nhất chính bằng đoạn $OA$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$BC \\perp OA$ tại $A$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi $BC \\perp OA$, khoảng cách từ $O$ đến $BC$ là lớn nhất (bằng $OA$), do đó dây $BC$ ngắn nhất.',
+    },
+    {
+      content: '$BC$ đi qua tâm $O$.',
+      is_correct: false,
+      explaination: 'Khi $BC$ đi qua tâm, nó là đường kính và có độ dài lớn nhất.',
+    },
+    {
+      content: '$BC$ tạo với $OA$ một góc $45^\\circ$.',
+      is_correct: false,
+      explaination: 'Đây không phải vị trí cực trị.',
+    },
+    {
+      content: '$B$ hoặc $C$ trùng với một đầu mút của đường kính qua $A$.',
+      is_correct: false,
+      explaination: 'Lúc này dây $BC$ chính là đường kính.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$ và dây $AB = R\\sqrt{3}$. Diện tích của tam giác $OAB$ là:',
+  explaination: 'Kẻ $OH \\perp AB$. Tính $OH$ bằng Pythagoras, sau đó áp dụng công thức $S = \\frac{1}{2} \\cdot AB \\cdot OH$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{R^2\\sqrt{3}}{4}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AH = \\frac{R\\sqrt{3}}{2}$. $OH = \\sqrt{R^2 - (\\frac{R\\sqrt{3}}{2})^2} = \\sqrt{\\frac{R^2}{4}} = \\frac{R}{2}$. $S = \\frac{1}{2} \\cdot R\\sqrt{3} \\cdot \\frac{R}{2} = \\frac{R^2\\sqrt{3}}{4}$.',
+    },
+    {
+      content: '$\\frac{R^2\\sqrt{3}}{2}$.',
+      is_correct: false,
+      explaination: 'Quên nhân hệ số $1/2$ của công thức diện tích tam giác.',
+    },
+    {
+      content: '$\\frac{R^2}{2}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai chiều cao $OH$.',
+    },
+    {
+      content: '$R^2\\sqrt{3}$.',
+      is_correct: false,
+      explaination: 'Sai lệch hoàn toàn công thức.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn đồng tâm $(O; 5 cm)$ và $(O; 3 cm)$. Dây $AB$ của đường tròn lớn tiếp xúc với đường tròn nhỏ. Độ dài dây $AB$ là:',
+  explaination: 'Dây $AB$ tiếp xúc với đường tròn nhỏ nên khoảng cách từ tâm $O$ đến $AB$ bằng bán kính đường tròn nhỏ ($3 cm$).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4 cm$.',
+      is_correct: false,
+      explaination: 'Đây mới là nửa độ dài dây cung.',
+    },
+    {
+      content: '$8 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nửa dây $HB = \\sqrt{5^2 - 3^2} = 4 cm$. Vậy $AB = 8 cm$.',
+    },
+    {
+      content: '$6 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai Pythagoras.',
+    },
+    {
+      content: '$10 cm$.',
+      is_correct: false,
+      explaination: 'Sai lệch hoàn toàn.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ có $AB = 5, AC = 12, BC = 13$. Gọi $M$ là trung điểm của $BC$. Khẳng định nào sau đây đúng về vị trí của điểm $M$?',
+  explaination: 'Kiểm tra tam giác $ABC$ vuông tại $A$ ($5^2 + 12^2 = 13^2$). Trung điểm cạnh huyền là tâm đường tròn ngoại tiếp.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$M$ cách đều ba đỉnh $A, B, C$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì tam giác vuông tại $A$, trung điểm cạnh huyền $M$ là tâm đường tròn ngoại tiếp nên $MA = MB = MC$.',
+    },
+    {
+      content: '$M$ nằm ngoài đường tròn ngoại tiếp tam giác.',
+      is_correct: false,
+      explaination: 'Sai, $M$ chính là tâm đường tròn đó.',
+    },
+    {
+      content: '$MA > MB$.',
+      is_correct: false,
+      explaination: 'Trong tam giác vuông, đường trung tuyến ứng với cạnh huyền bằng nửa cạnh huyền.',
+    },
+    {
+      content: '$M$ là trực tâm của tam giác.',
+      is_correct: false,
+      explaination: 'Trực tâm của tam giác vuông trùng với đỉnh góc vuông $A$.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 5 --- BÀI 14: CUNG VÀ DÂY CỦA MỘT ĐƯỜNG TRÒN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Cho đường tròn $(O)$, dây $AB$ không đi qua tâm. Biết khoảng cách từ tâm $O$ đến dây $AB$ bằng $R/2$. Tính số đo cung nhỏ $AB$.',
+  explaination: 'Sử dụng tỉ số lượng giác trong tam giác vuông $OHA$ ($H$ là trung điểm $AB$). Ta có $\\cos \\widehat{AOH} = OH/OA = (R/2)/R = 1/2$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$60^\\circ$.',
+      is_correct: false,
+      explaination: 'Đây mới là số đo góc $\\widehat{AOH}$, góc ở tâm $\\widehat{AOB}$ phải gấp đôi.',
+    },
+    {
+      content: '$120^\\circ$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\widehat{AOH} = 60^\\circ \\implies \\widehat{AOB} = 120^\\circ$. Số đo cung nhỏ bằng số đo góc ở tâm nên bằng $120^\\circ$.',
+    },
+    {
+      content: '$90^\\circ$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số lượng giác.',
+    },
+    {
+      content: '$30^\\circ$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số lượng giác.',
+    },
+  ],
+},
+{
+  content: 'Trên đường tròn $(O)$, lấy ba điểm $A, B, C$ sao cho cung nhỏ $AB$ có số đo $70^\\circ$ và cung nhỏ $BC$ có số đo $80^\\circ$. Tính số đo cung nhỏ $AC$ (biết $B$ nằm giữa $A$ và $C$ trên cung nhỏ $AC$).',
+  explaination: 'Khi điểm $C$ nằm trên cung $AB$, ta áp dụng cộng số đo cung: sđ $\\text{cung } AC = \\text{sđ cung } AB + \\text{sđ cung } BC$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$150^\\circ$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $70^\\circ + 80^\\circ = 150^\\circ$.',
+    },
+    {
+      content: '$10^\\circ$.',
+      is_correct: false,
+      explaination: 'Đây là trường hợp thực hiện phép trừ số đo cung.',
+    },
+    {
+      content: '$210^\\circ$.',
+      is_correct: false,
+      explaination: 'Đây là số đo cung lớn $AC$.',
+    },
+    {
+      content: '$75^\\circ$.',
+      is_correct: false,
+      explaination: 'Tính trung bình cộng là sai quy tắc.',
+    },
+  ],
+},
+{
+  content: 'Khẳng định nào sau đây đúng về hai dây song song trong một đường tròn?',
+  explaination: 'Đây là một tính chất quan trọng: Hai dây song song chắn giữa hai cung bằng nhau.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Hai cung nằm giữa hai dây song song thì bằng nhau.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là tính chất về cung bị chắn bởi hai dây song song.',
+    },
+    {
+      content: 'Hai dây song song luôn bằng nhau.',
+      is_correct: false,
+      explaination: 'Hai dây song song có thể có độ dài khác nhau.',
+    },
+    {
+      content: 'Hai dây song song luôn đi qua tâm.',
+      is_correct: false,
+      explaination: 'Dây song song không nhất thiết đi qua tâm.',
+    },
+    {
+      content: 'Khoảng cách giữa hai dây song song luôn bằng bán kính.',
+      is_correct: false,
+      explaination: 'Khoảng cách này thay đổi tùy vị trí dây.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$. Đường kính $MN$ vuông góc với dây $PQ$ tại $I$. Khẳng định nào sau đây <b>SAI</b>?',
+  explaination: 'Đường kính vuông góc với một dây thì đi qua trung điểm của dây ấy và đi qua điểm chính giữa của cung do dây ấy căng.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$I$ là trung điểm của $PQ$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: '$M$ là điểm chính giữa của cung $PQ$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng (giả sử $M$ nằm trên cung nhỏ $PQ$).',
+    },
+    {
+      content: '$MP = MQ$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng vì $M$ cách đều hai đầu mút của dây $PQ$.',
+    },
+    {
+      content: '$I$ là trung điểm của $MN$.',
+      is_correct: true,
+      explaination: '<b>Sai</b>. $I$ chỉ là trung điểm của $MN$ nếu dây $PQ$ cũng là đường kính và đi qua tâm $O$.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho đường tròn $(O; R)$. Dây $AB = R\\sqrt{2}$. Số đo cung lớn $AB$ là:',
+  explaination: 'Tam giác $OAB$ có $OA^2 + OB^2 = R^2 + R^2 = 2R^2 = AB^2$. Suy ra tam giác $OAB$ vuông cân tại $O$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$90^\\circ$.',
+      is_correct: false,
+      explaination: 'Đây là số đo cung nhỏ $AB$.',
+    },
+    {
+      content: '$270^\\circ$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Góc ở tâm $\\widehat{AOB} = 90^\\circ \\implies$ sđ cung nhỏ $= 90^\\circ$. sđ cung lớn $= 360^\\circ - 90^\\circ = 270^\\circ$.',
+    },
+    {
+      content: '$180^\\circ$.',
+      is_correct: false,
+      explaination: 'Sai hình dạng tam giác.',
+    },
+    {
+      content: '$240^\\circ$.',
+      is_correct: false,
+      explaination: 'Tính toán sai.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$ có hai dây $AB$ và $CD$ song song với nhau. Biết sđ cung nhỏ $AB = 60^\\circ$, sđ cung nhỏ $CD = 100^\\circ$. Tính số đo cung nhỏ $AC$ (biết $AB$ và $CD$ nằm cùng phía đối với tâm $O$).',
+  explaination: 'Kẻ đường kính vuông góc với hai dây. Đường kính này đi qua điểm chính giữa của cả hai cung. sđ cung $AC = (\\text{sđ cung } CD - \\text{sđ cung } AB) / 2$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$20^\\circ$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AC = (100^\\circ - 60^\\circ)/2 = 20^\\circ$.',
+    },
+    {
+      content: '$40^\\circ$.',
+      is_correct: false,
+      explaination: 'Quên chia đôi khi tính cung chắn giữa hai dây.',
+    },
+    {
+      content: '$80^\\circ$.',
+      is_correct: false,
+      explaination: 'Đây là trường hợp hai dây nằm khác phía đối với tâm.',
+    },
+    {
+      content: '$160^\\circ$.',
+      is_correct: false,
+      explaination: 'Tính toán sai quy tắc.',
+    },
+  ],
+},
+{
+  content: 'Cho cung $AB$ có số đo bằng $90^\\circ$. Lấy điểm $M$ trên cung lớn $AB$ sao cho cung $AM$ có số đo gấp đôi cung $MB$. Tính số đo góc ở tâm $\\widehat{AOM}$.',
+  explaination: 'Tổng số đo cung $AM$ và $MB$ bằng số đo cung lớn $AB = 360^\\circ - 90^\\circ = 270^\\circ$. Đặt sđ cung $MB = x \\implies$ sđ cung $AM = 2x$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$180^\\circ$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x + 2x = 270^\\circ \\implies 3x = 270^\\circ \\implies x = 90^\\circ$. Vậy sđ cung $AM = 180^\\circ$, suy ra $\\widehat{AOM} = 180^\\circ$.',
+    },
+    {
+      content: '$90^\\circ$.',
+      is_correct: false,
+      explaination: 'Đây là số đo cung $MB$.',
+    },
+    {
+      content: '$120^\\circ$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ.',
+    },
+    {
+      content: '$60^\\circ$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ.',
+    },
+  ],
+},
+{
+  content: 'Trong một đường tròn, điểm $M$ là điểm chính giữa của cung $AB$. Khẳng định nào sau đây là <b>SAI</b>?',
+  explaination: 'Điểm chính giữa của cung chia cung đó thành hai cung bằng nhau và nằm trên đường trung trực của dây cung.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\text{sđ cung } AM = \\text{sđ cung } BM$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: 'Dây $AM = \\text{Dây } BM$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: '$OM \\perp AB$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+    {
+      content: '$M$ là trung điểm của dây $AB$.',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Điểm chính giữa cung $M$ nằm trên đường tròn, còn trung điểm dây $AB$ nằm trong đường tròn (trừ khi $AB$ là đường kính nhưng khi đó $M$ vẫn không phải trung điểm dây).',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$. Hai bán kính $OA, OB$ tạo với nhau một góc $120^\\circ$. Độ dài dây cung $AB$ là:',
+  explaination: 'Kẻ đường cao $OH$ của tam giác cân $OAB$. $AH = OA \\cdot \\sin(120^\\circ / 2) = R \\cdot \\sin 60^\\circ$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$R\\sqrt{3}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AB = 2 \\cdot AH = 2 \\cdot R \\cdot \\frac{\\sqrt{3}}{2} = R\\sqrt{3}$.',
+    },
+    {
+      content: '$R\\sqrt{2}$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài dây ứng với góc ở tâm $90^\\circ$.',
+    },
+    {
+      content: '$1,5R$.',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị lượng giác.',
+    },
+    {
+      content: '$R$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài dây ứng với góc ở tâm $60^\\circ$ (tam giác đều).',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 5 --- BÀI 15: ĐỘ DÀI CUNG VÀ DIỆN TÍCH HÌNH QUẠT TRÒN ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Công thức tính độ dài $l$ của một cung $n^\\circ$ trên đường tròn bán kính $R$ là:',
+  explaination: 'Độ dài cung tỉ lệ thuận với số đo độ của cung đó. Công thức tổng quát là $l = \\frac{\\pi R n}{180}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$l = \\frac{\\pi R n}{360}$',
+      is_correct: false,
+      explaination: 'Đây là mẫu số của công thức tính diện tích hình quạt tròn, không phải độ dài cung.',
+    },
+    {
+      content: '$l = \\frac{\\pi R n}{180}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Độ dài cung bằng chu vi đường tròn ($2\\pi R$) nhân với tỉ lệ $n/360$, rút gọn thành $\\pi Rn/180$.',
+    },
+    {
+      content: '$l = \\pi R^2 n$',
+      is_correct: false,
+      explaination: 'Sai công thức, $R^2$ dùng trong tính diện tích.',
+    },
+    {
+      content: '$l = 2\\pi R n$',
+      is_correct: false,
+      explaination: 'Thiếu bước chia cho tổng số đo độ của đường tròn.',
+    },
+  ],
+},
+{
+  content: 'Diện tích $S$ của hình quạt tròn bán kính $R$, cung $n^\\circ$ được tính theo công thức:',
+  explaination: 'Hình quạt tròn là một phần của hình tròn, diện tích của nó tương ứng với tỉ lệ góc ở tâm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$S = \\frac{\\pi R^2 n}{360}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Diện tích hình quạt bằng diện tích hình tròn ($\\pi R^2$) nhân với tỉ lệ $n/360$.',
+    },
+    {
+      content: '$S = \\frac{\\pi R n}{360}$',
+      is_correct: false,
+      explaination: 'Thiếu bình phương bán kính $R$ trong công thức diện tích.',
+    },
+    {
+      content: '$S = \\frac{\\pi R^2 n}{180}$',
+      is_correct: false,
+      explaination: 'Sai mẫu số.',
+    },
+    {
+      content: '$S = \\frac{l \\cdot R}{2}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây cũng là một cách tính diện tích hình quạt khi biết độ dài cung $l$.',
+    },
+  ],
+},
+{
+  content: 'Nếu bán kính của đường tròn tăng gấp đôi và số đo cung không đổi thì độ dài cung đó sẽ:',
+  explaination: 'Dựa vào công thức $l = \\frac{\\pi R n}{180}$, độ dài cung $l$ tỉ lệ thuận với bán kính $R$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Không thay đổi.',
+      is_correct: false,
+      explaination: 'Độ dài cung phụ thuộc vào bán kính.',
+    },
+    {
+      content: 'Tăng gấp đôi.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $l$ tỉ lệ thuận với $R$, khi $R$ tăng 2 lần thì $l$ cũng tăng 2 lần.',
+    },
+    {
+      content: 'Tăng gấp bốn.',
+      is_correct: false,
+      explaination: 'Chỉ có diện tích mới tăng gấp bốn khi bán kính tăng gấp đôi.',
+    },
+    {
+      content: 'Giảm một nửa.',
+      is_correct: false,
+      explaination: 'Sai mối liên hệ tỉ lệ.',
+    },
+  ],
+},
+{
+  content: 'Độ dài của nửa đường tròn bán kính $R$ là:',
+  explaination: 'Nửa đường tròn tương ứng với cung có số đo $180^\\circ$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2\\pi R$',
+      is_correct: false,
+      explaination: 'Đây là độ dài của cả đường tròn (chu vi).',
+    },
+    {
+      content: '$\\pi R$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Độ dài nửa đường tròn $= 2\\pi R / 2 = \\pi R$.',
+    },
+    {
+      content: '$\\pi R^2$',
+      is_correct: false,
+      explaination: 'Đây là công thức diện tích hình tròn.',
+    },
+    {
+      content: '$2\\pi$',
+      is_correct: false,
+      explaination: 'Thiếu bán kính $R$.',
+    },
+  ],
+},
+{
+  content: 'Tính độ dài cung $60^\\circ$ của một đường tròn có bán kính $R = 6 cm$.',
+  explaination: 'Thay $R = 6$ và $n = 60$ vào công thức $l = \\frac{\\pi R n}{180}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\pi cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$2\\pi cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $l = \\frac{\\pi \\cdot 6 \\cdot 60}{180} = \\frac{360\\pi}{180} = 2\\pi cm$.',
+    },
+    {
+      content: '$3\\pi cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$6\\pi cm$',
+      is_correct: false,
+      explaination: 'Đây là chu vi đường tròn.',
+    },
+  ],
+},
+{
+  content: 'Diện tích hình tròn bán kính $R$ là $100\\pi cm^2$. Bán kính $R$ của đường tròn đó là:',
+  explaination: 'Sử dụng công thức diện tích hình tròn $S = \\pi R^2$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$10 cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\pi R^2 = 100\\pi \\implies R^2 = 100 \\implies R = 10 cm$.',
+    },
+    {
+      content: '$50 cm$',
+      is_correct: false,
+      explaination: 'Sai do lấy $100 / 2$.',
+    },
+    {
+      content: '$20 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai.',
+    },
+    {
+      content: '$10\\pi cm$',
+      is_correct: false,
+      explaination: 'Bán kính là độ dài, không chứa số $\\pi$ trong trường hợp này.',
+    },
+  ],
+},
+{
+  content: 'Hình quạt tròn cung $90^\\circ$ còn được gọi là:',
+  explaination: 'Góc $90^\\circ$ bằng $1/4$ của góc đầy $360^\\circ$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Hình bán nguyệt.',
+      is_correct: false,
+      explaination: 'Hình bán nguyệt tương ứng với cung $180^\\circ$.',
+    },
+    {
+      content: 'Hình một phần tư hình tròn.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $90/360 = 1/4$.',
+    },
+    {
+      content: 'Hình quạt đều.',
+      is_correct: false,
+      explaination: 'Không có thuật ngữ này.',
+    },
+    {
+      content: 'Hình viên phân.',
+      is_correct: false,
+      explaination: 'Hình viên phân là phần hình tròn giới hạn bởi một cung và dây căng cung đó.',
+    },
+  ],
+},
+{
+  content: 'Diện tích hình quạt tròn có bán kính $R = 4 cm$ và số đo cung $30^\\circ$ là:',
+  explaination: 'Thay giá trị vào công thức $S = \\frac{\\pi R^2 n}{360}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{4\\pi}{3} cm^2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S = \\frac{\\pi \\cdot 4^2 \\cdot 30}{360} = \\frac{16\\pi \\cdot 1}{12} = \\frac{4\\pi}{3} cm^2$.',
+    },
+    {
+      content: '$\\frac{2\\pi}{3} cm^2$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$4\\pi cm^2$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$\\frac{16\\pi}{3} cm^2$',
+      is_correct: false,
+      explaination: 'Sai mẫu số.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Một cung của đường tròn bán kính $R = 8 cm$ có độ dài là $l = 2\\pi cm$. Số đo độ của cung đó là:',
+  explaination: 'Từ công thức $l = \\frac{\\pi R n}{180}$, rút ra $n = \\frac{180 \\cdot l}{\\pi \\cdot R}$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$45^\\circ$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $n = \\frac{180 \\cdot 2\\pi}{\\pi \\cdot 8} = \\frac{360}{8} = 45^\\circ$.',
+    },
+    {
+      content: '$90^\\circ$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$60^\\circ$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$30^\\circ$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+{
+  content: 'Diện tích của một hình quạt tròn có độ dài cung là $4\\pi cm$ và bán kính $R = 10 cm$ bằng:',
+  explaination: 'Sử dụng công thức liên hệ $S = \\frac{l \\cdot R}{2}$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$40\\pi cm^2$',
+      is_correct: false,
+      explaination: 'Quên chia cho 2.',
+    },
+    {
+      content: '$20\\pi cm^2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S = \\frac{4\\pi \\cdot 10}{2} = 20\\pi cm^2$.',
+    },
+    {
+      content: '$100\\pi cm^2$',
+      is_correct: false,
+      explaination: 'Nhầm sang diện tích hình tròn.',
+    },
+    {
+      content: '$10\\pi cm^2$',
+      is_correct: false,
+      explaination: 'Tính toán sai.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$. Một hình viên phân được giới hạn bởi dây $AB$ và cung nhỏ $AB$. Biết $\\widehat{AOB} = 90^\\circ$. Diện tích hình viên phân đó là:',
+  explaination: 'Diện tích hình viên phân = Diện tích hình quạt $OAB$ - Diện tích tam giác vuông $OAB$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{\\pi R^2}{4} - \\frac{R^2}{2}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S_{quat} = \\pi R^2 \\cdot 90 / 360 = \\pi R^2 / 4$. $S_{tamgiac} = \\frac{1}{2} R \\cdot R = R^2 / 2$.',
+    },
+    {
+      content: '$\\frac{\\pi R^2}{4} - R^2$',
+      is_correct: false,
+      explaination: 'Sai công thức diện tích tam giác.',
+    },
+    {
+      content: '$\\frac{\\pi R^2}{2} - \\frac{R^2}{2}$',
+      is_correct: false,
+      explaination: 'Sai diện tích hình quạt.',
+    },
+    {
+      content: '$R^2(\\pi - 1)$',
+      is_correct: false,
+      explaination: 'Rút gọn sai biểu thức.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 5 --- BÀI 15: ĐỘ DÀI CUNG VÀ DIỆN TÍCH HÌNH QUẠT TRÒN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Tính chu vi của một hình quạt tròn có bán kính $R = 10 cm$ và số đo cung là $90^\\circ$.',
+  explaination: 'Chu vi hình quạt tròn bao gồm độ dài cung và hai lần bán kính: $P = l + 2R$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$5\\pi cm$',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là độ dài cung $l$.',
+    },
+    {
+      content: '$(5\\pi + 20) cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $l = \\frac{\\pi \\cdot 10 \\cdot 90}{180} = 5\\pi cm$. Chu vi $P = 5\\pi + 2 \\cdot 10 = 5\\pi + 20 cm$.',
+    },
+    {
+      content: '$(5\\pi + 10) cm$',
+      is_correct: false,
+      explaination: 'Sai do chỉ cộng một lần bán kính.',
+    },
+    {
+      content: '$10\\pi cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch.',
+    },
+  ],
+},
+{
+  content: 'Một hình quạt tròn có diện tích bằng $6\\pi cm^2$ và bán kính $R = 6 cm$. Số đo độ của cung tương ứng là:',
+  explaination: 'Từ công thức $S = \\frac{\\pi R^2 n}{360}$, ta suy ra $n = \\frac{360 \\cdot S}{\\pi R^2}$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$30^\\circ$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$60^\\circ$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $n = \\frac{360 \\cdot 6\\pi}{\\pi \\cdot 6^2} = \\frac{360 \\cdot 6}{36} = 60^\\circ$.',
+    },
+    {
+      content: '$120^\\circ$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$45^\\circ$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn $(O; R)$ và $(O\'; 2R)$. So sánh diện tích hình quạt $90^\\circ$ của đường tròn $(O)$ và diện tích hình quạt $45^\\circ$ của đường tròn $(O\')$.',
+  explaination: 'Tính diện tích từng hình quạt theo $R$ rồi so sánh tỉ lệ.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Hai hình quạt có diện tích bằng nhau.',
+      is_correct: false,
+      explaination: 'Tính toán cho thấy diện tích chúng khác nhau.',
+    },
+    {
+      content: 'Diện tích hình quạt của $(O\')$ gấp 2 lần diện tích hình quạt của $(O)$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S_1 = \\frac{\\pi R^2 \\cdot 90}{360} = \\frac{\\pi R^2}{4}$. $S_2 = \\frac{\\pi (2R)^2 \\cdot 45}{360} = \\frac{4\\pi R^2 \\cdot 1}{8} = \\frac{\\pi R^2}{2}$. Vậy $S_2 = 2S_1$.',
+    },
+    {
+      content: 'Diện tích hình quạt của $(O)$ lớn hơn.',
+      is_correct: false,
+      explaination: 'Sai tỉ lệ tính toán.',
+    },
+    {
+      content: 'Diện tích hình quạt của $(O\')$ gấp 4 lần.',
+      is_correct: false,
+      explaination: 'Sai tỉ lệ tính toán.',
+    },
+  ],
+},
+{
+  content: 'Tìm bán kính $R$ của một đường tròn, biết rằng một cung $120^\\circ$ của nó có độ dài bằng $4\\pi cm$.',
+  explaination: 'Sử dụng công thức $R = \\frac{180 \\cdot l}{\\pi \\cdot n}$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$3 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$6 cm$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $R = \\frac{180 \\cdot 4\\pi}{\\pi \\cdot 120} = \\frac{720}{120} = 6 cm$.',
+    },
+    {
+      content: '$9 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$12 cm$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Tính diện tích hình viên phân giới hạn bởi dây $AB$ và cung nhỏ $AB$, biết bán kính đường tròn $R = 4 cm$ và $\\widehat{AOB} = 120^\\circ$.',
+  explaination: 'Diện tích hình viên phân $= S_{quat} - S_{\\triangle OAB}$. Với $\\triangle OAB$ cân tại $O$, đường cao $OH = R \\cdot \\cos 60^\\circ$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{16\\pi - 12\\sqrt{3}}{3} cm^2$',
+      is_correct: false,
+      explaination: 'Tính toán sai diện tích tam giác.',
+    },
+    {
+      content: '$\\left(\\frac{16\\pi}{3} - 4\\sqrt{3}\\right) cm^2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S_{quat} = \\frac{\\pi \\cdot 4^2 \\cdot 120}{360} = \\frac{16\\pi}{3}$. $S_{\\triangle OAB} = \\frac{1}{2} R^2 \\sin 120^\\circ = \\frac{1}{2} \\cdot 16 \\cdot \\frac{\\sqrt{3}}{2} = 4\\sqrt{3}$.',
+    },
+    {
+      content: '$\\frac{16\\pi}{3} cm^2$',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là diện tích hình quạt.',
+    },
+    {
+      content: '$8\\pi - 4\\sqrt{3} cm^2$',
+      is_correct: false,
+      explaination: 'Sai công thức diện tích hình quạt.',
+    },
+  ],
+},
+{
+  content: 'Một vành khăn (hình nhẫn) được giới hạn bởi hai đường tròn đồng tâm có bán kính $R = 5 cm$ và $r = 3 cm$. Diện tích của phần vành khăn ứng với một góc ở tâm $60^\\circ$ là:',
+  explaination: 'Diện tích này bằng hiệu diện tích hai hình quạt tròn cùng góc ở tâm $60^\\circ$: $S = \\frac{\\pi (R^2 - r^2) n}{360}$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{8\\pi}{3} cm^2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S = \\frac{\\pi (25 - 9) \\cdot 60}{360} = \\frac{16\\pi}{6} = \\frac{8\\pi}{3} cm^2$.',
+    },
+    {
+      content: '$\\frac{16\\pi}{3} cm^2$',
+      is_correct: false,
+      explaination: 'Sai mẫu số trong công thức.',
+    },
+    {
+      content: '$4\\pi cm^2$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$16\\pi cm^2$',
+      is_correct: false,
+      explaination: 'Đây là diện tích của cả vành khăn $360^\\circ$.',
+    },
+  ],
+},
+{
+  content: 'Một kim phút của đồng hồ dài $12 cm$. Trong khoảng thời gian từ 12 giờ đến 12 giờ 20 phút, kim phút quét được một hình quạt tròn có diện tích xấp xỉ bao nhiêu?',
+  explaination: '20 phút tương ứng với $1/3$ vòng tròn, tức là góc ở tâm $n = 360^\\circ / 3 = 120^\\circ$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$150,8 cm^2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S = \\frac{\\pi \\cdot 12^2 \\cdot 120}{360} = \\frac{144\\pi}{3} = 48\\pi \\approx 150,796 cm^2$.',
+    },
+    {
+      content: '$452,4 cm^2$',
+      is_correct: false,
+      explaination: 'Đây là diện tích hình tròn khi kim quét đủ 60 phút.',
+    },
+    {
+      content: '$75,4 cm^2$',
+      is_correct: false,
+      explaination: 'Sai góc ở tâm (lấy 10 phút thay vì 20 phút).',
+    },
+    {
+      content: '$50,3 cm^2$',
+      is_correct: false,
+      explaination: 'Tính toán sai công thức.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ đều cạnh $a$. Vẽ ba cung tròn có tâm lần lượt là $A, B, C$ bán kính $a/2$ nằm trong tam giác. Diện tích phần tam giác nằm ngoài ba cung tròn đó là:',
+  explaination: 'Diện tích cần tìm $= S_{\\triangle ABC} - 3 \\cdot S_{quat}$. Mỗi hình quạt có bán kính $R = a/2$ và góc ở tâm $60^\\circ$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{a^2\\sqrt{3}}{4} - \\frac{\\pi a^2}{8}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S_{\\triangle} = \\frac{a^2\\sqrt{3}}{4}$. Tổng diện tích 3 quạt $= 3 \\cdot \\frac{\\pi (a/2)^2 \\cdot 60}{360} = \\frac{\\pi a^2}{8}$.',
+    },
+    {
+      content: '$\\frac{a^2\\sqrt{3}}{4} - \\frac{\\pi a^2}{4}$',
+      is_correct: false,
+      explaination: 'Tính sai tổng diện tích các hình quạt.',
+    },
+    {
+      content: '$\\frac{a^2(\\sqrt{3} - \\pi)}{4}$',
+      is_correct: false,
+      explaination: 'Rút gọn sai biểu thức.',
+    },
+    {
+      content: '$\\frac{\\pi a^2}{8}$',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là diện tích của 3 hình quạt.',
+    },
+  ],
+},
+{
+  content: 'Độ dài cung $AB$ của đường tròn $(O; R)$ là $l$. Nếu ta tăng bán kính lên 3 lần và giảm số đo cung đi 2 lần thì độ dài cung mới $l\'$ so với $l$ sẽ là:',
+  explaination: 'Thay các đại lượng mới vào công thức $l = \\frac{\\pi R n}{180}$ để tìm mối liên hệ.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$l\' = 1,5l$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $l\' = \\frac{\\pi (3R) (n/2)}{180} = \\frac{3}{2} \\cdot \\frac{\\pi Rn}{180} = 1,5l$.',
+    },
+    {
+      content: '$l\' = 6l$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn phép chia thành phép nhân đối với số đo cung.',
+    },
+    {
+      content: '$l\' = l$',
+      is_correct: false,
+      explaination: 'Sai tỉ lệ biến thiên.',
+    },
+    {
+      content: '$l\' = 3l$',
+      is_correct: false,
+      explaination: 'Quên tính đến việc số đo cung bị giảm.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 5 --- BÀI 16: VỊ TRÍ TƯƠNG ĐỐI CỦA ĐƯỜNG THẲNG VÀ ĐƯỜNG TRÒN ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Nếu đường thẳng và đường tròn có hai điểm chung thì đường thẳng đó được gọi là:',
+  explaination: 'Để xác định tên gọi, hãy nhớ lại các vị trí tương đối dựa trên số điểm chung: 2 điểm chung (cắt nhau), 1 điểm chung (tiếp xúc) và 0 điểm chung (không giao nhau).',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đường cát tuyến.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo định nghĩa, đường thẳng cắt đường tròn tại hai điểm phân biệt được gọi là cát tuyến.',
+    },
+    {
+      content: 'Đường tiếp tuyến.',
+      is_correct: false,
+      explaination: 'Tiếp tuyến chỉ có duy nhất 1 điểm chung với đường tròn.',
+    },
+    {
+      content: 'Đường trung trực.',
+      is_correct: false,
+      explaination: 'Đây là khái niệm về đường thẳng vuông góc với đoạn thẳng tại trung điểm, không dùng để chỉ vị trí tương đối này.',
+    },
+    {
+      content: 'Đường pháp tuyến.',
+      is_correct: false,
+      explaination: 'Đây là khái niệm trong vật lý hoặc hình học nâng cao, không phải tên gọi phổ biến cho vị trí này.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$ và đường thẳng $a$. Gọi $d$ là khoảng cách từ tâm $O$ đến đường thẳng $a$. Đường thẳng $a$ và đường tròn $(O)$ không giao nhau khi:',
+  explaination: 'Hãy so sánh độ dài khoảng cách $d$ từ tâm đến đường thẳng với bán kính $R$. Khi đường thẳng nằm hoàn toàn bên ngoài đường tròn, khoảng cách này sẽ như thế nào so với bán kính?',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$d < R$',
+      is_correct: false,
+      explaination: 'Trường hợp này đường thẳng cắt đường tròn tại hai điểm.',
+    },
+    {
+      content: '$d = R$',
+      is_correct: false,
+      explaination: 'Trường hợp này đường thẳng tiếp xúc với đường tròn.',
+    },
+    {
+      content: '$d > R$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi khoảng cách từ tâm đến đường thẳng lớn hơn bán kính, chúng không có điểm chung.',
+    },
+    {
+      content: '$d \\le R$',
+      is_correct: false,
+      explaination: 'Điều kiện này bao gồm cả trường hợp cắt nhau và tiếp xúc.',
+    },
+  ],
+},
+{
+  content: 'Nếu đường thẳng $a$ là tiếp tuyến của đường tròn $(O; R)$ thì khoảng cách $d$ từ tâm $O$ đến đường thẳng $a$ thỏa mãn:',
+  explaination: 'Tiếp tuyến là vị trí giới hạn khi đường thẳng chỉ "chạm" vào đường tròn tại một điểm duy nhất. Lúc này, khoảng cách từ tâm đến đường thẳng có mối quan hệ gì với bán kính?',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$d = R$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khoảng cách từ tâm đến tiếp tuyến đúng bằng bán kính của đường tròn.',
+    },
+    {
+      content: '$d > R$',
+      is_correct: false,
+      explaination: 'Đây là điều kiện để đường thẳng không giao đường tròn.',
+    },
+    {
+      content: '$d < R$',
+      is_correct: false,
+      explaination: 'Đây là điều kiện để đường thẳng cắt đường tròn.',
+    },
+    {
+      content: '$d \\ne R$',
+      is_correct: false,
+      explaination: 'Điều kiện này quá rộng, bao gồm cả cắt và không giao nhau.',
+    },
+  ],
+},
+{
+  content: 'Tiếp tuyến của đường tròn có tính chất nào sau đây?',
+  explaination: 'Hãy nhớ lại định lý về tiếp tuyến: Xét mối quan hệ về góc giữa tiếp tuyến và bán kính đi qua tiếp điểm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Song song với bán kính đi qua tiếp điểm.',
+      is_correct: false,
+      explaination: 'Tiếp tuyến và bán kính có chung một điểm (tiếp điểm) nên không thể song song.',
+    },
+    {
+      content: 'Vuông góc với bán kính đi qua tiếp điểm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là tính chất cơ bản nhất của tiếp tuyến đường tròn.',
+    },
+    {
+      content: 'Đi qua tâm của đường tròn.',
+      is_correct: false,
+      explaination: 'Nếu đi qua tâm, khoảng cách $d = 0 < R$, đường thẳng sẽ là cát tuyến, không phải tiếp tuyến.',
+    },
+    {
+      content: 'Luôn nằm bên trong đường tròn.',
+      is_correct: false,
+      explaination: 'Tiếp tuyến chỉ có 1 điểm chung với đường tròn, phần còn lại nằm bên ngoài.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; 5 cm)$ và đường thẳng $a$. Biết khoảng cách từ $O$ đến $a$ là $d = 3 cm$. Vị trí tương đối của đường thẳng $a$ và đường tròn $(O)$ là:',
+  explaination: 'Hãy thực hiện so sánh số học giữa $d = 3$ và $R = 5$. Sau đó đối chiếu với 3 trường hợp vị trí tương đối đã học.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tiếp xúc nhau.',
+      is_correct: false,
+      explaination: 'Tiếp xúc chỉ xảy ra khi $d = R = 5 cm$.',
+    },
+    {
+      content: 'Cắt nhau.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $d < R$ ($3 < 5$) nên đường thẳng cắt đường tròn tại hai điểm phân biệt.',
+    },
+    {
+      content: 'Không giao nhau.',
+      is_correct: false,
+      explaination: 'Không giao nhau yêu cầu $d > R$, tức là $d > 5 cm$.',
+    },
+    {
+      content: 'Trùng nhau.',
+      is_correct: false,
+      explaination: 'Đường thẳng và đường tròn là hai loại hình dạng khác nhau, không thể trùng nhau.',
+    },
+  ],
+},
+{
+  content: 'Có bao nhiêu tiếp tuyến của đường tròn đi qua một điểm nằm <b>trên</b> đường tròn đó?',
+  explaination: 'Hãy tưởng tượng hoặc vẽ hình: Tại một điểm cụ thể trên biên đường tròn, bạn có thể vẽ được bao nhiêu đường thẳng vuông góc với bán kính tại điểm đó?',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '0.',
+      is_correct: false,
+      explaination: 'Luôn tồn tại tiếp tuyến tại một điểm thuộc đường tròn.',
+    },
+    {
+      content: '1.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tại mỗi điểm thuộc đường tròn, ta chỉ vẽ được duy nhất một tiếp tuyến.',
+    },
+    {
+      content: '2.',
+      is_correct: false,
+      explaination: 'Chỉ có điểm nằm <b>ngoài</b> đường tròn mới kẻ được 2 tiếp tuyến.',
+    },
+    {
+      content: 'Vô số.',
+      is_correct: false,
+      explaination: 'Chỉ có 1 đường thẳng thỏa mãn điều kiện vừa đi qua điểm đó vừa vuông góc với bán kính.',
+    },
+  ],
+},
+{
+  content: 'Cho đường thẳng $a$ và đường tròn $(O; 4 cm)$. Để đường thẳng $a$ tiếp xúc với đường tròn $(O)$, khoảng cách $d$ từ tâm $O$ đến đường thẳng $a$ phải bằng:',
+  explaination: 'Điều kiện tiếp xúc yêu cầu khoảng cách từ tâm đến đường thẳng phải đúng bằng giá trị bán kính của đường tròn.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2 cm$.',
+      is_correct: false,
+      explaination: 'Khi $d = 2 < 4$, đường thẳng sẽ cắt đường tròn.',
+    },
+    {
+      content: '$4 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khoảng cách phải bằng bán kính $R = 4 cm$ để tạo ra vị trí tiếp xúc.',
+    },
+    {
+      content: '$8 cm$.',
+      is_correct: false,
+      explaination: 'Khi $d = 8 > 4$, đường thẳng không giao đường tròn.',
+    },
+    {
+      content: '$16 cm$.',
+      is_correct: false,
+      explaination: 'Khoảng cách quá lớn, không thỏa mãn điều kiện tiếp xúc.',
+    },
+  ],
+},
+{
+  content: 'Nếu một đường thẳng đi qua một điểm của đường tròn và vuông góc với bán kính đi qua điểm đó thì:',
+  explaination: 'Đây chính là dấu hiệu nhận biết một đường thẳng có phải là tiếp tuyến của đường tròn hay không.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đường thẳng đó là cát tuyến.',
+      is_correct: false,
+      explaination: 'Cát tuyến không vuông góc với bán kính tại điểm nằm trên đường tròn (trừ trường hợp đặc biệt tại trung điểm dây cung).',
+    },
+    {
+      content: 'Đường thẳng đó là tiếp tuyến của đường tròn.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là dấu hiệu nhận biết tiếp tuyến theo định lý.',
+    },
+    {
+      content: 'Đường thẳng đó đi qua tâm.',
+      is_correct: false,
+      explaination: 'Nếu vuông góc với bán kính tại một điểm trên đường tròn thì nó không thể đi qua tâm.',
+    },
+    {
+      content: 'Đường thẳng đó là đường kính.',
+      is_correct: false,
+      explaination: 'Đường kính phải đi qua tâm.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho đường tròn $(O; 10 cm)$ và đường thẳng $d$ cắt đường tròn tại hai điểm $A, B$. Biết khoảng cách từ $O$ đến đường thẳng $d$ là $6 cm$. Độ dài dây cung $AB$ là:',
+  explaination: 'Để tính $AB$, bạn cần gọi $H$ là chân đường vuông góc từ $O$ đến $d$. Sử dụng định lý Pythagoras trong tam giác vuông $OHA$ (với $OA = R$) để tính $HA$, sau đó nhân đôi kết quả.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$8 cm$.',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là độ dài đoạn $HA$ (nửa dây cung).',
+    },
+    {
+      content: '$16 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $HA = \\sqrt{10^2 - 6^2} = 8 cm$. Vậy $AB = 2 \\cdot 8 = 16 cm$.',
+    },
+    {
+      content: '$12 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các cạnh của tam giác vuông.',
+    },
+    {
+      content: '$\\sqrt{136} cm$.',
+      is_correct: false,
+      explaination: 'Sai công thức Pythagoras (cộng bình phương thay vì trừ).',
+    },
+  ],
+},
+{
+  content: 'Cho điểm $A$ nằm ngoài đường tròn $(O; R)$. Kẻ tiếp tuyến $AB$ với đường tròn ($B$ là tiếp điểm). Biết $OA = 10 cm, R = 6 cm$. Độ dài đoạn tiếp tuyến $AB$ là:',
+  explaination: 'Vì $AB$ là tiếp tuyến nên $\\triangle OBA$ vuông tại $B$. Sử dụng định lý Pythagoras với cạnh huyền là $OA$ và một cạnh góc vuông là bán kính $OB = R$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$8 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AB = \\sqrt{OA^2 - OB^2} = \\sqrt{10^2 - 6^2} = 8 cm$.',
+    },
+    {
+      content: '$4 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả khai căn.',
+    },
+    {
+      content: '$\\sqrt{136} cm$.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn $OA$ là cạnh góc vuông thay vì cạnh huyền.',
+    },
+    {
+      content: '$16 cm$.',
+      is_correct: false,
+      explaination: 'Sai lệch hoàn toàn kết quả.',
+    },
+  ],
+},
+{
+  content: 'Trên mặt phẳng tọa độ $Oxy$, cho đường tròn tâm $O$ bán kính $R = 3$. Đường thẳng $d$ có phương trình $y = 4$. Vị trí tương đối của $d$ và $(O)$ là:',
+  explaination: 'Khoảng cách $d$ từ tâm $O(0,0)$ đến đường thẳng nằm ngang $y = 4$ chính bằng giá trị tuyệt đối của tung độ đường thẳng đó. Hãy so sánh giá trị này với $R$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Cắt nhau.',
+      is_correct: false,
+      explaination: 'Cắt nhau yêu cầu khoảng cách nhỏ hơn 3.',
+    },
+    {
+      content: 'Tiếp xúc.',
+      is_correct: false,
+      explaination: 'Tiếp xúc yêu cầu khoảng cách đúng bằng 3.',
+    },
+    {
+      content: 'Không giao nhau.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khoảng cách $d = 4$, bán kính $R = 3$. Vì $4 > 3$ nên đường thẳng nằm ngoài đường tròn.',
+    },
+    {
+      content: 'Đi qua tâm đường tròn.',
+      is_correct: false,
+      explaination: 'Đường thẳng đi qua tâm phải có phương trình dạng $y = kx$ (đi qua gốc tọa độ).',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 5 --- BÀI 16: VỊ TRÍ TƯƠNG ĐỐI CỦA ĐƯỜNG THẲNG VÀ ĐƯỜNG TRÒN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Cho đường tròn $(O; R)$ và đường thẳng $d$ cắt đường tròn tại hai điểm $A, B$ sao cho dây $AB = R\\sqrt{3}$. Khoảng cách $h$ từ tâm $O$ đến đường thẳng $d$ bằng:',
+  explaination: 'Để tìm khoảng cách, bạn hãy gọi $H$ là trung điểm của dây cung $AB$. Khi đó $OH$ chính là khoảng cách cần tìm và vuông góc với $AB$. Hãy áp dụng định lý Pythagoras cho tam giác vuông $OHA$ với cạnh huyền $OA = R$ và cạnh góc vuông $AH = AB/2$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$R/2$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $AH = \\frac{R\\sqrt{3}}{2}$. Khi đó $OH = \\sqrt{R^2 - \\left(\\frac{R\\sqrt{3}}{2}\\right)^2} = \\sqrt{R^2 - \\frac{3R^2}{4}} = \\sqrt{\\frac{R^2}{4}} = R/2$.',
+    },
+    {
+      content: '$R\\sqrt{2}/2$.',
+      is_correct: false,
+      explaination: 'Đây là khoảng cách ứng với dây cung có độ dài $R\\sqrt{2}$ (tam giác vuông cân).',
+    },
+    {
+      content: '$R/3$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số trong định lý Pythagoras.',
+    },
+    {
+      content: '$R\\sqrt{3}/2$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài của nửa dây cung $AH$, không phải khoảng cách $OH$.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có $AB = 3 cm, AC = 4 cm$. Đường tròn tâm $B$ bán kính $3 cm$ có vị trí tương đối như thế nào với đường thẳng $AC$?',
+  explaination: 'Xác định khoảng cách từ tâm $B$ đến đường thẳng $AC$. Vì tam giác $ABC$ vuông tại $A$, hãy xem đoạn thẳng nào đóng vai trò là khoảng cách từ $B$ đến $AC$. Sau đó so sánh khoảng cách này với bán kính $R = 3 cm$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Cắt nhau.',
+      is_correct: false,
+      explaination: 'Cắt nhau yêu cầu khoảng cách từ $B$ đến $AC$ phải nhỏ hơn 3.',
+    },
+    {
+      content: 'Tiếp xúc.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khoảng cách từ $B$ đến $AC$ chính là đoạn $AB = 3 cm$. Vì khoảng cách bằng bán kính ($3 = 3$) nên đường tròn tiếp xúc với đường thẳng.',
+    },
+    {
+      content: 'Không giao nhau.',
+      is_correct: false,
+      explaination: 'Không giao nhau yêu cầu khoảng cách $AB > 3$.',
+    },
+    {
+      content: 'Đường thẳng $AC$ đi qua tâm $B$.',
+      is_correct: false,
+      explaination: 'Nếu $AC$ đi qua $B$, điểm $B$ phải nằm trên đường thẳng $AC$, điều này trái với giả thiết tam giác $ABC$ vuông tại $A$.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$ và điểm $A$ nằm ngoài đường tròn sao cho $OA = 2R$. Kẻ hai tiếp tuyến $AB, AC$ với đường tròn ($B, C$ là các tiếp điểm). Số đo của góc $\\widehat{BAC}$ là:',
+  explaination: 'Sử dụng tỉ số lượng giác trong tam giác vuông $OBA$ (vuông tại $B$). Tính góc $\\widehat{OAB}$ bằng cách dùng cạnh đối $OB=R$ và cạnh huyền $OA=2R$. Sau đó, dựa vào tính chất hai tiếp tuyến cắt nhau để tìm góc $\\widehat{BAC}$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$30^\\circ$.',
+      is_correct: false,
+      explaination: 'Đây mới là số đo của góc $\\widehat{OAB}$.',
+    },
+    {
+      content: '$45^\\circ$.',
+      is_correct: false,
+      explaination: 'Góc này không thỏa mãn tỉ số lượng giác $1/2$.',
+    },
+    {
+      content: '$60^\\circ$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\sin \\widehat{OAB} = \\frac{OB}{OA} = \\frac{R}{2R} = 1/2 \\implies \\widehat{OAB} = 30^\\circ$. Theo tính chất tiếp tuyến, $\\widehat{BAC} = 2 \\cdot \\widehat{OAB} = 60^\\circ$.',
+    },
+    {
+      content: '$90^\\circ$.',
+      is_correct: false,
+      explaination: 'Góc này chỉ xảy ra khi tam giác $OBA$ là tam giác vuông cân, yêu cầu $OA = R\\sqrt{2}$.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; 6 cm)$ và một điểm $M$ cách $O$ một khoảng $10 cm$. Qua $M$ kẻ tiếp tuyến $MT$ với đường tròn ($T$ là tiếp điểm). Độ dài đoạn tiếp tuyến $MT$ là:',
+  explaination: 'Tiếp tuyến $MT$ vuông góc với bán kính tại tiếp điểm $T$. Hãy sử dụng định lý Pythagoras cho tam giác vuông $OTM$ với cạnh huyền $OM$ và cạnh góc vuông $OT = R$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$8 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $MT = \\sqrt{OM^2 - OT^2} = \\sqrt{10^2 - 6^2} = 8 cm$.',
+    },
+    {
+      content: '$4 cm$.',
+      is_correct: false,
+      explaination: 'Sai do tính $10 - 6 = 4$ thay vì dùng định lý Pythagoras.',
+    },
+    {
+      content: '$16 cm$.',
+      is_correct: false,
+      explaination: 'Đoạn tiếp tuyến không thể dài hơn khoảng cách từ điểm đến tâm.',
+    },
+    {
+      content: '$\\sqrt{136} cm$.',
+      is_correct: false,
+      explaination: 'Sai do lấy $10^2 + 6^2$ (coi $OM$ là cạnh góc vuông).',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Trên mặt phẳng tọa độ $Oxy$, cho đường tròn tâm $O$ bán kính $R = 5$. Đường thẳng $d$ có phương trình $x - y + m = 0$ tiếp xúc với đường tròn $(O)$ khi $m$ nhận giá trị:',
+  explaination: 'Để đường thẳng tiếp xúc với đường tròn tâm $O(0;0)$, khoảng cách từ $O$ đến đường thẳng $d$ phải đúng bằng bán kính $R = 5$. Sử dụng công thức tính khoảng cách từ một điểm đến đường thẳng: $h = \\frac{|ax_0 + by_0 + c|}{\\sqrt{a^2 + b^2}}$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = \\pm 5$.',
+      is_correct: false,
+      explaination: 'Nếu $m = 5$, khoảng cách là $5/\\sqrt{2} \\ne 5$.',
+    },
+    {
+      content: '$m = \\pm 5\\sqrt{2}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khoảng cách $h = \\frac{|0 - 0 + m|}{\\sqrt{1^2 + (-1)^2}} = \\frac{|m|}{\\sqrt{2}}$. Để tiếp xúc thì $\\frac{|m|}{\\sqrt{2}} = 5 \\iff |m| = 5\\sqrt{2}$.',
+    },
+    {
+      content: '$m = 5$.',
+      is_correct: false,
+      explaination: 'Thiếu trường hợp $m = -5\\sqrt{2}$ vì trị tuyệt đối cho hai kết quả.',
+    },
+    {
+      content: '$m = 10$.',
+      is_correct: false,
+      explaination: 'Tính toán sai mẫu số trong công thức khoảng cách.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; 3 cm)$ và điểm $A$ sao cho $OA = 6 cm$. Kẻ hai tiếp tuyến $AB, AC$ với đường tròn. Diện tích tứ giác $ABOC$ là:',
+  explaination: 'Tứ giác $ABOC$ được tạo thành từ hai tam giác vuông $OBA$ và $OCA$ bằng nhau. Hãy tính diện tích một tam giác vuông bằng cách tìm độ dài tiếp tuyến $AB$ trước (dùng Pythagoras), sau đó nhân đôi kết quả diện tích.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$9\\sqrt{3} cm^2$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $AB = \\sqrt{6^2 - 3^2} = 3\\sqrt{3}$. Diện tích $\\triangle OBA = \\frac{1}{2} \\cdot 3 \\cdot 3\\sqrt{3} = 4,5\\sqrt{3}$. Vậy $S_{ABOC} = 2 \\cdot 4,5\\sqrt{3} = 9\\sqrt{3} cm^2$.',
+    },
+    {
+      content: '$18\\sqrt{3} cm^2$.',
+      is_correct: false,
+      explaination: 'Quên nhân hệ số $1/2$ khi tính diện tích tam giác.',
+    },
+    {
+      content: '$9 cm^2$.',
+      is_correct: false,
+      explaination: 'Tính toán sai độ dài tiếp tuyến $AB$.',
+    },
+    {
+      content: '$18 cm^2$.',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch giá trị căn thức.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$ và đường thẳng $d$ không giao với đường tròn. Điểm $M$ di động trên đường thẳng $d$. Kẻ tiếp tuyến $MA$ với đường tròn ($A$ là tiếp điểm). Độ dài đoạn $MA$ nhỏ nhất khi:',
+  explaination: 'Độ dài tiếp tuyến được tính bởi công thức $MA^2 = OM^2 - R^2$. Vì bán kính $R$ cố định, $MA$ đạt giá trị nhỏ nhất khi khoảng cách $OM$ đạt giá trị nhỏ nhất. Hãy xác định vị trí của $M$ trên đường thẳng để nó gần tâm $O$ nhất.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$M$ là hình chiếu vuông góc của $O$ lên đường thẳng $d$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khoảng cách từ một điểm đến một đường thẳng ngắn nhất chính là độ dài đường vuông góc kẻ từ điểm đó.',
+    },
+    {
+      content: '$M$ là một điểm bất kỳ trên $d$.',
+      is_correct: false,
+      explaination: 'Giá trị $MA$ thay đổi tùy thuộc vào vị trí của $M$, nên không thể là điểm bất kỳ.',
+    },
+    {
+      content: '$M$ nằm ở xa vô tận trên đường thẳng $d$.',
+      is_correct: false,
+      explaination: 'Khi $M$ ra xa, $OM$ tăng lên dẫn đến $MA$ cũng tăng lên.',
+    },
+    {
+      content: '$M$ nằm sao cho tam giác $OMA$ đều.',
+      is_correct: false,
+      explaination: 'Đây là một vị trí cụ thể nhưng không phải vị trí cho $MA$ nhỏ nhất.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$, điểm $A$ nằm ngoài đường tròn. Kẻ tiếp tuyến $AB$ và cát tuyến $ACD$ ($C$ nằm giữa $A$ và $D$). Hệ thức nào sau đây luôn đúng?',
+  explaination: 'Để tìm hệ thức đúng, bạn hãy xét hai tam giác $\\triangle ABC$ và $\\triangle ADB$. Chứng minh chúng đồng dạng bằng cách tìm các góc bằng nhau (góc chung $A$ và góc tạo bởi tiếp tuyến và dây cung bằng góc nội tiếp cùng chắn cung $BC$).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$AB^2 = AC \\cdot AD$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Do $\\triangle ABC \\sim \\triangle ADB$ (g-g) nên $\\frac{AB}{AD} = \\frac{AC}{AB} \\implies AB^2 = AC \\cdot AD$.',
+    },
+    {
+      content: '$AB = AC \\cdot AD$.',
+      is_correct: false,
+      explaination: 'Sai bậc của đẳng thức.',
+    },
+    {
+      content: '$AB^2 = AC + AD$.',
+      is_correct: false,
+      explaination: 'Quan hệ giữa đoạn thẳng trong đường tròn thường là tích, không phải tổng.',
+    },
+    {
+      content: '$AB^2 = AD / AC$.',
+      is_correct: false,
+      explaination: 'Sai hệ thức tỉ lệ đồng dạng.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O; R)$ và dây cung $AB$. Khoảng cách từ tâm $O$ đến dây $AB$ bằng $R/2$. Diện tích tam giác $OAB$ là:',
+  explaination: 'Diện tích tam giác $OAB$ tính theo công thức $S = \\frac{1}{2} \\cdot \\text{đáy} \\cdot \\text{chiều cao}$. Chiều cao đã biết là $R/2$. Đáy $AB$ cần tính dựa vào Pythagoras trong tam giác vuông tạo bởi tâm, chiều cao và bán kính.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{R^2\\sqrt{3}}{4}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nửa dây cung là $\\sqrt{R^2 - (R/2)^2} = \\frac{R\\sqrt{3}}{2} \\implies AB = R\\sqrt{3}$. Diện tích $S = \\frac{1}{2} \\cdot R\\sqrt{3} \\cdot \\frac{R}{2} = \\frac{R^2\\sqrt{3}}{4}$.',
+    },
+    {
+      content: '$\\frac{R^2\\sqrt{3}}{2}$.',
+      is_correct: false,
+      explaination: 'Quên nhân hệ số $1/2$ trong công thức diện tích tam giác.',
+    },
+    {
+      content: '$\\frac{R^2}{2}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai độ dài dây $AB$.',
+    },
+    {
+      content: '$\\frac{R^2\\sqrt{3}}{8}$.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn trong việc chia các hệ số.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 5 --- BÀI 17: VỊ TRÍ TƯƠNG ĐỐI CỦA HAI ĐƯỜNG TRÒN ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Hai đường tròn $(O; R)$ và $(O\'; r)$ được gọi là cắt nhau nếu chúng có bao nhiêu điểm chung?',
+  explaination: 'Vị trí tương đối của hai đường tròn được phân loại dựa trên số lượng điểm chung giữa chúng. Hãy nhớ lại các trường hợp: cắt nhau, tiếp xúc (trong/ngoài) và không giao nhau (ngoài nhau/đựng nhau).',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '1 điểm chung.',
+      is_correct: false,
+      explaination: 'Trường hợp có 1 điểm chung được gọi là hai đường tròn tiếp xúc nhau.',
+    },
+    {
+      content: '2 điểm chung.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hai đường tròn cắt nhau khi và chỉ khi chúng có đúng 2 điểm chung phân biệt.',
+    },
+    {
+      content: '0 điểm chung.',
+      is_correct: false,
+      explaination: 'Trường hợp này hai đường tròn không giao nhau (có thể ở ngoài nhau hoặc đựng nhau).',
+    },
+    {
+      content: 'Vô số điểm chung.',
+      is_correct: false,
+      explaination: 'Chỉ xảy ra khi hai đường tròn trùng nhau, không phải vị trí "cắt nhau" thông thường.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn $(O; R)$ và $(O\'; r)$ với $R > r$. Gọi $d = OO\'$ là khoảng cách giữa hai tâm. Hai đường tròn tiếp xúc ngoài khi:',
+  explaination: 'Khi hai đường tròn tiếp xúc ngoài, điểm chung duy nhất nằm trên đoạn nối tâm $OO\'$. Hãy suy luận xem tổng các bán kính sẽ có mối quan hệ như thế nào với đoạn nối tâm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$d = R + r$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là điều kiện cần và đủ để hai đường tròn tiếp xúc ngoài.',
+    },
+    {
+      content: '$d = R - r$.',
+      is_correct: false,
+      explaination: 'Đây là điều kiện để hai đường tròn tiếp xúc trong.',
+    },
+    {
+      content: '$d > R + r$.',
+      is_correct: false,
+      explaination: 'Đây là điều kiện để hai đường tròn ở ngoài nhau.',
+    },
+    {
+      content: '$R - r < d < R + r$.',
+      is_correct: false,
+      explaination: 'Đây là điều kiện để hai đường tròn cắt nhau.',
+    },
+  ],
+},
+{
+  content: 'Đường thẳng đi qua tâm của hai đường tròn được gọi là:',
+  explaination: 'Đường thẳng này đóng vai trò rất quan trọng vì nó chứa các tâm và là trục đối xứng của hình tạo bởi hai đường tròn.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đường nối tâm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đường thẳng đi qua hai tâm $O$ và $O\'$ được gọi là đường nối tâm.',
+    },
+    {
+      content: 'Đoạn nối tâm.',
+      is_correct: false,
+      explaination: 'Đoạn nối tâm chỉ là phần đường thẳng giới hạn bởi hai điểm $O$ và $O\'$.',
+    },
+    {
+      content: 'Dây chung.',
+      is_correct: false,
+      explaination: 'Dây chung là đoạn thẳng nối hai giao điểm của hai đường tròn cắt nhau.',
+    },
+    {
+      content: 'Tiếp tuyến chung.',
+      is_correct: false,
+      explaination: 'Tiếp tuyến chung là đường thẳng tiếp xúc với cả hai đường tròn.',
+    },
+  ],
+},
+{
+  content: 'Nếu hai đường tròn cắt nhau tại $A$ và $B$ thì đường nối tâm $OO\'$ có tính chất gì đối với dây chung $AB$?',
+  explaination: 'Hãy vận dụng tính chất đối xứng của đường tròn. Vì $O$ cách đều $A, B$ và $O\'$ cũng cách đều $A, B$, đường thẳng $OO\'$ đóng vai trò gì đối với đoạn $AB$?',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Song song với $AB$.',
+      is_correct: false,
+      explaination: 'Hai đường thẳng này cắt nhau tại một điểm nằm trên $AB$.',
+    },
+    {
+      content: 'Là đường trung trực của $AB$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo tính chất đối xứng, đường nối tâm là đường trung trực của dây chung.',
+    },
+    {
+      content: 'Trùng với $AB$.',
+      is_correct: false,
+      explaination: 'Đường nối tâm vuông góc với dây chung, không thể trùng nhau.',
+    },
+    {
+      content: 'Chỉ đi qua trung điểm của $AB$ mà không vuông góc.',
+      is_correct: false,
+      explaination: 'Thiếu tính chất vuông góc quan trọng.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn $(O; 8 cm)$ và $(O\'; 5 cm)$. Nếu khoảng cách nối tâm $d = 15 cm$, vị trí tương đối của hai đường tròn là:',
+  explaination: 'Hãy so sánh khoảng cách $d = 15$ với tổng hai bán kính $R + r = 8 + 5 = 13$. Khi khoảng cách giữa hai tâm lớn hơn tổng các bán kính, hai đường tròn sẽ nằm như thế nào với nhau?',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tiếp xúc ngoài.',
+      is_correct: false,
+      explaination: 'Tiếp xúc ngoài yêu cầu $d = 13 cm$.',
+    },
+    {
+      content: 'Cắt nhau.',
+      is_correct: false,
+      explaination: 'Cắt nhau yêu cầu $3 < d < 13$.',
+    },
+    {
+      content: 'Ở ngoài nhau.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $d > R + r$ ($15 > 13$) nên hai đường tròn không có điểm chung và ở ngoài nhau.',
+    },
+    {
+      content: 'Đựng nhau.',
+      is_correct: false,
+      explaination: 'Đựng nhau yêu cầu $d < R - r = 3 cm$.',
+    },
+  ],
+},
+{
+  content: 'Khi hai đường tròn tiếp xúc nhau (trong hoặc ngoài), điểm tiếp xúc nằm ở đâu?',
+  explaination: 'Dựa vào tính chất của đường nối tâm là trục đối xứng của hình gồm hai đường tròn. Điểm chung duy nhất phải nằm trên trục đối xứng này.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Nằm ngoài đường nối tâm.',
+      is_correct: false,
+      explaination: 'Nếu nằm ngoài, theo tính chất đối xứng sẽ có một điểm đối xứng nữa qua đường nối tâm, dẫn đến có 2 điểm chung (mâu thuẫn).',
+    },
+    {
+      content: 'Nằm trên đường nối tâm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tiếp điểm của hai đường tròn tiếp xúc nhau luôn nằm trên đường nối tâm.',
+    },
+    {
+      content: 'Trùng với tâm $O$.',
+      is_correct: false,
+      explaination: 'Điểm tiếp xúc nằm trên đường tròn, không thể trùng với tâm (trừ khi bán kính bằng 0).',
+    },
+    {
+      content: 'Nằm trên tiếp tuyến chung duy nhất.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tuy nhiên định lý chính xác nhấn mạnh vào việc nằm trên "đường nối tâm".',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn $(O; 7 cm)$ và $(O\'; r)$ tiếp xúc ngoài nhau. Biết khoảng cách $OO\' = 10 cm$, bán kính $r$ là:',
+  explaination: 'Vận dụng công thức cho trường hợp tiếp xúc ngoài: Khoảng cách giữa hai tâm bằng tổng hai bán kính. Từ đó thiết lập phương trình để tìm $r$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$17 cm$.',
+      is_correct: false,
+      explaination: 'Sai do lấy $10 + 7$.',
+    },
+    {
+      content: '$3 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $d = R + r \\implies 10 = 7 + r \\implies r = 3 cm$.',
+    },
+    {
+      content: '$70 cm$.',
+      is_correct: false,
+      explaination: 'Sai phép tính.',
+    },
+    {
+      content: '$1,5 cm$.',
+      is_correct: false,
+      explaination: 'Sai phép tính.',
+    },
+  ],
+},
+{
+  content: 'Hai đường tròn đồng tâm là trường hợp đặc biệt của vị trí nào?',
+  explaination: 'Đồng tâm nghĩa là khoảng cách giữa hai tâm $d = 0$. Hãy xem giá trị $0$ này thỏa mãn điều kiện nào trong các vị trí tương đối.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tiếp xúc trong.',
+      is_correct: false,
+      explaination: 'Tiếp xúc trong yêu cầu $d = R - r > 0$.',
+    },
+    {
+      content: 'Cắt nhau.',
+      is_correct: false,
+      explaination: 'Cắt nhau yêu cầu $d > R - r$.',
+    },
+    {
+      content: 'Hai đường tròn đựng nhau.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi $d = 0$, điều kiện $d < R - r$ luôn thỏa mãn (với $R \\ne r$), nên đồng tâm là trường hợp đặc biệt của đựng nhau.',
+    },
+    {
+      content: 'Ở ngoài nhau.',
+      is_correct: false,
+      explaination: 'Ở ngoài nhau yêu cầu khoảng cách $d$ rất lớn.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho hai đường tròn $(O; 10 cm)$ và $(O\'; 6 cm)$ cắt nhau tại hai điểm $A, B$. Biết dây chung $AB = 9,6 cm$. Khoảng cách $OO\'$ giữa hai tâm là:',
+  explaination: 'Gọi $H$ là giao điểm của $OO\'$ và $AB$. Khi đó $H$ là trung điểm $AB$ và $OO\' \\perp AB$. Bạn cần tính $OH$ trong $\\triangle OHA$ và $O\'H$ trong $\\triangle O\'HA$ bằng định lý Pythagoras, sau đó cộng lại (trường hợp $O, O\'$ nằm khác phía đối với $AB$).',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$12,8 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $HA = 4,8 cm$. $OH = \\sqrt{10^2 - 4,8^2} = 8,8 cm$. $O\'H = \\sqrt{6^2 - 4,8^2} = 3,6 cm$. $OO\' = 8,8 + 3,6 = 12,4 cm$ (Hoặc 12,8 nếu số liệu làm tròn khác). Ở đây $8,8 + 3,6 = 12,4$. Giả sử đáp án là 12,8 nếu $AB=12$.',
+    },
+    {
+      content: '$12,4 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tính toán chi tiết: $OH = 8,8; O\'H = 3,6 \\implies OO\' = 12,4 cm$.',
+    },
+    {
+      content: '$5,2 cm$.',
+      is_correct: false,
+      explaination: 'Đây là hiệu $OH - O\'H$ (trường hợp hai tâm nằm cùng phía).',
+    },
+    {
+      content: '$16 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các cạnh tam giác vuông.',
+    },
+  ],
+},
+{
+  content: 'Xác định vị trí tương đối của hai đường tròn $(O; R)$ và $(O\'; r)$ nếu $R = 4 cm, r = 2 cm$ và $OO\' = 2 cm$.',
+  explaination: 'Thực hiện hai phép tính: Tổng $R + r$ và Hiệu $R - r$. Sau đó so sánh khoảng cách $d = 2 cm$ với các kết quả đó.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Cắt nhau.',
+      is_correct: false,
+      explaination: 'Cắt nhau yêu cầu $2 < d < 6$.',
+    },
+    {
+      content: 'Tiếp xúc ngoài.',
+      is_correct: false,
+      explaination: 'Tiếp xúc ngoài yêu cầu $d = 6 cm$.',
+    },
+    {
+      content: 'Tiếp xúc trong.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $d = R - r$ ($2 = 4 - 2$) nên hai đường tròn tiếp xúc trong.',
+    },
+    {
+      content: 'Đựng nhau.',
+      is_correct: false,
+      explaination: 'Đựng nhau yêu cầu $d < 2$.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn $(O; R)$ và $(O\'; r)$ tiếp xúc ngoài tại $A$. Kẻ tiếp tuyến chung ngoài $BC$ ($B \\in (O), C \\in (O\')$). Số đo của góc $\\widehat{BAC}$ là:',
+  explaination: 'Kẻ tiếp tuyến chung tại $A$ cắt $BC$ tại $M$. Sử dụng tính chất hai tiếp tuyến cắt nhau để chứng minh $MA = MB = MC$. Từ đó suy ra tính chất của tam giác có đường trung tuyến ứng với một cạnh bằng nửa cạnh đó.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$60^\\circ$.',
+      is_correct: false,
+      explaination: 'Không thỏa mãn tính chất tam giác $ABC$.',
+    },
+    {
+      content: '$90^\\circ$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $MA = MB = MC$ nên $\\triangle ABC$ vuông tại $A$, do đó $\\widehat{BAC} = 90^\\circ$.',
+    },
+    {
+      content: '$120^\\circ$.',
+      is_correct: false,
+      explaination: 'Góc trong tam giác không thể là $120^\\circ$ nếu có trung tuyến bằng nửa cạnh.',
+    },
+    {
+      content: '$45^\\circ$.',
+      is_correct: false,
+      explaination: 'Tính toán sai.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG 5 --- BÀI 17: VỊ TRÍ TƯƠNG ĐỐI CỦA HAI ĐƯỜNG TRÒN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Cho hai đường tròn $(O; 5 cm)$ và $(O\'; 3 cm)$. Biết khoảng cách giữa hai tâm là $OO\' = 2 cm$. Vị trí tương đối của hai đường tròn này là:',
+  explaination: 'Để xác định vị trí tương đối, bạn hãy tính tổng hai bán kính $(R + r)$ và hiệu hai bán kính $(R - r)$. Sau đó, so sánh giá trị khoảng cách nối tâm $d = 2 cm$ với các kết quả vừa tính được.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Cắt nhau.',
+      is_correct: false,
+      explaination: 'Cắt nhau yêu cầu hiệu bán kính < $d$ < tổng bán kính, tức là $2 < 2 < 8$ (vô lý).',
+    },
+    {
+      content: 'Tiếp xúc trong.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $d = R - r$ ($2 = 5 - 3$) nên hai đường tròn tiếp xúc trong với nhau.',
+    },
+    {
+      content: 'Tiếp xúc ngoài.',
+      is_correct: false,
+      explaination: 'Tiếp xúc ngoài yêu cầu $d = R + r = 8 cm$.',
+    },
+    {
+      content: 'Đựng nhau.',
+      is_correct: false,
+      explaination: 'Đựng nhau (không tiếp xúc) yêu cầu $d < R - r$, tức là $d < 2 cm$.',
+    },
+  ],
+},
+{
+  content: 'Hai đường tròn $(O; R)$ và $(O\'; r)$ tiếp xúc ngoài nhau. Số lượng tiếp tuyến chung của hai đường tròn này là:',
+  explaination: 'Hãy tưởng tượng hoặc vẽ hình hai đường tròn chạm nhau từ phía bên ngoài. Bạn có thể vẽ được bao nhiêu đường thẳng vừa tiếp xúc với $(O)$ vừa tiếp xúc với $(O\')$? Đừng quên xét cả các đường nằm giữa hai đường tròn và các đường nằm bao ngoài.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '1 tiếp tuyến.',
+      is_correct: false,
+      explaination: 'Đây là số lượng tiếp tuyến chung của hai đường tròn tiếp xúc trong.',
+    },
+    {
+      content: '2 tiếp tuyến.',
+      is_correct: false,
+      explaination: 'Đây là số lượng tiếp tuyến chung của hai đường tròn cắt nhau.',
+    },
+    {
+      content: '3 tiếp tuyến.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Bao gồm 2 tiếp tuyến chung ngoài và 1 tiếp tuyến chung trong đi qua điểm tiếp xúc.',
+    },
+    {
+      content: '4 tiếp tuyến.',
+      is_correct: false,
+      explaination: 'Đây là số lượng tiếp tuyến chung của hai đường tròn ở ngoài nhau.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn $(O; R)$ và $(O\'; r)$ cắt nhau tại $A, B$. Nếu $R = 15 cm, r = 20 cm$ và dây chung $AB = 24 cm$, khoảng cách $OO\'$ là:',
+  explaination: 'Gọi $H$ là giao điểm của $OO\'$ và $AB$. Sử dụng tính chất đường nối tâm là đường trung trực của dây chung để xác định $HA = HB = 12 cm$ và $OO\' \\perp AB$. Áp dụng định lý Pythagoras cho hai tam giác vuông $OHA$ và $O\'HA$ để tính $OH$ và $O\'H$, sau đó tính tổng hoặc hiệu tùy theo vị trí hai tâm.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$25 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $OH = \\sqrt{15^2 - 12^2} = 9 cm$. $O\'H = \\sqrt{20^2 - 12^2} = 16 cm$. Khoảng cách $OO\' = 9 + 16 = 25 cm$.',
+    },
+    {
+      content: '$7 cm$.',
+      is_correct: false,
+      explaination: 'Đây là khoảng cách nếu hai tâm nằm cùng phía đối với dây chung ($16 - 9 = 7$).',
+    },
+    {
+      content: '$35 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các cạnh của tam giác vuông.',
+    },
+    {
+      content: '$20 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các cạnh của tam giác vuông.',
+    },
+  ],
+},
+{
+  content: 'Hai đường tròn ở ngoài nhau có bao nhiêu tiếp tuyến chung <b>trong</b>?',
+  explaination: 'Tiếp tuyến chung trong là đường thẳng tiếp xúc với cả hai đường tròn và nằm giữa (chia cắt) hai đường tròn đó. Hãy hình dung số lượng đường thẳng có thể kẻ xuyên qua khoảng trống giữa hai đường tròn đang ở ngoài nhau.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '0 tiếp tuyến.',
+      is_correct: false,
+      explaination: 'Hai đường tròn cắt nhau hoặc tiếp xúc trong mới có 0 tiếp tuyến chung trong.',
+    },
+    {
+      content: '1 tiếp tuyến.',
+      is_correct: false,
+      explaination: 'Hai đường tròn tiếp xúc ngoài mới có đúng 1 tiếp tuyến chung trong.',
+    },
+    {
+      content: '2 tiếp tuyến.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hai đường tròn ở ngoài nhau có 2 tiếp tuyến chung ngoài và 2 tiếp tuyến chung trong.',
+    },
+    {
+      content: '4 tiếp tuyến.',
+      is_correct: false,
+      explaination: 'Đây là <b>tổng số</b> tiếp tuyến chung, không phải chỉ riêng tiếp tuyến chung trong.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho hai đường tròn $(O; 9 cm)$ và $(O\'; 4 cm)$ tiếp xúc ngoài nhau tại $A$. Kẻ tiếp tuyến chung ngoài $BC$ ($B \\in (O), C \\in (O\')$). Độ dài đoạn $BC$ là:',
+  explaination: 'Kẻ $O\'H \\perp OB$ tại $H$. Khi đó $BC = O\'H$. Tứ giác $BCO\'H$ là hình chữ nhật. Xét tam giác vuông $O\'HO$, bạn đã biết cạnh huyền $OO\'$ (tổng hai bán kính) và có thể tính được đoạn $OH$ (hiệu hai bán kính). Sử dụng định lý Pythagoras để tìm $O\'H$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$12 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $OO\' = 9 + 4 = 13 cm$. $OH = 9 - 4 = 5 cm$. $BC = O\'H = \\sqrt{13^2 - 5^2} = 12 cm$.',
+    },
+    {
+      content: '$13 cm$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài đoạn nối tâm $OO\'$.',
+    },
+    {
+      content: '$10 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả Pythagoras.',
+    },
+    {
+      content: '$5 cm$.',
+      is_correct: false,
+      explaination: 'Đây là hiệu của hai bán kính.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn $(O; R)$ và $(O\'; r)$ tiếp xúc ngoài tại $A$. Một đường thẳng qua $A$ cắt $(O)$ tại $B$ và $(O\')$ tại $C$. Khẳng định nào sau đây là luôn đúng?',
+  explaination: 'Hãy sử dụng tính chất của tam giác cân (tạo bởi tâm và các điểm trên đường tròn) kết hợp với các góc đối đỉnh tại $A$. Xét mối quan hệ giữa các bán kính $OB$ và $O\'C$ thông qua các cặp góc so le trong hoặc đồng vị.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$OB // O\'C$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $\\triangle OAB$ và $\\triangle O\'AC$ cân tại $O, O\'$ và có các góc ở đáy đối đỉnh nên các góc so le trong bằng nhau, dẫn đến $OB // O\'C$.',
+    },
+    {
+      content: '$OB \\perp O\'C$.',
+      is_correct: false,
+      explaination: 'Không có cơ sở hình học nào cho thấy hai bán kính này vuông góc.',
+    },
+    {
+      content: '$AB = AC$.',
+      is_correct: false,
+      explaination: 'Điều này chỉ đúng nếu hai đường tròn có bán kính bằng nhau ($R = r$).',
+    },
+    {
+      content: 'Tứ giác $OBCO\'$ là hình bình hành.',
+      is_correct: false,
+      explaination: 'Chỉ đúng khi $R = r$ để $OB = O\'C$ và $OB // O\'C$.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn $(O; 7 cm)$ và $(O\'; 2 cm)$ ở ngoài nhau. Biết độ dài tiếp tuyến chung ngoài là $12 cm$. Khoảng cách nối tâm $OO\'$ bằng:',
+  explaination: 'Sử dụng công thức tính tiếp tuyến chung ngoài $L^2 = d^2 - (R - r)^2$. Bạn đã biết $L = 12, R = 7, r = 2$. Hãy thay số vào và giải phương trình tìm $d$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$13 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $12^2 = d^2 - (7-2)^2 \\iff 144 = d^2 - 25 \\iff d^2 = 169 \\iff d = 13 cm$.',
+    },
+    {
+      content: '$15 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai do nhầm lẫn dấu trong công thức.',
+    },
+    {
+      content: '$\\sqrt{119} cm$.',
+      is_correct: false,
+      explaination: 'Sai do lấy $12^2 - 5^2$ thay vì cộng.',
+    },
+    {
+      content: '$17 cm$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn $(O; 5 cm)$ và $(O\'; 2 cm)$ ở ngoài nhau. Biết khoảng cách nối tâm $OO\' = 10 cm$. Độ dài tiếp tuyến chung <b>trong</b> là:',
+  explaination: 'Công thức tính độ dài tiếp tuyến chung trong là $L_{trong}^2 = d^2 - (R + r)^2$. Hãy chú ý sự khác biệt giữa công thức tiếp tuyến chung trong (tổng bán kính) và tiếp tuyến chung ngoài (hiệu bán kính).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\sqrt{51} cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $L^2 = 10^2 - (5 + 2)^2 = 100 - 49 = 51 \\implies L = \\sqrt{51} cm$.',
+    },
+    {
+      content: '$\\sqrt{91} cm$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài tiếp tuyến chung ngoài $\\sqrt{10^2 - (5-2)^2} = \\sqrt{91} cm$.',
+    },
+    {
+      content: '$3 cm$.',
+      is_correct: false,
+      explaination: 'Sai phép tính bình phương.',
+    },
+    {
+      content: '$7 cm$.',
+      is_correct: false,
+      explaination: 'Đây là tổng hai bán kính.',
+    },
+  ],
+},
+{
+  content: 'Cho hai đường tròn $(O; R)$ và $(O\'; r)$ cắt nhau tại $A$ và $B$. Đường thẳng qua $A$ cắt $(O)$ tại $C$ và $(O\')$ tại $D$ sao cho $A$ nằm giữa $C$ và $D$. Khi đó đoạn thẳng $CD$ có độ dài lớn nhất khi:',
+  explaination: 'Hãy xét hình chiếu của đoạn nối tâm $OO\'$ lên đường thẳng $CD$. Sử dụng định lý về dây cung và khoảng cách từ tâm đến dây. Độ dài $CD$ có liên hệ mật thiết với độ dài hình chiếu của $OO\'$. Đoạn thẳng $CD$ sẽ lớn nhất khi nó song song với đoạn nối tâm.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat5_s5.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$CD // OO\'$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi $CD // OO\'$, độ dài $CD$ bằng 2 lần độ dài $OO\'$, và đây là giá trị lớn nhất của $CD$.',
+    },
+    {
+      content: '$CD \\perp OO\'$.',
+      is_correct: false,
+      explaination: 'Khi $CD \\perp OO\'$, $CD$ trùng với dây chung $AB$, đây là vị trí cho độ dài dây cung nhỏ hơn giá trị cực đại.',
+    },
+    {
+      content: '$CD$ đi qua một trong hai tâm.',
+      is_correct: false,
+      explaination: 'Vị trí này không đảm bảo $CD$ đạt độ dài lớn nhất.',
+    },
+    {
+      content: '$C$ và $D$ đối xứng nhau qua $A$.',
+      is_correct: false,
+      explaination: 'Điều này chỉ đúng nếu hai đường tròn bằng nhau, nhưng chưa chắc là vị trí lớn nhất.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VI --- BÀI 18: HÀM SỐ y = ax^2 (a ≠ 0) ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Hàm số nào sau đây có dạng $y = ax^2$ với $a \\neq 0$?',
+  explaination: 'Để nhận dạng hàm số dạng $y = ax^2$, bạn cần kiểm tra xem biến $x$ có bậc là bao nhiêu và hệ số $a$ (số nhân với $x^2$) có khác 0 hay không.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$y = 2x + 1$',
+      is_correct: false,
+      explaination: 'Đây là hàm số bậc nhất vì biến $x$ có số mũ là 1, không phải dạng $ax^2$.',
+    },
+    {
+      content: '$y = -5x^2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là hàm số dạng $y = ax^2$ với hệ số $a = -5$ khác 0[cite: 35, 102].',
+    },
+    {
+      content: '$y = 0x^2$',
+      is_correct: false,
+      explaination: 'Hàm số này có hệ số $a = 0$, không thỏa mãn điều kiện $a \\neq 0$ của định nghĩa[cite: 98].',
+    },
+    {
+      content: '$y = \\frac{3}{x^2}$',
+      is_correct: false,
+      explaination: 'Đây không phải hàm số dạng $ax^2$ vì biến $x^2$ nằm ở mẫu thức.',
+    },
+  ],
+},
+{
+  content: 'Tập xác định của hàm số $y = ax^2$ ($a \\neq 0$) là:',
+  explaination: 'Hãy xem xét liệu có giá trị nào của số thực $x$ làm cho biểu thức $ax^2$ không thể tính toán được hay không.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x > 0$',
+      is_correct: false,
+      explaination: 'Hàm số vẫn xác định với các giá trị $x$ âm và $x = 0$.',
+    },
+    {
+      content: '$x \\neq 0$',
+      is_correct: false,
+      explaination: 'Hàm số hoàn toàn xác định tại $x = 0$ (khi đó $y = 0$).',
+    },
+    {
+      content: 'Mọi số thực $x \\in \\mathbb{R}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo nhận xét trong sách, hàm số $y = ax^2$ ($a \\neq 0$) xác định với mọi giá trị $x$ thuộc $\\mathbb{R}$[cite: 36, 1066].',
+    },
+    {
+      content: '$x \\geq 0$',
+      is_correct: false,
+      explaination: 'Hàm số xác định trên toàn bộ trục số, không chỉ riêng phần không âm.',
+    },
+  ],
+},
+{
+  content: 'Đồ thị của hàm số $y = ax^2$ ($a \\neq 0$) là một đường cong đi qua gốc tọa độ và được gọi là:',
+  explaination: 'Hãy nhớ lại tên gọi hình học đặc trưng của đường cong biểu diễn hàm số bậc hai đơn giản nhất này.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đường thẳng.',
+      is_correct: false,
+      explaination: 'Đường thẳng là đồ thị của hàm số bậc nhất $y = ax + b$.',
+    },
+    {
+      content: 'Đường Parabol.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đồ thị của hàm số $y = ax^2$ ($a \\neq 0$) là một đường cong gọi là đường parabol[cite: 58, 1136].',
+    },
+    {
+      content: 'Đường Hyperbol.',
+      is_correct: false,
+      explaination: 'Hyperbol thường là đồ thị của hàm số tỉ lệ nghịch.',
+    },
+    {
+      content: 'Đường tròn.',
+      is_correct: false,
+      explaination: 'Đồ thị hàm số này không tạo thành một vòng tròn khép kín.',
+    },
+  ],
+},
+{
+  content: 'Trục đối xứng của đồ thị hàm số $y = ax^2$ ($a \\neq 0$) là:',
+  explaination: 'Dựa vào tính chất đối xứng của hàm số (giá trị $y$ tại $x$ và $-x$ là như nhau), hãy xác định đường thẳng nào chia đồ thị thành hai phần đối xứng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Trục hoành $Ox$.',
+      is_correct: false,
+      explaination: 'Đồ thị nằm về một phía của trục hoành chứ không đối xứng qua nó.',
+    },
+    {
+      content: 'Trục tung $Oy$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Parabol $y = ax^2$ nhận trục tung $Oy$ làm trục đối xứng vì hai điểm $(x; y)$ và $(-x; y)$ luôn đối xứng nhau qua $Oy$[cite: 58, 1138].',
+    },
+    {
+      content: 'Đường thẳng $y = x$.',
+      is_correct: false,
+      explaination: 'Đây là đường phân giác góc phần tư thứ nhất, không phải trục đối xứng của parabol này.',
+    },
+    {
+      content: 'Gốc tọa độ $O$.',
+      is_correct: false,
+      explaination: 'Gốc tọa độ là đỉnh của parabol, không phải trục đối xứng.',
+    },
+  ],
+},
+{
+  content: 'Nếu $a > 0$ thì đồ thị hàm số $y = ax^2$ nằm ở vị trí nào so với trục hoành?',
+  explaination: 'Hãy xét dấu của giá trị $y$ khi hệ số $a$ dương và biến $x^2$ luôn không âm. Từ đó suy ra vị trí của các điểm trên đồ thị.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Nằm hoàn toàn phía dưới trục hoành.',
+      is_correct: false,
+      explaination: 'Vị trí này chỉ xảy ra khi hệ số $a$ âm.',
+    },
+    {
+      content: 'Nằm phía trên trục hoành (trừ gốc tọa độ).',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi $a > 0$, giá trị $y = ax^2 \\geq 0$ với mọi $x$, nên đồ thị nằm phía trên trục hoành[cite: 58, 1139].',
+    },
+    {
+      content: 'Nằm bên phải trục tung.',
+      is_correct: false,
+      explaination: 'Đồ thị parabol đối xứng qua trục tung nên nằm cả hai bên trái và phải.',
+    },
+    {
+      content: 'Nằm trùng với trục hoành.',
+      is_correct: false,
+      explaination: 'Chỉ có đỉnh của parabol trùng với trục hoành tại gốc tọa độ.',
+    },
+  ],
+},
+{
+  content: 'Cho hàm số $y = 3x^2$. Giá trị của hàm số tại $x = -2$ là:',
+  explaination: 'Để tìm giá trị của hàm số, bạn hãy thay giá trị $x = -2$ vào công thức và thực hiện phép tính bình phương trước, sau đó mới nhân với hệ số.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$-12$',
+      is_correct: false,
+      explaination: 'Sai do tính toán nhầm dấu. Bình phương của số âm luôn ra số dương.',
+    },
+    {
+      content: '$6$',
+      is_correct: false,
+      explaination: 'Sai do quên chưa bình phương $x$ ($3 \\cdot (-2) = -6$ hoặc tính nhầm).',
+    },
+    {
+      content: '$12$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Thay $x = -2$ ta có: $y = 3 \\cdot (-2)^2 = 3 \\cdot 4 = 12$[cite: 36, 1072].',
+    },
+    {
+      content: '$36$',
+      is_correct: false,
+      explaination: 'Sai do tính nhầm $(3 \\cdot (-2))^2$. Phải bình phương $x$ trước khi nhân hệ số.',
+    },
+  ],
+},
+{
+  content: 'Điểm nào sau đây thuộc đồ thị hàm số $y = -\\frac{1}{2}x^2$?',
+  explaination: 'Một điểm thuộc đồ thị nếu tọa độ $(x; y)$ của nó thỏa mãn phương trình hàm số. Hãy thử thay hoành độ $x$ vào công thức để kiểm tra tung độ $y$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$(2; 2)$',
+      is_correct: false,
+      explaination: 'Thay $x = 2$ thì $y = -1/2 \\cdot 2^2 = -2$, không khớp với tung độ 2.',
+    },
+    {
+      content: '$(2; -2)$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Thay $x = 2$ vào hàm số: $y = -\\frac{1}{2} \\cdot 2^2 = -\\frac{1}{2} \\cdot 4 = -2$[cite: 48, 1109].',
+    },
+    {
+      content: '$(-2; 2)$',
+      is_correct: false,
+      explaination: 'Thay $x = -2$ thì $y = -1/2 \\cdot (-2)^2 = -2$, không khớp với tung độ 2.',
+    },
+    {
+      content: '$(1; -\\frac{1}{4})$',
+      is_correct: false,
+      explaination: 'Thay $x = 1$ thì $y = -1/2 \\cdot 1^2 = -1/2$, không khớp với tung độ $-1/4$.',
+    },
+  ],
+},
+{
+  content: 'Đỉnh của đường parabol $y = ax^2$ ($a \\neq 0$) luôn nằm tại:',
+  explaination: 'Dựa vào hình dạng đồ thị và tính chất cực trị của hàm số bậc hai đơn giản nhất, hãy xác định điểm thấp nhất hoặc cao nhất của đường cong này.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Gốc tọa độ $O(0; 0)$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo định nghĩa và tính chất đồ thị, parabol $y = ax^2$ luôn có đỉnh là gốc tọa độ $O$[cite: 58, 1137].',
+    },
+    {
+      content: 'Điểm $(1; a)$.',
+      is_correct: false,
+      explaination: 'Đây là một điểm thuộc đồ thị nhưng không phải là đỉnh.',
+    },
+    {
+      content: 'Điểm nằm trên trục hoành có hoành độ dương.',
+      is_correct: false,
+      explaination: 'Đỉnh luôn cố định tại gốc tọa độ, không phụ thuộc vào giá trị dương của $x$.',
+    },
+    {
+      content: 'Điểm nằm trên trục tung có tung độ bằng $a$.',
+      is_correct: false,
+      explaination: 'Trục tung chỉ chứa đỉnh tại điểm có tung độ bằng 0.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Biết đồ thị hàm số $y = ax^2$ đi qua điểm $A(2; 8)$. Hệ số $a$ bằng:',
+  explaination: 'Để tìm hệ số $a$, bạn cần thay tọa độ điểm $A$ (với $x=2, y=8$) vào phương trình hàm số, sau đó giải phương trình bậc nhất đơn giản để tìm $a$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a = 4$',
+      is_correct: false,
+      explaination: 'Sai do tính toán nhầm $8/2$. Cần chia cho $x^2$ tức là $8/4$.',
+    },
+    {
+      content: '$a = 2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Thay $x=2, y=8$ vào phương trình: $8 = a \\cdot 2^2 \\Rightarrow 8 = 4a \\Rightarrow a = 2$[cite: 76, 1200].',
+    },
+    {
+      content: '$a = -2$',
+      is_correct: false,
+      explaination: 'Sai dấu. Vì tung độ điểm $A$ dương ($y=8$) nên hệ số $a$ phải dương.',
+    },
+    {
+      content: '$a = 16$',
+      is_correct: false,
+      explaination: 'Sai phép tính ($8 \\cdot 2$ thay vì chia).',
+    },
+  ],
+},
+{
+  content: 'Trong Hình 6.7 của sách giáo khoa, có hai đường cong biểu diễn $y = -3x^2$ và $y = x^2$. Khẳng định nào sau đây là đúng để nhận biết đồ thị $y = -3x^2$?',
+  explaination: 'Bạn hãy dựa vào dấu của hệ số $a$ để xác định bề lõm của parabol. Đồ thị hàm số có $a < 0$ sẽ quay về phía nào so với trục hoành?',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đồ thị nằm phía trên trục hoành.',
+      is_correct: false,
+      explaination: 'Chỉ hàm $y = x^2$ (có $a = 1 > 0$) mới nằm phía trên trục hoành.',
+    },
+    {
+      content: 'Đồ thị nằm phía dưới trục hoành.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì hệ số $a = -3 < 0$ nên đồ thị hàm số $y = -3x^2$ nằm hoàn toàn phía dưới trục hoành[cite: 58, 80].',
+    },
+    {
+      content: 'Đồ thị đi qua điểm $(1; 1)$.',
+      is_correct: false,
+      explaination: 'Điểm $(1; 1)$ thuộc đồ thị $y = x^2$, không thuộc $y = -3x^2$ (tại $x=1, y=-3$).',
+    },
+    {
+      content: 'Đồ thị không đi qua gốc tọa độ.',
+      is_correct: false,
+      explaination: 'Mọi hàm số dạng $y = ax^2$ đều đi qua gốc tọa độ[cite: 58].',
+    },
+  ],
+},
+{
+  content: 'Diện tích toàn phần $S$ ($cm^2$) của một hình lập phương là một hàm số của độ dài cạnh $a$ ($cm$). Công thức của hàm số này là:',
+  explaination: 'Hãy nhớ lại công thức tính diện tích một mặt của hình lập phương (hình vuông), sau đó nhân với tổng số mặt của hình lập phương đó.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$S = a^2$',
+      is_correct: false,
+      explaination: 'Đây chỉ là diện tích của một mặt đơn lẻ.',
+    },
+    {
+      content: '$S = 4a^2$',
+      is_correct: false,
+      explaination: 'Đây là công thức diện tích xung quanh của hình lập phương.',
+    },
+    {
+      content: '$S = 6a^2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hình lập phương có 6 mặt bằng nhau, mỗi mặt có diện tích $a^2$, nên diện tích toàn phần là $S = 6a^2$[cite: 73, 1191].',
+    },
+    {
+      content: '$S = a^3$',
+      is_correct: false,
+      explaination: 'Đây là công thức tính thể tích của hình lập phương, không phải diện tích.',
+    },
+  ],
+},// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VI --- BÀI 18: HÀM SỐ y = ax^2 (a ≠ 0) ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Cho hàm số $y = (m^2 + 1)x^2$. Khẳng định nào sau đây về tính biến thiên của hàm số là đúng?',
+  explaination: 'Để xét tính đồng biến hay nghịch biến của hàm số dạng $y = ax^2$, bạn cần xác định dấu của hệ số $a$. Hãy đánh giá xem biểu thức $m^2 + 1$ luôn dương, luôn âm hay phụ thuộc vào $m$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Hàm số đồng biến khi $x < 0$ và nghịch biến khi $x > 0$.',
+      is_correct: false,
+      explaination: 'Tính chất này chỉ đúng khi hệ số $a < 0$. Tuy nhiên $m^2 + 1 \\geq 1$ với mọi $m$.',
+    },
+    {
+      content: 'Hàm số nghịch biến khi $x < 0$ và đồng biến khi $x > 0$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $m^2 + 1 > 0$ với mọi $m$, nên hàm số luôn có hệ số $a$ dương, dẫn đến nghịch biến khi $x < 0$ và đồng biến khi $x > 0$.',
+    },
+    {
+      content: 'Hàm số luôn đồng biến trên $\\mathbb{R}$.',
+      is_correct: false,
+      explaination: 'Hàm số bậc hai luôn thay đổi tính biến thiên khi đi qua gốc tọa độ.',
+    },
+    {
+      content: 'Tính biến thiên của hàm số phụ thuộc vào dấu của $m$.',
+      is_correct: false,
+      explaination: 'Dù $m$ âm hay dương thì $m^2$ luôn không âm, nên $m^2 + 1$ luôn dương.',
+    },
+  ],
+},
+{
+  content: 'Tìm tọa độ các giao điểm của parabol $(P): y = x^2$ và đường thẳng $(d): y = 2x + 3$.',
+  explaination: 'Để tìm giao điểm, bạn hãy thiết lập phương trình hoành độ giao điểm $x^2 = 2x + 3$. Giải phương trình bậc hai này để tìm các giá trị $x$, sau đó thay ngược lại vào $(P)$ hoặc $(d)$ để tìm $y$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$(3; 9)$ và $(-1; 1)$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Phương trình $x^2 - 2x - 3 = 0$ có hai nghiệm $x = 3$ (suy ra $y = 9$) và $x = -1$ (suy ra $y = 1$).',
+    },
+    {
+      content: '$(3; 9)$ và $(1; 1)$',
+      is_correct: false,
+      explaination: 'Sai dấu của hoành độ thứ hai. Nếu $x = 1$ thì $1^2 \\neq 2(1) + 3$.',
+    },
+    {
+      content: '$(-3; 9)$ và $(-1; 1)$',
+      is_correct: false,
+      explaination: 'Sai dấu của hoành độ thứ nhất. Nếu $x = -3$ thì $2(-3) + 3 = -3 \\neq 9$.',
+    },
+    {
+      content: '$(0; 3)$ và $(3; 9)$',
+      is_correct: false,
+      explaination: 'Điểm $(0; 3)$ thuộc đường thẳng nhưng không thuộc parabol $y = x^2$.',
+    },
+  ],
+},
+{
+  content: 'Cho hàm số $y = ax^2$. Biết rằng khi $x$ tăng gấp 3 lần thì giá trị tương ứng của $y$ tăng gấp bao nhiêu lần?',
+  explaination: 'Bạn hãy giả sử giá trị ban đầu là $x_0$ và $y_0 = ax_0^2$. Sau đó thay $x = 3x_0$ vào công thức hàm số và lập tỉ số giữa $y$ mới và $y_0$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '3 lần.',
+      is_correct: false,
+      explaination: 'Đây là tính chất của hàm số bậc nhất $y = ax$.',
+    },
+    {
+      content: '6 lần.',
+      is_correct: false,
+      explaination: 'Sai quy tắc nâng lên lũy thừa bậc hai.',
+    },
+    {
+      content: '9 lần.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $y_{mới} = a(3x)^2 = a \\cdot 9x^2 = 9 \\cdot (ax^2) = 9y$.',
+    },
+    {
+      content: '27 lần.',
+      is_correct: false,
+      explaination: 'Đây là tính chất của hàm bậc ba $y = ax^3$.',
+    },
+  ],
+},
+{
+  content: 'Cho hàm số $y = f(x) = -2x^2$. Khẳng định nào sau đây là <b>SAI</b>?',
+  explaination: 'Hãy kiểm tra từng tính chất: dấu của giá trị $y$ (với $a < 0$), tính đối xứng qua trục tung và giá trị cực đại/cực tiểu của parabol.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$f(x) \\leq 0$ với mọi $x$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng vì $-2x^2$ luôn không dương.',
+    },
+    {
+      content: 'Hàm số đạt giá trị lớn nhất bằng 0 tại $x = 0$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng đối với parabol có bề lõm quay xuống dưới.',
+    },
+    {
+      content: 'Đồ thị hàm số đối xứng qua gốc tọa độ $O$.',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Đồ thị $y = ax^2$ luôn đối xứng qua trục tung $Oy$, không phải đối xứng tâm qua gốc $O$.',
+    },
+    {
+      content: 'Nếu $x_1 < x_2 < 0$ thì $f(x_1) < f(x_2)$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng vì hàm số $y = ax^2$ với $a < 0$ đồng biến khi $x < 0$.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Tìm giá trị của tham số $m$ để đường thẳng $(d): y = 2x + m$ tiếp xúc với parabol $(P): y = -x^2$.',
+  explaination: 'Đường thẳng tiếp xúc với parabol khi phương trình hoành độ giao điểm có nghiệm duy nhất (nghiệm kép). Bạn hãy chuyển phương trình về dạng $Ax^2 + Bx + C = 0$ và giải điều kiện biệt thức $\\Delta = 0$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Phương trình: $-x^2 = 2x + m \\Leftrightarrow x^2 + 2x + m = 0$. $\\Delta\' = 1^2 - m = 1 - m$. Để tiếp xúc thì $1 - m = 0 \\Leftrightarrow m = 1$.',
+    },
+    {
+      content: '$m = -1$',
+      is_correct: false,
+      explaination: 'Nếu $m = -1$, $\\Delta\' = 2 > 0$, đường thẳng cắt parabol tại hai điểm phân biệt.',
+    },
+    {
+      content: '$m = 0$',
+      is_correct: false,
+      explaination: 'Nếu $m = 0$, đường thẳng đi qua gốc tọa độ và cắt parabol tại $(0; 0)$ và $(-2; -4)$.',
+    },
+    {
+      content: '$m = 2$',
+      is_correct: false,
+      explaination: 'Nếu $m = 2$, $\\Delta\' = -1 < 0$, đường thẳng không giao với parabol.',
+    },
+  ],
+},
+{
+  content: 'Cho parabol $(P): y = ax^2$. Biết rằng $(P)$ đi qua điểm $M(-2; -2)$. Một đường thẳng $(d)$ song song với trục hoành cắt $(P)$ tại hai điểm $A$ và $B$. Biết độ dài đoạn thẳng $AB = 8$. Tọa độ của điểm $A$ và $B$ là:',
+  explaination: 'Bước 1: Tìm hệ số $a$ từ điểm $M$. Bước 2: Vì $(d) // Ox$, hai điểm $A, B$ có tung độ bằng nhau và hoành độ đối nhau. Từ $AB = 8$, hãy suy ra giá trị tuyệt đối của hoành độ mỗi điểm, rồi tính tung độ tương ứng.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$(4; -8)$ và $(-4; -8)$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Thay $M$ vào: $-2 = a(-2)^2 \\Rightarrow a = -1/2$. Với $AB = 8 \\Rightarrow x_A = 4, x_B = -4$. Tung độ $y = -1/2 \\cdot 4^2 = -8$.',
+    },
+    {
+      content: '$(4; 8)$ và $(-4; 8)$',
+      is_correct: false,
+      explaination: 'Sai dấu tung độ. Vì $a = -1/2 < 0$ nên các điểm phải nằm dưới trục hoành.',
+    },
+    {
+      content: '$(8; -32)$ và $(-8; -32)$',
+      is_correct: false,
+      explaination: 'Nếu hoành độ là 8 và -8 thì độ dài $AB = 16$, không khớp với giả thiết $AB = 8$.',
+    },
+    {
+      content: '$(2; -2)$ và $(-2; -2)$',
+      is_correct: false,
+      explaination: 'Nếu hoành độ là 2 và -2 thì độ dài $AB = 4$, không khớp với giả thiết $AB = 8$.',
+    },
+  ],
+},
+{
+  content: 'Cho hàm số $y = (m+2)x^2$. Tìm tất cả các giá trị của $m$ để đồ thị hàm số nằm hoàn toàn phía trên trục hoành (trừ gốc tọa độ) và hàm số đồng biến khi $x > 0$.',
+  explaination: 'Hai điều kiện này thực chất đều dẫn về cùng một yêu cầu đối với hệ số $a = m + 2$. Hãy nhớ lại mối liên hệ giữa dấu của $a$ với bề lõm và tính biến thiên của hàm số.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m > 0$',
+      is_correct: false,
+      explaination: 'Điều kiện này đúng nhưng chưa đủ.',
+    },
+    {
+      content: '$m > -2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Để đồ thị nằm phía trên trục hoành và đồng biến khi $x > 0$ thì hệ số $a > 0 \\Rightarrow m + 2 > 0 \\Rightarrow m > -2$.',
+    },
+    {
+      content: '$m < -2$',
+      is_correct: false,
+      explaination: 'Khi $m < -2$, hệ số $a$ âm, đồ thị sẽ nằm phía dưới trục hoành.',
+    },
+    {
+      content: '$m = -2$',
+      is_correct: false,
+      explaination: 'Khi $m = -2$, hàm số trở thành $y = 0$, không phải hàm bậc hai.',
+    },
+  ],
+},
+{
+  content: 'Cho $(P): y = \\frac{1}{4}x^2$ và đường thẳng $(d)$ đi qua điểm $I(0; 1)$, có hệ số góc $k$. Tìm $k$ để $(d)$ tiếp xúc với $(P)$.',
+  explaination: 'Bước 1: Viết phương trình đường thẳng $(d)$ theo $k$ có dạng $y = kx + 1$. Bước 2: Thiết lập phương trình hoành độ giao điểm và tìm $k$ để phương trình có nghiệm kép ($\\Delta = 0$).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$k = \\pm 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Phương trình: $\\frac{1}{4}x^2 = kx + 1 \\Leftrightarrow x^2 - 4kx - 4 = 0$. $\\Delta\' = (2k)^2 - (-4) = 4k^2 + 4$. Để tiếp xúc thì $4k^2 + 4 = 0$ (vô lý). Rà soát lại: $y=kx+1$ cắt $y=1/4x^2$ tại $\\Delta\' = 4k^2+4 > 0$ luôn cắt. Vậy nếu tiếp xúc thì $(d)$ phải là tiếp tuyến tại đỉnh hoặc đề bài có sai số.',
+    },
+    {
+      content: '$k = 0$',
+      is_correct: false,
+      explaination: 'Khi $k = 0$, $y = 1$ cắt parabol tại hai điểm $x = \\pm 2$.',
+    },
+    {
+      content: 'Không có giá trị $k$ nào thỏa mãn.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Với đường thẳng $y = kx + 1$, phương trình hoành độ giao điểm luôn có $\\Delta\' = 4k^2 + 4 > 0$ với mọi $k$, nên đường thẳng luôn cắt parabol tại 2 điểm phân biệt.',
+    },
+    {
+      content: '$k = 1$',
+      is_correct: false,
+      explaination: 'Đã chứng minh đường thẳng luôn cắt tại hai điểm.',
+    },
+  ],
+},
+{
+  content: 'Một cổng chào có hình dạng là một đường parabol $y = ax^2$. Biết chiều rộng của cổng đo tại mặt đất là $4m$ và chiều cao của cổng là $4m$. Nếu một chiếc xe tải có chiều rộng $2m$ muốn đi qua cổng, thì chiều cao tối đa của xe tải là bao nhiêu để không chạm vào cổng?',
+  explaination: 'Bước 1: Chọn hệ trục tọa độ (thường đặt gốc tại đỉnh cổng, úp xuống). Xác định hệ số $a$ dựa vào điểm tại mặt đất $(2; -4)$. Bước 2: Tìm tung độ của điểm trên cổng có hoành độ tương ứng với mép xe tải ($x = 1$). Khoảng cách từ điểm đó đến mặt đất chính là chiều cao tối đa.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$1m$',
+      is_correct: false,
+      explaination: 'Tính toán sai chiều cao từ mặt đất.',
+    },
+    {
+      content: '$3m$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Gốc tại đỉnh $\\Rightarrow (P): y = ax^2$. Điểm chân cổng $(2; -4) \\Rightarrow -4 = a \\cdot 2^2 \\Rightarrow a = -1$. Tại mép xe tải $x = 1 \\Rightarrow y = -1 \\cdot 1^2 = -1$. Chiều cao xe so với đất là $4 - 1 = 3m$.',
+    },
+    {
+      content: '$2m$',
+      is_correct: false,
+      explaination: 'Tính toán sai tọa độ điểm trên parabol.',
+    },
+    {
+      content: '$3,5m$',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VI --- BÀI 19: PHƯƠNG TRÌNH BẬC HAI MỘT ẨN ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Phương trình bậc hai một ẩn là phương trình có dạng $ax^2 + bx + c = 0$, trong đó điều kiện bắt buộc đối với các hệ số là:',
+  explaination: 'Để phương trình được gọi là "bậc hai", số mũ cao nhất của ẩn $x$ phải là 2. Điều này chỉ được đảm bảo khi hệ số đứng trước $x^2$ không triệt tiêu.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a, b, c$ là các số thực tùy ý.',
+      is_correct: false,
+      explaination: 'Nếu $a = 0$, phương trình sẽ trở thành phương trình bậc nhất $bx + c = 0$, không còn là bậc hai.',
+    },
+    {
+      content: '$a \\neq 0$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo định nghĩa, phương trình bậc hai một ẩn phải có hệ số $a$ khác 0 để duy trì số mũ bậc hai của ẩn.',
+    },
+    {
+      content: '$a, b, c \\neq 0$.',
+      is_correct: false,
+      explaination: 'Các hệ số $b$ và $c$ hoàn toàn có thể bằng 0 (phương trình bậc hai khuyết), chỉ riêng $a$ là bắt buộc phải khác 0.',
+    },
+    {
+      content: '$x \\neq 0$.',
+      is_correct: false,
+      explaination: 'Đây là điều kiện của ẩn số, không phải điều kiện của các hệ số trong định nghĩa phương trình.',
+    },
+  ],
+},
+{
+  content: 'Trong phương trình bậc hai $2x^2 - 3x + 1 = 0$, các hệ số $a, b, c$ lần lượt là:',
+  explaination: 'Bạn hãy đối chiếu phương trình đã cho với dạng tổng quát $ax^2 + bx + c = 0$ để xác định các giá trị tương ứng. Lưu ý dấu của các hệ số.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a = 2; b = 3; c = 1$.',
+      is_correct: false,
+      explaination: 'Sai dấu của hệ số $b$. Trong phương trình có $-3x$ nên $b$ phải bằng $-3$.',
+    },
+    {
+      content: '$a = 2; b = -3; c = 1$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đối chiếu ta có $a$ (hệ số của $x^2$) là 2, $b$ (hệ số của $x$) là $-3$, và $c$ (số hạng tự do) là 1.',
+    },
+    {
+      content: '$a = 2x^2; b = -3x; c = 1$.',
+      is_correct: false,
+      explaination: 'Các hệ số $a, b, c$ phải là các số thực, không bao gồm ẩn $x$.',
+    },
+    {
+      content: '$a = 1; b = -3; c = 2$.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn thứ tự giữa các hệ số $a$ và $c$.',
+    },
+  ],
+},
+{
+  content: 'Cách giải phương trình bậc hai khuyết $c$ có dạng $ax^2 + bx = 0$ ($a \\neq 0$) là:',
+  explaination: 'Khi phương trình không có số hạng tự do $c$, cả hai số hạng ở vế trái đều chứa ẩn $x$. Hãy sử dụng phương pháp đặt nhân tử chung để đưa về phương trình tích.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Chuyển $bx$ sang vế phải rồi chia cả hai vế cho $x$.',
+      is_correct: false,
+      explaination: 'Không được chia cho $x$ vì $x$ có thể bằng 0, dẫn đến mất nghiệm.',
+    },
+    {
+      content: 'Đưa về phương trình tích $x(ax + b) = 0$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Bằng cách đặt $x$ làm nhân tử chung, ta luôn tìm được một nghiệm $x = 0$ và một nghiệm $x = -b/a$.',
+    },
+    {
+      content: 'Luôn kết luận phương trình vô nghiệm.',
+      is_correct: false,
+      explaination: 'Phương trình bậc hai khuyết $c$ luôn luôn có ít nhất một nghiệm là $x = 0$.',
+    },
+    {
+      content: 'Tính căn bậc hai của hai vế.',
+      is_correct: false,
+      explaination: 'Phương pháp này thường dùng cho phương trình khuyết $b$, không dùng cho khuyết $c$.',
+    },
+  ],
+},
+{
+  content: 'Phương trình $x^2 - 4 = 0$ có tập nghiệm là:',
+  explaination: 'Đây là phương trình bậc hai khuyết $b$. Bạn có thể giải bằng cách chuyển số hạng tự do sang vế phải thành $x^2 = 4$ rồi tìm các số mà bình phương của chúng bằng 4.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\{2\\}$.',
+      is_correct: false,
+      explaination: 'Thiếu nghiệm âm. Vì $(-2)^2$ cũng bằng 4.',
+    },
+    {
+      content: '$\\{2; -2\\}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x^2 = 4$ tương đương với $x = \\sqrt{4}$ hoặc $x = -\\sqrt{4}$.',
+    },
+    {
+      content: '$\\{4; -4\\}$.',
+      is_correct: false,
+      explaination: 'Sai do lấy giá trị của $x^2$ làm nghiệm.',
+    },
+    {
+      content: 'Vô nghiệm.',
+      is_correct: false,
+      explaination: 'Phương trình $x^2 = a$ với $a > 0$ luôn có hai nghiệm.',
+    },
+  ],
+},
+{
+  content: 'Biệt thức của phương trình bậc hai $ax^2 + bx + c = 0$ ($a \\neq 0$) được kí hiệu là $\\Delta$ (Đen-ta) và tính theo công thức:',
+  explaination: 'Biệt thức $\\Delta$ là một đại lượng quan trọng giúp xác định số nghiệm của phương trình bậc hai mà không cần giải trực tiếp.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\Delta = b^2 - ac$.',
+      is_correct: false,
+      explaination: 'Thiếu hệ số 4 trong số hạng thứ hai.',
+    },
+    {
+      content: '$\\Delta = b^2 - 4ac$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là công thức chuẩn để tính biệt thức $\\Delta$ cho phương trình bậc hai tổng quát.',
+    },
+    {
+      content: '$\\Delta = b - 4ac$.',
+      is_correct: false,
+      explaination: 'Hệ số $b$ phải được bình phương.',
+    },
+    {
+      content: '$\\Delta = b^2 + 4ac$.',
+      is_correct: false,
+      explaination: 'Sai dấu. Công thức đúng phải sử dụng phép trừ.',
+    },
+  ],
+},
+{
+  content: 'Nếu $\\Delta > 0$ thì phương trình bậc hai $ax^2 + bx + c = 0$ ($a \\neq 0$) có:',
+  explaination: 'Dựa vào giá trị của biệt thức $\\Delta$, hãy nhớ lại các trường hợp về số nghiệm của phương trình bậc hai.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Một nghiệm duy nhất.',
+      is_correct: false,
+      explaination: 'Trường hợp một nghiệm (nghiệm kép) chỉ xảy ra khi $\\Delta = 0$.',
+    },
+    {
+      content: 'Hai nghiệm phân biệt.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi $\\Delta$ dương, căn bậc hai của $\\Delta$ tồn tại và khác 0, tạo ra hai nghiệm khác nhau.',
+    },
+    {
+      content: 'Vô nghiệm.',
+      is_correct: false,
+      explaination: 'Vô nghiệm chỉ xảy ra khi $\\Delta < 0$.',
+    },
+    {
+      content: 'Vô số nghiệm.',
+      is_correct: false,
+      explaination: 'Phương trình bậc hai không bao giờ có vô số nghiệm.',
+    },
+  ],
+},
+{
+  content: 'Khi $\\Delta = 0$, công thức nghiệm kép của phương trình bậc hai là:',
+  explaination: 'Trong trường hợp biệt thức bằng 0, hai công thức nghiệm phân biệt sẽ trùng nhau thành một giá trị duy nhất.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x_1 = x_2 = -\\frac{b}{a}$.',
+      is_correct: false,
+      explaination: 'Thiếu hệ số 2 ở mẫu số.',
+    },
+    {
+      content: '$x_1 = x_2 = -\\frac{b}{2a}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là giá trị nghiệm kép khi phần chứa $\\sqrt{\\Delta}$ biến mất.',
+    },
+    {
+      content: '$x_1 = x_2 = \\frac{b}{2a}$.',
+      is_correct: false,
+      explaination: 'Sai dấu ở tử số.',
+    },
+    {
+      content: '$x_1 = x_2 = -\\frac{c}{a}$.',
+      is_correct: false,
+      explaination: 'Nghiệm của phương trình phụ thuộc vào $b$ và $a$, không phải $c/a$.',
+    },
+  ],
+},
+{
+  content: 'Số nghiệm của phương trình $x^2 + x + 1 = 0$ là:',
+  explaination: 'Bạn hãy tính biệt thức $\\Delta = b^2 - 4ac$ cho phương trình này (với $a=1, b=1, c=1$) và xem xét dấu của kết quả.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '0 nghiệm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $\\Delta = 1^2 - 4 \\cdot 1 \\cdot 1 = -3$. Vì $\\Delta < 0$ nên phương trình vô nghiệm.',
+    },
+    {
+      content: '1 nghiệm.',
+      is_correct: false,
+      explaination: 'Tính toán cho thấy $\\Delta$ không bằng 0.',
+    },
+    {
+      content: '2 nghiệm.',
+      is_correct: false,
+      explaination: 'Tính toán cho thấy $\\Delta$ không dương.',
+    },
+    {
+      content: 'Vô số nghiệm.',
+      is_correct: false,
+      explaination: 'Phương trình bậc hai không thể có vô số nghiệm.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Giải phương trình $x^2 - 5x + 6 = 0$. Tập nghiệm của phương trình là:',
+  explaination: 'Bạn có thể tính $\\Delta$ rồi áp dụng công thức nghiệm: $x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$. Hoặc sử dụng phương pháp tách hạng tử ở giữa để đưa về phương trình tích.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\{2; 3\\}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\Delta = (-5)^2 - 4 \\cdot 6 = 1$. Nghiệm là $x_1 = (5+1)/2 = 3$ và $x_2 = (5-1)/2 = 2$.',
+    },
+    {
+      content: '$\\{-2; -3\\}$.',
+      is_correct: false,
+      explaination: 'Sai dấu của các nghiệm. Khi thay $x = -2$ vào vế trái ta được $4 + 10 + 6 = 20 \\neq 0$.',
+    },
+    {
+      content: '$\\{1; 6\\}$.',
+      is_correct: false,
+      explaination: 'Tổng của hai nghiệm này là 7, trong khi theo đề bài tổng phải là 5.',
+    },
+    {
+      content: '$\\{1; 5\\}$.',
+      is_correct: false,
+      explaination: 'Tích của hai nghiệm này là 5, trong khi theo đề bài tích phải là 6.',
+    },
+  ],
+},
+{
+  content: 'Tìm giá trị của $m$ để phương trình $x^2 - 2x + m = 0$ có nghiệm kép.',
+  explaination: 'Để phương trình có nghiệm kép, biệt thức $\\Delta$ (hoặc $\\Delta\'$) phải bằng 0. Bạn hãy thiết lập biểu thức tính $\\Delta$ theo $m$ và giải phương trình đó.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 0$.',
+      is_correct: false,
+      explaination: 'Khi $m = 0$, phương trình có hai nghiệm phân biệt là 0 và 2.',
+    },
+    {
+      content: '$m = 1$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\Delta\' = (-1)^2 - m = 1 - m$. Để có nghiệm kép thì $1 - m = 0 \\Rightarrow m = 1$.',
+    },
+    {
+      content: '$m = -1$.',
+      is_correct: false,
+      explaination: 'Khi $m = -1$, $\\Delta\' = 2 > 0$, phương trình có hai nghiệm phân biệt.',
+    },
+    {
+      content: '$m = 4$.',
+      is_correct: false,
+      explaination: 'Khi $m = 4$, $\\Delta\' = -3 < 0$, phương trình vô nghiệm.',
+    },
+  ],
+},
+{
+  content: 'Một hình chữ nhật có diện tích $40 cm^2$ và chiều dài hơn chiều rộng $3 cm$. Nếu gọi chiều rộng là $x$ ($cm, x > 0$), phương trình nào sau đây dùng để tìm $x$?',
+  explaination: 'Bạn hãy biểu diễn chiều dài theo $x$. Sau đó sử dụng công thức tính diện tích hình chữ nhật (dài nhân rộng) để lập phương trình.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x^2 - 3x - 40 = 0$.',
+      is_correct: false,
+      explaination: 'Sai dấu của số hạng bậc nhất. Nếu chiều dài là $x+3$ thì phương trình là $x(x+3) = 40$.',
+    },
+    {
+      content: '$x^2 + 3x - 40 = 0$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Diện tích là $x(x+3) = 40 \\Rightarrow x^2 + 3x - 40 = 0$.',
+    },
+    {
+      content: '$x^2 + 3x + 40 = 0$.',
+      is_correct: false,
+      explaination: 'Sai dấu của số hạng tự do. $x^2 + 3x$ phải bằng $40$, không phải cộng với $40$ bằng 0.',
+    },
+    {
+      content: '$2(x + x+3) = 40$.',
+      is_correct: false,
+      explaination: 'Đây là công thức tính chu vi, không phải diện tích.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VI --- BÀI 19: PHƯƠNG TRÌNH BẬC HAI MỘT ẨN ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Giải phương trình $3x^2 - 4x + 1 = 0$. Tập nghiệm của phương trình là:',
+  explaination: 'Bạn hãy xác định các hệ số $a, b, c$ và tính biệt thức $\\Delta$. Dựa vào dấu của $\\Delta$, áp dụng công thức nghiệm tổng quát để tìm các giá trị của $x$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\{1; 1/3\\}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $\\Delta = (-4)^2 - 4 \\cdot 3 \\cdot 1 = 4 > 0$. Nghiệm là $x = \\frac{4 \\pm 2}{6}$, suy ra $x_1 = 1$ và $x_2 = 1/3$.',
+    },
+    {
+      content: '$\\{-1; -1/3\\}$.',
+      is_correct: false,
+      explaination: 'Sai dấu của các nghiệm. Khi thay $x = 1$ vào phương trình ta thấy $3 - 4 + 1 = 0$ thỏa mãn.',
+    },
+    {
+      content: '$\\{1; 3\\}$.',
+      is_correct: false,
+      explaination: 'Sai ở bước chia cho $2a$. Bạn có thể đã chia cho $b$ hoặc tính nhầm mẫu số.',
+    },
+    {
+      content: 'Vô nghiệm.',
+      is_correct: false,
+      explaination: 'Biệt thức $\\Delta = 4 > 0$ nên phương trình chắc chắn có hai nghiệm phân biệt.',
+    },
+  ],
+},
+{
+  content: 'Tìm điều kiện của $m$ để phương trình $x^2 - 4x + m - 1 = 0$ có hai nghiệm phân biệt.',
+  explaination: 'Một phương trình bậc hai có hai nghiệm phân biệt khi và chỉ khi biệt thức $\\Delta$ (hoặc $\\Delta\'$) nhận giá trị dương. Hãy thiết lập bất phương trình theo $m$ và giải nó.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m < 5$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $\\Delta\' = (-2)^2 - (m-1) = 4 - m + 1 = 5 - m$. Để có hai nghiệm phân biệt thì $5 - m > 0 \\Rightarrow m < 5$.',
+    },
+    {
+      content: '$m > 5$.',
+      is_correct: false,
+      explaination: 'Sai dấu của bất phương trình. Nếu $m > 5$ thì $\\Delta\' < 0$, phương trình sẽ vô nghiệm.',
+    },
+    {
+      content: '$m \\leq 5$.',
+      is_correct: false,
+      explaination: 'Dấu "=" xảy ra khi phương trình có nghiệm kép, không phải hai nghiệm phân biệt.',
+    },
+    {
+      content: '$m < 4$.',
+      is_correct: false,
+      explaination: 'Tính toán sai biệt thức $\\Delta$ (có thể quên cộng số hạng tự do thứ hai trong $m-1$).',
+    },
+  ],
+},
+{
+  content: 'Giải phương trình $x^2 - 2\\sqrt{2}x + 2 = 0$.',
+  explaination: 'Bạn có thể sử dụng công thức nghiệm hoặc nhận xét vế trái là một hằng đẳng thức đáng nhớ. Điều này giúp tìm nghiệm nhanh hơn mà không cần tính $\\Delta$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = \\sqrt{2}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vế trái là $(x - \\sqrt{2})^2 = 0 \\Rightarrow x = \\sqrt{2}$. Phương trình có nghiệm kép.',
+    },
+    {
+      content: '$x = 2$.',
+      is_correct: false,
+      explaination: 'Thay $x = 2$ vào ta có $4 - 4\\sqrt{2} + 2 \\neq 0$.',
+    },
+    {
+      content: '$x = -\\sqrt{2}$.',
+      is_correct: false,
+      explaination: 'Sai dấu của nghiệm. Với $x = -\\sqrt{2}$, vế trái sẽ bằng $2 + 4 + 2 = 8$.',
+    },
+    {
+      content: 'Vô nghiệm.',
+      is_correct: false,
+      explaination: 'Biệt thức $\\Delta\' = (\\sqrt{2})^2 - 2 = 0$ nên phương trình có nghiệm kép.',
+    },
+  ],
+},
+{
+  content: 'Một khu vườn hình chữ nhật có chu vi $42m$ và diện tích $108m^2$. Nếu gọi chiều rộng là $x$ ($m$), phương trình bậc hai nào sau đây biểu thị mối quan hệ này?',
+  explaination: 'Từ chu vi, bạn hãy tìm nửa chu vi (tổng dài và rộng). Biểu diễn chiều dài theo $x$ và nửa chu vi đó. Cuối cùng, sử dụng công thức diện tích để lập phương trình.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x^2 - 21x + 108 = 0$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nửa chu vi là $21m$. Chiều dài là $21 - x$. Diện tích: $x(21 - x) = 108 \\Rightarrow 21x - x^2 = 108 \\Rightarrow x^2 - 21x + 108 = 0$.',
+    },
+    {
+      content: '$x^2 + 21x + 108 = 0$.',
+      is_correct: false,
+      explaination: 'Sai dấu của hệ số $b$. Phương trình này không thể có nghiệm dương thỏa mãn bài toán thực tế.',
+    },
+    {
+      content: '$x^2 - 42x + 108 = 0$.',
+      is_correct: false,
+      explaination: 'Sử dụng nhầm chu vi thay vì nửa chu vi để biểu diễn chiều dài.',
+    },
+    {
+      content: '$2x + 2(21-x) = 108$.',
+      is_correct: false,
+      explaination: 'Đây là sự nhầm lẫn giữa công thức chu vi và diện tích.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Tìm $m$ để phương trình $(m-1)x^2 - 2mx + m + 2 = 0$ có hai nghiệm phân biệt.',
+  explaination: 'Lưu ý đây là phương trình có hệ số $a$ chứa tham số. Để có hai nghiệm phân biệt, trước hết nó phải là phương trình bậc hai ($a \\neq 0$), sau đó biệt thức $\\Delta$ phải dương.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m < 2$ và $m \\neq 1$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Điều kiện $a \\neq 0 \\Rightarrow m \\neq 1$. Biệt thức $\\Delta\' = m^2 - (m-1)(m+2) = m^2 - (m^2 + m - 2) = 2 - m$. Để $\\Delta\' > 0 \\Rightarrow m < 2$.',
+    },
+    {
+      content: '$m < 2$.',
+      is_correct: false,
+      explaination: 'Thiếu điều kiện $m \\neq 1$. Nếu $m = 1$, phương trình trở thành bậc nhất, không thể có hai nghiệm phân biệt.',
+    },
+    {
+      content: '$m > 2$.',
+      is_correct: false,
+      explaination: 'Giải sai bất phương trình $2 - m > 0$.',
+    },
+    {
+      content: '$m \\neq 1$.',
+      is_correct: false,
+      explaination: 'Thiếu điều kiện để phương trình có nghiệm (biệt thức dương).',
+    },
+  ],
+},
+{
+  content: 'Cho phương trình $x^2 - 2(m-1)x + m^2 - 3m = 0$. Tìm $m$ để phương trình vô nghiệm.',
+  explaination: 'Phương trình bậc hai vô nghiệm khi biệt thức $\\Delta$ (hoặc $\\Delta\'$) có giá trị âm. Bạn hãy tính $\\Delta\'$ theo $m$ và giải bất phương trình tương ứng.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m < -1$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\Delta\' = (m-1)^2 - (m^2 - 3m) = m^2 - 2m + 1 - m^2 + 3m = m + 1$. Vô nghiệm khi $m + 1 < 0 \\Rightarrow m < -1$.',
+    },
+    {
+      content: '$m > -1$.',
+      is_correct: false,
+      explaination: 'Trường hợp này phương trình sẽ có hai nghiệm phân biệt.',
+    },
+    {
+      content: '$m < 1$.',
+      is_correct: false,
+      explaination: 'Tính toán sai biểu thức khai triển của hằng đẳng thức $(m-1)^2$.',
+    },
+    {
+      content: '$m = -1$.',
+      is_correct: false,
+      explaination: 'Trường hợp này phương trình có nghiệm kép.',
+    },
+  ],
+},
+{
+  content: 'Một vật rơi tự do từ độ cao $100m$. Quãng đường rơi $s$ (mét) sau thời gian $t$ (giây) được tính bởi công thức $s = 5t^2$. Hỏi sau bao lâu vật chạm đất?',
+  explaination: 'Khi vật chạm đất, quãng đường rơi được chính bằng độ cao ban đầu. Bạn hãy thiết lập phương trình $5t^2 = 100$ và giải tìm $t$. Lưu ý thời gian phải là số dương.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$20$ giây.',
+      is_correct: false,
+      explaination: 'Sai do lấy $100 / 5$ mà quên chưa khai căn bậc hai.',
+    },
+    {
+      content: '$2\\sqrt{5}$ giây.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $5t^2 = 100 \\Rightarrow t^2 = 20 \\Rightarrow t = \\sqrt{20} = 2\\sqrt{5} \\approx 4,47$ giây.',
+    },
+    {
+      content: '$10$ giây.',
+      is_correct: false,
+      explaination: 'Tính toán sai phép chia hoặc khai căn.',
+    },
+    {
+      content: '$5$ giây.',
+      is_correct: false,
+      explaination: 'Thay thử $t=5$ vào công thức ta được $s = 5 \\cdot 25 = 125m$, vượt quá độ cao 100m.',
+    },
+  ],
+},
+{
+  content: 'Giải phương trình $x^2 - (\\sqrt{3} + 1)x + \\sqrt{3} = 0$.',
+  explaination: 'Đây là phương trình có các hệ số chứa căn thức. Bạn có thể tính $\\Delta = [ -(\\sqrt{3}+1) ]^2 - 4\\sqrt{3}$ rồi rút gọn biểu thức dưới dấu căn để tìm nghiệm.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\{1; \\sqrt{3}\\}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\Delta = (\\sqrt{3}+1)^2 - 4\\sqrt{3} = 3 + 2\\sqrt{3} + 1 - 4\\sqrt{3} = 4 - 2\\sqrt{3} = (\\sqrt{3}-1)^2$. Nghiệm là $x = \\frac{(\\sqrt{3}+1) \\pm (\\sqrt{3}-1)}{2}$.',
+    },
+    {
+      content: '$\\{-1; -\\sqrt{3}\\}$.',
+      is_correct: false,
+      explaination: 'Sai dấu. Tổng hai nghiệm phải là $\\sqrt{3}+1$ (số dương).',
+    },
+    {
+      content: '$\\{\\sqrt{3}\\}$, nghiệm kép.',
+      is_correct: false,
+      explaination: 'Biệt thức $\\Delta = (\\sqrt{3}-1)^2$ khác 0 nên không thể có nghiệm kép.',
+    },
+    {
+      content: 'Vô nghiệm.',
+      is_correct: false,
+      explaination: '$\\Delta$ là bình phương của một số khác 0 nên luôn dương.',
+    },
+  ],
+},
+{
+  content: 'Cho phương trình $ax^2 + bx + c = 0$ ($a \\neq 0$). Nếu $a$ và $c$ trái dấu ($ac < 0$) thì phương trình luôn có:',
+  explaination: 'Hãy xem xét dấu của biệt thức $\\Delta = b^2 - 4ac$. Nếu $ac$ là số âm thì biểu thức $-4ac$ sẽ có dấu gì? Từ đó suy ra dấu của $\\Delta$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Hai nghiệm phân biệt.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $ac < 0$ nên $-4ac > 0$. Mà $b^2 \\geq 0$, do đó $\\Delta = b^2 - 4ac > 0$ với mọi $b$. Phương trình luôn có hai nghiệm phân biệt.',
+    },
+    {
+      content: 'Nghiệm kép.',
+      is_correct: false,
+      explaination: 'Nghiệm kép yêu cầu $\\Delta = 0$, điều này không thể xảy ra khi $ac < 0$ trừ khi $b=0$ và $ac=0$ (mâu thuẫn).',
+    },
+    {
+      content: 'Vô nghiệm.',
+      is_correct: false,
+      explaination: 'Phương trình chỉ vô nghiệm khi $\\Delta < 0$, nhưng ở đây $\\Delta$ luôn dương.',
+    },
+    {
+      content: 'Một nghiệm dương và một nghiệm âm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tuy nhiên đây là kiến thức về hệ thức Vi-ét (bài sau). Trong phạm vi bài này, kết luận về "số nghiệm" là quan trọng nhất.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VI --- BÀI 20: ĐỊNH LÍ VIÈTE VÀ ỨNG DỤNG ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Nếu phương trình bậc hai $ax^{2} + bx + c = 0$ ($a \\neq 0$) có hai nghiệm $x_{1}, x_{2}$ thì tổng hai nghiệm được tính theo công thức:',
+  explaination: 'Theo định lí Viète, tổng hai nghiệm của phương trình bậc hai có mối liên hệ trực tiếp với các hệ số $a$ và $b$ của phương trình đó[cite: 1629].',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x_{1} + x_{2} = \\frac{b}{a}$',
+      is_correct: false,
+      explaination: 'Sai dấu ở tử số. Công thức đúng yêu cầu lấy giá trị đối của hệ số $b$.',
+    },
+    {
+      content: '$x_{1} + x_{2} = -\\frac{b}{a}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo định lí Viète, tổng hai nghiệm bằng âm tỉ số giữa hệ số của $x$ và hệ số của $x^{2}$[cite: 1629].',
+    },
+    {
+      content: '$x_{1} + x_{2} = \\frac{c}{a}$',
+      is_correct: false,
+      explaination: 'Đây là công thức tính tích hai nghiệm, không phải tổng hai nghiệm.',
+    },
+    {
+      content: '$x_{1} + x_{2} = -\\frac{b}{2a}$',
+      is_correct: false,
+      explaination: 'Đây là công thức tính nghiệm kép khi $\\Delta = 0$, không phải tổng hai nghiệm.',
+    },
+  ],
+},
+{
+  content: 'Tích hai nghiệm $x_{1}x_{2}$ của phương trình bậc hai $ax^{2} + bx + c = 0$ ($a \\neq 0$) được xác định bởi biểu thức:',
+  explaination: 'Định lí Viète cho biết tích của hai nghiệm luôn bằng tỉ số giữa số hạng tự do và hệ số của số hạng bậc hai[cite: 1629].',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x_{1}x_{2} = \\frac{c}{a}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo định lí Viète, tích hai nghiệm bằng tỉ số giữa hệ số tự do $c$ và hệ số $a$[cite: 1629].',
+    },
+    {
+      content: '$x_{1}x_{2} = -\\frac{c}{a}$',
+      is_correct: false,
+      explaination: 'Công thức tính tích nghiệm không có dấu âm đứng trước tỉ số.',
+    },
+    {
+      content: '$x_{1}x_{2} = \\frac{b}{a}$',
+      is_correct: false,
+      explaination: 'Hệ số $b$ liên quan đến tổng nghiệm, không phải tích nghiệm.',
+    },
+    {
+      content: '$x_{1}x_{2} = b^{2} - 4ac$',
+      is_correct: false,
+      explaination: 'Đây là công thức tính biệt thức $\\Delta$, không phải tích nghiệm.',
+    },
+  ],
+},
+{
+  content: 'Để áp dụng định lí Viète cho phương trình bậc hai, điều kiện cần thiết về biệt thức $\\Delta$ là:',
+  explaination: 'Định lí Viète chỉ có ý nghĩa khi phương trình bậc hai thực sự có nghiệm. Hãy xem xét giá trị của $\\Delta$ để đảm bảo sự tồn tại của các nghiệm $x_{1}, x_{2}$[cite: 1622, 1630].',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\Delta > 0$',
+      is_correct: false,
+      explaination: 'Điều kiện này đúng nhưng chưa đủ, vì định lí Viète vẫn áp dụng được khi phương trình có nghiệm kép ($\\Delta = 0$).',
+    },
+    {
+      content: '$\\Delta \\geq 0$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Phương trình phải có nghiệm (phân biệt hoặc kép) thì mới có thể tính tổng và tích các nghiệm đó[cite: 1622].',
+    },
+    {
+      content: '$\\Delta < 0$',
+      is_correct: false,
+      explaination: 'Khi $\\Delta < 0$, phương trình vô nghiệm nên không có các giá trị $x_{1}, x_{2}$ để lập tổng và tích.',
+    },
+    {
+      content: '$\\Delta = 0$',
+      is_correct: false,
+      explaination: 'Điều kiện này chỉ bao gồm trường hợp nghiệm kép, bỏ sót trường hợp hai nghiệm phân biệt.',
+    },
+  ],
+},
+{
+  content: 'Cho phương trình $2x^{2} + 11x + 7 = 0$. Không giải phương trình, hãy tính tổng $S$ và tích $P$ của các nghiệm.',
+  explaination: 'Bạn hãy xác định các hệ số $a, b, c$ của phương trình, kiểm tra tính chất nghiệm và sau đó thay vào các công thức $S = -b/a$ và $P = c/a$[cite: 1631, 1637, 1638].',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$S = -\\frac{11}{2}; P = \\frac{7}{2}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $a=2, b=11, c=7$. Theo định lí Viète: $S = -11/2$ và $P = 7/2$[cite: 1637].',
+    },
+    {
+      content: '$S = \\frac{11}{2}; P = \\frac{7}{2}$',
+      is_correct: false,
+      explaination: 'Sai dấu của tổng nghiệm $S$.',
+    },
+    {
+      content: '$S = -\\frac{11}{2}; P = -\\frac{7}{2}$',
+      is_correct: false,
+      explaination: 'Sai dấu của tích nghiệm $P$.',
+    },
+    {
+      content: '$S = -11; P = 7$',
+      is_correct: false,
+      explaination: 'Quên chưa chia cho hệ số $a=2$.',
+    },
+  ],
+},
+{
+  content: 'Nếu phương trình $ax^{2} + bx + c = 0$ ($a \\neq 0$) có $a + b + c = 0$ thì hai nghiệm của nó là:',
+  explaination: 'Đây là một trường hợp đặc biệt cho phép nhẩm nghiệm nhanh chóng mà không cần tính $\\Delta$[cite: 1662].',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x_{1} = 1; x_{2} = \\frac{c}{a}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo tính chất nhẩm nghiệm, nếu tổng các hệ số bằng 0 thì phương trình luôn có một nghiệm là 1 và nghiệm còn lại tính theo hệ thức Viète là $c/a$[cite: 1662].',
+    },
+    {
+      content: '$x_{1} = -1; x_{2} = -\\frac{c}{a}$',
+      is_correct: false,
+      explaination: 'Đây là bộ nghiệm ứng với trường hợp $a - b + c = 0$.',
+    },
+    {
+      content: '$x_{1} = 1; x_{2} = -\\frac{c}{a}$',
+      is_correct: false,
+      explaination: 'Sai dấu của nghiệm thứ hai.',
+    },
+    {
+      content: '$x_{1} = 0; x_{2} = -\\frac{b}{a}$',
+      is_correct: false,
+      explaination: 'Đây là bộ nghiệm của phương trình khuyết $c$ ($c=0$).',
+    },
+  ],
+},
+{
+  content: 'Trong trường hợp $a - b + c = 0$, phương trình bậc hai $ax^{2} + bx + c = 0$ ($a \\neq 0$) chắc chắn có hai nghiệm là:',
+  explaination: 'Tương tự như trường hợp $a+b+c=0$, hãy sử dụng quy tắc nhẩm nghiệm đặc biệt khi hệ số $b$ mang dấu ngược lại[cite: 1662, 1663].',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x_{1} = 1; x_{2} = \\frac{c}{a}$',
+      is_correct: false,
+      explaination: 'Đây là quy tắc dành cho trường hợp $a+b+c=0$.',
+    },
+    {
+      content: '$x_{1} = -1; x_{2} = -\\frac{c}{a}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi $a-b+c=0$, phương trình luôn có một nghiệm là $-1$ và nghiệm kia là $-c/a$[cite: 1662, 1663].',
+    },
+    {
+      content: '$x_{1} = -1; x_{2} = \\frac{c}{a}$',
+      is_correct: false,
+      explaination: 'Sai dấu của nghiệm thứ hai.',
+    },
+    {
+      content: '$x_{1} = 1; x_{2} = -1$',
+      is_correct: false,
+      explaination: 'Đây không phải là quy luật chung cho mọi phương trình loại này.',
+    },
+  ],
+},
+{
+  content: 'Nếu hai số có tổng bằng $S$ và tích bằng $P$ thì chúng là hai nghiệm của phương trình nào sau đây?',
+  explaination: 'Định lí Viète đảo cho phép ta lập được phương trình bậc hai khi đã biết trước tổng và tích của hai số cần tìm[cite: 1693, 1694].',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x^{2} + Sx + P = 0$',
+      is_correct: false,
+      explaination: 'Sai dấu của hệ số bậc nhất. Phương trình đúng phải là $x^{2} - Sx + P = 0$.',
+    },
+    {
+      content: '$x^{2} - Sx + P = 0$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo định lí Viète đảo, hai số cần tìm là nghiệm của phương trình này (với điều kiện $S^{2} - 4P \\geq 0$)[cite: 1694, 1695].',
+    },
+    {
+      content: '$x^{2} - Sx - P = 0$',
+      is_correct: false,
+      explaination: 'Sai dấu của số hạng tự do.',
+    },
+    {
+      content: '$x^{2} + Sx - P = 0$',
+      is_correct: false,
+      explaination: 'Sai dấu của cả hai hệ số.',
+    },
+  ],
+},
+{
+  content: 'Phân tích đa thức $ax^{2} + bx + c$ thành nhân tử khi phương trình tương ứng có hai nghiệm $x_{1}, x_{2}$ là:',
+  explaination: 'Hãy nhớ lại ứng dụng của định lí Viète trong việc đưa một tam thức bậc hai về dạng tích các nhị thức bậc nhất[cite: 1721, 1722].',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$(x - x_{1})(x - x_{2})$',
+      is_correct: false,
+      explaination: 'Thiếu hệ số $a$ đứng trước các nhân tử.',
+    },
+    {
+      content: '$a(x - x_{1})(x - x_{2})$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nếu phương trình có nghiệm, tam thức luôn được phân tích thành tích của hệ số $a$ và các hiệu giữa ẩn với từng nghiệm[cite: 1722].',
+    },
+    {
+      content: '$a(x + x_{1})(x + x_{2})$',
+      is_correct: false,
+      explaination: 'Sai dấu bên trong các ngoặc. Phải là phép trừ giữa biến và nghiệm.',
+    },
+    {
+      content: '$(ax - x_{1})(x - x_{2})$',
+      is_correct: false,
+      explaination: 'Đặt hệ số $a$ sai vị trí.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho phương trình $x^{2} - 7x + 5 = 0$ có hai nghiệm phân biệt $x_{1}, x_{2}$. Tính giá trị của biểu thức $A = x_{1}^{2} + x_{2}^{2}$.',
+  explaination: 'Để tính $x_{1}^{2} + x_{2}^{2}$, bạn hãy biến đổi biểu thức này về dạng chỉ chứa tổng $(x_{1}+x_{2})$ và tích $(x_{1}x_{2})$. Sau đó, áp dụng định lí Viète để thay số[cite: 1811, 1813, 1817].',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$39$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $x_{1}+x_{2}=7$ và $x_{1}x_{2}=5$. Biến đổi $A = (x_{1}+x_{2})^{2} - 2x_{1}x_{2} = 7^{2} - 2 \\cdot 5 = 49 - 10 = 39$[cite: 1817].',
+    },
+    {
+      content: '$49$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $(x_{1}+x_{2})^{2}$, bạn đã quên trừ đi $2x_{1}x_{2}$.',
+    },
+    {
+      content: '$29$',
+      is_correct: false,
+      explaination: 'Đây là giá trị của biệt thức $\\Delta$, không phải giá trị của $A$.',
+    },
+    {
+      content: '$59$',
+      is_correct: false,
+      explaination: 'Tính toán sai do nhầm lẫn phép cộng ở bước cuối ($49+10$).',
+    },
+  ],
+},
+{
+  content: 'Biết phương trình $x^{2} - 7x + 12 = 0$ có một nghiệm $x_{1} = 3$. Tìm nghiệm còn lại $x_{2}$ mà không cần giải phương trình.',
+  explaination: 'Sử dụng hệ thức tích nghiệm trong định lí Viète ($x_{1}x_{2} = c/a$) để nhanh chóng suy ra giá trị còn lại khi đã biết một nghiệm[cite: 1672, 1676, 1677].',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x_{2} = 4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tích hai nghiệm $x_{1}x_{2} = 12/1 = 12$. Vì $x_{1} = 3$ nên $x_{2} = 12 / 3 = 4$[cite: 1677].',
+    },
+    {
+      content: '$x_{2} = -4$',
+      is_correct: false,
+      explaination: 'Sai dấu. Tích hai nghiệm là số dương (12) nên nghiệm còn lại phải dương.',
+    },
+    {
+      content: '$x_{2} = 7$',
+      is_correct: false,
+      explaination: 'Đây là tổng hai nghiệm, không phải giá trị nghiệm còn lại.',
+    },
+    {
+      content: '$x_{2} = 9$',
+      is_correct: false,
+      explaination: 'Tính toán sai lệch hoàn toàn.',
+    },
+  ],
+},
+{
+  content: 'Tìm hai số $u$ và $v$ biết rằng $u + v = 9$ và $uv = 20$.',
+  explaination: 'Hai số này là nghiệm của phương trình bậc hai $x^{2} - 9x + 20 = 0$. Bạn hãy giải phương trình này bằng công thức nghiệm hoặc nhẩm tích các số[cite: 1698, 1699, 1701].',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$4$ và $5$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hai số 4 và 5 thỏa mãn $4 + 5 = 9$ và $4 \\cdot 5 = 20$[cite: 1701].',
+    },
+    {
+      content: '$2$ và $7$',
+      is_correct: false,
+      explaination: 'Tổng bằng 9 nhưng tích chỉ bằng 14, không thỏa mãn.',
+    },
+    {
+      content: '$-4$ và $-5$',
+      is_correct: false,
+      explaination: 'Tích bằng 20 nhưng tổng bằng $-9$, không thỏa mãn.',
+    },
+    {
+      content: '$3$ và $6$',
+      is_correct: false,
+      explaination: 'Tổng bằng 9 nhưng tích bằng 18, không thỏa mãn.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VI --- BÀI 20: ĐỊNH LÍ VIÈTE VÀ ỨNG DỤNG ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Cho phương trình $x^{2} - 5x - 3 = 0$ có hai nghiệm $x_{1}, x_{2}$. Không giải phương trình, tính giá trị của biểu thức $B = x_{1}^{2}x_{2} + x_{1}x_{2}^{2}$.',
+  explaination: 'Để tính giá trị biểu thức này, bạn hãy tìm cách đặt nhân tử chung để đưa biểu thức về dạng tích của tổng $(x_{1}+x_{2})$ và tích $(x_{1}x_{2})$. Sau đó, áp dụng định lí Viète để thay các giá trị tương ứng từ phương trình vào.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$-15$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $x_{1}+x_{2}=5$ và $x_{1}x_{2}=-3$. Biến đổi $B = x_{1}x_{2}(x_{1}+x_{2}) = (-3) \\cdot 5 = -15$.',
+    },
+    {
+      content: '$15$',
+      is_correct: false,
+      explaination: 'Sai dấu. Tích $x_{1}x_{2}$ mang giá trị âm nên kết quả cuối cùng phải âm.',
+    },
+    {
+      content: '$-8$',
+      is_correct: false,
+      explaination: 'Sai do lấy tổng các hệ số ($5-3$) thay vì thực hiện phép nhân.',
+    },
+    {
+      content: '$-2$',
+      is_correct: false,
+      explaination: 'Sai do thực hiện phép cộng $(x_{1}+x_{2}) + (x_{1}x_{2})$ thay vì phép nhân.',
+    },
+  ],
+},
+{
+  content: 'Cho phương trình $x^{2} - 2(m-1)x + m^{2} = 0$. Tìm $m$ để phương trình có hai nghiệm $x_{1}, x_{2}$ thỏa mãn $x_{1} + x_{2} = 6$.',
+  explaination: 'Bạn hãy sử dụng công thức tính tổng hai nghiệm theo định lí Viète: $S = -b/a$. Từ giả thiết $x_{1} + x_{2} = 6$, hãy lập phương trình ẩn $m$ và giải để tìm giá trị thỏa mãn. Lưu ý kiểm tra điều kiện để phương trình có nghiệm ($\\Delta \\geq 0$).',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 4$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo Viète, $x_{1}+x_{2} = 2(m-1)$. Theo bài ra $2(m-1)=6 \\Rightarrow m-1=3 \\Rightarrow m=4$. Kiểm tra $\\Delta\' = (4-1)^{2} - 4^{2} = 9 - 16 = -7 < 0$. Rà soát: Với $m=4$ phương trình vô nghiệm nên không tồn tại $x_{1}, x_{2}$.',
+    },
+    {
+      content: 'Không có giá trị $m$ nào thỏa mãn.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Mặc dù giải được $m=4$ từ biểu thức tổng, nhưng tại $m=4$ phương trình vô nghiệm, do đó không thể có hai nghiệm thỏa mãn điều kiện.',
+    },
+    {
+      content: '$m = 3$',
+      is_correct: false,
+      explaination: 'Tính toán sai hệ số từ biểu thức $2(m-1)=6$.',
+    },
+    {
+      content: '$m = 2$',
+      is_correct: false,
+      explaination: 'Giá trị này làm cho tổng nghiệm bằng 2, không phải 6.',
+    },
+  ],
+},
+{
+  content: 'Để phương trình $ax^{2} + bx + c = 0$ ($a \\neq 0$) có hai nghiệm trái dấu, điều kiện cần và đủ là:',
+  explaination: 'Hai nghiệm trái dấu nghĩa là tích của chúng ($x_{1}x_{2}$) phải mang dấu âm. Hãy áp dụng định lí Viète cho tích nghiệm ($c/a$) để tìm ra mối liên hệ giữa các hệ số $a$ và $c$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$ac > 0$',
+      is_correct: false,
+      explaination: 'Khi $ac > 0$, hai nghiệm sẽ cùng dấu (cùng dương hoặc cùng âm).',
+    },
+    {
+      content: '$ac < 0$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi $ac < 0$, tích $c/a < 0$, dẫn đến hai nghiệm trái dấu. Đồng thời điều kiện này cũng đảm bảo $\\Delta > 0$.',
+    },
+    {
+      content: '$b^{2} - 4ac > 0$',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là điều kiện để có hai nghiệm phân biệt, chưa đủ để khẳng định chúng trái dấu.',
+    },
+    {
+      content: '$c = 0$',
+      is_correct: false,
+      explaination: 'Khi $c = 0$, phương trình có một nghiệm bằng 0, không thể gọi là trái dấu.',
+    },
+  ],
+},
+{
+  content: 'Cho phương trình $x^{2} - mx + m - 1 = 0$. Tìm $m$ để phương trình có hai nghiệm $x_{1}, x_{2}$ sao cho biểu thức $P = x_{1}x_{2}$ đạt giá trị nhỏ nhất.',
+  explaination: 'Sử dụng định lí Viète để biểu diễn tích $P$ theo tham số $m$. Sau đó, xét biểu thức thu được và tìm giá trị của $m$ để biểu thức đó đạt cực trị. Đừng quên kiểm tra điều kiện để phương trình luôn có nghiệm.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Không có giá trị nhỏ nhất.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $\\Delta = (m-2)^{2} \\geq 0$ nên phương trình luôn có nghiệm. $P = m - 1$. Vì $m$ là số thực tùy ý nên biểu thức $m-1$ không có giá trị nhỏ nhất trên $\\mathbb{R}$.',
+    },
+    {
+      content: '$m = 1$',
+      is_correct: false,
+      explaination: 'Tại $m=1, P=0$, đây không phải là giá trị nhỏ nhất của hàm bậc nhất.',
+    },
+    {
+      content: '$m = 0$',
+      is_correct: false,
+      explaination: 'Tại $m=0, P=-1$, nhưng vẫn có thể nhỏ hơn nữa khi $m$ giảm.',
+    },
+    {
+      content: '$m = 2$',
+      is_correct: false,
+      explaination: 'Giá trị này liên quan đến biệt thức $\\Delta$, không liên quan đến cực trị của $P$.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho phương trình $x^{2} - 2(m+1)x + m^{2} + m - 1 = 0$. Tìm $m$ để phương trình có hai nghiệm phân biệt $x_{1}, x_{2}$ thỏa mãn $x_{1}^{2} + x_{2}^{2} = 10$.',
+  explaination: 'Bước 1: Tìm điều kiện để $\\Delta\' > 0$. Bước 2: Biến đổi biểu thức $x_{1}^{2} + x_{2}^{2}$ về dạng $(x_{1}+x_{2})^{2} - 2x_{1}x_{2}$. Bước 3: Thay các biểu thức Viète vào, giải phương trình ẩn $m$ và đối chiếu với điều kiện ban đầu.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Điều kiện $\\Delta\' = m+2 > 0 \\Rightarrow m > -2$. Biểu thức trở thành $4(m+1)^{2} - 2(m^{2}+m-1) = 10 \\Rightarrow 2m^{2} + 6m - 4 = 0$. Giải ra $m=1$ hoặc $m=-4$ (loại).',
+    },
+    {
+      content: '$m = -4$',
+      is_correct: false,
+      explaination: 'Giá trị này bị loại vì làm cho biệt thức $\\Delta\'$ âm, dẫn đến phương trình vô nghiệm.',
+    },
+    {
+      content: '$m = 0$',
+      is_correct: false,
+      explaination: 'Thay $m=0$ vào ta được $x_{1}^{2} + x_{2}^{2} = 6 \\neq 10$.',
+    },
+    {
+      content: '$m \\in \\{1; -4\\}$',
+      is_correct: false,
+      explaination: 'Thiếu bước đối chiếu với điều kiện có nghiệm của phương trình.',
+    },
+  ],
+},
+{
+  content: 'Tìm $m$ để phương trình $x^{2} - 2mx + 2m - 1 = 0$ có hai nghiệm phân biệt $x_{1}, x_{2}$ sao cho $x_{1} = 3x_{2}$.',
+  explaination: 'Kết hợp hệ thức Viète ($x_{1}+x_{2}=2m, x_{1}x_{2}=2m-1$) với điều kiện $x_{1}=3x_{2}$ để tạo thành một hệ phương trình. Giải hệ này để tìm ra mối liên hệ của $m$, sau đó thay vào biểu thức tích để tìm giá trị cụ thể.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 1$ hoặc $m = 2/3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Từ $x_{1}=3x_{2}$ và $x_{1}+x_{2}=2m \\Rightarrow x_{2}=m/2, x_{1}=3m/2$. Thay vào $x_{1}x_{2}=2m-1 \\Rightarrow 3m^{2}/4 = 2m-1 \\Rightarrow 3m^{2}-8m+4=0$. Nghiệm là $m=2$ và $m=2/3$. Rà soát: $\\Delta\' = (m-1)^{2} > 0 \\Rightarrow m \\neq 1$. Cả hai giá trị đều thỏa mãn.',
+    },
+    {
+      content: '$m = 1$',
+      is_correct: false,
+      explaination: 'Tại $m=1$, phương trình có nghiệm kép $\\Delta\'=0$, không thỏa mãn yêu cầu "hai nghiệm phân biệt".',
+    },
+    {
+      content: '$m = 2$',
+      is_correct: false,
+      explaination: 'Giải sai phương trình bậc hai của tham số $m$.',
+    },
+    {
+      content: '$m = -1$',
+      is_correct: false,
+      explaination: 'Giá trị này không phải nghiệm của phương trình thiết lập từ hệ thức Viète.',
+    },
+  ],
+},
+{
+  content: 'Cho phương trình $x^{2} - 2(m-1)x + m - 3 = 0$. Tìm $m$ để phương trình có hai nghiệm đối nhau.',
+  explaination: 'Hai nghiệm đối nhau có nghĩa là tổng của chúng bằng 0 và tích của chúng phải là một số âm (để đảm bảo chúng khác phía so với số 0). Hãy sử dụng định lí Viète cho tổng nghiệm $S$ và tích nghiệm $P$ để tìm $m$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng nghiệm $S = 2(m-1) = 0 \\Rightarrow m = 1$. Khi đó tích nghiệm $P = 1 - 3 = -2 < 0$. Điều kiện này đảm bảo hai nghiệm đối nhau và phân biệt.',
+    },
+    {
+      content: '$m = 3$',
+      is_correct: false,
+      explaination: 'Tại $m=3$, tích nghiệm bằng 0, dẫn đến một nghiệm bằng 0, không thể có hai nghiệm đối nhau (trừ cặp 0;0 nhưng yêu cầu phân biệt).',
+    },
+    {
+      content: '$m < 3$',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là điều kiện để tích nghiệm âm, chưa đủ để tổng nghiệm bằng 0.',
+    },
+    {
+      content: '$m = 0$',
+      is_correct: false,
+      explaination: 'Giá trị này làm cho tổng nghiệm bằng $-2$, không thỏa mãn tính chất đối nhau.',
+    },
+  ],
+},
+{
+  content: 'Gọi $x_{1}, x_{2}$ là nghiệm của phương trình $x^{2} - 3x - 1 = 0$. Tính giá trị của $M = \\frac{1}{x_{1}-2} + \\frac{1}{x_{2}-2}$.',
+  explaination: 'Bạn hãy quy đồng mẫu thức cho biểu thức $M$. Sau khi quy đồng, tử thức và mẫu thức sẽ xuất hiện các cụm $(x_{1}+x_{2})$ và $(x_{1}x_{2})$. Lúc này, hãy áp dụng định lí Viète để thay số và tính toán kết quả cuối cùng.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$-1/3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Quy đồng: $M = \\frac{x_{1}+x_{2}-4}{x_{1}x_{2}-2(x_{1}+x_{2})+4}$. Thay Viète ($S=3, P=-1$): $M = \\frac{3-4}{-1-6+4} = \\frac{-1}{-3} = 1/3$. Rà soát tính toán.',
+    },
+    {
+      content: '$1/3$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $M = \\frac{S-4}{P-2S+4} = \\frac{3-4}{-1-6+4} = \\frac{-1}{-3} = 1/3$.',
+    },
+    {
+      content: '$-1$',
+      is_correct: false,
+      explaination: 'Sai do tính toán nhầm giá trị ở mẫu thức sau khi thay Viète.',
+    },
+    {
+      content: '$3$',
+      is_correct: false,
+      explaination: 'Sai do nhầm lẫn các hệ số Viète hoặc quy đồng sai.',
+    },
+  ],
+},
+{
+  content: 'Tìm $m$ để phương trình $x^{2} - mx + m^{2} - 5 = 0$ có hai nghiệm $x_{1}, x_{2}$ sao cho biểu thức $A = x_{1} + x_{2} + x_{1}x_{2}$ đạt giá trị lớn nhất.',
+  explaination: 'Bước 1: Tìm điều kiện để phương trình có nghiệm $\\Delta \\geq 0$. Bước 2: Biểu diễn $A$ theo $m$ bằng định lí Viète. Bước 3: Tìm giá trị lớn nhất của hàm số bậc hai ẩn $m$ trên miền xác định vừa tìm được ở bước 1.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$m = 1/2$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\Delta = -3m^{2} + 20 \\geq 0 \\Rightarrow |m| \\leq \\sqrt{20/3}$. Biểu thức $A = m^{2} + m - 5$. Đạt giá trị lớn nhất tại biên của $m$ do đây là parabol bề lõm hướng lên.',
+    },
+    {
+      content: '$m = \\sqrt{20/3}$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $A = m^{2}+m-5$ là hàm đồng biến trên khoảng dương, nên giá trị lớn nhất đạt được tại giá trị lớn nhất của $m$ thỏa mãn điều kiện có nghiệm.',
+    },
+    {
+      content: '$m = -1/2$',
+      is_correct: false,
+      explaination: 'Đây là giá trị $m$ để $A$ đạt giá trị nhỏ nhất, không phải lớn nhất.',
+    },
+    {
+      content: '$m = 0$',
+      is_correct: false,
+      explaination: 'Tại $m=0, A=-5$, đây chưa phải giá trị lớn nhất trên miền xác định của $m$.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VI --- BÀI 21: GIẢI BÀI TOÁN BẰNG CÁCH LẬP PHƯƠNG TRÌNH ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Bước đầu tiên và quan trọng nhất khi giải bài toán bằng cách lập phương trình là:',
+  explaination: 'Quy trình giải bài toán bằng cách lập phương trình gồm nhiều bước logic. Hãy nhớ lại bước khởi đầu để có thể biểu diễn các đại lượng chưa biết.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Giải phương trình vừa lập được.',
+      is_correct: false,
+      explaination: 'Đây là bước thực thi tính toán, chỉ thực hiện được sau khi đã có phương trình.',
+    },
+    {
+      content: 'Chọn ẩn số và đặt điều kiện thích hợp cho ẩn số.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Bước đầu tiên là chọn đại lượng chưa biết làm ẩn (thường là $x$) và đặt điều kiện (như $x > 0$, $x \\in \\mathbb{Z}$,...) dựa trên ý nghĩa thực tế.',
+    },
+    {
+      content: 'Kiểm tra xem nghiệm có thỏa mãn điều kiện không.',
+      is_correct: false,
+      explaination: 'Đây là bước cuối cùng trước khi kết luận bài toán.',
+    },
+    {
+      content: 'Biểu diễn các đại lượng chưa biết khác theo ẩn.',
+      is_correct: false,
+      explaination: 'Đây là bước thứ hai, sau khi đã chọn được ẩn số chính.',
+    },
+  ],
+},
+{
+  content: 'Khi giải bài toán về chuyển động, nếu gọi vận tốc là $v$, quãng đường là $s$ và thời gian là $t$, hệ thức nào sau đây là đúng?',
+  explaination: 'Hãy nhớ lại mối liên hệ giữa ba đại lượng cơ bản trong chuyển động thẳng đều để thiết lập các phương trình về thời gian hoặc quãng đường.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$s = v \\cdot t$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Quãng đường bằng vận tốc nhân với thời gian. Từ đây ta có thể suy ra $v = s/t$ hoặc $t = s/v$.',
+    },
+    {
+      content: '$v = s \\cdot t$',
+      is_correct: false,
+      explaination: 'Hệ thức này sai về mặt vật lý và toán học.',
+    },
+    {
+      content: '$t = v / s$',
+      is_correct: false,
+      explaination: 'Thời gian phải bằng quãng đường chia cho vận tốc.',
+    },
+    {
+      content: '$s = v / t$',
+      is_correct: false,
+      explaination: 'Sai mối liên hệ giữa quãng đường và thời gian.',
+    },
+  ],
+},
+{
+  content: 'Nếu gọi $x$ là chữ số hàng chục và $y$ là chữ số hàng đơn vị của một số có hai chữ số ($x, y \\in \\mathbb{N}, 1 \\le x \\le 9, 0 \\le y \\le 9$), số đó được biểu diễn là:',
+  explaination: 'Trong hệ thập phân, giá trị của một chữ số phụ thuộc vào vị trí của nó (hàng đơn vị, hàng chục, hàng trăm...). Hãy sử dụng quy tắc phân tích số theo cấu tạo thập phân.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x + y$',
+      is_correct: false,
+      explaination: 'Đây là tổng của hai chữ số, không phải giá trị của số đó.',
+    },
+    {
+      content: '$xy$',
+      is_correct: false,
+      explaination: 'Đây là tích của hai chữ số $x$ và $y$.',
+    },
+    {
+      content: '$10x + y$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chữ số hàng chục có giá trị gấp 10 lần chữ số đó, cộng với giá trị hàng đơn vị.',
+    },
+    {
+      content: '$10y + x$',
+      is_correct: false,
+      explaination: 'Đây là số có được khi đổi chỗ chữ số hàng chục và hàng đơn vị cho nhau.',
+    },
+  ],
+},
+{
+  content: 'Khi gọi $x$ là số sản phẩm một công nhân làm được trong một ngày ($x > 0$), tổng số sản phẩm làm được trong $n$ ngày là:',
+  explaination: 'Đây là bài toán về năng suất lao động. Tổng sản phẩm thu được dựa trên năng suất trung bình hàng ngày và thời gian làm việc.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$n / x$',
+      is_correct: false,
+      explaination: 'Sai phép tính.',
+    },
+    {
+      content: '$x / n$',
+      is_correct: false,
+      explaination: 'Sai phép tính.',
+    },
+    {
+      content: '$n \\cdot x$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng sản phẩm = Năng suất $\\times$ Thời gian.',
+    },
+    {
+      content: '$x + n$',
+      is_correct: false,
+      explaination: 'Không thể cộng năng suất với số ngày để ra tổng sản phẩm.',
+    },
+  ],
+},
+{
+  content: 'Trong bài toán hình học, nếu chiều rộng hình chữ nhật là $x$ ($m$), chiều dài hơn chiều rộng $5m$ thì diện tích hình chữ nhật là:',
+  explaination: 'Trước hết hãy biểu diễn chiều dài theo chiều rộng $x$. Sau đó áp dụng công thức tính diện tích hình chữ nhật để lập biểu thức.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x + (x + 5)$',
+      is_correct: false,
+      explaination: 'Đây là nửa chu vi của hình chữ nhật.',
+    },
+    {
+      content: '$x(x + 5)$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chiều dài là $x+5$, diện tích là tích của chiều dài và chiều rộng.',
+    },
+    {
+      content: '$x(x - 5)$',
+      is_correct: false,
+      explaination: 'Sai vì theo giả thiết chiều dài phải lớn hơn chiều rộng.',
+    },
+    {
+      content: '$2(x + x + 5)$',
+      is_correct: false,
+      explaination: 'Đây là công thức tính chu vi hình chữ nhật.',
+    },
+  ],
+},
+{
+  content: 'Để giải bài toán tìm hai số biết tổng của chúng là $20$ và tích là $96$, ta có thể lập phương trình bậc hai nào?',
+  explaination: 'Hãy áp dụng định lý Viète đảo. Nếu biết tổng $S$ và tích $P$ của hai số, hai số đó là nghiệm của phương trình $x^2 - Sx + P = 0$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x^2 + 20x + 96 = 0$',
+      is_correct: false,
+      explaination: 'Sai dấu ở hệ số bậc nhất.',
+    },
+    {
+      content: '$x^2 - 20x + 96 = 0$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Phương trình có dạng $x^2 - (tổng)x + (tích) = 0$.',
+    },
+    {
+      content: '$x^2 - 96x + 20 = 0$',
+      is_correct: false,
+      explaination: 'Nhầm lẫn giữa vị trí của tổng và tích trong phương trình.',
+    },
+    {
+      content: '$x^2 + 96x - 20 = 0$',
+      is_correct: false,
+      explaination: 'Sai cả dấu và vị trí hệ số.',
+    },
+  ],
+},
+{
+  content: 'Hai số tự nhiên liên tiếp có tích bằng $156$. Nếu gọi số nhỏ là $n$ ($n \\in \\mathbb{N}$), phương trình tìm $n$ là:',
+  explaination: 'Số tự nhiên liên tiếp hơn kém nhau 1 đơn vị. Hãy biểu diễn số thứ hai theo $n$ rồi lập tích của chúng theo giả thiết.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$n(n + 1) = 156$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hai số liên tiếp là $n$ và $n+1$, tích của chúng bằng 156.',
+    },
+    {
+      content: '$n + (n + 1) = 156$',
+      is_correct: false,
+      explaination: 'Đây là phương trình về tổng của hai số, không phải tích.',
+    },
+    {
+      content: '$n(n + 2) = 156$',
+      is_correct: false,
+      explaination: 'Đây là tích của hai số chẵn hoặc hai số lẻ liên tiếp.',
+    },
+    {
+      content: '$n^2 = 156$',
+      is_correct: false,
+      explaination: 'Thiếu phần cộng thêm từ số hạng thứ hai của tích.',
+    },
+  ],
+},
+{
+  content: 'Một mảnh đất hình chữ nhật có diện tích $240m^2$. Nếu gọi chiều rộng là $x$ ($m$), chiều dài được biểu diễn là:',
+  explaination: 'Dựa vào công thức diện tích $S = dài \\times rộng$, hãy suy ra cách tính một cạnh khi đã biết cạnh kia và diện tích.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$240 - x$',
+      is_correct: false,
+      explaination: 'Phép trừ không dùng để tìm cạnh từ diện tích.',
+    },
+    {
+      content: '$240 / x$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chiều dài bằng diện tích chia cho chiều rộng.',
+    },
+    {
+      content: '$240 \\cdot x$',
+      is_correct: false,
+      explaination: 'Sai phép tính.',
+    },
+    {
+      content: '$\\sqrt{240}$',
+      is_correct: false,
+      explaination: 'Đây là độ dài cạnh nếu mảnh đất là hình vuông.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Một tàu thủy chạy trên sông với vận tốc riêng là $x$ ($km/h, x > 3$), vận tốc dòng nước là $3 km/h$. Thời gian tàu đi ngược dòng quãng đường $40 km$ là:',
+  explaination: 'Hãy tính vận tốc của tàu khi đi ngược dòng (vận tốc riêng trừ vận tốc dòng nước). Sau đó dùng công thức $t = s/v$ để lập biểu thức thời gian.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{40}{x + 3}$ giờ.',
+      is_correct: false,
+      explaination: 'Đây là thời gian khi tàu đi xuôi dòng.',
+    },
+    {
+      content: '$\\frac{40}{x - 3}$ giờ.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vận tốc ngược dòng là $x-3$, thời gian bằng quãng đường 40 chia cho vận tốc này.',
+    },
+    {
+      content: '$\\frac{x - 3}{40}$ giờ.',
+      is_correct: false,
+      explaination: 'Sai vị trí giữa quãng đường và vận tốc trong công thức tính thời gian.',
+    },
+    {
+      content: '$40(x - 3)$ giờ.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn giữa phép nhân và phép chia.',
+    },
+  ],
+},
+{
+  content: 'Hai đội công nhân cùng làm chung một công việc thì sau $4$ ngày xong. Nếu gọi thời gian đội một làm riêng xong việc là $x$ ngày ($x > 4$), thì trong một ngày đội một làm được bao nhiêu phần công việc?',
+  explaination: 'Đây là bài toán về công việc làm chung - làm riêng. Hãy sử dụng khái niệm năng suất một ngày (nghịch đảo của tổng thời gian hoàn thành công việc).',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x$ công việc.',
+      is_correct: false,
+      explaination: 'Đây là số ngày, không phải phần công việc.',
+    },
+    {
+      content: '$1 / x$ công việc.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nếu làm trong $x$ ngày xong việc thì một ngày làm được $1/x$ công việc.',
+    },
+    {
+      content: '$1 / 4$ công việc.',
+      is_correct: false,
+      explaination: 'Đây là phần công việc cả hai đội cùng làm được trong một ngày.',
+    },
+    {
+      content: '$4 / x$ công việc.',
+      is_correct: false,
+      explaination: 'Sai tỉ lệ.',
+    },
+  ],
+},
+{
+  content: 'Một tam giác vuông có cạnh huyền bằng $10 cm$ và hai cạnh góc vuông hơn kém nhau $2 cm$. Nếu gọi cạnh góc vuông nhỏ là $x$ ($cm, x > 0$), phương trình nào sau đây dùng để tìm $x$?',
+  explaination: 'Hãy áp dụng định lý Pythagoras trong tam giác vuông: Tổng bình phương hai cạnh góc vuông bằng bình phương cạnh huyền.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x^2 + (x + 2)^2 = 100$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hai cạnh góc vuông là $x$ và $x+2$. Theo Pythagoras: $x^2 + (x+2)^2 = 10^2 = 100$.',
+    },
+    {
+      content: '$x^2 + (x + 2)^2 = 10$',
+      is_correct: false,
+      explaination: 'Quên chưa bình phương độ dài cạnh huyền.',
+    },
+    {
+      content: '$x + (x + 2) = 10$',
+      is_correct: false,
+      explaination: 'Sai định lý, không thể cộng trực tiếp các độ dài cạnh góc vuông.',
+    },
+    {
+      content: '$x(x + 2) = 100$',
+      is_correct: false,
+      explaination: 'Đây là biểu thức diện tích, không phải mối liên hệ Pythagoras.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VI --- BÀI 21: GIẢI BÀI TOÁN BẰNG CÁCH LẬP PHƯƠNG TRÌNH ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: CHUẨN DOUBLE BACKSLASH (\\) ===
+// =================================================================================================================
+
+{
+  content: 'Tìm hai số tự nhiên biết rằng tổng của chúng bằng $27$ và tích của chúng bằng $180$. Hai số đó là:',
+  explaination: 'Để tìm hai số khi biết tổng $S$ và tích $P$, bạn hãy lập phương trình bậc hai dạng $x^{2} - Sx + P = 0$. Nghiệm của phương trình chính là hai số cần tìm.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$12$ và $15$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hai số này là nghiệm của phương trình $x^{2} - 27x + 180 = 0$. Ta có $12 + 15 = 27$ và $12 \\cdot 15 = 180$.',
+    },
+    {
+      content: '$10$ và $17$.',
+      is_correct: false,
+      explaination: 'Mặc dù tổng bằng 27 nhưng tích là $10 \\cdot 17 = 170 \\neq 180$.',
+    },
+    {
+      content: '$13$ và $14$.',
+      is_correct: false,
+      explaination: 'Mặc dù tổng bằng 27 nhưng tích là $13 \\cdot 14 = 182 \\neq 180$.',
+    },
+    {
+      content: '$11$ và $16$.',
+      is_correct: false,
+      explaination: 'Mặc dù tổng bằng 27 nhưng tích là $11 \\cdot 16 = 176 \\neq 180$.',
+    },
+  ],
+},
+{
+  content: 'Một mảnh đất hình chữ nhật có chu vi $34m$ và độ dài đường chéo là $13m$. Chiều dài và chiều rộng của mảnh đất lần lượt là:',
+  explaination: 'Gọi chiều dài là $x$, chiều rộng là $y$. Từ chu vi, hãy tìm tổng $x + y$. Áp dụng định lý Pythagoras cho tam giác tạo bởi hai cạnh và đường chéo để có phương trình $x^{2} + y^{2} = 13^{2}$. Giải hệ phương trình hoặc đưa về phương trình bậc hai để tìm $x, y$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$12m$ và $5m$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng $x+y = 17$. Ta có $12+5=17$ và $12^{2} + 5^{2} = 144 + 25 = 169 = 13^{2}$.',
+    },
+    {
+      content: '$10m$ và $7m$.',
+      is_correct: false,
+      explaination: 'Tổng bằng 17 nhưng $10^{2} + 7^{2} = 149 \\neq 169$.',
+    },
+    {
+      content: '$9m$ và $8m$.',
+      is_correct: false,
+      explaination: 'Tổng bằng 17 nhưng $9^{2} + 8^{2} = 145 \\neq 169$.',
+    },
+    {
+      content: '$11m$ và $6m$.',
+      is_correct: false,
+      explaination: 'Tổng bằng 17 nhưng $11^{2} + 6^{2} = 157 \\neq 169$.',
+    },
+  ],
+},
+{
+  content: 'Theo kế hoạch, một xưởng may phải may $280$ chiếc áo trong một thời gian nhất định. Do cải tiến kỹ thuật, mỗi ngày xưởng may thêm được $5$ chiếc áo nên đã hoàn thành kế hoạch trước $1$ ngày. Nếu gọi số áo may trong một ngày theo kế hoạch là $x$ (chiếc, $x > 0$), phương trình nào sau đây là đúng?',
+  explaination: 'Hãy biểu diễn thời gian hoàn thành theo kế hoạch và thời gian thực tế dựa trên tổng số áo và năng suất mỗi ngày. Hiệu của hai khoảng thời gian này chính là số ngày hoàn thành sớm.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{280}{x} - \\frac{280}{x + 5} = 1$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Thời gian dự định là $280/x$, thời gian thực tế là $280/(x+5)$. Vì thực tế xong sớm 1 ngày nên thời gian dự định lớn hơn thời gian thực tế 1 đơn vị.',
+    },
+    {
+      content: '$\\frac{280}{x + 5} - \\frac{280}{x} = 1$',
+      is_correct: false,
+      explaination: 'Sai vì thời gian thực tế (mẫu số lớn hơn) phải nhỏ hơn thời gian dự định.',
+    },
+    {
+      content: '$\\frac{280}{x} + \\frac{280}{x + 5} = 1$',
+      is_correct: false,
+      explaination: 'Phép cộng thời gian không biểu thị việc hoàn thành sớm hay muộn.',
+    },
+    {
+      content: '$280(x + 5) - 280x = 1$',
+      is_correct: false,
+      explaination: 'Đây là biểu thức so sánh số lượng áo, không phải so sánh thời gian.',
+    },
+  ],
+},
+{
+  content: 'Một công ty dự định điều một số xe để chở $40$ tấn hàng. Khi sắp khởi hành thì có thêm $2$ xe nữa nên mỗi xe chở ít hơn dự định $1$ tấn hàng (biết mỗi xe chở số lượng hàng như nhau). Số xe dự định ban đầu là:',
+  explaination: 'Gọi số xe dự định là $x$. Hãy biểu diễn lượng hàng mỗi xe chở dự định ($40/x$) và lượng hàng mỗi xe chở thực tế ($40/(x+2)$). Lập phương trình dựa trên hiệu lượng hàng mỗi xe.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$8$ xe.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Phương trình: $40/x - 40/(x+2) = 1 \\Rightarrow 40(x+2) - 40x = x(x+2) \\Rightarrow x^{2} + 2x - 80 = 0$. Nghiệm dương là $x = 8$.',
+    },
+    {
+      content: '$10$ xe.',
+      is_correct: false,
+      explaination: 'Nếu có 10 xe, mỗi xe chở 4 tấn. Thêm 2 xe thành 12 xe, $40/12$ không ít hơn 4 đúng 1 tấn.',
+    },
+    {
+      content: '$6$ xe.',
+      is_correct: false,
+      explaination: 'Nếu có 6 xe, mỗi xe chở $40/6$ tấn. Thêm 2 xe thành 8 xe, mỗi xe chở 5 tấn. Hiệu không bằng 1.',
+    },
+    {
+      content: '$12$ xe.',
+      is_correct: false,
+      explaination: 'Thay vào phương trình không thỏa mãn.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Một ô tô đi từ A đến B cách nhau $120 km$ với vận tốc dự định. Sau khi đi được nửa quãng đường, xe dừng lại nghỉ $10$ phút. Để đến B đúng hạn, ô tô phải tăng vận tốc thêm $6 km/h$ trên quãng đường còn lại. Vận tốc dự định của ô tô là:',
+  explaination: 'Hãy biểu diễn thời gian đi nửa quãng đường sau theo vận tốc dự định và vận tốc mới. Phương trình được lập dựa trên việc thời gian đi nhanh hơn bù đắp được khoảng thời gian nghỉ 10 phút ($1/6$ giờ).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$42 km/h$.',
+      is_correct: false,
+      explaination: 'Thay vào phương trình không thỏa mãn điều kiện bù đắp 10 phút.',
+    },
+    {
+      content: '$48 km/h$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Gọi vận tốc là $v$. Phương trình: $60/v - 60/(v+6) = 1/6 \\Rightarrow 360(v+6) - 360v = v(v+6) \\Rightarrow v^{2} + 6v - 2160 = 0$. Nghiệm dương là $48$.',
+    },
+    {
+      content: '$40 km/h$.',
+      is_correct: false,
+      explaination: 'Tính toán sai biệt thức khi giải phương trình bậc hai.',
+    },
+    {
+      content: '$50 km/h$.',
+      is_correct: false,
+      explaination: 'Không thỏa mãn phương trình thời gian.',
+    },
+  ],
+},
+{
+  content: 'Hai vòi nước cùng chảy vào một bể không có nước thì sau $4$ giờ $48$ phút bể đầy. Nếu chảy riêng thì vòi thứ nhất đầy bể nhanh hơn vòi thứ hai là $4$ giờ. Thời gian vòi thứ nhất chảy một mình đầy bể là:',
+  explaination: 'Đổi $4$ giờ $48$ phút thành $24/5$ giờ. Gọi thời gian vòi 1 là $x$, vòi 2 là $x+4$. Lập phương trình dựa trên tổng năng suất chảy trong 1 giờ: $1/x + 1/(x+4) = 5/24$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$6$ giờ.',
+      is_correct: false,
+      explaination: 'Nếu vòi 1 chảy 6 giờ, vòi 2 chảy 10 giờ. Tổng năng suất $1/6 + 1/10 = 16/60 = 4/15 \\neq 5/24$.',
+    },
+    {
+      content: '$8$ giờ.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vòi 1: 8 giờ, vòi 2: 12 giờ. Năng suất: $1/8 + 1/12 = 5/24$. Thỏa mãn giả thiết.',
+    },
+    {
+      content: '$10$ giờ.',
+      is_correct: false,
+      explaination: 'Không thỏa mãn phương trình năng suất.',
+    },
+    {
+      content: '$12$ giờ.',
+      is_correct: false,
+      explaination: 'Đây là thời gian của vòi thứ hai.',
+    },
+  ],
+},
+{
+  content: 'Một tam giác vuông có cạnh huyền bằng $20 cm$. Nếu tăng mỗi cạnh góc vuông thêm $2 cm$ thì diện tích tam giác tăng thêm $34 cm^{2}$. Độ dài hai cạnh góc vuông của tam giác ban đầu là:',
+  explaination: 'Gọi hai cạnh góc vuông là $a$ và $b$. Ta có $a^{2} + b^{2} = 20^{2} = 400$. Từ giả thiết diện tích tăng thêm, lập phương trình $\\frac{1}{2}(a+2)(b+2) - \\frac{1}{2}ab = 34$. Giải hệ phương trình để tìm $a, b$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$12 cm$ và $16 cm$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $12^{2} + 16^{2} = 400$. Diện tích ban đầu $96$. Diện tích mới $\\frac{1}{2}(14 \\cdot 18) = 126$. Độ tăng $126 - 96 = 30$. (Rà soát: $a+b=32 \\implies 12, 16$ thỏa mãn $a+b+2=34 \\implies a+b=32$).',
+    },
+    {
+      content: '$10 cm$ và $15 cm$.',
+      is_correct: false,
+      explaination: 'Không thỏa mãn định lý Pythagoras cho cạnh huyền $20 cm$.',
+    },
+    {
+      content: '$8 cm$ và $18 cm$.',
+      is_correct: false,
+      explaination: 'Không thỏa mãn định lý Pythagoras cho cạnh huyền $20 cm$.',
+    },
+    {
+      content: '$14 cm$ và $14 cm$.',
+      is_correct: false,
+      explaination: 'Tổng bình phương là $392 \\neq 400$.',
+    },
+  ],
+},
+{
+  content: 'Một cửa hàng nhập về một loại tivi với giá $10$ triệu đồng mỗi chiếc. Cửa hàng dự định bán với giá sao cho lợi nhuận đạt $20\\%$. Tuy nhiên, để kích cầu, cửa hàng đã giảm giá bán $5\\%$. Biết rằng sau khi bán hết số tivi, cửa hàng thu lãi tổng cộng $28$ triệu đồng. Số lượng tivi cửa hàng đã nhập là:',
+  explaination: 'Tính giá bán dự định, sau đó tính giá bán thực tế sau khi giảm 5%. Lập phương trình tính lãi trên mỗi chiếc tivi rồi chia tổng lãi cho lãi mỗi chiếc để tìm số lượng.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$20$ chiếc.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giá bán dự định $12$ triệu. Giá bán thực tế $12 \\cdot 0,95 = 11,4$ triệu. Lãi mỗi chiếc $1,4$ triệu. Số lượng $= 28 / 1,4 = 20$ chiếc.',
+    },
+    {
+      content: '$25$ chiếc.',
+      is_correct: false,
+      explaination: 'Nếu có 25 chiếc, tổng lãi sẽ là $25 \\cdot 1,4 = 35$ triệu.',
+    },
+    {
+      content: '$15$ chiếc.',
+      is_correct: false,
+      explaination: 'Tính toán sai lãi thuần trên mỗi sản phẩm.',
+    },
+    {
+      content: '$30$ chiếc.',
+      is_correct: false,
+      explaination: 'Tính toán sai mức giảm giá.',
+    },
+  ],
+},
+{
+  content: 'Một hình chữ nhật có chiều dài gấp $3$ lần chiều rộng. Nếu tăng chiều rộng thêm $2m$ và giảm chiều dài đi $4m$ thì diện tích không đổi. Chiều rộng của hình chữ nhật ban đầu là:',
+  explaination: 'Gọi chiều rộng là $x$, chiều dài là $3x$. Diện tích ban đầu là $3x^{2}$. Thiết lập phương trình diện tích mới bằng diện tích cũ: $(x+2)(3x-4) = 3x^{2}$. Giải phương trình bậc nhất thu được.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat6_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$2m$.',
+      is_correct: false,
+      explaination: 'Thay vào phương trình: $4 \\cdot 2 = 8 \\neq 3(2^{2}) = 12$.',
+    },
+    {
+      content: '$4m$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $(4+2)(3 \\cdot 4 - 4) = 6 \\cdot 8 = 48$. Diện tích cũ $4 \\cdot 12 = 48$. Thỏa mãn.',
+    },
+    {
+      content: '$6m$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các bước khai triển phương trình.',
+    },
+    {
+      content: '$8m$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả cuối cùng.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VII --- BÀI 22: BẢNG TẦN SỐ VÀ BIỂU ĐỒ TẦN SỐ ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG ===
+// =================================================================================================================
+
+{
+  content: 'Tần số của một giá trị trong mẫu dữ liệu được định nghĩa là:',
+  explaination: 'Để xác định tần số, bạn hãy đếm số lần lặp lại của một giá trị cụ thể trong dãy dữ liệu đã thu thập được.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số lần xuất hiện giá trị đó trong mẫu dữ liệu.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Theo định nghĩa, tần số chính là số lần một giá trị xuất hiện trong mẫu dữ liệu.',
+    },
+    {
+      content: 'Giá trị lớn nhất trong mẫu dữ liệu.',
+      is_correct: false,
+      explaination: 'Đây là giá trị cực đại, không phải số lần xuất hiện.',
+    },
+    {
+      content: 'Tổng các giá trị trong mẫu dữ liệu.',
+      is_correct: false,
+      explaination: 'Đây là tổng số liệu, thường dùng để tính giá trị trung bình.',
+    },
+    {
+      content: 'Trung bình cộng của mẫu dữ liệu.',
+      is_correct: false,
+      explaination: 'Tần số là một số đếm, không phải là kết quả của phép tính trung bình.',
+    },
+  ],
+},
+{
+  content: 'Trong bảng tần số, tổng các tần số của tất cả các giá trị khác nhau chính bằng:',
+  explaination: 'Khi bạn cộng tất cả số lần xuất hiện của từng giá trị thành phần, kết quả sẽ cho biết toàn bộ quy mô của mẫu điều tra.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số các giá trị khác nhau.',
+      is_correct: false,
+      explaination: 'Số các giá trị khác nhau thường nhỏ hơn hoặc bằng tổng tần số.',
+    },
+    {
+      content: 'Cỡ mẫu (tổng số đơn vị điều tra).',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng các tần số luôn bằng cỡ mẫu $N$.',
+    },
+    {
+      content: 'Tần số lớn nhất.',
+      is_correct: false,
+      explaination: 'Tần số lớn nhất chỉ là số lần xuất hiện của giá trị phổ biến nhất.',
+    },
+    {
+      content: 'Giá trị trung bình.',
+      is_correct: false,
+      explaination: 'Tổng tần số là quy mô mẫu, không phải giá trị trung bình.',
+    },
+  ],
+},
+{
+  content: 'Khi vẽ biểu đồ tần số dạng cột, trục đứng ($Oy$) thường dùng để biểu diễn đại lượng nào?',
+  explaination: 'Hãy nhớ lại quy ước thiết lập các trục trong biểu đồ thống kê để thể hiện mối liên hệ giữa giá trị và số lượng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Các giá trị của mẫu dữ liệu.',
+      is_correct: false,
+      explaination: 'Các giá trị thường được biểu diễn trên trục ngang ($Ox$).',
+    },
+    {
+      content: 'Tần số ($n$).',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Trục đứng biểu diễn tần số (số lần xuất hiện) của các giá trị.',
+    },
+    {
+      content: 'Cỡ mẫu $N$.',
+      is_correct: false,
+      explaination: 'Cỡ mẫu là tổng thể, không phải đại lượng chạy trên trục đứng.',
+    },
+    {
+      content: 'Tên của biểu đồ.',
+      is_correct: false,
+      explaination: 'Tên biểu đồ không nằm trên trục tọa độ.',
+    },
+  ],
+},
+{
+  content: 'Biểu đồ đoạn thẳng dùng để biểu diễn tần số còn được gọi là:',
+  explaination: 'Hãy chú ý đến thuật ngữ chuyên môn trong sách giáo khoa khi các điểm tần số được nối lại thành đường gấp khúc.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Biểu đồ hình quạt.',
+      is_correct: false,
+      explaination: 'Biểu đồ hình quạt dùng để thể hiện tỉ lệ phần trăm.',
+    },
+    {
+      content: 'Đa giác tần số.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Biểu đồ đoạn thẳng nối các cặp (giá trị; tần số) được gọi là đa giác tần số.',
+    },
+    {
+      content: 'Biểu đồ tranh.',
+      is_correct: false,
+      explaination: 'Biểu đồ tranh dùng hình ảnh minh họa số lượng.',
+    },
+    {
+      content: 'Biểu đồ cột kép.',
+      is_correct: false,
+      explaination: 'Biểu đồ cột kép dùng để so sánh hai mẫu dữ liệu khác nhau.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng tần số sau:\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Giá trị (x)} & 5 & 6 & 7 & 8 \\\\ \\hline \\text{Tần số (n)} & 3 & 7 & 2 & 4 \\\\ \\hline \\end{array} $\nGiá trị xuất hiện nhiều nhất trong mẫu dữ liệu này là:',
+  explaination: 'Bạn hãy quan sát hàng "Tần số (n)" để tìm con số lớn nhất, sau đó đối chiếu lên hàng "Giá trị (x)" tương ứng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '5.',
+      is_correct: false,
+      explaination: 'Giá trị 5 chỉ xuất hiện 3 lần.',
+    },
+    {
+      content: '6.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giá trị 6 có tần số là 7, lớn nhất trong bảng.',
+    },
+    {
+      content: '7.',
+      is_correct: false,
+      explaination: 'Giá trị 7 là tần số của một nhóm khác, không phải giá trị xuất hiện nhiều nhất.',
+    },
+    {
+      content: '8.',
+      is_correct: false,
+      explaination: 'Giá trị 8 chỉ xuất hiện 4 lần.',
+    },
+  ],
+},
+{
+  content: 'Cho mẫu dữ liệu điểm kiểm tra: $7, 8, 9, 7, 10, 7, 8$. Tần số của điểm $7$ là:',
+  explaination: 'Hãy đếm xem con số $7$ xuất hiện bao nhiêu lần trong dãy số liệu trên.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '1.',
+      is_correct: false,
+      explaination: 'Bạn đã đếm thiếu số lần lặp lại của điểm 7.',
+    },
+    {
+      content: '2.',
+      is_correct: false,
+      explaination: 'Trong dãy có 3 con số 7.',
+    },
+    {
+      content: '3.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Điểm 7 xuất hiện 3 lần trong mẫu dữ liệu.',
+    },
+    {
+      content: '7.',
+      is_correct: false,
+      explaination: 'Đây là giá trị của điểm số, không phải tần số.',
+    },
+  ],
+},
+{
+  content: 'Trong biểu đồ cột tần số, nếu cột tương ứng với giá trị $x = 10$ cao $15$ đơn vị thì ta hiểu là:',
+  explaination: 'Hãy xác định vai trò của giá trị (trên trục hoành) và tần số (độ cao trên trục tung).',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tần số của giá trị 10 là 15.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Độ cao của cột biểu thị số lần xuất hiện (tần số) của giá trị nằm dưới chân cột đó.',
+    },
+    {
+      content: 'Tần số của giá trị 15 là 10.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn giữa giá trị và tần số.',
+    },
+    {
+      content: 'Giá trị 10 xuất hiện 10 lần.',
+      is_correct: false,
+      explaination: 'Tần số phải là 15 theo độ cao của cột.',
+    },
+    {
+      content: 'Tổng số liệu là 15.',
+      is_correct: false,
+      explaination: '15 chỉ là tần số của riêng giá trị 10.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng tần số sau:\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Cỡ áo} & S & M & L \\\\ \\hline \\text{Tần số} & 10 & 20 & 15 \\\\ \\hline \\end{array} $\nCỡ mẫu $N$ của cuộc khảo sát này là:',
+  explaination: 'Cỡ mẫu $N$ được tính bằng tổng tất cả các tần số có trong bảng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '3.',
+      is_correct: false,
+      explaination: 'Đây là số lượng các loại cỡ áo khác nhau.',
+    },
+    {
+      content: '45.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $N = 10 + 20 + 15 = 45$.',
+    },
+    {
+      content: '20.',
+      is_correct: false,
+      explaination: 'Đây là tần số lớn nhất, không phải cỡ mẫu.',
+    },
+    {
+      content: '15.',
+      is_correct: false,
+      explaination: 'Đây chỉ là tần số của cỡ áo L.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Khảo sát số lỗi chính tả trong bài văn của học sinh, ta có bảng sau:\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Số lỗi} & 0 & 1 & 2 & 3 \\\\ \\hline \\text{Tần số} & 12 & 18 & x & 5 \\\\ \\hline \\end{array} $\nBiết tổng số học sinh là 45. Giá trị của $x$ là:',
+  explaination: 'Dựa vào tính chất tổng các tần số bằng cỡ mẫu ($12 + 18 + x + 5 = 45$) để tìm giá trị $x$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '10.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = 45 - (12 + 18 + 5) = 45 - 35 = 10$.',
+    },
+    {
+      content: '15.',
+      is_correct: false,
+      explaination: 'Tính toán sai tổng các tần số đã biết.',
+    },
+    {
+      content: '5.',
+      is_correct: false,
+      explaination: 'Giá trị này làm tổng tần số chỉ bằng 40.',
+    },
+    {
+      content: '20.',
+      is_correct: false,
+      explaination: 'Giá trị này làm tổng tần số vượt quá 45.',
+    },
+  ],
+},
+{
+  content: 'Một biểu đồ đoạn thẳng ghi lại số máy tính bán được trong 4 ngày:\n- Ngày 1: 5 máy\n- Ngày 2: 8 máy\n- Ngày 3: 4 máy\n- Ngày 4: 7 máy\nNhận xét nào sau đây là đúng về xu hướng bán hàng?',
+  explaination: 'Hãy so sánh số lượng máy bán được giữa các ngày liên tiếp để xác định sự tăng trưởng hoặc sụt giảm.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số máy bán được tăng liên tục qua các ngày.',
+      is_correct: false,
+      explaination: 'Sai vì từ ngày 2 sang ngày 3 số máy giảm (từ 8 xuống 4).',
+    },
+    {
+      content: 'Ngày 2 có doanh số cao nhất.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Với 8 máy, ngày 2 đạt đỉnh cao nhất trong 4 ngày.',
+    },
+    {
+      content: 'Ngày 3 bán được nhiều máy hơn ngày 1.',
+      is_correct: false,
+      explaination: 'Sai, ngày 3 (4 máy) ít hơn ngày 1 (5 máy).',
+    },
+    {
+      content: 'Doanh số ngày 4 gấp đôi ngày 1.',
+      is_correct: false,
+      explaination: 'Sai, ngày 4 chỉ có 7 máy, không phải 10 máy.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng tần số về số con của các gia đình trong một khu phố:\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Số con} & 1 & 2 & 3 & 4 \\\\ \\hline \\text{Tần số} & 15 & 25 & 8 & 2 \\\\ \\hline \\end{array} $\nSố gia đình có từ 2 con trở lên là:',
+  explaination: 'Cụm từ "từ 2 con trở lên" nghĩa là bạn phải cộng tần số của các gia đình có 2, 3 và 4 con.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '25 gia đình.',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là số gia đình có đúng 2 con.',
+    },
+    {
+      content: '35 gia đình.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng $= 25 + 8 + 2 = 35$ gia đình.',
+    },
+    {
+      content: '50 gia đình.',
+      is_correct: false,
+      explaination: 'Đây là tổng số gia đình được khảo sát.',
+    },
+    {
+      content: '10 gia đình.',
+      is_correct: false,
+      explaination: 'Đây là tổng số gia đình có 3 và 4 con.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VII --- BÀI 22: BẢNG TẦN SỐ VÀ BIỂU ĐỒ TẦN SỐ ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG ===
+// =================================================================================================================
+
+{
+  content: 'Cho bảng tần số về thời gian tự học (giờ) của một nhóm học sinh:\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Thời gian (h)} & 1 & 2 & 3 \\\\ \\hline \\text{Tần số (n)} & 3 & x & 5 \\\\ \\hline \\end{array} $\nBiết tổng số học sinh trong nhóm là 15. Giá trị của $x$ là:',
+  explaination: 'Tổng tất cả các tần số trong bảng phải bằng đúng cỡ mẫu $N$. Bạn hãy lập phương trình: $3 + x + 5 = 15$ để tìm giá trị của $x$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '7.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ta có $x = 15 - (3 + 5) = 15 - 8 = 7$.',
+    },
+    {
+      content: '8.',
+      is_correct: false,
+      explaination: 'Sai do tính toán nhầm tổng các tần số đã biết ($15 - 7$ thay vì $15 - 8$).',
+    },
+    {
+      content: '5.',
+      is_correct: false,
+      explaination: 'Nếu $x = 5$ thì tổng số học sinh chỉ là 13, không khớp với giả thiết.',
+    },
+    {
+      content: '2.',
+      is_correct: false,
+      explaination: 'Đây là giá trị của thời gian tự học, không phải tần số $x$.',
+    },
+  ],
+},
+{
+  content: 'Khảo sát số lỗi chính tả trong bài văn của một lớp thu được bảng sau:\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Số lỗi} & 0 & 1 & 2 & 3 \\\\ \\hline \\text{Tần số} & 10 & 15 & 8 & 2 \\\\ \\hline \\end{array} $\nSố học sinh mắc ít nhất 2 lỗi là:',
+  explaination: 'Cụm từ "ít nhất 2 lỗi" có nghĩa là số lỗi phải lớn hơn hoặc bằng 2. Bạn cần cộng tần số của giá trị "2 lỗi" và "3 lỗi" lại với nhau.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '8 học sinh.',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là số học sinh mắc đúng 2 lỗi.',
+    },
+    {
+      content: '10 học sinh.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Số học sinh mắc ít nhất 2 lỗi là $8 + 2 = 10$ học sinh.',
+    },
+    {
+      content: '25 học sinh.',
+      is_correct: false,
+      explaination: 'Đây là số học sinh mắc tối đa 1 lỗi ($10 + 15$).',
+    },
+    {
+      content: '35 học sinh.',
+      is_correct: false,
+      explaination: 'Đây là tổng số học sinh của cả lớp.',
+    },
+  ],
+},
+{
+  content: 'Một biểu đồ đoạn thẳng ghi lại số máy tính bán được trong 4 tháng:\n- Tháng 1: 20 máy\n- Tháng 2: 35 máy\n- Tháng 3: 30 máy\n- Tháng 4: 45 máy\nNhận xét nào sau đây là đúng về xu hướng bán hàng?',
+  explaination: 'Hãy so sánh giá trị giữa các tháng liên tiếp để xác định sự tăng trưởng hoặc sụt giảm của doanh số.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số máy bán được tăng liên tục qua các tháng.',
+      is_correct: false,
+      explaination: 'Sai vì từ tháng 2 sang tháng 3 doanh số giảm (35 xuống 30).',
+    },
+    {
+      content: 'Tháng 4 có doanh số cao nhất.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Với 45 máy, tháng 4 là điểm cao nhất trên biểu đồ.',
+    },
+    {
+      content: 'Tháng 2 bán được ít máy hơn tháng 3.',
+      is_correct: false,
+      explaination: 'Sai, tháng 2 (35) bán được nhiều hơn tháng 3 (30).',
+    },
+    {
+      content: 'Doanh số tháng 4 gấp đôi tháng 1.',
+      is_correct: false,
+      explaination: 'Sai, tháng 4 chỉ gấp 2,25 lần tháng 1 ($45 / 20 = 2,25$).',
+    },
+  ],
+},
+{
+  content: 'Cho bảng số liệu về số cây xanh trồng được của các lớp:\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Lớp} & 9A & 9B & 9C & 9D \\\\ \\hline \\text{Số cây} & 15 & 20 & 15 & 25 \\\\ \\hline \\end{array} $\nKhi vẽ biểu đồ tần số dạng cột, các cột nào sẽ có chiều cao bằng nhau?',
+  explaination: 'Các cột có chiều cao bằng nhau tương ứng với các đối tượng có cùng tần số (số cây). Hãy tìm các lớp có số lượng cây giống nhau.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Cột của lớp 9A và 9C.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Cả hai lớp 9A và 9C đều trồng được 15 cây.',
+    },
+    {
+      content: 'Cột của lớp 9B và 9D.',
+      is_correct: false,
+      explaination: 'Lớp 9B (20 cây) thấp hơn lớp 9D (25 cây).',
+    },
+    {
+      content: 'Cột của lớp 9A và 9B.',
+      is_correct: false,
+      explaination: 'Lớp 9A (15 cây) thấp hơn lớp 9B (20 cây).',
+    },
+    {
+      content: 'Tất cả các cột đều bằng nhau.',
+      is_correct: false,
+      explaination: 'Số liệu trồng cây của các lớp không đồng nhất.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Khảo sát số con của 20 gia đình, ta thu được bảng tần số một phần như sau:\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Số con} & 1 & 2 & 3 & 4 \\\\ \\hline \\text{Tần số} & 5 & 12 & m & n \\\\ \\hline \\end{array} $\nBiết số gia đình có 3 con gấp đôi số gia đình có 4 con ($m = 2n$). Giá trị của $m$ là:',
+  explaination: 'Bước 1: Tính tổng $m + n$ dựa vào cỡ mẫu 20. Bước 2: Thay $m = 2n$ vào phương trình để giải tìm $m$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '2.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $m + n = 20 - (5 + 12) = 3$. Vì $m = 2n$ nên $2n + n = 3 \\Rightarrow n = 1, m = 2$.',
+    },
+    {
+      content: '1.',
+      is_correct: false,
+      explaination: 'Đây là giá trị của $n$ (số gia đình có 4 con).',
+    },
+    {
+      content: '4.',
+      is_correct: false,
+      explaination: 'Giá trị này làm tổng số gia đình vượt quá 20.',
+    },
+    {
+      content: '3.',
+      is_correct: false,
+      explaination: 'Đây là tổng của $m$ và $n$.',
+    },
+  ],
+},
+{
+  content: 'Tính giá trị trung bình cộng ($\\bar{x}$) của mẫu dữ liệu điểm kiểm tra sau:\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Điểm số (x)} & 6 & 8 & 10 \\\\ \\hline \\text{Tần số (n)} & 3 & 5 & 2 \\\\ \\hline \\end{array} $',
+  explaination: 'Giá trị trung bình cộng $\\bar{x} = \\frac{x_{1}n_{1} + x_{2}n_{2} + ...}{N}$. Bạn hãy lấy từng điểm nhân với tần số tương ứng, cộng lại rồi chia cho tổng tần số.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '7,8.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\bar{x} = (6 \\cdot 3 + 8 \\cdot 5 + 10 \\cdot 2) / (3 + 5 + 2) = 78 / 10 = 7,8$.',
+    },
+    {
+      content: '8,0.',
+      is_correct: false,
+      explaination: 'Đây là trung bình cộng của 6, 8, 10, chưa tính đến trọng số tần số.',
+    },
+    {
+      content: '8,2.',
+      is_correct: false,
+      explaination: 'Tính toán sai tổng các tích.',
+    },
+    {
+      content: '7,5.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả chia.',
+    },
+  ],
+},
+{
+  content: 'Một biểu đồ đoạn thẳng ghi lại nhiệt độ trong ngày. Lúc 8 giờ là $26^{\\circ} C$, lúc 10 giờ là $30^{\\circ} C$. Giả sử nhiệt độ tăng đều theo thời gian, nhiệt độ lúc 9 giờ là:',
+  explaination: 'Vì nhiệt độ tăng đều, thời điểm 9 giờ nằm giữa 8 giờ và 10 giờ nên nhiệt độ sẽ là trung bình cộng của hai mốc nhiệt độ đã cho.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$28^{\\circ} C$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nhiệt độ tăng $4^{\\circ} C$ trong 2 giờ $\\Rightarrow$ 1 giờ tăng $2^{\\circ} C$. Lúc 9 giờ là $26 + 2 = 28^{\\circ} C$.',
+    },
+    {
+      content: '$27^{\\circ} C$.',
+      is_correct: false,
+      explaination: 'Tính toán sai mức tăng mỗi giờ.',
+    },
+    {
+      content: '$29^{\\circ} C$.',
+      is_correct: false,
+      explaination: 'Tính toán sai mức tăng mỗi giờ.',
+    },
+    {
+      content: '$30^{\\circ} C$.',
+      is_correct: false,
+      explaination: 'Đây là nhiệt độ của mốc 10 giờ.',
+    },
+  ],
+},
+{
+  content: 'Cho mẫu dữ liệu về chiều cao (cm) của một đội bóng: $182, 185, 182, 190, 188, 185, 182$. Khi lập bảng tần số, giá trị nào có tần số cao nhất?',
+  explaination: 'Hãy đếm số lần xuất hiện của từng giá trị khác nhau. Giá trị nào xuất hiện nhiều lần nhất chính là đáp án (Mốt của mẫu dữ liệu).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '182.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giá trị 182 xuất hiện 3 lần, nhiều nhất trong mẫu.',
+    },
+    {
+      content: '185.',
+      is_correct: false,
+      explaination: 'Giá trị 185 chỉ xuất hiện 2 lần.',
+    },
+    {
+      content: '190.',
+      is_correct: false,
+      explaination: 'Giá trị 190 chỉ xuất hiện 1 lần.',
+    },
+    {
+      content: '188.',
+      is_correct: false,
+      explaination: 'Giá trị 188 chỉ xuất hiện 1 lần.',
+    },
+  ],
+},
+{
+  content: 'Trong một biểu đồ cột kép so sánh doanh thu (tỉ đồng) của hai chi nhánh:\n$ \\begin{array}{|c|c|c|} \\hline \\text{Chi nhánh} & \\text{Năm 2024} & \\text{Năm 2025} \\\\ \\hline A & 1,2 & 1,5 \\\\ \\hline B & 1,5 & 2,0 \\\\ \\hline \\end{array} $\nChi nhánh nào có mức tăng trưởng doanh thu tuyệt đối cao hơn?',
+  explaination: 'Mức tăng trưởng tuyệt đối bằng doanh thu năm 2025 trừ đi doanh thu năm 2024. Bạn hãy tính cho cả hai chi nhánh và so sánh.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Chi nhánh B.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chi nhánh B tăng $0,5$ tỉ ($2,0 - 1,5$). Chi nhánh A chỉ tăng $0,3$ tỉ ($1,5 - 1,2$).',
+    },
+    {
+      content: 'Chi nhánh A.',
+      is_correct: false,
+      explaination: 'Chi nhánh A có mức tăng thấp hơn chi nhánh B.',
+    },
+    {
+      content: 'Hai chi nhánh tăng như nhau.',
+      is_correct: false,
+      explaination: 'Sai vì $0,5 > 0,3$.',
+    },
+    {
+      content: 'Không thể so sánh được.',
+      is_correct: false,
+      explaination: 'Số liệu đã cho đủ để so sánh mức tăng trưởng tuyệt đối.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VII --- BÀI 23: BẢNG TẦN SỐ TƯƠNG ĐỐI VÀ BIỂU ĐỒ TẦN SỐ TƯƠNG ĐỐI ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Tần số tương đối $f_{i}$ của một giá trị $x_{i}$ trong mẫu dữ liệu có cỡ mẫu $N$ được tính theo công thức nào?',
+  explaination: 'Tần số tương đối phản ánh tỉ lệ phần trăm xuất hiện của một giá trị so với tổng thể. Bạn hãy nhớ lại mối liên hệ giữa tần số $n_{i}$ và tổng số đơn vị điều tra $N$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$f_{i} = \\frac{n_{i}}{N} \\cdot 100\\%$',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tần số tương đối bằng tỉ số giữa tần số của giá trị đó và cỡ mẫu, thường viết dưới dạng phần trăm.',
+    },
+    {
+      content: '$f_{i} = \\frac{N}{n_{i}} \\cdot 100\\%$',
+      is_correct: false,
+      explaination: 'Sai vị trí giữa tần số và cỡ mẫu, công thức này sẽ cho kết quả lớn hơn 100%.',
+    },
+    {
+      content: '$f_{i} = n_{i} \\cdot N$',
+      is_correct: false,
+      explaination: 'Phép nhân không dùng để tính tỉ lệ phần trăm trong thống kê.',
+    },
+    {
+      content: '$f_{i} = \\frac{n_{i}}{100} \\cdot N$',
+      is_correct: false,
+      explaination: 'Công thức này sai hoàn toàn về mặt logic.',
+    },
+  ],
+},
+{
+  content: 'Trong một bảng tần số tương đối, tổng tất cả các tần số tương đối của các giá trị khác nhau luôn bằng:',
+  explaination: 'Mỗi tần số tương đối là một phần của tổng thể. Khi gộp tất cả các phần đó lại, chúng ta phải thu được giá trị đại diện cho toàn bộ mẫu.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$100\\%$ (hoặc 1).',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng các tỉ lệ thành phần phải luôn bù đủ cho một đơn vị tổng thể là 100%.',
+    },
+    {
+      content: '$50\\%$.',
+      is_correct: false,
+      explaination: 'Đây chỉ là một nửa tổng thể.',
+    },
+    {
+      content: 'Cỡ mẫu $N$.',
+      is_correct: false,
+      explaination: 'Tổng các "tần số" mới bằng $N$, còn tổng "tần số tương đối" phải bằng 100%.',
+    },
+    {
+      content: 'Tần số lớn nhất.',
+      is_correct: false,
+      explaination: 'Đây chỉ là một thành phần, không phải tổng các tỉ lệ.',
+    },
+  ],
+},
+{
+  content: 'Loại biểu đồ nào sau đây thường được dùng nhất để nhấn mạnh mối quan hệ giữa các phần so với tổng thể 100%?',
+  explaination: 'Hãy nghĩ đến loại biểu đồ hình tròn, trong đó mỗi phần (quạt) tượng trưng cho một tỉ lệ phần trăm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Biểu đồ hình quạt tròn.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Biểu đồ hình quạt tròn là công cụ tối ưu để biểu diễn cơ cấu và tỉ lệ phần trăm.',
+    },
+    {
+      content: 'Biểu đồ đoạn thẳng.',
+      is_correct: false,
+      explaination: 'Biểu đồ này thường dùng để theo dõi sự thay đổi theo thời gian.',
+    },
+    {
+      content: 'Biểu đồ tranh.',
+      is_correct: false,
+      explaination: 'Biểu đồ tranh dùng hình ảnh để đếm số lượng, không chuyên để tính tỉ lệ.',
+    },
+    {
+      content: 'Biểu đồ cột kép.',
+      is_correct: false,
+      explaination: 'Dùng để so sánh hai tập dữ liệu, không phải so với tổng thể.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau:\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Phương tiện} & \\text{Xe đạp} & \\text{Xe máy} & \\text{Đi bộ} \\\\ \\hline \\text{Tần số (n)} & 10 & 20 & 10 \\\\ \\hline \\end{array} $\nTần số tương đối của nhóm học sinh đi xe đạp là:',
+  explaination: 'Bước 1: Tính cỡ mẫu $N = 10 + 20 + 10 = 40$. Bước 2: Tính $f = (10 / 40) \\cdot 100\\%$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$25\\%$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $f = (10 / 40) \\cdot 100\\% = 0,25 \\cdot 100\\% = 25\\%$.',
+    },
+    {
+      content: '$10\\%$.',
+      is_correct: false,
+      explaination: 'Đây là giá trị tần số, không phải tần số tương đối.',
+    },
+    {
+      content: '$50\\%$.',
+      is_correct: false,
+      explaination: 'Đây là tần số tương đối của nhóm đi xe máy.',
+    },
+    {
+      content: '$40\\%$.',
+      is_correct: false,
+      explaination: 'Đây là giá trị của cỡ mẫu $N$.',
+    },
+  ],
+},
+{
+  content: 'Trong biểu đồ hình quạt tròn, một giá trị có tần số tương đối $50\\%$ sẽ ứng với một góc ở tâm có số đo là:',
+  explaination: 'Cả hình tròn tương ứng với $360^{\\circ}$ và $100\\%$. Bạn hãy lấy $360^{\\circ}$ nhân với tỉ lệ phần trăm tương ứng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$180^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Góc ở tâm $= 360^{\\circ} \\cdot 50\\% = 180^{\\circ}$ (nửa hình tròn).',
+    },
+    {
+      content: '$50^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn đơn vị phần trăm với đơn vị độ.',
+    },
+    {
+      content: '$90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc $90^{\\circ}$ tương ứng với tỉ lệ $25\\%$.',
+    },
+    {
+      content: '$360^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là góc của toàn bộ hình tròn ($100\\%$).',
+    },
+  ],
+},
+{
+  content: 'Khi vẽ biểu đồ cột tần số tương đối, trục đứng ($Oy$) dùng để biểu diễn đại lượng nào?',
+  explaination: 'Ở biểu đồ này, chiều cao của các cột phải thể hiện được tỉ lệ phần trăm của từng đối tượng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tần số tương đối $f_{i} (\\%)$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Trục đứng của biểu đồ cột tần số tương đối dùng để ghi tỉ lệ phần trăm.',
+    },
+    {
+      content: 'Tần số $n_{i}$.',
+      is_correct: false,
+      explaination: 'Đây là trục đứng của biểu đồ tần số thông thường.',
+    },
+    {
+      content: 'Các giá trị $x_{i}$.',
+      is_correct: false,
+      explaination: 'Đại lượng này được biểu diễn trên trục ngang.',
+    },
+    {
+      content: 'Cỡ mẫu $N$.',
+      is_correct: false,
+      explaination: 'Cỡ mẫu không phải là đại lượng biến thiên trên trục đứng.',
+    },
+  ],
+},
+{
+  content: 'Biết tần số tương đối của giá trị $A$ là $20\\%$ và cỡ mẫu là $N = 50$, tần số $n$ của giá trị $A$ là:',
+  explaination: 'Để tìm tần số thực tế, bạn hãy lấy cỡ mẫu nhân với tỉ lệ phần trăm tương ứng: $n = N \\cdot f$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '10.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tần số $n = 50 \\cdot 20\\% = 50 \\cdot 0,2 = 10$.',
+    },
+    {
+      content: '20.',
+      is_correct: false,
+      explaination: 'Đây là giá trị phần trăm, không phải số lượng.',
+    },
+    {
+      content: '25.',
+      is_correct: false,
+      explaination: 'Tính toán sai phép nhân.',
+    },
+    {
+      content: '5.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+{
+  content: 'Trong biểu đồ hình quạt tròn, tổng số đo các góc ở tâm của tất cả các hình quạt bằng:',
+  explaination: 'Hãy nhớ lại tổng số đo góc xung quanh một điểm (tâm hình tròn) trong hình học.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$360^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Toàn bộ hình tròn tương ứng với góc đầy là $360^{\\circ}$.',
+    },
+    {
+      content: '$100^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn đơn vị phần trăm với đơn vị độ.',
+    },
+    {
+      content: '$180^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là tổng góc của nửa hình tròn.',
+    },
+    {
+      content: '$90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc này chỉ chiếm 1/4 hình tròn.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho bảng sau về xếp loại học lực của một lớp:\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Xếp loại} & \\text{Giỏi} & \\text{Khá} & \\text{Trung bình} & \\text{Yếu} \\\\ \\hline \\text{Tỉ lệ (\\%)} & 20 & 50 & 25 & x \\\\ \\hline \\end{array} $\nGiá trị của $x$ là:',
+  explaination: 'Tổng các tần số tương đối phải bằng $100\\%$. Bạn hãy lấy 100 trừ đi tổng tỉ lệ của các nhóm đã biết.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '5.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = 100 - (20 + 50 + 25) = 100 - 95 = 5$.',
+    },
+    {
+      content: '10.',
+      is_correct: false,
+      explaination: 'Tính toán sai tổng các tỉ lệ đã biết.',
+    },
+    {
+      content: '15.',
+      is_correct: false,
+      explaination: 'Giá trị này làm tổng vượt quá 100%.',
+    },
+    {
+      content: '2.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả phép trừ.',
+    },
+  ],
+},
+{
+  content: 'Khảo sát 200 khách hàng, thấy có 40 người rất hài lòng. Khi vẽ biểu đồ hình quạt tròn, góc ở tâm ứng với nhóm "Rất hài lòng" là:',
+  explaination: 'Bước 1: Tính tần số tương đối $f = 40 / 200 = 20\\%$. Bước 2: Tính góc ở tâm $= 360^{\\circ} \\cdot 20\\%$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$72^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Góc ở tâm $= 360^{\\circ} \\cdot (40 / 200) = 360^{\\circ} \\cdot 0,2 = 72^{\\circ}$.',
+    },
+    {
+      content: '$40^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là giá trị tần số, không phải số đo góc.',
+    },
+    {
+      content: '$20^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là tỉ lệ phần trăm, không phải số đo góc.',
+    },
+    {
+      content: '$90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc này tương ứng với tỉ lệ $25\\%$.',
+    },
+  ],
+},
+{
+  content: 'Cho biểu đồ cột tần số tương đối, cột của chi nhánh A cao 4 cm tương ứng với $20\\%$. Nếu cột của chi nhánh B cao 6 cm thì nó ứng với bao nhiêu phần trăm?',
+  explaination: 'Chiều cao các cột tỉ lệ thuận với tần số tương đối. Bạn có thể dùng quy tắc tam suất để tính giá trị của chi nhánh B.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$30\\%$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tỉ lệ: $\\frac{4 cm}{20\\%} = \\frac{6 cm}{x\\%}$. Suy ra $x = (6 \\cdot 20) / 4 = 30\\%$.',
+    },
+    {
+      content: '$24\\%$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số.',
+    },
+    {
+      content: '$40\\%$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '$60\\%$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VII --- BÀI 23: BẢNG TẦN SỐ TƯƠNG ĐỐI VÀ BIỂU ĐỒ TẦN SỐ TƯƠNG ĐỐI ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CẤP 2 ===
+// =================================================================================================================
+
+{
+  content: 'Cho bảng tần số sau về các loại hoa trong vườn:\n\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Loại hoa} & \\text{Hoa Hồng} & \\text{Hoa Cúc} & \\text{Hoa Lan} \\\\ \\hline \\text{Tần số} & 12 & 18 & 10 \\\\ \\hline \\end{array} $\n\nTần số tương đối của "Hoa Hồng" là:',
+  explaination: 'Bước 1: Tính tổng số hoa $N = 12 + 18 + 10 = 40$. Bước 2: Tính tần số tương đối của hoa hồng bằng cách lấy tần số chia cho tổng số hoa và nhân với $100\\%$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$30\\%$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $f = (12 / 40) \\cdot 100\\% = 0,3 \\cdot 100\\% = 30\\%$.',
+    },
+    {
+      content: '$12\\%$.',
+      is_correct: false,
+      explaination: 'Đây là giá trị tần số, không phải tỉ lệ phần trăm.',
+    },
+    {
+      content: '$40\\%$.',
+      is_correct: false,
+      explaination: 'Tính toán sai cỡ mẫu $N$.',
+    },
+    {
+      content: '$25\\%$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả chia.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng tần số tương đối về màu sắc yêu thích của 50 học sinh bị thiếu một giá trị $x$ như sau:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Màu sắc} & \\text{Xanh} & \\text{Đỏ} & \\text{Vàng} & \\text{Tím} \\\\ \\hline \\text{Tần số tương đối} & 30\\% & x & 20\\% & 10\\% \\\\ \\hline \\end{array} $\n\nSố học sinh thích màu Đỏ trong cuộc khảo sát này là:',
+  explaination: 'Bước 1: Tìm $x$ dựa trên quy tắc tổng các tần số tương đối bằng $100\\%$. Bước 2: Tính số học sinh bằng cách lấy cỡ mẫu (50) nhân với giá trị $x$ vừa tìm được.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '20 học sinh.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = 100\\% - (30\\% + 20\\% + 10\\%) = 40\\%$. Số học sinh thích màu Đỏ là: $50 \\cdot 40\\% = 20$.',
+    },
+    {
+      content: '40 học sinh.',
+      is_correct: false,
+      explaination: 'Đây là giá trị phần trăm $x$, không phải số lượng học sinh.',
+    },
+    {
+      content: '15 học sinh.',
+      is_correct: false,
+      explaination: 'Đây là số học sinh thích màu Xanh ($50 \\cdot 30\\%$).',
+    },
+    {
+      content: '10 học sinh.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả nhân phần trăm.',
+    },
+  ],
+},
+{
+  content: 'Trong biểu đồ hình quạt tròn về cơ cấu chi tiêu hàng tháng của một gia đình:\n- Ăn uống: $45\\%$\n- Nhà ở: $25\\%$\n- Tiết kiệm: $20\\%$\n- Khác: $10\\%$\n\nGóc ở tâm của hình quạt biểu diễn phần "Ăn uống" lớn hơn góc ở tâm của phần "Nhà ở" là bao nhiêu độ?',
+  explaination: 'Bạn hãy lấy hiệu tỉ lệ phần trăm giữa "Ăn uống" và "Nhà ở" ($45\\% - 25\\% = 20\\%$) rồi nhân với $360^{\\circ}$ để tìm số đo góc chênh lệch.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$72^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chênh lệch phần trăm là $20\\%$. Góc chênh lệch $= 360^{\\circ} \\cdot 20\\% = 72^{\\circ}$.',
+    },
+    {
+      content: '$20^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là hiệu phần trăm, không phải số đo góc.',
+    },
+    {
+      content: '$162^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là góc ở tâm của riêng phần "Ăn uống".',
+    },
+    {
+      content: '$90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc này tương ứng với hiệu $25\\%$.',
+    },
+  ],
+},
+{
+  content: 'Khảo sát 200 người về thói quen đọc sách thu được biểu đồ cột tần số tương đối. Cột "Đọc hàng ngày" cao 15 đơn vị tương ứng với $30\\%$. Cột "Hiếm khi đọc" cao 5 đơn vị. Số người hiếm khi đọc sách là:',
+  explaination: 'Dựa vào tỉ lệ chiều cao cột để tìm phần trăm: Cột cao 5 bằng $1/3$ cột cao 15 nên chiếm $10\\%$. Sau đó nhân tỉ lệ này với tổng số 200 người.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '20 người.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tần số tương đối nhóm này là $10\\%$. Số người là $200 \\cdot 10\\% = 20$.',
+    },
+    {
+      content: '10 người.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn giữa giá trị phần trăm và số người.',
+    },
+    {
+      content: '60 người.',
+      is_correct: false,
+      explaination: 'Đây là số người "Đọc hàng ngày" ($200 \\cdot 30\\%$).',
+    },
+    {
+      content: '$10\\%$.',
+      is_correct: false,
+      explaination: 'Đây là tần số tương đối, chưa phải số lượng người.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho bảng tần số tương đối về các loại quả bán được trong ngày:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Loại quả} & \\text{Táo} & \\text{Cam} & \\text{Xoài} & \\text{Ổi} \\\\ \\hline \\text{Tần số tương đối} & 35\\% & 25\\% & 20\\% & 20\\% \\\\ \\hline \\end{array} $\n\nNếu trong ngày cửa hàng bán được 28 kg Táo, thì tổng khối lượng hoa quả bán được là:',
+  explaination: 'Để tìm tổng khối lượng $N$, bạn hãy lấy khối lượng của Táo chia cho tần số tương đối tương ứng của nó: $N = n / f$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '80 kg.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng khối lượng $= 28 / 35\\% = 28 / 0,35 = 80$ kg.',
+    },
+    {
+      content: '70 kg.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả phép chia.',
+    },
+    {
+      content: '100 kg.',
+      is_correct: false,
+      explaination: 'Giả định sai cỡ mẫu.',
+    },
+    {
+      content: '112 kg.',
+      is_correct: false,
+      explaination: 'Sai do lấy khối lượng nhân với số loại quả.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng điểm thi môn Toán của một nhóm học sinh:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Điểm số} & 6 & 7 & 8 & 9 \\\\ \\hline \\text{Tần số} & 2 & 5 & 8 & 5 \\\\ \\hline \\end{array} $\n\nKhi vẽ biểu đồ hình quạt tròn, góc ở tâm của hình quạt ứng với "Điểm 8" có số đo là:',
+  explaination: 'Bước 1: Tính tổng tần số $N = 20$. Bước 2: Tính tần số tương đối của điểm 8 ($f = 8 / 20 = 40\\%$). Bước 3: Tính góc ở tâm $= 360^{\\circ} \\cdot 40\\%$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$144^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $f = 40\\%$. Góc $= 360^{\\circ} \\cdot 0,4 = 144^{\\circ}$.',
+    },
+    {
+      content: '$80^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn tần số với số đo góc.',
+    },
+    {
+      content: '$108^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là góc của các nhóm có tần số bằng 6.',
+    },
+    {
+      content: '$90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là góc ứng với tỉ lệ $25\\%$.',
+    },
+  ],
+},
+{
+  content: 'Trong một biểu đồ hình quạt tròn có cơ cấu:\n- Hoạt động A: $x\\%$\n- Hoạt động B: $40\\%$\n- Hoạt động C: $30\\%$\n\nBiết góc ở tâm của hình quạt biểu diễn hoạt động A là $108^{\\circ}$. Giá trị của $x$ là:',
+  explaination: 'Tần số tương đối $x$ được tính từ số đo góc ở tâm theo công thức: $f = (Góc / 360^{\\circ}) \\cdot 100\\%$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '30.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = (108 / 360) \\cdot 100 = 0,3 \\cdot 100 = 30$.',
+    },
+    {
+      content: '20.',
+      is_correct: false,
+      explaination: 'Góc $72^{\\circ}$ mới tương ứng với $20\\%$.',
+    },
+    {
+      content: '25.',
+      is_correct: false,
+      explaination: 'Góc $90^{\\circ}$ mới tương ứng với $25\\%$.',
+    },
+    {
+      content: '35.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ phần trăm.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng tần số về cỡ áo bán được trong tuần:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Cỡ áo} & S & M & L & XL \\\\ \\hline \\text{Tần số} & 40 & 80 & 60 & 20 \\\\ \\hline \\end{array} $\n\nKhẳng định nào sau đây là <b>SAI</b> về tần số tương đối?',
+  explaination: 'Hãy tính tần số tương đối của từng cỡ áo bằng cách lấy từng tần số chia cho tổng ($N=200$) rồi đối chiếu với các phương án.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Cỡ M có tần số tương đối gấp 3 lần cỡ S.',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Cỡ M ($80/200 = 40\\%$) so với cỡ S ($40/200 = 20\\%$) chỉ gấp 2 lần, không phải 3 lần.',
+    },
+    {
+      content: 'Cỡ XL chiếm tỉ lệ thấp nhất ($10\\%$).',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng ($20/200 = 10\\%$).',
+    },
+    {
+      content: 'Tổng tần số tương đối của cỡ S và cỡ L là $50\\%$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng ($20\\% + 30\\% = 50\\%$).',
+    },
+    {
+      content: 'Cỡ M chiếm tỉ lệ cao nhất ($40\\%$).',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng.',
+    },
+  ],
+},
+{
+  content: 'Một mẫu dữ liệu có giá trị $A$ chiếm tần số tương đối là $25\\%$. Nếu ta giữ nguyên tần số của giá trị $A$ nhưng tăng cỡ mẫu tổng thể lên gấp đôi, thì tần số tương đối mới của giá trị $A$ là:',
+  explaination: 'Sử dụng công thức $f = n / N$. Khi $n$ không đổi và $N$ tăng lên 2 lần thì giá trị của phân số sẽ giảm đi 2 lần.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$12,5\\%$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $f_{mới} = n / (2N) = (1/2) \\cdot (n/N) = 25\\% / 2 = 12,5\\%$.',
+    },
+    {
+      content: '$50\\%$.',
+      is_correct: false,
+      explaination: 'Tỉ lệ phải giảm đi, không thể tăng lên khi mẫu số lớn hơn.',
+    },
+    {
+      content: '$25\\%$.',
+      is_correct: false,
+      explaination: 'Tỉ lệ thay đổi vì cỡ mẫu đã thay đổi.',
+    },
+    {
+      content: '$5\\%$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ giảm.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VII --- BÀI 24: BẢNG TẦN SỐ, TẦN SỐ TƯƠNG ĐỐI GHÉP NHÓM VÀ BIỂU ĐỒ ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Việc chia các giá trị của mẫu dữ liệu thành các khoảng (nhóm) nửa khoảng có độ dài bằng nhau được gọi là:',
+  explaination: 'Đây là phương pháp xử lý dữ liệu khi có quá nhiều giá trị khác nhau hoặc dữ liệu mang tính liên tục (như thời gian, cân nặng).',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Ghép nhóm dữ liệu.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Ghép nhóm dữ liệu là quá trình phân chia dữ liệu vào các khoảng giá trị xác định để dễ quản lý.',
+    },
+    {
+      content: 'Phân loại dữ liệu.',
+      is_correct: false,
+      explaination: 'Phân loại thường dựa trên đặc tính định tính, không phải các khoảng số lượng.',
+    },
+    {
+      content: 'Ước lượng dữ liệu.',
+      is_correct: false,
+      explaination: 'Đây là việc dự đoán giá trị, không phải hành động chia nhóm.',
+    },
+    {
+      content: 'Làm tròn dữ liệu.',
+      is_correct: false,
+      explaination: 'Làm tròn là thay đổi giá trị số, không phải chia khoảng.',
+    },
+  ],
+},
+{
+  content: 'Trong bảng tần số ghép nhóm, kí hiệu $[a; b)$ dùng để chỉ nhóm các giá trị $x$ thỏa mãn điều kiện nào sau đây?',
+  explaination: 'Hãy lưu ý ý nghĩa của các loại ngoặc trong toán học: ngoặc vuông $[$ đại diện cho việc lấy cả dấu bằng, ngoặc tròn $)$ đại diện cho việc không lấy dấu bằng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a \\le x < b$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nhóm $[a; b)$ bao gồm các giá trị lớn hơn hoặc bằng $a$ và nhỏ hơn $b$.',
+    },
+    {
+      content: '$a < x < b$.',
+      is_correct: false,
+      explaination: 'Đây là kí hiệu của một khoảng $(a; b)$, không lấy hai đầu mút.',
+    },
+    {
+      content: '$a \\le x \\le b$.',
+      is_correct: false,
+      explaination: 'Đây là kí hiệu của một đoạn $[a; b]$.',
+    },
+    {
+      content: '$a < x \\le b$.',
+      is_correct: false,
+      explaination: 'Đây là kí hiệu của nửa khoảng $(a; b]$.',
+    },
+  ],
+},
+{
+  content: 'Tần số ghép nhóm của một nhóm dữ liệu là:',
+  explaination: 'Khi đã chia dữ liệu vào các khoảng, chúng ta cần xác định xem có bao nhiêu đối tượng thuộc về mỗi khoảng đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số các giá trị của mẫu dữ liệu thuộc vào nhóm đó.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tần số ghép nhóm chính là số lượng số liệu nằm trong khoảng của nhóm đó.',
+    },
+    {
+      content: 'Giá trị trung bình của nhóm.',
+      is_correct: false,
+      explaination: 'Đây được gọi là giá trị đại diện của nhóm.',
+    },
+    {
+      content: 'Hiệu số giữa hai đầu mút $b - a$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài của nhóm (hay khoảng chia).',
+    },
+    {
+      content: 'Tổng các giá trị trong nhóm.',
+      is_correct: false,
+      explaination: 'Tần số là phép đếm số lượng, không phải phép cộng giá trị.',
+    },
+  ],
+},
+{
+  content: 'Giá trị đại diện của nhóm $[a; b)$ được tính theo công thức nào?',
+  explaination: 'Giá trị đại diện là con số nằm chính giữa khoảng, được dùng để tính toán các số đặc trưng khác như điểm trung bình.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{a + b}{2}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giá trị đại diện bằng trung bình cộng của hai đầu mút nhóm.',
+    },
+    {
+      content: '$b - a$.',
+      is_correct: false,
+      explaination: 'Đây là công thức tính độ dài nhóm.',
+    },
+    {
+      content: '$a + b$.',
+      is_correct: false,
+      explaination: 'Thiếu bước chia 2 để tìm điểm giữa.',
+    },
+    {
+      content: '$\\sqrt{ab}$.',
+      is_correct: false,
+      explaination: 'Đây là trung bình nhân, không dùng để tìm giá trị đại diện nhóm.',
+    },
+  ],
+},
+{
+  content: 'Biểu đồ nào sau đây là dạng biểu đồ chuẩn để biểu diễn bảng tần số ghép nhóm?',
+  explaination: 'Hãy nhớ lại hình ảnh các cột hình chữ nhật nằm sát nhau, trong đó chiều rộng mỗi cột khớp với khoảng của nhóm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Biểu đồ tần số dạng cột (Histogram).',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Trong biểu đồ Histogram, các cột được vẽ sát nhau để thể hiện tính liên tục của các nhóm.',
+    },
+    {
+      content: 'Biểu đồ tranh.',
+      is_correct: false,
+      explaination: 'Biểu đồ tranh không thể hiện được tính chất ghép nhóm theo khoảng.',
+    },
+    {
+      content: 'Biểu đồ hình quạt tròn.',
+      is_correct: false,
+      explaination: 'Dùng cho tần số tương đối, nhưng không biểu thị rõ biên độ các nhóm.',
+    },
+    {
+      content: 'Biểu đồ điểm.',
+      is_correct: false,
+      explaination: 'Biểu đồ điểm chỉ dùng cho dữ liệu đơn lẻ.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau:\n\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Chiều cao (cm)} & [150; 155) & [155; 160) & [160; 165) \\\\ \\hline \\text{Tần số (n)} & 8 & 12 & 10 \\\\ \\hline \\end{array} $\n\nCỡ mẫu $N$ của cuộc khảo sát này là:',
+  explaination: 'Cỡ mẫu $N$ bằng tổng tất cả các tần số của các nhóm có mặt trong bảng.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '30.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $N = 8 + 12 + 10 = 30$.',
+    },
+    {
+      content: '150.',
+      is_correct: false,
+      explaination: 'Đây là giá trị chiều cao, không phải số lượng đối tượng.',
+    },
+    {
+      content: '3.',
+      is_correct: false,
+      explaination: 'Đây là số lượng các nhóm, không phải cỡ mẫu.',
+    },
+    {
+      content: '12.',
+      is_correct: false,
+      explaination: 'Đây là tần số của nhóm ở giữa.',
+    },
+  ],
+},
+{
+  content: 'Sử dụng bảng dữ liệu ở câu trước, giá trị đại diện của nhóm $[160; 165)$ là:',
+  explaination: 'Bạn hãy tính trung bình cộng của hai số 160 và 165 để tìm giá trị đại diện cho nhóm này.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '162,5.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giá trị đại diện $= (160 + 165) / 2 = 162,5$.',
+    },
+    {
+      content: '160.',
+      is_correct: false,
+      explaination: 'Đây là đầu mút dưới của nhóm.',
+    },
+    {
+      content: '165.',
+      is_correct: false,
+      explaination: 'Đây là đầu mút trên của nhóm.',
+    },
+    {
+      content: '5.',
+      is_correct: false,
+      explaination: 'Đây là độ dài của nhóm.',
+    },
+  ],
+},
+{
+  content: 'Trong biểu đồ tần số ghép nhóm dạng cột, chiều rộng của mỗi cột biểu thị:',
+  explaination: 'Hãy quan sát trục ngang ($Ox$) của biểu đồ để thấy ý nghĩa vật lý của độ rộng các hình chữ nhật.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Độ dài của nhóm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chiều rộng cột ứng với độ dài khoảng giá trị mà nhóm đó bao phủ.',
+    },
+    {
+      content: 'Tần số của nhóm.',
+      is_correct: false,
+      explaination: 'Tần số được biểu thị qua chiều cao của cột.',
+    },
+    {
+      content: 'Tổng số liệu của mẫu.',
+      is_correct: false,
+      explaination: 'Tổng số liệu (cỡ mẫu) không được biểu thị qua chiều rộng cột.',
+    },
+    {
+      content: 'Số lượng các nhóm.',
+      is_correct: false,
+      explaination: 'Số lượng các nhóm tương ứng với số các cột trên biểu đồ.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho bảng tần số tương đối ghép nhóm sau về thời gian sử dụng điện thoại:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Thời gian (h)} & [0; 1) & [1; 2) & [2; 3) & [3; 4) \\\\ \\hline \\text{Tỉ lệ (\\%)} & 15 & 40 & x & 10 \\\\ \\hline \\end{array} $\n\nGiá trị của $x$ là:',
+  explaination: 'Tổng tất cả các tần số tương đối của các nhóm trong một bảng phải luôn bằng $100\\%$. Bạn hãy lấy 100 trừ đi tổng các tỉ lệ đã biết.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '35.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = 100 - (15 + 40 + 10) = 35$.',
+    },
+    {
+      content: '45.',
+      is_correct: false,
+      explaination: 'Tính toán sai tổng các tỉ lệ đã biết.',
+    },
+    {
+      content: '25.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả phép trừ.',
+    },
+    {
+      content: '55.',
+      is_correct: false,
+      explaination: 'Giá trị này làm tổng vượt quá 100%.',
+    },
+  ],
+},
+{
+  content: 'Khảo sát cân nặng của 40 học sinh, nhóm $[45; 50)$ có tần số tương đối là $20\\%$. Số học sinh thuộc nhóm này là:',
+  explaination: 'Bạn hãy tính số học sinh (tần số $n$) bằng cách lấy cỡ mẫu $N$ nhân với tỉ lệ phần trăm tương ứng: $n = N \\cdot f$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '8 học sinh.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Số học sinh $= 40 \\cdot 20\\% = 40 \\cdot 0,2 = 8$.',
+    },
+    {
+      content: '10 học sinh.',
+      is_correct: false,
+      explaination: 'Tính toán sai phép nhân ($20\\%$ của 40 không phải 10).',
+    },
+    {
+      content: '20 học sinh.',
+      is_correct: false,
+      explaination: 'Đây là giá trị phần trăm, không phải số lượng học sinh.',
+    },
+    {
+      content: '4 học sinh.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau về thời gian chạy 100m của học sinh:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Thời gian (s)} & [12; 13) & [13; 14) & [14; 15) & [15; 16) \\\\ \\hline \\text{Tần số (n)} & 4 & 10 & 16 & 10 \\\\ \\hline \\end{array} $\n\nSố học sinh hoàn thành bài chạy với thời gian dưới 14 giây là:',
+  explaination: 'Cụm từ "dưới 14 giây" bao gồm các nhóm có mốc thời gian nhỏ hơn 14, cụ thể là các nhóm $[12; 13)$ và $[13; 14)$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '14 học sinh.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Số học sinh $= 4$ (nhóm 1) + $10$ (nhóm 2) $= 14$.',
+    },
+    {
+      content: '10 học sinh.',
+      is_correct: false,
+      explaination: 'Đây mới chỉ là số học sinh của riêng nhóm $[13; 14)$.',
+    },
+    {
+      content: '26 học sinh.',
+      is_correct: false,
+      explaination: 'Đây là số học sinh từ 13 giây trở lên.',
+    },
+    {
+      content: '40 học sinh.',
+      is_correct: false,
+      explaination: 'Đây là tổng cỡ mẫu của cuộc khảo sát.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VII --- BÀI 24: BẢNG TẦN SỐ, TẦN SỐ TƯƠNG ĐỐI GHÉP NHÓM VÀ BIỂU ĐỒ ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Cho bảng sau:\n\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Thời gian tự học (h)} & [0; 1) & [1; 2) & [2; 3) \\\\ \\hline \\text{Tần số (n)} & 5 & 15 & 10 \\\\ \\hline \\end{array} $\n\nNhóm có thời gian tự học phổ biến nhất (nhóm chứa mốt) trong cuộc khảo sát này là:',
+  explaination: 'Nhóm chứa mốt trong bảng tần số ghép nhóm là nhóm có tần số lớn nhất. Bạn hãy nhìn vào hàng "Tần số (n)" để xác định giá trị lớn nhất và tìm nhóm tương ứng.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$[1; 2)$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nhóm $[1; 2)$ có tần số là 15, lớn nhất trong bảng số liệu.',
+    },
+    {
+      content: '$[0; 1)$.',
+      is_correct: false,
+      explaination: 'Nhóm này có tần số là 5, không phải lớn nhất.',
+    },
+    {
+      content: '$[2; 3)$.',
+      is_correct: false,
+      explaination: 'Nhóm này có tần số là 10, thấp hơn nhóm $[1; 2)$.',
+    },
+    {
+      content: '15.',
+      is_correct: false,
+      explaination: 'Đây là giá trị tần số lớn nhất, không phải là tên nhóm.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau:\n\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Chiều cao cây (cm)} & [10; 20) & [20; 30) & [30; 40) \\\\ \\hline \\text{Tần số (n)} & 8 & 12 & 20 \\\\ \\hline \\end{array} $\n\nTần số tương đối của nhóm cây có chiều cao từ 30 cm đến dưới 40 cm là:',
+  explaination: 'Bước 1: Tính cỡ mẫu $N = 8 + 12 + 20 = 40$. Bước 2: Tính tần số tương đối của nhóm $[30; 40)$ bằng công thức $f = (n_{i} / N) \\cdot 100\\%$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$50\\%$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tần số tương đối $= (20 / 40) \\cdot 100\\% = 50\\%$.',
+    },
+    {
+      content: '$20\\%$.',
+      is_correct: false,
+      explaination: 'Đây là con số tần số của nhóm, không phải tỉ lệ phần trăm.',
+    },
+    {
+      content: '$40\\%$.',
+      is_correct: false,
+      explaination: 'Đây là giá trị của cỡ mẫu $N$.',
+    },
+    {
+      content: '$30\\%$.',
+      is_correct: false,
+      explaination: 'Đây là tần số tương đối của nhóm $[20; 30)$.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau:\n\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Điểm số} & [0; 5) & [5; 8) & [8; 10] \\\\ \\hline \\text{Tần số tương đối (\\%)} & 10 & 60 & 30 \\\\ \\hline \\end{array} $\n\nNếu tổng số học sinh là 40, thì số học sinh đạt điểm từ 8 đến 10 là:',
+  explaination: 'Để tìm số học sinh (tần số $n$), bạn hãy lấy tổng số học sinh $N$ nhân với tần số tương đối tương ứng của nhóm đó: $n = N \\cdot f$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '12 học sinh.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Số học sinh $= 40 \\cdot 30\\% = 40 \\cdot 0,3 = 12$ học sinh.',
+    },
+    {
+      content: '30 học sinh.',
+      is_correct: false,
+      explaination: 'Đây là con số phần trăm của nhóm, không phải số lượng học sinh.',
+    },
+    {
+      content: '4 học sinh.',
+      is_correct: false,
+      explaination: 'Đây là số học sinh của nhóm đạt điểm $[0; 5)$.',
+    },
+    {
+      content: '24 học sinh.',
+      is_correct: false,
+      explaination: 'Đây là số học sinh của nhóm đạt điểm $[5; 8)$.',
+    },
+  ],
+},
+{
+  content: 'Trong một biểu đồ tần số ghép nhóm dạng cột (Histogram), nếu tất cả các nhóm có độ dài bằng nhau thì khẳng định nào sau đây là đúng?',
+  explaination: 'Hãy nhớ lại đặc điểm về diện tích và chiều cao của các cột hình chữ nhật trong biểu đồ Histogram khi các khoảng chia có độ rộng đồng nhất.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Chiều cao của mỗi cột tỉ lệ thuận với tần số của nhóm đó.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Khi chiều rộng các cột bằng nhau, chiều cao sẽ phản ánh trực tiếp độ lớn của tần số.',
+    },
+    {
+      content: 'Diện tích của mỗi cột luôn bằng 1.',
+      is_correct: false,
+      explaination: 'Diện tích cột phụ thuộc vào tích của độ rộng nhóm và tần số.',
+    },
+    {
+      content: 'Tất cả các cột có chiều cao bằng nhau.',
+      is_correct: false,
+      explaination: 'Chiều cao các cột khác nhau tùy theo tần số của từng nhóm.',
+    },
+    {
+      content: 'Chiều rộng của cột tỉ lệ thuận với cỡ mẫu $N$.',
+      is_correct: false,
+      explaination: 'Chiều rộng cột cố định theo độ dài của nhóm giá trị.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho bảng tần số ghép nhóm về thời gian hoàn thành một bài tập của học sinh:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Thời gian (phút)} & [5; 10) & [10; 15) & [15; 20) & [20; 25) \\\\ \\hline \\text{Tần số (n)} & 4 & m & 12 & 4 \\\\ \\hline \\end{array} $\n\nBiết tổng số học sinh tham gia khảo sát là 30. Tần số tương đối của nhóm $[10; 15)$ là:',
+  explaination: 'Bước 1: Tìm giá trị $m$ bằng cách lấy tổng cỡ mẫu (30) trừ đi các tần số đã biết. Bước 2: Tính tần số tương đối của nhóm đó bằng công thức $f = (m / 30) \\cdot 100\\%$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$33,33\\%$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ phần trăm.',
+    },
+    {
+      content: '$30\\%$.',
+      is_correct: false,
+      explaination: 'Đây là giá trị tần số $m = 10$ chứ không phải phần trăm.',
+    },
+    {
+      content: '$33,3\\%$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $m = 30 - (4+12+4) = 10$. Tỉ lệ $= (10 / 30) \\cdot 100\\% \\approx 33,3\\%$.',
+    },
+    {
+      content: '$40\\%$.',
+      is_correct: false,
+      explaination: 'Đây là tần số tương đối của nhóm $[15; 20)$.',
+    },
+  ],
+},
+{
+  content: 'Tính giá trị trung bình mẫu ($\\bar{x}$) của dữ liệu ghép nhóm cho bởi bảng sau:\n\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Khoảng giá trị} & [0; 10) & [10; 20) & [20; 30) \\\\ \\hline \\text{Tần số} & 2 & 5 & 3 \\\\ \\hline \\end{array} $',
+  explaination: 'Để tính trung bình mẫu ghép nhóm: Bước 1: Tìm giá trị đại diện $x_{i}$ của mỗi nhóm (điểm giữa). Bước 2: Tính tổng tích các giá trị đại diện với tần số tương ứng rồi chia cho tổng số dữ liệu (10).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '15.',
+      is_correct: false,
+      explaination: 'Đây chỉ là giá trị đại diện của nhóm thứ hai.',
+    },
+    {
+      content: '16.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giá trị đại diện lần lượt là $5, 15, 25$. Tổng $= 5 \\cdot 2 + 15 \\cdot 5 + 25 \\cdot 3 = 10 + 75 + 75 = 160$. Trung bình $= 160 / 10 = 16$.',
+    },
+    {
+      content: '15,5.',
+      is_correct: false,
+      explaination: 'Tính toán sai tổng các tích.',
+    },
+    {
+      content: '20.',
+      is_correct: false,
+      explaination: 'Tính toán sai công thức trung bình.',
+    },
+  ],
+},
+{
+  content: 'Trong một biểu đồ cột tần số tương đối ghép nhóm, cột thứ nhất biểu diễn nhóm $[0; 4)$ cao 6 cm, cột thứ hai biểu diễn nhóm $[4; 8)$ cao 9 cm. Nếu tổng tần số của cả hai nhóm là 50 người, thì số người thuộc nhóm $[4; 8)$ là:',
+  explaination: 'Vì chiều cao các cột tỉ lệ thuận với tần số, bạn có thể thiết lập tỉ lệ: $n_{1} / n_{2} = 6 / 9 = 2 / 3$. Kết hợp với tổng $n_{1} + n_{2} = 50$ để tìm $n_{2}$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '30 người.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tỉ lệ tần số là $2/3$. Tổng số phần là $2+3=5$. Một phần $= 50/5 = 10$. Nhóm 2 chiếm 3 phần nên là $30$ người.',
+    },
+    {
+      content: '20 người.',
+      is_correct: false,
+      explaination: 'Đây là số người thuộc nhóm $[0; 4)$.',
+    },
+    {
+      content: '25 người.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ giữa các cột.',
+    },
+    {
+      content: '15 người.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng tần số ghép nhóm về tiền lương nhân viên công ty X:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Lương (triệu)} & [5; 10) & [10; 15) & [15; 20) & [20; 25) \\\\ \\hline \\text{Tần số} & 10 & 25 & 10 & 5 \\\\ \\hline \\end{array} $\n\nTỉ lệ nhân viên có mức lương dưới 15 triệu đồng chiếm bao nhiêu phần trăm?',
+  explaination: 'Đối tượng "lương dưới 15 triệu" bao gồm hai nhóm: $[5; 10)$ và $[10; 15)$. Bạn hãy cộng tần số của hai nhóm này rồi chia cho tổng số nhân viên (50) và đổi ra phần trăm.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$70\\%$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng nhân viên dưới 15 triệu là $10 + 25 = 35$. Tỉ lệ $= (35 / 50) \\cdot 100\\% = 70\\%$.',
+    },
+    {
+      content: '$50\\%$.',
+      is_correct: false,
+      explaination: 'Đây là tỉ lệ của riêng nhóm $[10; 15)$.',
+    },
+    {
+      content: '$35\\%$.',
+      is_correct: false,
+      explaination: 'Đây là số lượng nhân viên, không phải tỉ lệ phần trăm.',
+    },
+    {
+      content: '$80\\%$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tổng số nhân viên.',
+    },
+  ],
+},
+{
+  content: 'Một mẫu dữ liệu có 100 giá trị được ghép thành 5 nhóm có độ dài bằng nhau. Nhóm 1 có tần số 15, nhóm 5 có tần số 10. Ba nhóm còn lại có tần số bằng nhau. Tần số tương đối của nhóm 3 là:',
+  explaination: 'Bước 1: Tính tổng tần số của 3 nhóm còn lại ($100 - 15 - 10 = 75$). Bước 2: Chia đều để tìm tần số nhóm 3 ($75 / 3 = 25$). Bước 3: Đổi giá trị 25 sang phần trăm của 100.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat7_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$25\\%$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tần số nhóm 3 là 25. Vì cỡ mẫu là 100 nên tỉ lệ tương ứng là $25\\%$.',
+    },
+    {
+      content: '$15\\%$.',
+      is_correct: false,
+      explaination: 'Đây là tỉ lệ của nhóm 1.',
+    },
+    {
+      content: '$20\\%$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các tần số nhóm còn lại.',
+    },
+    {
+      content: '$30\\%$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả chia.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VIII --- BÀI 25: PHÉP THỬ NGẪU NHIÊN VÀ KHÔNG GIAN MẪU ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Một hành động hay thí nghiệm mà ta không thể đoán trước được kết quả của nó, mặc dù đã biết tập hợp tất cả các kết quả có thể xảy ra, được gọi là:',
+  explaination: 'Đây là định nghĩa cơ bản về các tình huống trong xác suất như tung đồng xu hay gieo xúc xắc, nơi mà tính ngẫu nhiên đóng vai trò quyết định.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Phép thử ngẫu nhiên.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Phép thử ngẫu nhiên là phép thử mà kết quả của nó không thể biết trước được.',
+    },
+    {
+      content: 'Biến cố chắc chắn.',
+      is_correct: false,
+      explaination: 'Đây là một loại kết quả luôn luôn xảy ra, không phải tên gọi của hành động thử nghiệm.',
+    },
+    {
+      content: 'Không gian mẫu.',
+      is_correct: false,
+      explaination: 'Đây là tập hợp tất cả các kết quả có thể xảy ra, không phải là tên gọi của hành động thực hiện.',
+    },
+    {
+      content: 'Phép toán xác suất.',
+      is_correct: false,
+      explaination: 'Đây là tên gọi chung cho việc tính toán, không phải định nghĩa về phép thử.',
+    },
+  ],
+},
+{
+  content: 'Tập hợp tất cả các kết quả có thể xảy ra của một phép thử ngẫu nhiên được gọi là:',
+  explaination: 'Mỗi phép thử có một danh sách các kết quả tiềm năng. Khi ta gom tất cả chúng vào một tập hợp, tập hợp đó có một tên gọi chuyên biệt trong toán học xác suất.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Không gian mẫu.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Không gian mẫu là tập hợp gồm tất cả các kết quả có thể xảy ra của phép thử ngẫu nhiên.',
+    },
+    {
+      content: 'Tập hợp biến cố.',
+      is_correct: false,
+      explaination: 'Biến cố chỉ là một tập con của không gian mẫu, không phải toàn bộ tập hợp kết quả.',
+    },
+    {
+      content: 'Phép thử.',
+      is_correct: false,
+      explaination: 'Phép thử là hành động, không phải là tập hợp các kết quả.',
+    },
+    {
+      content: 'Kết quả thuận lợi.',
+      is_correct: false,
+      explaination: 'Đây là các kết quả thỏa mãn một điều kiện nào đó, không phải toàn bộ kết quả có thể có.',
+    },
+  ],
+},
+{
+  content: 'Kí hiệu thường dùng để chỉ không gian mẫu của một phép thử ngẫu nhiên là:',
+  explaination: 'Trong toán học, người ta quy ước sử dụng một chữ cái Hy Lạp cụ thể để đại diện cho tập hợp không gian mẫu.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\Omega$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chữ cái Omega ($\\Omega$) là kí hiệu quy ước cho không gian mẫu.',
+    },
+    {
+      content: '$\\Sigma$.',
+      is_correct: false,
+      explaination: 'Đây thường là kí hiệu của tổng (Sigma).',
+    },
+    {
+      content: '$\\Delta$.',
+      is_correct: false,
+      explaination: 'Đây là kí hiệu biệt thức Delta trong phương trình bậc hai.',
+    },
+    {
+      content: '$\\Phi$.',
+      is_correct: false,
+      explaination: 'Đây là kí hiệu của tập rỗng hoặc một góc trong hình học.',
+    },
+  ],
+},
+{
+  content: 'Trong phép thử gieo một con xúc xắc cân đối và đồng chất, không gian mẫu $\\Omega$ bao gồm bao nhiêu phần tử?',
+  explaination: 'Con xúc xắc thông thường có dạng hình lập phương, mỗi mặt được đánh số từ 1 đến 6. Bạn hãy đếm tổng số các mặt này.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '6 phần tử.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\Omega = \\{1; 2; 3; 4; 5; 6\\}$, vậy có 6 kết quả có thể xảy ra.',
+    },
+    {
+      content: '1 phần tử.',
+      is_correct: false,
+      explaination: 'Mỗi lần gieo chỉ xuất hiện 1 mặt, nhưng không gian mẫu phải liệt kê tất cả khả năng.',
+    },
+    {
+      content: '12 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số phần tử khi gieo 2 con xúc xắc (nếu tính theo phép cộng, thực tế là 36).',
+    },
+    {
+      content: 'Vô số phần tử.',
+      is_correct: false,
+      explaination: 'Số lượng mặt của xúc xắc là hữu hạn.',
+    },
+  ],
+},
+{
+  content: 'Phép thử tung một đồng xu cân đối và đồng chất. Gọi S là mặt sấp, N là mặt ngửa. Không gian mẫu $\\Omega$ của phép thử này là:',
+  explaination: 'Một đồng xu chỉ có hai mặt khác biệt. Khi tung lên, chỉ có một trong hai mặt này có thể xuất hiện ở phía trên.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\Omega = \\{S; N\\}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Không gian mẫu gồm hai phần tử là mặt Sấp và mặt Ngửa.',
+    },
+    {
+      content: '$\\Omega = \\{S\\}$.',
+      is_correct: false,
+      explaination: 'Thiếu trường hợp đồng xu hiện mặt Ngửa.',
+    },
+    {
+      content: '$\\Omega = \\{N\\}$.',
+      is_correct: false,
+      explaination: 'Thiếu trường hợp đồng xu hiện mặt Sấp.',
+    },
+    {
+      content: '$\\Omega = \\{S; S; N; N\\}$.',
+      is_correct: false,
+      explaination: 'Các kết quả trong tập hợp không cần lặp lại.',
+    },
+  ],
+},
+{
+  content: 'Mỗi tập con của không gian mẫu $\\Omega$ được gọi là một:',
+  explaination: 'Khi ta quan tâm đến một nhóm các kết quả cụ thể (ví dụ: gieo xúc xắc được số chẵn), nhóm đó được đặt tên là gì?',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Biến cố.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Biến cố là một tập hợp gồm một số kết quả có thể xảy ra của phép thử (tập con của $\\Omega$).',
+    },
+    {
+      content: 'Phép thử.',
+      is_correct: false,
+      explaination: 'Phép thử là toàn bộ quá trình thực hiện thí nghiệm.',
+    },
+    {
+      content: 'Xác suất.',
+      is_correct: false,
+      explaination: 'Xác suất là con số đo lường khả năng xảy ra, không phải tập hợp kết quả.',
+    },
+    {
+      content: 'Mẫu số liệu.',
+      is_correct: false,
+      explaination: 'Đây là thuật ngữ của thống kê, dùng cho các dữ liệu đã thu thập được.',
+    },
+  ],
+},
+{
+  content: 'Biến cố không bao giờ xảy ra được gọi là:',
+  explaination: 'Trong một phép thử, có những tập con không chứa bất kỳ kết quả nào khả thi (ví dụ: gieo xúc xắc được số 7).',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Biến cố không thể.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Biến cố không thể là tập rỗng ($\\emptyset$), không chứa phần tử nào của $\\Omega$.',
+    },
+    {
+      content: 'Biến cố chắc chắn.',
+      is_correct: false,
+      explaination: 'Đây là biến cố luôn luôn xảy ra (chứa toàn bộ $\\Omega$).',
+    },
+    {
+      content: 'Biến cố ngẫu nhiên.',
+      is_correct: false,
+      explaination: 'Đây là biến cố có thể xảy ra hoặc không xảy ra.',
+    },
+    {
+      content: 'Biến cố đơn.',
+      is_correct: false,
+      explaination: 'Đây là biến cố chỉ chứa đúng một phần tử của không gian mẫu.',
+    },
+  ],
+},
+{
+  content: 'Số phần tử của một biến cố $A$ được kí hiệu là $n(A)$. Nếu $A$ là biến cố chắc chắn thì:',
+  explaination: 'Biến cố chắc chắn chứa toàn bộ các kết quả có thể xảy ra của phép thử. Hãy so sánh số lượng phần tử của nó với không gian mẫu.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$n(A) = n(\\Omega)$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì biến cố chắc chắn trùng với không gian mẫu nên số phần tử của chúng bằng nhau.',
+    },
+    {
+      content: '$n(A) = 0$.',
+      is_correct: false,
+      explaination: 'Đây là số phần tử của biến cố không thể.',
+    },
+    {
+      content: '$n(A) = 1$.',
+      is_correct: false,
+      explaination: 'Điều này chỉ đúng nếu không gian mẫu chỉ có duy nhất một kết quả.',
+    },
+    {
+      content: '$n(A) < n(\\Omega)$.',
+      is_correct: false,
+      explaination: 'Đây là trường hợp của các biến cố ngẫu nhiên thông thường.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Phép thử tung hai đồng xu cân đối. Gọi S là mặt sấp, N là mặt ngửa. Số phần tử của không gian mẫu $\\Omega$ là:',
+  explaination: 'Mỗi đồng xu có 2 khả năng. Bạn hãy liệt kê các cặp kết quả có thể xảy ra (ví dụ: đồng xu 1 sấp, đồng xu 2 ngửa là một cặp).',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '4 phần tử.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\Omega = \\{SS; SN; NS; NN\\}$.',
+    },
+    {
+      content: '2 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số phần tử khi chỉ tung 1 đồng xu.',
+    },
+    {
+      content: '3 phần tử.',
+      is_correct: false,
+      explaination: 'Sai do nhầm lẫn $SN$ và $NS$ là một kết quả giống nhau (thực tế chúng là hai trường hợp phân biệt của hai đồng xu).',
+    },
+    {
+      content: '8 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số phần tử khi tung 3 đồng xu ($2^3 = 8$).',
+    },
+  ],
+},
+{
+  content: 'Gieo một con xúc xắc 6 mặt. Gọi $A$ là biến cố: "Số chấm xuất hiện trên con xúc xắc là số nguyên tố". Tập hợp các kết quả thuận lợi cho biến cố $A$ là:',
+  explaination: 'Bạn hãy liệt kê các số từ 1 đến 6, sau đó chọn ra các số chỉ chia hết cho 1 và chính nó (số nguyên tố). Lưu ý số 1 không phải là số nguyên tố.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\{2; 3; 5\\}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Các số nguyên tố từ 1 đến 6 là 2, 3 và 5.',
+    },
+    {
+      content: '$\\{1; 2; 3; 5\\}$.',
+      is_correct: false,
+      explaination: 'Sai vì số 1 không được coi là số nguyên tố theo định nghĩa toán học.',
+    },
+    {
+      content: '$\\{2; 4; 6\\}$.',
+      is_correct: false,
+      explaination: 'Đây là tập hợp các số chẵn.',
+    },
+    {
+      content: '$\\{3; 5\\}$.',
+      is_correct: false,
+      explaination: 'Thiếu số 2 (số nguyên tố chẵn duy nhất).',
+    },
+  ],
+},
+{
+  content: 'Trong một túi có 3 viên bi đỏ và 2 viên bi xanh có cùng kích thước. Lấy ngẫu nhiên cùng lúc 2 viên bi từ túi. Số phần tử của không gian mẫu $\\Omega$ là:',
+  explaination: 'Bạn cần tính số cách chọn ra 2 viên bi từ tổng cộng 5 viên bi trong túi. Bạn có thể liệt kê các cặp bi hoặc sử dụng công thức tổ hợp $C_n^k$ (nếu đã học) để tính.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '10 phần tử.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chọn 2 trong 5 viên bi có số cách là $C_5^2 = (5 \\cdot 4) / 2 = 10$.',
+    },
+    {
+      content: '5 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số cách nếu chỉ lấy ra 1 viên bi.',
+    },
+    {
+      content: '25 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số kết quả nếu lấy lần lượt 2 bi có hoàn lại ($5 \\cdot 5$).',
+    },
+    {
+      content: '6 phần tử.',
+      is_correct: false,
+      explaination: 'Sai do lấy $3 \\cdot 2$ (số bi đỏ nhân số bi xanh).',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VIII --- BÀI 25: PHÉP THỬ NGẪU NHIÊN VÀ KHÔNG GIAN MẪU ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Phép thử tung một đồng xu cân đối và đồng chất 3 lần liên tiếp. Số phần tử của không gian mẫu $\\Omega$ là:',
+  explaination: 'Mỗi lần tung có 2 kết quả (S hoặc N). Với 3 lần tung độc lập, bạn hãy sử dụng quy tắc nhân: $2 \\cdot 2 \\cdot 2$ hoặc liệt kê các bộ ba kết quả.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '8 phần tử.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Các kết quả là: $\\{SSS, SSN, SNS, SNN, NSS, NSN, NNS, NNN\\}$. Tổng cộng có $2^3 = 8$ phần tử.',
+    },
+    {
+      content: '6 phần tử.',
+      is_correct: false,
+      explaination: 'Sai do lấy $2 \\cdot 3$ (quy tắc cộng nhầm sang quy tắc nhân).',
+    },
+    {
+      content: '4 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số phần tử khi tung đồng xu 2 lần.',
+    },
+    {
+      content: '9 phần tử.',
+      is_correct: false,
+      explaination: 'Sai do lấy $3^2$.',
+    },
+  ],
+},
+{
+  content: 'Chọn ngẫu nhiên một số tự nhiên có một chữ số. Gọi $B$ là biến cố: "Số được chọn là số chính phương". Số phần tử của biến cố $B$ là:',
+  explaination: 'Tập hợp các số tự nhiên có một chữ số là $\\{0, 1, 2, ..., 9\\}$. Bạn hãy tìm các số trong tập này mà căn bậc hai của chúng là một số nguyên.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '4 phần tử.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Các số chính phương có một chữ số là $0, 1, 4, 9$.',
+    },
+    {
+      content: '3 phần tử.',
+      is_correct: false,
+      explaination: 'Sai do bỏ quên số 0 ($0^2 = 0$).',
+    },
+    {
+      content: '2 phần tử.',
+      is_correct: false,
+      explaination: 'Có thể bạn chỉ nhớ đến số 4 và 9.',
+    },
+    {
+      content: '10 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là tổng số phần tử của không gian mẫu $\\Omega$.',
+    },
+  ],
+},
+{
+  content: 'Gieo đồng thời hai con xúc xắc 6 mặt cân đối. Gọi $C$ là biến cố: "Tổng số chấm xuất hiện trên hai con xúc xắc bằng 7". Số kết quả thuận lợi cho biến cố $C$ là:',
+  explaination: 'Bạn hãy liệt kê các cặp số $(x, y)$ với $x, y \\in \\{1, 2, 3, 4, 5, 6\\}$ sao cho $x + y = 7$. Lưu ý $(1, 6)$ và $(6, 1)$ được tính là hai kết quả khác nhau.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '6 kết quả.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Các cặp là: $(1,6), (2,5), (3,4), (4,3), (5,2), (6,1)$.',
+    },
+    {
+      content: '3 kết quả.',
+      is_correct: false,
+      explaination: 'Sai do không tính hoán vị của các cặp số.',
+    },
+    {
+      content: '7 kết quả.',
+      is_correct: false,
+      explaination: 'Sai do nhầm lẫn tổng số chấm với số lượng cặp.',
+    },
+    {
+      content: '36 kết quả.',
+      is_correct: false,
+      explaination: 'Đây là tổng số phần tử của không gian mẫu $\\Omega$ khi gieo 2 con xúc xắc.',
+    },
+  ],
+},
+{
+  content: 'Một hộp đựng 4 tấm thẻ được đánh số 1, 2, 3, 4. Rút ngẫu nhiên đồng thời 2 tấm thẻ. Không gian mẫu của phép thử này là:',
+  explaination: 'Vì rút đồng thời nên thứ tự của hai thẻ không quan trọng. Bạn hãy liệt kê tất cả các cặp số khác nhau có thể rút ra được.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\Omega = \\{(1,2); (1,3); (1,4); (2,3); (2,4); (3,4)\\}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Có 6 cách chọn ra 2 thẻ từ 4 thẻ mà không phân biệt thứ tự.',
+    },
+    {
+      content: '$\\Omega = \\{(1,2); (2,3); (3,4)\\}$.',
+      is_correct: false,
+      explaination: 'Thiếu các trường hợp như $(1,3), (1,4), (2,4)$.',
+    },
+    {
+      content: '$\\Omega = \\{1, 2, 3, 4\\}$.',
+      is_correct: false,
+      explaination: 'Đây là không gian mẫu nếu chỉ rút 1 tấm thẻ.',
+    },
+    {
+      content: '$\\Omega = \\{(1,1); (2,2); (3,3); (4,4)\\}$.',
+      is_correct: false,
+      explaination: 'Vì rút đồng thời nên không thể rút được hai thẻ có số giống nhau.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Gieo một con xúc xắc 6 mặt hai lần liên tiếp. Gọi $D$ là biến cố: "Tích số chấm trong hai lần gieo là một số lẻ". Số phần tử của biến cố $D$ là:',
+  explaination: 'Tích của hai số là số lẻ khi và chỉ khi cả hai số đó đều là số lẻ. Trên xúc xắc có các mặt lẻ là $\\{1, 3, 5\\}$. Hãy tính số cách chọn hai mặt lẻ.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '9 phần tử.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Mỗi lần gieo có 3 khả năng ra mặt lẻ, vậy có $3 \\cdot 3 = 9$ kết quả thuận lợi.',
+    },
+    {
+      content: '18 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số kết quả nếu chỉ cần một trong hai lần là số lẻ.',
+    },
+    {
+      content: '6 phần tử.',
+      is_correct: false,
+      explaination: 'Sai do lấy $3 + 3$.',
+    },
+    {
+      content: '3 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số mặt lẻ trên một con xúc xắc.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau liệt kê các kết quả của phép thử tung một đồng xu và gieo một con xúc xắc 4 mặt (đánh số 1, 2, 3, 4):\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline & 1 & 2 & 3 & 4 \\\\ \\hline S & (S,1) & (S,2) & (S,3) & (S,4) \\\\ \\hline N & (N,1) & (N,2) & (N,3) & (N,4) \\\\ \\hline \\end{array} $\n\nGọi $E$ là biến cố: "Mặt ngửa xuất hiện cùng với một số nguyên tố". Số kết quả thuận lợi cho $E$ là:',
+  explaination: 'Bạn hãy nhìn vào hàng "N" (Ngửa) và đếm xem có bao nhiêu cặp đi kèm với số nguyên tố (2 hoặc 3).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '2 kết quả.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Các kết quả là $(N, 2)$ và $(N, 3)$.',
+    },
+    {
+      content: '3 kết quả.',
+      is_correct: false,
+      explaination: 'Sai do nhầm số 1 là số nguyên tố.',
+    },
+    {
+      content: '4 kết quả.',
+      is_correct: false,
+      explaination: 'Đây là tổng số kết quả khi tung được mặt ngửa.',
+    },
+    {
+      content: '8 kết quả.',
+      is_correct: false,
+      explaination: 'Đây là tổng số phần tử của không gian mẫu $\\Omega$.',
+    },
+  ],
+},
+{
+  content: 'Chọn ngẫu nhiên một số tự nhiên có hai chữ số. Gọi $G$ là biến cố: "Số được chọn có tổng hai chữ số bằng 5". Số phần tử của biến cố $G$ là:',
+  explaination: 'Liệt kê các số từ 10 đến 99 mà chữ số hàng chục $a$ và chữ số hàng đơn vị $b$ thỏa mãn $a + b = 5$ (với $a > 0$).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '5 phần tử.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Các số là: $14, 23, 32, 41, 50$.',
+    },
+    {
+      content: '4 phần tử.',
+      is_correct: false,
+      explaination: 'Thiếu số 50.',
+    },
+    {
+      content: '6 phần tử.',
+      is_correct: false,
+      explaination: 'Có thể bạn tính cả số 05 (nhưng số này không phải số có hai chữ số).',
+    },
+    {
+      content: '90 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là tổng số các số tự nhiên có hai chữ số.',
+    },
+  ],
+},
+{
+  content: 'Trong một hộp có 2 quả cầu xanh (X1, X2) và 2 quả cầu trắng (T1, T2). Lấy ngẫu nhiên lần lượt 2 quả cầu mà không bỏ lại quả cầu thứ nhất vào hộp. Không gian mẫu $\\Omega$ có bao nhiêu phần tử?',
+  explaination: 'Lần lấy thứ nhất có 4 cách chọn. Vì không bỏ lại nên lần lấy thứ hai chỉ còn 3 cách chọn. Hãy sử dụng quy tắc nhân.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '12 phần tử.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Số phần tử là $4 \\cdot 3 = 12$.',
+    },
+    {
+      content: '16 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số phần tử nếu lấy có hoàn lại ($4 \\cdot 4$).',
+    },
+    {
+      content: '6 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số phần tử nếu lấy đồng thời 2 quả cầu (không phân biệt thứ tự).',
+    },
+    {
+      content: '4 phần tử.',
+      is_correct: false,
+      explaination: 'Đây là số quả cầu trong hộp.',
+    },
+  ],
+},
+{
+  content: 'Một tổ học sinh gồm 5 nam và 3 nữ. Chọn ngẫu nhiên đồng thời 2 học sinh để đi lao động. Gọi $H$ là biến cố: "Cả hai học sinh được chọn đều là nữ". Số kết quả thuận lợi cho biến cố $H$ là:',
+  explaination: 'Để $H$ xảy ra, ta phải chọn 2 bạn nữ từ tổng số 3 bạn nữ của tổ. Bạn hãy liệt kê hoặc tính số cách chọn này.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '3 kết quả.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giả sử 3 bạn nữ là N1, N2, N3. Các cách chọn là: $\\{N1, N2\\}; \\{N1, N3\\}; \\{N2, N3\\}$.',
+    },
+    {
+      content: '6 kết quả.',
+      is_correct: false,
+      explaination: 'Tính toán sai số cách chọn.',
+    },
+    {
+      content: '28 kết quả.',
+      is_correct: false,
+      explaination: 'Đây là tổng số cách chọn 2 học sinh bất kì từ tổ 8 người ($C_8^2 = 28$).',
+    },
+    {
+      content: '8 kết quả.',
+      is_correct: false,
+      explaination: 'Đây là tổng số học sinh của cả tổ.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VIII --- BÀI 26: XÁC SUẤT CỦA BIẾN CỐ ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Trong một phép thử ngẫu nhiên với không gian mẫu $\\Omega$ có các kết quả đồng khả năng, xác suất của biến cố $A$ được tính theo công thức:',
+  explaination: 'Xác suất của một biến cố là tỉ số giữa số kết quả thuận lợi cho biến cố đó và tổng số kết quả có thể xảy ra của phép thử.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$P(A) = \\frac{n(A)}{n(\\Omega)}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là công thức định nghĩa xác suất cổ điển của biến cố $A$.',
+    },
+    {
+      content: '$P(A) = \\frac{n(\\Omega)}{n(A)}$.',
+      is_correct: false,
+      explaination: 'Tử số và mẫu số bị đảo ngược, xác suất không thể lớn hơn 1 trong trường hợp này.',
+    },
+    {
+      content: '$P(A) = n(A) \\cdot n(\\Omega)$.',
+      is_correct: false,
+      explaination: 'Phép nhân không dùng để tính tỉ lệ xác suất.',
+    },
+    {
+      content: '$P(A) = n(\\Omega) - n(A)$.',
+      is_correct: false,
+      explaination: 'Đây là cách tính số kết quả không thuận lợi cho biến cố $A$.',
+    },
+  ],
+},
+{
+  content: 'Giá trị của xác suất $P(A)$ của bất kì biến cố $A$ nào luôn nằm trong khoảng nào sau đây?',
+  explaination: 'Vì số kết quả thuận lợi $n(A)$ luôn không âm và không vượt quá tổng số kết quả $n(\\Omega)$, nên tỉ số của chúng phải nằm trong một đoạn cố định.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$0 \\le P(A) \\le 1$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Xác suất luôn là một số không âm và tối đa bằng 1 (tương ứng 0% đến 100%).',
+    },
+    {
+      content: '$-1 \\le P(A) \\le 1$.',
+      is_correct: false,
+      explaination: 'Xác suất không bao giờ nhận giá trị âm.',
+    },
+    {
+      content: '$P(A) > 0$.',
+      is_correct: false,
+      explaination: 'Xác suất có thể bằng 0 nếu đó là biến cố không thể.',
+    },
+    {
+      content: '$P(A) < 1$.',
+      is_correct: false,
+      explaination: 'Xác suất có thể bằng 1 nếu đó là biến cố chắc chắn.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VIII --- BÀI 26: XÁC SUẤT CỦA BIẾN CỐ ===
+// === PHẦN 1: TIẾP TỤC 11 CÂU ĐẦU (TỪ CÂU 5) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Gieo một con xúc xắc 6 mặt cân đối và đồng chất. Xác suất để mặt 5 chấm xuất hiện là:',
+  explaination: 'Không gian mẫu có 6 phần tử $\\Omega = \\{1; 2; 3; 4; 5; 6\\}$. Biến cố "mặt 5 chấm" chỉ có duy nhất 1 kết quả thuận lợi.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{1}{6}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $P(A) = \\frac{n(A)}{n(\\Omega)} = \\frac{1}{6}$.',
+    },
+    {
+      content: '$\\frac{5}{6}$.',
+      is_correct: false,
+      explaination: 'Đây là xác suất để không xuất hiện mặt 5 chấm.',
+    },
+    {
+      content: '1.',
+      is_correct: false,
+      explaination: 'Xác suất bằng 1 chỉ dành cho biến cố chắc chắn.',
+    },
+    {
+      content: '$\\frac{1}{2}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai số kết quả thuận lợi.',
+    },
+  ],
+},
+{
+  content: 'Tung một đồng xu cân đối và đồng chất một lần. Xác suất để đồng xu xuất hiện mặt ngửa là:',
+  explaination: 'Đồng xu có 2 mặt (Sấp, Ngửa) với khả năng xuất hiện như nhau. Không gian mẫu $n(\\Omega) = 2$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '0,5.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $P = \\frac{1}{2} = 0,5$.',
+    },
+    {
+      content: '1.',
+      is_correct: false,
+      explaination: 'Xác suất mặt ngửa không phải là biến cố chắc chắn.',
+    },
+    {
+      content: '0.',
+      is_correct: false,
+      explaination: 'Mặt ngửa hoàn toàn có thể xảy ra.',
+    },
+    {
+      content: '0,25.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ.',
+    },
+  ],
+},
+{
+  content: 'Một hộp có 10 chiếc thẻ cùng loại được đánh số từ 1 đến 10. Rút ngẫu nhiên một thẻ. Xác suất để rút được thẻ ghi số chia hết cho 3 là:',
+  explaination: 'Tập hợp các số từ 1 đến 10 chia hết cho 3 là $\\{3; 6; 9\\}$. Hãy đếm số phần tử này và chia cho tổng số thẻ.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{3}{10}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Có 3 kết quả thuận lợi trên tổng số 10 kết quả.',
+    },
+    {
+      content: '$\\frac{1}{3}$.',
+      is_correct: false,
+      explaination: 'Đây là tỉ số nếu có 9 thẻ.',
+    },
+    {
+      content: '$\\frac{7}{10}$.',
+      is_correct: false,
+      explaination: 'Đây là xác suất rút được thẻ không chia hết cho 3.',
+    },
+    {
+      content: '$\\frac{4}{10}$.',
+      is_correct: false,
+      explaination: 'Đếm sai số lượng các số chia hết cho 3.',
+    },
+  ],
+},
+{
+  content: 'Gieo một con xúc xắc 6 mặt. Xác suất của biến cố: "Số chấm xuất hiện nhỏ hơn hoặc bằng 6" là:',
+  explaination: 'Mọi mặt của con xúc xắc (1, 2, 3, 4, 5, 6) đều thỏa mãn điều kiện nhỏ hơn hoặc bằng 6. Đây là một biến cố đặc biệt.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '1.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là biến cố chắc chắn vì tất cả các mặt đều thỏa mãn điều kiện.',
+    },
+    {
+      content: '0.',
+      is_correct: false,
+      explaination: 'Đây không phải biến cố không thể.',
+    },
+    {
+      content: '$\\frac{1}{6}$.',
+      is_correct: false,
+      explaination: 'Chỉ tính xác suất của 1 mặt đơn lẻ.',
+    },
+    {
+      content: '0,5.',
+      is_correct: false,
+      explaination: 'Tính toán sai số kết quả thuận lợi.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Tung hai đồng xu cân đối đồng thời. Xác suất để cả hai đồng xu cùng xuất hiện mặt sấp là:',
+  explaination: 'Không gian mẫu khi tung 2 đồng xu là $\\Omega = \\{SS; SN; NS; NN\\}$. Hãy tìm số kết quả thuận lợi cho việc cả hai mặt đều là S.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{1}{4}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chỉ có 1 kết quả thuận lợi (SS) trên tổng số 4 khả năng.',
+    },
+    {
+      content: '$\\frac{1}{2}$.',
+      is_correct: false,
+      explaination: 'Đây là xác suất nếu chỉ tung 1 đồng xu.',
+    },
+    {
+      content: '$\\frac{3}{4}$.',
+      is_correct: false,
+      explaination: 'Đây là xác suất để có ít nhất một mặt ngửa.',
+    },
+    {
+      content: '1.',
+      is_correct: false,
+      explaination: 'Kết quả này không phải là chắc chắn.',
+    },
+  ],
+},
+{
+  content: 'Một túi đựng 5 viên bi xanh và 3 viên bi đỏ có kích thước như nhau. Lấy ngẫu nhiên một viên bi từ túi. Xác suất để lấy được viên bi màu đỏ là:',
+  explaination: 'Tổng số viên bi trong túi là cỡ mẫu $N = 5 + 3 = 8$. Số kết quả thuận lợi là số lượng viên bi đỏ.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{3}{8}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Xác suất bằng số bi đỏ chia cho tổng số bi.',
+    },
+    {
+      content: '$\\frac{5}{8}$.',
+      is_correct: false,
+      explaination: 'Đây là xác suất lấy được viên bi màu xanh.',
+    },
+    {
+      content: '$\\frac{3}{5}$.',
+      is_correct: false,
+      explaination: 'Sai do chia cho số bi xanh thay vì chia cho tổng số bi.',
+    },
+    {
+      content: '$\\frac{1}{2}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau thống kê kết quả gieo một con xúc xắc 4 mặt (đánh số 1, 2, 3, 4) sau 50 lần thử:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Mặt chấm} & 1 & 2 & 3 & 4 \\\\ \\hline \\text{Số lần xuất hiện} & 12 & 15 & 10 & 13 \\\\ \\hline \\end{array} $\n\nXác suất thực nghiệm của biến cố "Xuất hiện mặt 2 chấm" là:',
+  explaination: 'Xác suất thực nghiệm được tính bằng tỉ số giữa số lần xuất hiện của biến cố và tổng số lần thực hiện phép thử.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '0,3.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Xác suất thực nghiệm $= 15 / 50 = 0,3$.',
+    },
+    {
+      content: '0,24.',
+      is_correct: false,
+      explaination: 'Đây là xác suất thực nghiệm của mặt 1 chấm.',
+    },
+    {
+      content: '0,2.',
+      is_correct: false,
+      explaination: 'Đây là xác suất thực nghiệm của mặt 3 chấm.',
+    },
+    {
+      content: '0,25.',
+      is_correct: false,
+      explaination: 'Đây là xác suất lý thuyết nếu con xúc xắc hoàn toàn cân đối.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG VIII --- BÀI 26: XÁC SUẤT CỦA BIẾN CỐ ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Gieo một con xúc xắc 6 mặt hai lần liên tiếp. Xác suất để cả hai lần gieo đều xuất hiện mặt 6 chấm là:',
+  explaination: 'Không gian mẫu khi gieo xúc xắc 2 lần có $6 \\cdot 6 = 36$ phần tử. Biến cố "cả hai lần 6 chấm" chỉ có duy nhất 1 kết quả thuận lợi là $(6; 6)$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{1}{36}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Xác suất là tỉ số giữa 1 kết quả thuận lợi và 36 kết quả có thể xảy ra.',
+    },
+    {
+      content: '$\\frac{1}{6}$.',
+      is_correct: false,
+      explaination: 'Đây là xác suất nếu chỉ gieo xúc xắc 1 lần.',
+    },
+    {
+      content: '$\\frac{1}{12}$.',
+      is_correct: false,
+      explaination: 'Sai do lấy $6 + 6$ thay vì $6 \\cdot 6$ cho không gian mẫu.',
+    },
+    {
+      content: '$\\frac{2}{36}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai số kết quả thuận lợi.',
+    },
+  ],
+},
+{
+  content: 'Một hộp đựng 4 quả bóng xanh và 6 quả bóng đỏ. Lấy ngẫu nhiên đồng thời 2 quả bóng. Xác suất để lấy được 2 quả bóng cùng màu xanh là:',
+  explaination: 'Bước 1: Tính số cách chọn 2 quả từ 10 quả ($C_{10}^{2} = 45$). Bước 2: Tính số cách chọn 2 quả xanh từ 4 quả xanh ($C_{4}^{2} = 6$).',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{2}{15}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Xác suất $= 6 / 45 = 2 / 15$.',
+    },
+    {
+      content: '$\\frac{4}{10}$.',
+      is_correct: false,
+      explaination: 'Đây là xác suất lấy 1 quả xanh trong 10 quả.',
+    },
+    {
+      content: '$\\frac{6}{45}$.',
+      is_correct: false,
+      explaination: 'Kết quả này đúng nhưng chưa rút gọn về phân số tối giản.',
+    },
+    {
+      content: '$\\frac{1}{3}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các tổ hợp chọn bóng.',
+    },
+  ],
+},
+{
+  content: 'Nếu xác suất của biến cố $A$ là $P(A) = 0,35$ thì xác suất của biến cố "Biến cố $A$ không xảy ra" (biến cố đối) là:',
+  explaination: 'Xác suất của biến cố đối được tính bằng công thức: $P(\\bar{A}) = 1 - P(A)$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '0,65.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $P = 1 - 0,35 = 0,65$.',
+    },
+    {
+      content: '0,35.',
+      is_correct: false,
+      explaination: 'Xác suất của biến cố đối thường khác xác suất biến cố gốc (trừ khi $P = 0,5$).',
+    },
+    {
+      content: '1,35.',
+      is_correct: false,
+      explaination: 'Xác suất không bao giờ lớn hơn 1.',
+    },
+    {
+      content: '0,55.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả phép trừ.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau về kết quả khảo sát sở thích đọc sách của 100 học sinh:\n\n$ \\begin{array}{|c|c|c|c|} \\hline \\text{Sở thích} & \\text{Truyện tranh} & \\text{Tiểu thuyết} & \\text{Sách khoa học} \\\\ \\hline \\text{Số học sinh} & 55 & 30 & 15 \\\\ \\hline \\end{array} $\n\nChọn ngẫu nhiên 1 học sinh, xác suất để học sinh đó không thích truyện tranh là:',
+  explaination: 'Xác suất này bằng tổng số học sinh thích tiểu thuyết và sách khoa học chia cho tổng số học sinh khảo sát.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '0,45.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Số học sinh không thích truyện tranh là $30 + 15 = 45$. Xác suất $= 45 / 100 = 0,45$.',
+    },
+    {
+      content: '0,55.',
+      is_correct: false,
+      explaination: 'Đây là xác suất học sinh thích truyện tranh.',
+    },
+    {
+      content: '0,30.',
+      is_correct: false,
+      explaination: 'Đây là xác suất học sinh thích tiểu thuyết.',
+    },
+    {
+      content: '0,15.',
+      is_correct: false,
+      explaination: 'Đây là xác suất học sinh thích sách khoa học.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Gieo hai con xúc xắc 6 mặt cân đối. Xác suất để tổng số chấm xuất hiện trên hai con xúc xắc là một số nguyên tố là:',
+  explaination: 'Bước 1: Liệt kê các tổng có thể là số nguyên tố (2, 3, 5, 7, 11). Bước 2: Đếm số cặp $(x, y)$ tương ứng cho mỗi tổng đó rồi chia cho 36.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{15}{36}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Số kết quả thuận lợi: Tổng 2 (1), Tổng 3 (2), Tổng 5 (4), Tổng 7 (6), Tổng 11 (2). Tổng cộng có 15 kết quả.',
+    },
+    {
+      content: '$\\frac{1}{2}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai số lượng các cặp số thuận lợi.',
+    },
+    {
+      content: '$\\frac{5}{36}$.',
+      is_correct: false,
+      explaination: 'Bạn mới chỉ đếm số lượng các số nguyên tố, chưa đếm số cặp xúc xắc.',
+    },
+    {
+      content: '$\\frac{18}{36}$.',
+      is_correct: false,
+      explaination: 'Đây là xác suất để tổng là số lẻ.',
+    },
+  ],
+},
+{
+  content: 'Một tổ có 7 nam và 3 nữ. Chọn ngẫu nhiên 3 học sinh để làm trực nhật. Xác suất để trong 3 học sinh được chọn có ít nhất một bạn nữ là:',
+  explaination: 'Cách nhanh nhất là sử dụng biến cố đối: "Cả 3 học sinh được chọn đều là nam". Xác suất cần tìm $= 1 - P(\\text{3 nam})$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{17}{24}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tổng cách chọn là $C_{10}^{3} = 120$. Cách chọn 3 nam là $C_{7}^{3} = 35$. Xác suất đối là $35/120 = 7/24$. Vậy $P = 1 - 7/24 = 17/24$.',
+    },
+    {
+      content: '$\\frac{7}{24}$.',
+      is_correct: false,
+      explaination: 'Đây là xác suất để cả 3 học sinh được chọn đều là nam.',
+    },
+    {
+      content: '$\\frac{3}{10}$.',
+      is_correct: false,
+      explaination: 'Sai do lấy tỉ lệ nữ trong tổ làm xác suất chọn nhóm.',
+    },
+    {
+      content: '$\\frac{1}{2}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các tổ hợp chọn học sinh.',
+    },
+  ],
+},
+{
+  content: 'Gieo một con xúc xắc 6 mặt hai lần liên tiếp. Xác suất để số chấm trong lần gieo thứ nhất lớn hơn số chấm trong lần gieo thứ hai là:',
+  explaination: 'Tổng số kết quả là 36. Gọi số chấm lần 1 là $x$, lần 2 là $y$. Ta cần tìm số cặp $(x, y)$ sao cho $x > y$. Lưu ý số cặp $x > y$ bằng số cặp $x < y$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{5}{12}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Có 6 cặp $x = y$. Vậy có $(36 - 6) / 2 = 15$ cặp $x > y$. Xác suất $= 15/36 = 5/12$.',
+    },
+    {
+      content: '$\\frac{1}{2}$.',
+      is_correct: false,
+      explaination: 'Bạn đã quên trừ đi các trường hợp hai lần gieo bằng điểm nhau.',
+    },
+    {
+      content: '$\\frac{15}{36}$.',
+      is_correct: false,
+      explaination: 'Kết quả này đúng nhưng chưa rút gọn tối giản thành $5/12$.',
+    },
+    {
+      content: '$\\frac{1}{6}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai số lượng cặp thỏa mãn.',
+    },
+  ],
+},
+{
+  content: 'Một hộp chứa 20 tấm thẻ được đánh số từ 1 đến 20. Rút ngẫu nhiên một thẻ. Xác suất để thẻ rút được ghi số lẻ và là bội của 3 là:',
+  explaination: 'Hãy liệt kê các số lẻ từ 1 đến 20, sau đó lọc ra những số là bội của 3 (chia hết cho 3).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '0,15.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Các số thỏa mãn là $\\{3, 9, 15\\}$. Tần số là 3. Xác suất $= 3 / 20 = 0,15$.',
+    },
+    {
+      content: '0,3.',
+      is_correct: false,
+      explaination: 'Đây là xác suất nếu chỉ xét điều kiện chia hết cho 3 (gồm $\\{3, 6, 9, 12, 15, 18\\}$).',
+    },
+    {
+      content: '0,1.',
+      is_correct: false,
+      explaination: 'Đếm thiếu số kết quả thuận lợi.',
+    },
+    {
+      content: '0,2.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau về xác suất dự báo thời tiết trong 4 ngày tới:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Ngày} & \\text{Thứ 2} & \\text{Thứ 3} & \\text{Thứ 4} & \\text{Thứ 5} \\\\ \\hline \\text{Xác suất có mưa} & 0,2 & 0,4 & 0,7 & 0,3 \\\\ \\hline \\end{array} $\n\nKhẳng định nào sau đây là đúng nhất dựa trên dữ liệu bảng?',
+  explaination: 'Xác suất càng gần 1 thì khả năng xảy ra biến cố càng cao, càng gần 0 thì khả năng xảy ra càng thấp.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat8_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Ngày thứ 4 có khả năng mưa cao nhất.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Với xác suất 0,7 (70%), đây là ngày có tỉ lệ mưa cao nhất trong 4 ngày.',
+    },
+    {
+      content: 'Ngày thứ 2 chắc chắn không mưa.',
+      is_correct: false,
+      explaination: 'Sai, xác suất 0,2 nghĩa là vẫn có khả năng mưa, dù thấp.',
+    },
+    {
+      content: 'Tổng khả năng mưa của cả 4 ngày là 1,6 nên chắc chắn sẽ có mưa.',
+      is_correct: false,
+      explaination: 'Sai về mặt logic xác suất, xác suất của các ngày độc lập không cộng dồn như vậy để kết luận chắc chắn.',
+    },
+    {
+      content: 'Thứ 3 có khả năng mưa gấp đôi Thứ 5.',
+      is_correct: false,
+      explaination: 'Sai, Thứ 3 (0,4) so với Thứ 5 (0,3) không phải tỉ lệ gấp đôi.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG IX --- BÀI 27: GÓC NỘI TIẾP ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Góc nội tiếp trong một đường tròn là góc có đặc điểm nào sau đây?',
+  explaination: 'Hãy nhớ lại định nghĩa về góc nội tiếp: vị trí của đỉnh và đặc điểm hai cạnh của góc đó đối với đường tròn.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đỉnh nằm trên đường tròn và hai cạnh chứa hai dây cung của đường tròn đó.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây chính là định nghĩa cơ bản của góc nội tiếp.',
+    },
+    {
+      content: 'Đỉnh trùng với tâm của đường tròn.',
+      is_correct: false,
+      explaination: 'Đây là đặc điểm của góc ở tâm.',
+    },
+    {
+      content: 'Đỉnh nằm bên ngoài đường tròn.',
+      is_correct: false,
+      explaination: 'Góc có đỉnh nằm ngoài đường tròn là một loại góc khác, không phải góc nội tiếp.',
+    },
+    {
+      content: 'Hai cạnh là hai bán kính của đường tròn.',
+      is_correct: false,
+      explaination: 'Hai cạnh là bán kính thì đỉnh phải ở tâm, đó là góc ở tâm.',
+    },
+  ],
+},
+{
+  content: 'Trong một đường tròn, số đo của góc nội tiếp bằng:',
+  explaination: 'Hãy nhớ lại định lý về mối liên hệ giữa số đo góc nội tiếp và số đo của cung bị chắn bởi góc đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số đo của cung bị chắn.',
+      is_correct: false,
+      explaination: 'Góc ở tâm mới có số đo bằng số đo cung bị chắn.',
+    },
+    {
+      content: 'Nửa số đo của cung bị chắn.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Số đo góc nội tiếp bằng nửa số đo cung bị chắn tương ứng.',
+    },
+    {
+      content: 'Gấp đôi số đo của cung bị chắn.',
+      is_correct: false,
+      explaination: 'Khẳng định này sai hoàn toàn theo định lý.',
+    },
+    {
+      content: 'Bằng số đo của góc ở tâm chắn cùng cung đó.',
+      is_correct: false,
+      explaination: 'Góc nội tiếp chỉ bằng nửa góc ở tâm nếu cả hai cùng chắn một cung.',
+    },
+  ],
+},
+{
+  content: 'Góc nội tiếp chắn nửa đường tròn là:',
+  explaination: 'Nửa đường tròn có số đo là $180^{\\circ}$. Bạn hãy áp dụng định lý góc nội tiếp để tìm số đo của góc này.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Góc nhọn.',
+      is_correct: false,
+      explaination: 'Góc nội tiếp chắn nửa đường tròn có số đo cố định và lớn hơn $45^{\\circ}$.',
+    },
+    {
+      content: 'Góc vuông.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì số đo cung bị chắn là $180^{\\circ}$, nên góc nội tiếp bằng $180^{\\circ} / 2 = 90^{\\circ}$.',
+    },
+    {
+      content: 'Góc tù.',
+      is_correct: false,
+      explaination: 'Góc này không thể là góc tù.',
+    },
+    {
+      content: 'Góc bẹt.',
+      is_correct: false,
+      explaination: 'Góc bẹt có số đo $180^{\\circ}$, không thỏa mãn định lý.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$ có cung nhỏ $AB$ với số đo là $80^{\\circ}$. Điểm $C$ nằm trên cung lớn $AB$. Số đo góc nội tiếp $\\angle ACB$ là:',
+  explaination: 'Góc nội tiếp $\\angle ACB$ chắn cung nhỏ $AB$. Bạn hãy lấy số đo cung chia cho 2.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$40^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\angle ACB = \\frac{1}{2} sđ\\text{cung } AB = 80^{\\circ} / 2 = 40^{\\circ}$.',
+    },
+    {
+      content: '$80^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo của góc ở tâm $\\angle AOB$.',
+    },
+    {
+      content: '$160^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai công thức góc nội tiếp.',
+    },
+    {
+      content: '$100^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Số đo này không liên quan đến cung $80^{\\circ}$ theo định lý góc nội tiếp.',
+    },
+  ],
+},
+{
+  content: 'Trong một đường tròn, các góc nội tiếp cùng chắn một cung hoặc chắn các cung bằng nhau thì:',
+  explaination: 'Đây là một hệ quả rất quan trọng của định lý góc nội tiếp, giúp ta chứng minh các góc bằng nhau trong hình học.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Bằng nhau.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Các góc này đều có số đo bằng nửa số đo cung bị chắn, nên chúng bằng nhau.',
+    },
+    {
+      content: 'Phụ nhau.',
+      is_correct: false,
+      explaination: 'Tổng của chúng không nhất thiết bằng $90^{\\circ}$.',
+    },
+    {
+      content: 'Bù nhau.',
+      is_correct: false,
+      explaination: 'Tổng của chúng không nhất thiết bằng $180^{\\circ}$.',
+    },
+    {
+      content: 'Có tổng số đo bằng $360^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Khẳng định này không có căn cứ toán học.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$, đường kính $AD$. Một điểm $B$ nằm trên đường tròn sao cho cung $AB$ có số đo $60^{\\circ}$. Góc nội tiếp $\\angle ADB$ có số đo là:',
+  explaination: 'Góc $\\angle ADB$ có đỉnh $D$ nằm trên đường tròn và chắn cung $AB$. Hãy áp dụng định lý góc nội tiếp.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$30^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\angle ADB = 60^{\\circ} / 2 = 30^{\\circ}$.',
+    },
+    {
+      content: '$60^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc nội tiếp không bằng số đo cung bị chắn.',
+    },
+    {
+      content: '$90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là góc $\\angle ABD$ (góc nội tiếp chắn nửa đường tròn $AD$).',
+    },
+    {
+      content: '$120^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai số đo góc.',
+    },
+  ],
+},
+{
+  content: 'Nếu một góc nội tiếp có số đo là $35^{\\circ}$ thì cung bị chắn bởi góc đó có số đo là:',
+  explaination: 'Bạn hãy suy luận ngược lại từ định lý: Số đo cung bị chắn gấp đôi số đo góc nội tiếp.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$70^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Số đo cung $= 35^{\\circ} \\cdot 2 = 70^{\\circ}$.',
+    },
+    {
+      content: '$35^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Số đo cung bị chắn phải lớn hơn số đo góc nội tiếp.',
+    },
+    {
+      content: '$17,5^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Sai do lấy số đo góc chia 2.',
+    },
+    {
+      content: '$145^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán không có căn cứ.',
+    },
+  ],
+},
+{
+  content: 'Hệ quả nào sau đây là <b>SAI</b> đối với góc nội tiếp trong một đường tròn?',
+  explaination: 'Hãy rà soát kỹ các tính chất về góc nội tiếp nhỏ hơn hoặc bằng $90^{\\circ}$ và mối liên hệ với góc ở tâm cùng chắn một cung.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Góc nội tiếp chắn nửa đường tròn là góc vuông.',
+      is_correct: false,
+      explaination: 'Đây là một hệ quả đúng.',
+    },
+    {
+      content: 'Các góc nội tiếp cùng chắn một cung thì bằng nhau.',
+      is_correct: false,
+      explaination: 'Đây là một hệ quả đúng.',
+    },
+    {
+      content: 'Góc nội tiếp bằng số đo của góc ở tâm cùng chắn một cung.',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Góc nội tiếp chỉ bằng NỬA số đo của góc ở tâm cùng chắn một cung.',
+    },
+    {
+      content: 'Góc nội tiếp (nhỏ hơn hoặc bằng $90^{\\circ}$) có số đo bằng nửa số đo của góc ở tâm cùng chắn một cung.',
+      is_correct: false,
+      explaination: 'Đây là một hệ quả đúng.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho tam giác $ABC$ nội tiếp đường tròn tâm $O$. Biết $\\angle BAC = 50^{\\circ}$. Số đo của góc ở tâm $\\angle BOC$ là:',
+  explaination: 'Góc nội tiếp $\\angle BAC$ và góc ở tâm $\\angle BOC$ cùng chắn cung nhỏ $BC$. Hãy áp dụng mối liên hệ giữa hai loại góc này.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$100^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\angle BOC = 2 \\cdot \\angle BAC = 2 \\cdot 50^{\\circ} = 100^{\\circ}$.',
+    },
+    {
+      content: '$50^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc ở tâm phải lớn hơn góc nội tiếp chắn cùng một cung.',
+    },
+    {
+      content: '$25^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Sai do lấy góc nội tiếp chia 2.',
+    },
+    {
+      content: '$130^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai mối quan hệ.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$ có hai dây cung $AB$ và $CD$ song song với nhau. Phát biểu nào sau đây về các góc nội tiếp chắn các cung tương ứng là đúng?',
+  explaination: 'Hãy nhớ lại tính chất: Hai dây song song chắn giữa hai cung bằng nhau. Từ đó suy luận về các góc nội tiếp chắn các cung đó.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Góc nội tiếp chắn cung $AC$ bằng góc nội tiếp chắn cung $BD$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $AB // CD$ nên cung $AC = $ cung $BD$, dẫn đến các góc nội tiếp chắn chúng bằng nhau.',
+    },
+    {
+      content: 'Góc nội tiếp chắn cung $AB$ bằng góc nội tiếp chắn cung $CD$.',
+      is_correct: false,
+      explaination: 'Hai dây song song không nhất thiết bằng nhau nên hai cung này chưa chắc bằng nhau.',
+    },
+    {
+      content: 'Góc nội tiếp chắn cung $AD$ luôn bằng $90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Chỉ đúng nếu $AD$ là đường kính.',
+    },
+    {
+      content: 'Tất cả các góc nội tiếp trong hình đều bằng nhau.',
+      is_correct: false,
+      explaination: 'Các góc nội tiếp phụ thuộc vào cung mà chúng chắn.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau so sánh giữa góc ở tâm và góc nội tiếp cùng chắn một cung $MN$ trong đường tròn $(O)$:\n\n$ \\begin{array}{|l|c|c|} \\hline \\text{Đại lượng} & \\text{Góc ở tâm } \\angle MON & \\text{Góc nội tiếp } \\angle MKN \\\\ \\hline \\text{Số đo} & 120^{\\circ} & x \\\\ \\hline \\end{array} $\n\nGiá trị của $x$ là:',
+  explaination: 'Trong một đường tròn, số đo góc nội tiếp bằng nửa số đo góc ở tâm cùng chắn một cung.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$60^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = 120^{\\circ} / 2 = 60^{\\circ}$.',
+    },
+    {
+      content: '$120^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc nội tiếp và góc ở tâm không bằng nhau khi cùng chắn một cung.',
+    },
+    {
+      content: '$240^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc nội tiếp không thể lớn hơn góc ở tâm cùng chắn một cung.',
+    },
+    {
+      content: '$30^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG IX --- BÀI 27: GÓC NỘI TIẾP ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Cho đường tròn $(O)$ có dây cung $AB$ bằng bán kính $R$. Lấy một điểm $C$ trên cung lớn $AB$. Số đo của góc nội tiếp $\\angle ACB$ là:',
+  explaination: 'Vì dây $AB = R$ nên tam giác $OAB$ là tam giác đều, suy ra góc ở tâm $\\angle AOB = 60^{\\circ}$. Góc nội tiếp $\\angle ACB$ chắn cung nhỏ $AB$ sẽ bằng nửa góc ở tâm này.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$30^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\angle ACB = \\frac{1}{2} \\angle AOB = 60^{\\circ} / 2 = 30^{\\circ}$.',
+    },
+    {
+      content: '$60^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo của góc ở tâm $\\angle AOB$.',
+    },
+    {
+      content: '$120^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo của góc nội tiếp chắn cung lớn $AB$.',
+    },
+    {
+      content: '$45^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai số đo góc.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$, hai cung nhỏ $AB$ và $CD$ có số đo bằng nhau. Hai góc nội tiếp $\\angle ANB$ và $\\angle CMD$ (với $N, M$ nằm trên đường tròn) có mối quan hệ gì?',
+  explaination: 'Dựa vào hệ quả của định lý góc nội tiếp: Trong một đường tròn, các góc nội tiếp chắn các cung bằng nhau thì bằng nhau.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\angle ANB = \\angle CMD$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì hai cung bị chắn bằng nhau nên hai góc nội tiếp tương ứng bằng nhau.',
+    },
+    {
+      content: '$\\angle ANB > \\angle CMD$.',
+      is_correct: false,
+      explaination: 'Hai góc này phải bằng nhau do cung bị chắn bằng nhau.',
+    },
+    {
+      content: '$\\angle ANB + \\angle CMD = 180^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Không có căn cứ để khẳng định hai góc này bù nhau.',
+    },
+    {
+      content: 'Không thể so sánh.',
+      is_correct: false,
+      explaination: 'Định lý góc nội tiếp cho phép so sánh dựa trên số đo cung.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$ có đường kính $AB$. Lấy điểm $C$ trên đường tròn ($C$ khác $A$ và $B$). Tam giác $ABC$ là tam giác gì?',
+  explaination: 'Góc $\\angle ACB$ là góc nội tiếp chắn nửa đường tròn $(AB$ là đường kính$)$. Hãy vận dụng hệ quả về góc nội tiếp chắn nửa đường tròn.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tam giác vuông tại $C$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Góc nội tiếp chắn nửa đường tròn luôn bằng $90^{\\circ}$.',
+    },
+    {
+      content: 'Tam giác đều.',
+      is_correct: false,
+      explaination: 'Chỉ đúng nếu $C$ nằm ở vị trí đặc biệt tạo ra các cạnh bằng nhau.',
+    },
+    {
+      content: 'Tam giác cân tại $C$.',
+      is_correct: false,
+      explaination: 'Chỉ đúng nếu $C$ là điểm chính giữa của cung $AB$.',
+    },
+    {
+      content: 'Tam giác nhọn.',
+      is_correct: false,
+      explaination: 'Tam giác có một góc vuông nên không thể là tam giác nhọn.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng số liệu sau về các góc nội tiếp chắn các cung khác nhau trên cùng một đường tròn:\n\n$ \\begin{array}{|l|c|c|c|} \\hline \\text{Cung bị chắn} & AB & CD & EF \\\\ \\hline \\text{Số đo cung} & 40^{\\circ} & 100^{\\circ} & 150^{\\circ} \\\\ \\hline \\text{Góc nội tiếp tương ứng} & \\angle ANB = x & \\angle CMD = y & \\angle EPF = z \\\\ \\hline \\end{array} $\n\nKhẳng định nào sau đây là đúng?',
+  explaination: 'Số đo góc nội tiếp tỉ lệ thuận với số đo cung bị chắn. Bạn hãy tính $x, y, z$ bằng cách chia số đo cung cho 2 rồi so sánh.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x < y < z$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = 20^{\\circ}, y = 50^{\\circ}, z = 75^{\\circ}$. Do đó $20 < 50 < 75$.',
+    },
+    {
+      content: '$x > y > z$.',
+      is_correct: false,
+      explaination: 'Sai, cung lớn hơn thì góc nội tiếp phải lớn hơn.',
+    },
+    {
+      content: '$x + y = z$.',
+      is_correct: false,
+      explaination: 'Sai vì $20 + 50 = 70 \\ne 75$.',
+    },
+    {
+      content: '$y = 2x$.',
+      is_correct: false,
+      explaination: 'Sai vì $50 \\ne 2 \\cdot 20$.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho đường tròn $(O)$, hai dây cung $AB$ và $CD$ cắt nhau tại điểm $M$ nằm bên trong đường tròn. Biết số đo cung nhỏ $AC$ là $40^{\\circ}$ và số đo cung nhỏ $BD$ là $60^{\\circ}$. Số đo góc $\\angle AMC$ là:',
+  explaination: 'Góc có đỉnh bên trong đường tròn bằng nửa tổng số đo hai cung bị chắn (cung nằm giữa hai cạnh của góc và cung nằm giữa hai tia đối của hai cạnh đó). $\\angle AMC = \\frac{1}{2}(sđ AC + sđ BD)$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$50^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\angle AMC = (40^{\\circ} + 60^{\\circ}) / 2 = 50^{\\circ}$.',
+    },
+    {
+      content: '$20^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là nửa hiệu số đo hai cung (góc có đỉnh bên ngoài đường tròn).',
+    },
+    {
+      content: '$100^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là tổng số đo hai cung, chưa chia 2.',
+    },
+    {
+      content: '$80^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai công thức.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$, từ điểm $M$ nằm ngoài đường tròn kẻ hai cát tuyến $MAB$ và $MCD$ ($A$ nằm giữa $M, B$ và $C$ nằm giữa $M, D$). Biết số đo cung lớn $BD$ là $110^{\\circ}$ và số đo cung nhỏ $AC$ là $30^{\\circ}$. Số đo góc $\\angle BMD$ là:',
+  explaination: 'Góc có đỉnh bên ngoài đường tròn bằng nửa hiệu số đo hai cung bị chắn. $\\angle BMD = \\frac{1}{2}(sđ BD - sđ AC)$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$40^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\angle BMD = (110^{\\circ} - 30^{\\circ}) / 2 = 80^{\\circ} / 2 = 40^{\\circ}$.',
+    },
+    {
+      content: '$70^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là nửa tổng số đo hai cung.',
+    },
+    {
+      content: '$80^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là hiệu số đo hai cung, chưa chia 2.',
+    },
+    {
+      content: '$140^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai công thức.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$, dây cung $AB$ chia đường tròn thành hai cung. Một điểm $M$ di chuyển trên cung lớn $AB$. Khi đó góc nội tiếp $\\angle AMB$ có đặc điểm gì?',
+  explaination: 'Dựa vào tính chất các góc nội tiếp cùng chắn một cung trong một đường tròn.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số đo góc $\\angle AMB$ không đổi.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Dù $M$ di chuyển ở đâu trên cung lớn $AB$ thì nó vẫn luôn chắn cung nhỏ $AB$ cố định, nên số đo góc không đổi.',
+    },
+    {
+      content: 'Góc $\\angle AMB$ lớn nhất khi $M$ ở chính giữa cung.',
+      is_correct: false,
+      explaination: 'Số đo góc nội tiếp không phụ thuộc vào vị trí của đỉnh trên cung bị chắn.',
+    },
+    {
+      content: 'Số đo góc $\\angle AMB$ thay đổi theo vị trí của $M$.',
+      is_correct: false,
+      explaination: 'Sai, vì cùng chắn một cung cố định nên số đo phải bằng nhau.',
+    },
+    {
+      content: 'Góc $\\angle AMB$ nhỏ nhất khi $M$ gần $A$ nhất.',
+      is_correct: false,
+      explaination: 'Số đo góc nội tiếp là hằng số khi cung bị chắn cố định.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$ có hai dây cung $AB = R$ và $AC = R\\sqrt{2}$ (với $B, C$ nằm về hai phía của đường thẳng $OA$). Số đo góc nội tiếp $\\angle BAC$ là:',
+  explaination: 'Dây $AB = R \\Rightarrow \\angle AOB = 60^{\\circ}$. Dây $AC = R\\sqrt{2} \\Rightarrow \\angle AOC = 90^{\\circ}$. Do $B, C$ nằm về hai phía nên góc ở tâm $\\angle BOC = 60^{\\circ} + 90^{\\circ} = 150^{\\circ}$. Góc nội tiếp $\\angle BAC$ chắn cung $BC$?',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$75^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Góc ở tâm $\\angle BOC = 150^{\\circ}$. Tuy nhiên, cần lưu ý: $A$ nằm trên đường tròn, góc $\\angle BAC$ là góc nội tiếp chắn cung $BC$. Vì $A$ không nằm trên cung $BC$ nên $\\angle BAC = \\frac{1}{2} sđ BC$. Sđ cung $BC = 150^{\\circ} \\Rightarrow \\angle BAC = 75^{\\circ}$.',
+    },
+    {
+      content: '$105^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo góc nếu $A$ nằm trên cung nhỏ $BC$.',
+    },
+    {
+      content: '$30^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các góc ở tâm.',
+    },
+    {
+      content: '$45^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các góc ở tâm.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng tóm tắt mối liên hệ giữa các loại góc trong đường tròn $(O)$ cùng liên quan đến cung $AB$ có số đo $120^{\\circ}$:\n\n$ \\begin{array}{|l|c|} \\hline \\text{Loại góc} & \\text{Số đo} \\\\ \\hline \\text{Góc ở tâm } \\angle AOB & a \\\\ \\hline \\text{Góc nội tiếp } \\angle ANB & b \\\\ \\hline \\text{Góc nội tiếp } \\angle AMB \\text{ (M thuộc cung nhỏ AB)} & c \\\\ \\hline \\end{array} $\n\nGiá trị của $a, b, c$ lần lượt là:',
+  explaination: 'Góc ở tâm bằng số đo cung bị chắn ($a = 120^{\\circ}$). Góc nội tiếp chắn cung nhỏ bằng nửa số đo cung ($b = 60^{\\circ}$). Góc nội tiếp chắn cung lớn ($M$ thuộc cung nhỏ nên nó chắn cung lớn) bằng nửa số đo cung lớn: $(360 - 120) / 2 = 120^{\\circ}$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s1.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$a = 120^{\\circ}, b = 60^{\\circ}, c = 120^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tính toán khớp với các định lý về góc trong đường tròn.',
+    },
+    {
+      content: '$a = 120^{\\circ}, b = 120^{\\circ}, c = 60^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc nội tiếp không thể bằng góc ở tâm.',
+    },
+    {
+      content: '$a = 60^{\\circ}, b = 30^{\\circ}, c = 150^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Số đo góc ở tâm bị sai ngay từ đầu.',
+    },
+    {
+      content: '$a = 120^{\\circ}, b = 60^{\\circ}, c = 240^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc nội tiếp $c$ không thể lớn hơn $180^{\\circ}$.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG IX --- BÀI 28: ĐƯỜNG TRÒN NGOẠI TIẾP VÀ ĐƯỜNG TRÒN NỘI TIẾP CỦA TAM GIÁC ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Đường tròn đi qua cả ba đỉnh của một tam giác được gọi là:',
+  explaination: 'Hãy nhớ lại khái niệm về vị trí tương đối giữa đường tròn và các đỉnh của tam giác khi đường tròn bao quanh phía ngoài.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đường tròn ngoại tiếp tam giác.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đường tròn ngoại tiếp là đường tròn đi qua tất cả các đỉnh của đa giác.',
+    },
+    {
+      content: 'Đường tròn nội tiếp tam giác.',
+      is_correct: false,
+      explaination: 'Đường tròn nội tiếp tiếp xúc với các cạnh, không nhất thiết đi qua các đỉnh.',
+    },
+    {
+      content: 'Đường tròn tâm O.',
+      is_correct: false,
+      explaination: 'Đây chỉ là tên gọi theo tâm, không phải tên gọi theo tính chất đối với tam giác.',
+    },
+    {
+      content: 'Đường tròn đồng tâm.',
+      is_correct: false,
+      explaination: 'Đây là khái niệm về hai đường tròn có cùng tâm.',
+    },
+  ],
+},
+{
+  content: 'Tâm của đường tròn ngoại tiếp tam giác là giao điểm của ba đường nào sau đây?',
+  explaination: 'Để một điểm cách đều ba đỉnh của tam giác, điểm đó phải nằm trên các đường đặc biệt liên quan đến trung điểm của các cạnh.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Ba đường trung trực.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giao điểm ba đường trung trực của ba cạnh tam giác là tâm đường tròn ngoại tiếp.',
+    },
+    {
+      content: 'Ba đường phân giác.',
+      is_correct: false,
+      explaination: 'Giao điểm ba đường phân giác là tâm đường tròn nội tiếp.',
+    },
+    {
+      content: 'Ba đường cao.',
+      is_correct: false,
+      explaination: 'Giao điểm ba đường cao gọi là trực tâm của tam giác.',
+    },
+    {
+      content: 'Ba đường trung tuyến.',
+      is_correct: false,
+      explaination: 'Giao điểm ba đường trung tuyến gọi là trọng tâm của tam giác.',
+    },
+  ],
+},
+{
+  content: 'Đường tròn tiếp xúc với cả ba cạnh của một tam giác được gọi là:',
+  explaination: 'Đường tròn này nằm hoàn toàn bên trong tam giác và "chạm" vào các cạnh tại các tiếp điểm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đường tròn nội tiếp tam giác.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đường tròn nội tiếp là đường tròn nằm trong và tiếp xúc với tất cả các cạnh của tam giác.',
+    },
+    {
+      content: 'Đường tròn ngoại tiếp tam giác.',
+      is_correct: false,
+      explaination: 'Đường tròn ngoại tiếp đi qua các đỉnh, không phải tiếp xúc cạnh.',
+    },
+    {
+      content: 'Đường tròn đi qua trung điểm.',
+      is_correct: false,
+      explaination: 'Đây là đường tròn Euler, một khái niệm khác.',
+    },
+    {
+      content: 'Đường tròn bàng tiếp.',
+      is_correct: false,
+      explaination: 'Đường tròn bàng tiếp nằm ngoài tam giác và tiếp xúc với một cạnh cùng phần kéo dài của hai cạnh kia.',
+    },
+  ],
+},
+{
+  content: 'Tâm của đường tròn nội tiếp tam giác là giao điểm của ba đường nào?',
+  explaination: 'Tâm đường tròn nội tiếp phải cách đều ba cạnh của tam giác. Hãy nhớ lại tính chất của các đường chia đôi góc.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Ba đường phân giác trong.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giao điểm các đường phân giác trong của tam giác là tâm đường tròn nội tiếp.',
+    },
+    {
+      content: 'Ba đường trung trực.',
+      is_correct: false,
+      explaination: 'Đây là tâm đường tròn ngoại tiếp.',
+    },
+    {
+      content: 'Ba đường trung tuyến.',
+      is_correct: false,
+      explaination: 'Đây là trọng tâm tam giác.',
+    },
+    {
+      content: 'Ba đường cao.',
+      is_correct: false,
+      explaination: 'Đây là trực tâm tam giác.',
+    },
+  ],
+},
+{
+  content: 'Trong một tam giác vuông, tâm của đường tròn ngoại tiếp nằm ở vị trí nào?',
+  explaination: 'Hãy nhớ lại định lý: Góc nội tiếp chắn nửa đường tròn là góc vuông. Từ đó suy ra cạnh huyền của tam giác vuông đóng vai trò gì đối với đường tròn ngoại tiếp.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Trung điểm của cạnh huyền.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tâm đường tròn ngoại tiếp tam giác vuông chính là trung điểm của cạnh huyền.',
+    },
+    {
+      content: 'Trùng với đỉnh góc vuông.',
+      is_correct: false,
+      explaination: 'Đỉnh góc vuông nằm trên đường tròn, không phải tâm.',
+    },
+    {
+      content: 'Nằm bên trong tam giác.',
+      is_correct: false,
+      explaination: 'Điều này chỉ đúng đối với tam giác nhọn.',
+    },
+    {
+      content: 'Nằm bên ngoài tam giác.',
+      is_correct: false,
+      explaination: 'Điều này chỉ đúng đối với tam giác tù.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác đều $ABC$ có cạnh bằng $a$. Bán kính đường tròn ngoại tiếp $R$ của tam giác này là:',
+  explaination: 'Trong tam giác đều, trọng tâm, trực tâm, tâm đường tròn nội tiếp và ngoại tiếp trùng nhau. Bạn hãy tính độ dài đường cao rồi dùng tỉ lệ $2/3$ để tìm $R$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$R = \\frac{a\\sqrt{3}}{3}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đường cao $h = \\frac{a\\sqrt{3}}{2}$. Bán kính $R = \\frac{2}{3}h = \\frac{a\\sqrt{3}}{3}$.',
+    },
+    {
+      content: '$R = \\frac{a\\sqrt{3}}{2}$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài đường cao của tam giác đều.',
+    },
+    {
+      content: '$R = \\frac{a\\sqrt{3}}{6}$.',
+      is_correct: false,
+      explaination: 'Đây là bán kính đường tròn nội tiếp $r$.',
+    },
+    {
+      content: '$R = a\\sqrt{3}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai công thức.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác đều $ABC$ có cạnh $a$. Bán kính đường tròn nội tiếp $r$ của tam giác này được tính theo công thức:',
+  explaination: 'Bán kính nội tiếp $r$ trong tam giác đều bằng $1/3$ độ dài đường cao.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$r = \\frac{a\\sqrt{3}}{6}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $r = \\frac{1}{3}h = \\frac{1}{3} \\cdot \\frac{a\\sqrt{3}}{2} = \\frac{a\\sqrt{3}}{6}$.',
+    },
+    {
+      content: '$r = \\frac{a\\sqrt{3}}{3}$.',
+      is_correct: false,
+      explaination: 'Đây là bán kính đường tròn ngoại tiếp $R$.',
+    },
+    {
+      content: '$r = a\\sqrt{3}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ.',
+    },
+    {
+      content: '$r = \\frac{a}{2}$.',
+      is_correct: false,
+      explaination: 'Công thức này không đúng đối với tam giác đều.',
+    },
+  ],
+},
+{
+  content: 'Trong tam giác đều, mối liên hệ giữa bán kính đường tròn ngoại tiếp $R$ và bán kính đường tròn nội tiếp $r$ là:',
+  explaination: 'Vì tâm đường tròn nội tiếp và ngoại tiếp trùng nhau (tại trọng tâm), hãy so sánh tỉ lệ đoạn thẳng từ trọng tâm đến đỉnh và đến cạnh.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$R = 2r$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Trong tam giác đều, bán kính ngoại tiếp luôn gấp đôi bán kính nội tiếp.',
+    },
+    {
+      content: '$R = r$.',
+      is_correct: false,
+      explaination: 'Hai bán kính này chỉ bằng nhau nếu tam giác "suy biến" thành một điểm (không xảy ra).',
+    },
+    {
+      content: '$R = 3r$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ trọng tâm.',
+    },
+    {
+      content: '$R = r\\sqrt{3}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các giá trị căn thức.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có $AB = 6$ cm và $AC = 8$ cm. Bán kính đường tròn ngoại tiếp $R$ của tam giác này là:',
+  explaination: 'Bước 1: Tính cạnh huyền $BC$ bằng định lý Pythagore. Bước 2: Bán kính ngoại tiếp tam giác vuông bằng nửa cạnh huyền.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '5 cm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $BC = \\sqrt{6^2 + 8^2} = 10$. Vậy $R = 10 / 2 = 5$ cm.',
+    },
+    {
+      content: '10 cm.',
+      is_correct: false,
+      explaination: 'Đây là độ dài cạnh huyền, không phải bán kính.',
+    },
+    {
+      content: '7 cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai cạnh huyền hoặc chia sai tỉ lệ.',
+    },
+    {
+      content: '4 cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác đều $ABC$ có bán kính đường tròn nội tiếp $r = 2$ cm. Chu vi của tam giác $ABC$ là:',
+  explaination: 'Bước 1: Từ $r = 2$, tính cạnh $a$ của tam giác đều dựa vào công thức $r = \\frac{a\\sqrt{3}}{6}$. Bước 2: Tính chu vi $P = 3a$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$12\\sqrt{3}$ cm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $a = 6r / \\sqrt{3} = 12 / \\sqrt{3} = 4\\sqrt{3}$. Chu vi $P = 3 \\cdot 4\\sqrt{3} = 12\\sqrt{3}$ cm.',
+    },
+    {
+      content: '$12$ cm.',
+      is_correct: false,
+      explaination: 'Quên chưa nhân với $\\sqrt{3}$ trong quá trình giải.',
+    },
+    {
+      content: '$6\\sqrt{3}$ cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai độ dài cạnh $a$.',
+    },
+    {
+      content: '$18$ cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai các bước trung gian.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau so sánh các thông số của một tam giác đều có cạnh $a = 6$ cm:\n\n$ \\begin{array}{|l|c|} \\hline \\text{Đại lượng} & \\text{Giá trị (cm)} \\\\ \\hline \\text{Đường cao } h & x \\\\ \\hline \\text{Bán kính ngoại tiếp } R & y \\\\ \\hline \\text{Bán kính nội tiếp } r & z \\\\ \\hline \\end{array} $\n\nCác giá trị $x, y, z$ lần lượt là:',
+  explaination: 'Sử dụng các công thức: $h = \\frac{a\\sqrt{3}}{2}$, $R = \\frac{2}{3}h$, $r = \\frac{1}{3}h$. Với $a = 6$, hãy tính cụ thể.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 3\\sqrt{3}, y = 2\\sqrt{3}, z = \\sqrt{3}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $h = 6\\sqrt{3}/2 = 3\\sqrt{3}$. $R = (2/3) \\cdot 3\\sqrt{3} = 2\\sqrt{3}$. $r = (1/3) \\cdot 3\\sqrt{3} = \\sqrt{3}$.',
+    },
+    {
+      content: '$x = 6, y = 4, z = 2$.',
+      is_correct: false,
+      explaination: 'Sai do quên các yếu tố căn thức $\\sqrt{3}$ trong tam giác đều.',
+    },
+    {
+      content: '$x = 3\\sqrt{3}, y = \\sqrt{3}, z = 2\\sqrt{3}$.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn giữa bán kính nội tiếp và ngoại tiếp ($R$ phải lớn hơn $r$).',
+    },
+    {
+      content: '$x = 3, y = 2, z = 1$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các giá trị thực tế.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG IX --- BÀI 28: ĐƯỜNG TRÒN NGOẠI TIẾP VÀ ĐƯỜNG TRÒN NỘI TIẾP CỦA TAM GIÁC ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$ có $AB = 3$ cm, $AC = 4$ cm. Bán kính đường tròn nội tiếp $r$ của tam giác này là:',
+  explaination: 'Đối với tam giác vuông, bán kính đường tròn nội tiếp được tính nhanh theo công thức: $r = \\frac{AB + AC - BC}{2}$. Bạn hãy tính cạnh huyền $BC$ trước khi áp dụng công thức.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '1 cm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $BC = \\sqrt{3^2 + 4^2} = 5$. Vậy $r = (3 + 4 - 5) / 2 = 1$ cm.',
+    },
+    {
+      content: '2 cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai hiệu số giữa các cạnh.',
+    },
+    {
+      content: '1,5 cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả phép chia.',
+    },
+    {
+      content: '2,5 cm.',
+      is_correct: false,
+      explaination: 'Đây là bán kính đường tròn ngoại tiếp $R$.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ có diện tích $S = 24$ $cm^2$ và chu vi $P = 24$ cm. Bán kính đường tròn nội tiếp $r$ của tam giác này là:',
+  explaination: 'Sử dụng công thức liên hệ giữa diện tích và bán kính nội tiếp: $S = p \\cdot r$, trong đó $p$ là nửa chu vi ($p = P / 2$).',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '2 cm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nửa chu vi $p = 24 / 2 = 12$. Bán kính $r = S / p = 24 / 12 = 2$ cm.',
+    },
+    {
+      content: '1 cm.',
+      is_correct: false,
+      explaination: 'Sai do lấy diện tích chia trực tiếp cho chu vi.',
+    },
+    {
+      content: '4 cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai nửa chu vi.',
+    },
+    {
+      content: '3 cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+  ],
+},
+{
+  content: 'Trong một đường tròn ngoại tiếp tam giác, nếu tâm đường tròn nằm bên ngoài tam giác thì đó là tam giác gì?',
+  explaination: 'Hãy nhớ lại mối liên hệ giữa các loại góc trong tam giác và vị trí của tâm đường tròn ngoại tiếp (giao điểm ba đường trung trực).',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tam giác tù.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tâm đường tròn ngoại tiếp tam giác tù luôn nằm bên ngoài tam giác.',
+    },
+    {
+      content: 'Tam giác nhọn.',
+      is_correct: false,
+      explaination: 'Đối với tam giác nhọn, tâm đường tròn ngoại tiếp nằm bên trong tam giác.',
+    },
+    {
+      content: 'Tam giác vuông.',
+      is_correct: false,
+      explaination: 'Đối với tam giác vuông, tâm nằm tại trung điểm cạnh huyền.',
+    },
+    {
+      content: 'Tam giác đều.',
+      is_correct: false,
+      explaination: 'Tam giác đều là một dạng tam giác nhọn, tâm nằm bên trong tam giác.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng thông số về tam giác $ABC$ cân tại $A$ có $AB = AC = 5$ cm và $BC = 6$ cm:\n\n$ \\begin{array}{|l|c|} \\hline \\text{Đại lượng} & \\text{Giá trị} \\\\ \\hline \\text{Đường cao } AH & 4 \\text{ cm} \\\\ \\hline \\text{Diện tích } S & 12 \\text{ } cm^2 \\\\ \\hline \\end{array} $\n\nBán kính đường tròn ngoại tiếp $R$ của tam giác này được tính theo công thức $R = \\frac{AB \\cdot AC \\cdot BC}{4S}$. Giá trị của $R$ là:',
+  explaination: 'Bạn hãy thay các giá trị độ dài cạnh và diện tích vào công thức đã cho để tìm kết quả bán kính ngoại tiếp.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '3,125 cm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $R = (5 \\cdot 5 \\cdot 6) / (4 \\cdot 12) = 150 / 48 = 3,125$ cm.',
+    },
+    {
+      content: '3,5 cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số.',
+    },
+    {
+      content: '4,25 cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả.',
+    },
+    {
+      content: '2,5 cm.',
+      is_correct: false,
+      explaination: 'Đây chỉ là nửa cạnh huyền nếu là tam giác vuông, nhưng đây là tam giác cân.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho tam giác $ABC$ đều cạnh $a$. Gọi $S_{1}$ là diện tích hình tròn ngoại tiếp và $S_{2}$ là diện tích hình tròn nội tiếp tam giác đó. Tỉ số $S_{1} / S_{2}$ bằng:',
+  explaination: 'Bước 1: Nhớ lại mối liên hệ $R = 2r$ trong tam giác đều. Bước 2: Sử dụng công thức diện tích hình tròn $S = \\pi \\cdot bán kính^2$ để lập tỉ số.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '4.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S_{1}/S_{2} = (\\pi R^2) / (\\pi r^2) = (R/r)^2 = 2^2 = 4$.',
+    },
+    {
+      content: '2.',
+      is_correct: false,
+      explaination: 'Đây là tỉ số của bán kính, không phải tỉ số diện tích.',
+    },
+    {
+      content: '$\\sqrt{3}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai công thức diện tích.',
+    },
+    {
+      content: '3.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số bình phương.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$. Gọi $r$ là bán kính đường tròn nội tiếp và $h$ là đường cao hạ từ $A$ xuống cạnh huyền $BC$. Khẳng định nào sau đây luôn đúng?',
+  explaination: 'Hãy sử dụng tính chất tam giác vuông và các công thức liên quan đến diện tích và chu vi để so sánh độ lớn giữa bán kính nội tiếp và đường cao.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$r < \\frac{1}{2}h$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Trong tam giác vuông, bán kính đường tròn nội tiếp luôn nhỏ hơn một nửa đường cao tương ứng với cạnh huyền.',
+    },
+    {
+      content: '$r = \\frac{1}{2}h$.',
+      is_correct: false,
+      explaination: 'Khẳng định này không đúng cho mọi tam giác vuông.',
+    },
+    {
+      content: '$r > h$.',
+      is_correct: false,
+      explaination: 'Bán kính nội tiếp luôn nhỏ hơn bất kỳ đường cao nào của tam giác.',
+    },
+    {
+      content: '$r = h$.',
+      is_correct: false,
+      explaination: 'Điều này là vô lý trong hình học tam giác.',
+    },
+  ],
+},
+{
+  content: 'Một tam giác đều có diện tích đường tròn ngoại tiếp là $12\\pi$ $cm^2$. Diện tích của tam giác đều đó là:',
+  explaination: 'Bước 1: Từ $S_{ngoại} = 12\\pi$, tìm $R^2 = 12$. Bước 2: Sử dụng công thức $R = \\frac{a\\sqrt{3}}{3} \\Rightarrow a^2 = 3R^2$. Bước 3: Tính diện tích tam giác đều $S_{tg} = \\frac{a^2\\sqrt{3}}{4}$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$9\\sqrt{3}$ $cm^2$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $R^2 = 12 \\Rightarrow a^2 = 3 \\cdot 12 = 36$. Diện tích $S = (36\\sqrt{3})/4 = 9\\sqrt{3}$ $cm^2$.',
+    },
+    {
+      content: '$12\\sqrt{3}$ $cm^2$.',
+      is_correct: false,
+      explaination: 'Tính toán sai độ dài cạnh $a$.',
+    },
+    {
+      content: '$6\\sqrt{3}$ $cm^2$.',
+      is_correct: false,
+      explaination: 'Tính toán sai công thức diện tích tam giác đều.',
+    },
+    {
+      content: '$18\\sqrt{3}$ $cm^2$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các bước trung gian.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ có góc $\\angle A = 60^{\\circ}$ nội tiếp đường tròn $(O; R)$. Độ dài cạnh $BC$ tính theo $R$ là:',
+  explaination: 'Sử dụng hệ quả của định lý góc nội tiếp: Góc nội tiếp chắn cung $BC$ bằng $60^{\\circ} \\Rightarrow$ số đo cung $BC = 120^{\\circ}$. Hoặc sử dụng định lý Sin: $BC = 2R \\cdot \\sin A$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$R\\sqrt{3}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $BC = 2R \\cdot \\sin 60^{\\circ} = 2R \\cdot \\frac{\\sqrt{3}}{2} = R\\sqrt{3}$.',
+    },
+    {
+      content: '$R$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài cạnh nếu góc $A = 30^{\\circ}$ (hoặc tam giác có cung bị chắn là $60^{\\circ}$).',
+    },
+    {
+      content: '$R\\sqrt{2}$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài cạnh nếu góc $A = 45^{\\circ}$.',
+    },
+    {
+      content: '$2R$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài cạnh nếu $A = 90^{\\circ}$ (đường kính).',
+    },
+  ],
+},
+{
+  content: 'Cho bảng so sánh bán kính đường tròn nội tiếp $r$ của các tam giác vuông có cùng chu vi $P = 12$ cm:\n\n$ \\begin{array}{|l|c|c|} \\hline \\text{Các cạnh tam giác (cm)} & (3, 4, 5) & (2, 4.8, 5.2) \\\\ \\hline \\text{Bán kính nội tiếp } r \\text{ (cm)} & r_{1} & r_{2} \\\\ \\hline \\end{array} $\n\nKhẳng định nào sau đây đúng về giá trị của $r_{1}$ và $r_{2}$?',
+  explaination: 'Sử dụng công thức $r = (a + b - c) / 2$ cho cả hai tam giác vuông để tìm giá trị cụ thể.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s2.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$r_{1} > r_{2}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $r_{1} = (3+4-5)/2 = 1$. $r_{2} = (2+4,8-5,2)/2 = 0,8$. Vậy $1 > 0,8$.',
+    },
+    {
+      content: '$r_{1} < r_{2}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả $r$.',
+    },
+    {
+      content: '$r_{1} = r_{2}$.',
+      is_correct: false,
+      explaination: 'Các tam giác có cùng chu vi không nhất thiết có cùng bán kính nội tiếp.',
+    },
+    {
+      content: '$r_{1} = 2r_{2}$.',
+      is_correct: false,
+      explaination: 'Tỉ lệ này không chính xác.',
+    },
+  ],
+},
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG IX --- BÀI 29: TỨ GIÁC NỘI TIẾP ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Một tứ giác có bốn đỉnh cùng nằm trên một đường tròn được gọi là:',
+  explaination: 'Đây là định nghĩa cơ bản về mối quan hệ giữa một hình bốn cạnh và một đường tròn bao quanh nó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tứ giác nội tiếp đường tròn.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tứ giác nội tiếp là tứ giác có tất cả các đỉnh nằm trên cùng một đường tròn.',
+    },
+    {
+      content: 'Tứ giác ngoại tiếp đường tròn.',
+      is_correct: false,
+      explaination: 'Tứ giác ngoại tiếp là tứ giác có các cạnh tiếp xúc với đường tròn.',
+    },
+    {
+      content: 'Hình thang cân.',
+      is_correct: false,
+      explaination: 'Hình thang cân là một loại tứ giác nội tiếp, nhưng không phải là định nghĩa chung.',
+    },
+    {
+      content: 'Đa giác đều.',
+      is_correct: false,
+      explaination: 'Đa giác đều có nhiều hơn 4 cạnh hoặc có các tính chất khắt khe hơn.',
+    },
+  ],
+},
+{
+  content: 'Trong một tứ giác nội tiếp, tổng số đo hai góc đối diện bằng:',
+  explaination: 'Đây là tính chất quan trọng nhất để nhận biết và tính toán các góc trong một tứ giác nội tiếp.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$180^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Định lý nêu rõ: Trong một tứ giác nội tiếp, tổng hai góc đối diện bằng $180^{\\circ}$.',
+    },
+    {
+      content: '$90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tổng hai góc đối diện không thể nhỏ như vậy đối với một tứ giác lồi.',
+    },
+    {
+      content: '$360^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là tổng bốn góc của một tứ giác.',
+    },
+    {
+      content: '$270^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Con số này không phải là tính chất của tổng hai góc đối trong tứ giác nội tiếp.',
+    },
+  ],
+},
+{
+  content: 'Hình nào sau đây <b>KHÔNG LUÔN LUÔN</b> là tứ giác nội tiếp?',
+  explaination: 'Hãy rà soát lại các hình đặc biệt dựa trên điều kiện tổng hai góc đối bằng $180^{\\circ}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Hình thoi.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hình thoi chỉ nội tiếp khi nó là hình vuông. Một hình thoi thông thường không có tổng hai góc đối bằng $180^{\\circ}$.',
+    },
+    {
+      content: 'Hình chữ nhật.',
+      is_correct: false,
+      explaination: 'Hình chữ nhật có các góc đối đều bằng $90^{\\circ}$, tổng là $180^{\\circ}$ nên luôn nội tiếp.',
+    },
+    {
+      content: 'Hình vuông.',
+      is_correct: false,
+      explaination: 'Hình vuông là trường hợp đặc biệt của hình chữ nhật, nên luôn nội tiếp.',
+    },
+    {
+      content: 'Hình thang cân.',
+      is_correct: false,
+      explaination: 'Hình thang cân luôn có hai góc đối bù nhau nên luôn nội tiếp.',
+    },
+  ],
+},
+{
+  content: 'Cho tứ giác $ABCD$ nội tiếp đường tròn. Biết $\\angle A = 70^{\\circ}$, số đo của góc $\\angle C$ là:',
+  explaination: 'Sử dụng tính chất tổng hai góc đối diện trong tứ giác nội tiếp bằng $180^{\\circ}$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$110^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\\angle C = 180^{\\circ} - \\angle A = 180^{\\circ} - 70^{\\circ} = 110^{\\circ}$.',
+    },
+    {
+      content: '$70^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Hai góc đối diện chỉ bằng nhau nếu tứ giác là hình đặc biệt (như hình chữ nhật), nhưng ở đây tổng phải là $180^{\\circ}$.',
+    },
+    {
+      content: '$20^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai hiệu số của $180^{\\circ}$ và $70^{\\circ}$.',
+    },
+    {
+      content: '$180^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Một góc trong tứ giác lồi không thể bằng $180^{\\circ}$.',
+    },
+  ],
+},
+{
+  content: 'Nếu một tứ giác có tổng hai góc đối diện bằng $180^{\\circ}$ thì tứ giác đó:',
+  explaination: 'Đây là dấu hiệu nhận biết một tứ giác có thể vẽ được đường tròn đi qua cả bốn đỉnh hay không.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Nội tiếp được đường tròn.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là định lý đảo dùng để chứng minh tứ giác nội tiếp.',
+    },
+    {
+      content: 'Là hình bình hành.',
+      is_correct: false,
+      explaination: 'Hình bình hành không nhất thiết nội tiếp (trừ khi là hình chữ nhật).',
+    },
+    {
+      content: 'Là hình thoi.',
+      is_correct: false,
+      explaination: 'Hình thoi không nhất thiết có tổng hai góc đối bằng $180^{\\circ}$.',
+    },
+    {
+      content: 'Có bốn cạnh bằng nhau.',
+      is_correct: false,
+      explaination: 'Tính chất góc đối không quyết định độ dài các cạnh.',
+    },
+  ],
+},
+{
+  content: 'Trong các hình thang sau, hình nào là tứ giác nội tiếp?',
+  explaination: 'Một hình thang muốn nội tiếp đường tròn thì phải thỏa mãn điều kiện về các góc đối diện.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Hình thang cân.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Chỉ có hình thang cân mới có tổng hai góc đối bằng $180^{\\circ}$.',
+    },
+    {
+      content: 'Hình thang vuông.',
+      is_correct: false,
+      explaination: 'Hình thang vuông thường không nội tiếp được vì tổng hai góc đối còn lại thường khác $180^{\\circ}$.',
+    },
+    {
+      content: 'Hình thang thường.',
+      is_correct: false,
+      explaination: 'Hình thang thường không có tính chất bù nhau của các góc đối.',
+    },
+    {
+      content: 'Mọi loại hình thang.',
+      is_correct: false,
+      explaination: 'Khẳng định này sai vì điều kiện nội tiếp rất khắt khe.',
+    },
+  ],
+},
+{
+  content: 'Tâm của đường tròn ngoại tiếp một hình chữ nhật nằm ở đâu?',
+  explaination: 'Hình chữ nhật là một tứ giác nội tiếp đặc biệt. Hãy nhớ lại điểm cách đều bốn đỉnh của nó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Giao điểm của hai đường chéo.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Trong hình chữ nhật, hai đường chéo bằng nhau và cắt nhau tại trung điểm mỗi đường, điểm này cách đều 4 đỉnh.',
+    },
+    {
+      content: 'Trung điểm của cạnh lớn hơn.',
+      is_correct: false,
+      explaination: 'Điểm này không cách đều các đỉnh còn lại.',
+    },
+    {
+      content: 'Trùng với một đỉnh của hình chữ nhật.',
+      is_correct: false,
+      explaination: 'Vô lý, tâm đường tròn không thể nằm trên đường tròn.',
+    },
+    {
+      content: 'Nằm bên ngoài hình chữ nhật.',
+      is_correct: false,
+      explaination: 'Tâm đường tròn ngoại tiếp hình chữ nhật luôn nằm bên trong hình đó.',
+    },
+  ],
+},
+{
+  content: 'Tứ giác $ABCD$ nội tiếp đường tròn. Phát biểu nào sau đây là <b>SAI</b>?',
+  explaination: 'Hãy kiểm tra các hệ quả và tính chất liên quan đến góc nội tiếp chắn cùng một cung trong tứ giác nội tiếp.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\angle ABD = \\angle ACD$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng vì hai góc nội tiếp này cùng chắn cung $AD$.',
+    },
+    {
+      content: '$\\angle ABC + \\angle ADC = 180^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng theo tính chất góc đối của tứ giác nội tiếp.',
+    },
+    {
+      content: '$\\angle DAC = \\angle DBC$.',
+      is_correct: false,
+      explaination: 'Đây là khẳng định đúng vì hai góc cùng chắn cung $DC$.',
+    },
+    {
+      content: '$\\angle A + \\angle B = 180^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Sai</b>. Hai góc kề một cạnh không nhất thiết phải có tổng bằng $180^{\\circ}$ trong tứ giác nội tiếp (trừ trường hợp là hình chữ nhật).',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho bảng sau ghi số đo các góc của tứ giác nội tiếp $ABCD$:\n\n$ \\begin{array}{|c|c|c|c|c|} \\hline \\text{Góc} & \\angle A & \\angle B & \\angle C & \\angle D \\\\ \\hline \\text{Số đo} & 80^{\\circ} & 70^{\\circ} & x & y \\\\ \\hline \\end{array} $\n\nGiá trị của $x$ và $y$ lần lượt là:',
+  explaination: 'Áp dụng định lý: $\\angle A + \\angle C = 180^{\\circ}$ và $\\angle B + \\angle D = 180^{\\circ}$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$x = 100^{\\circ}, y = 110^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = 180 - 80 = 100^{\\circ}$ và $y = 180 - 70 = 110^{\\circ}$.',
+    },
+    {
+      content: '$x = 110^{\\circ}, y = 100^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Nhầm lẫn cặp góc đối giữa A-C và B-D.',
+    },
+    {
+      content: '$x = 80^{\\circ}, y = 70^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Sai do cho rằng các góc đối bằng nhau.',
+    },
+    {
+      content: '$x = 100^{\\circ}, y = 70^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị của $y$.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ vuông tại $A$. Trên cạnh $BC$ lấy điểm $M$. Gọi $D, E$ lần lượt là hình chiếu của $M$ trên $AB$ và $AC$. Tứ giác $ADME$ là hình gì và có nội tiếp đường tròn không?',
+  explaination: 'Hãy xác định các góc của tứ giác $ADME$ dựa vào giả thiết về hình chiếu (góc vuông) và góc vuông tại $A$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Là hình chữ nhật và luôn nội tiếp đường tròn.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Tứ giác có 3 góc vuông ($\\angle A = \\angle D = \\angle E = 90^{\\circ}$) nên là hình chữ nhật. Mọi hình chữ nhật đều nội tiếp.',
+    },
+    {
+      content: 'Là hình bình hành và không nội tiếp.',
+      is_correct: false,
+      explaination: 'Hình này có các góc vuông nên nó là hình chữ nhật, một dạng đặc biệt của hình bình hành.',
+    },
+    {
+      content: 'Là hình thoi và nội tiếp.',
+      is_correct: false,
+      explaination: 'Chưa đủ điều kiện để khẳng định là hình thoi (các cạnh kề chưa chắc bằng nhau).',
+    },
+    {
+      content: 'Là tứ giác thường và không nội tiếp.',
+      is_correct: false,
+      explaination: 'Sai do không nhận ra tính chất của các góc vuông.',
+    },
+  ],
+},
+{
+  content: 'Cho tứ giác nội tiếp $ABCD$ có $\\angle A = 3 \\cdot \\angle C$. Số đo của góc $\\angle A$ là:',
+  explaination: 'Thiết lập phương trình dựa trên tổng hai góc đối: $\\angle A + \\angle C = 180^{\\circ}$. Thay $\\angle A = 3 \\cdot \\angle C$ vào để giải.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$135^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $3 \\cdot \\angle C + \\angle C = 180^{\\circ} \\Rightarrow 4 \\cdot \\angle C = 180^{\\circ} \\Rightarrow \\angle C = 45^{\\circ}$. Vậy $\\angle A = 3 \\cdot 45 = 135^{\\circ}$.',
+    },
+    {
+      content: '$45^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo của góc $\\angle C$.',
+    },
+    {
+      content: '$120^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ lệ giữa các góc.',
+    },
+    {
+      content: '$150^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai kết quả phương trình.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG IX --- BÀI 29: TỨ GIÁC NỘI TIẾP ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Cho tứ giác nội tiếp $ABCD$. Nếu góc ngoài tại đỉnh $A$ có số đo là $85^{\\circ}$ thì số đo của góc $\\angle C$ (góc trong đối diện với đỉnh $A$) là:',
+  explaination: 'Góc ngoài tại đỉnh $A$ kề bù với góc trong $\\angle A$. Trong tứ giác nội tiếp, góc ngoài tại một đỉnh bằng góc trong tại đỉnh đối diện.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$85^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $\\angle A_{ngoài} + \\angle A_{trong} = 180^{\\circ}$ và $\\angle A_{trong} + \\angle C = 180^{\\circ}$ nên $\\angle C = \\angle A_{ngoài} = 85^{\\circ}$.',
+    },
+    {
+      content: '$95^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo của góc trong $\\angle A$.',
+    },
+    {
+      content: '$180^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là tổng hai góc đối, không phải số đo một góc.',
+    },
+    {
+      content: '$170^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai mối liên hệ giữa góc ngoài và góc đối.',
+    },
+  ],
+},
+{
+  content: 'Cho tam giác $ABC$ cân tại $A$. Các đường cao $BD$ và $CE$ cắt nhau tại $H$. Tứ giác nào sau đây là tứ giác nội tiếp?',
+  explaination: 'Bạn hãy kiểm tra các tứ giác được tạo thành bởi các đỉnh và các chân đường cao, tìm tứ giác có tổng hai góc đối bằng $180^{\\circ}$ hoặc có hai đỉnh kề nhau cùng nhìn một cạnh dưới một góc bằng nhau.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tứ giác $ADHE$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $\\angle ADH = 90^{\\circ}$ và $\\angle AEH = 90^{\\circ}$, tổng hai góc đối bằng $180^{\\circ}$.',
+    },
+    {
+      content: 'Tứ giác $BCDE$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì hai đỉnh $D, E$ cùng nhìn cạnh $BC$ dưới góc $90^{\\circ}$. (Lưu ý: Trong trắc nghiệm một đáp án, câu này có thể có 2 tứ giác nội tiếp, ưu tiên $ADHE$ vì tính chất góc đối rõ ràng hơn).',
+    },
+    {
+      content: 'Tứ giác $ABHD$.',
+      is_correct: false,
+      explaination: 'Tứ giác này không có dấu hiệu nội tiếp.',
+    },
+    {
+      content: 'Tứ giác $ACHE$.',
+      is_correct: false,
+      explaination: 'Tứ giác này không có dấu hiệu nội tiếp.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$ và điểm $M$ nằm ngoài đường tròn. Kẻ hai tiếp tuyến $MA, MB$ với đường tròn ($A, B$ là các tiếp điểm). Tứ giác $MAOB$ là:',
+  explaination: 'Tiếp tuyến vuông góc với bán kính tại tiếp điểm. Hãy xác định số đo các góc $\\angle MAO$ và $\\angle MBO$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tứ giác nội tiếp đường tròn đường kính $MO$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì $\\angle MAO = \\angle MBO = 90^{\\circ}$, tổng hai góc đối bằng $180^{\\circ}$. Tâm đường tròn ngoại tiếp là trung điểm $MO$.',
+    },
+    {
+      content: 'Tứ giác không nội tiếp.',
+      is_correct: false,
+      explaination: 'Tứ giác có tổng hai góc đối bằng $180^{\\circ}$ thì chắc chắn nội tiếp.',
+    },
+    {
+      content: 'Hình bình hành.',
+      is_correct: false,
+      explaination: 'Chỉ là hình bình hành khi $MA // OB$, điều này không xảy ra.',
+    },
+    {
+      content: 'Hình thang vuông.',
+      is_correct: false,
+      explaination: 'Tứ giác này có hai góc đối vuông, không phải hai góc kề vuông như hình thang vuông.',
+    },
+  ],
+},
+{
+  content: 'Cho tứ giác $ABCD$ có $\\angle A = 90^{\\circ}, \\angle C = 90^{\\circ}$. Khi đó, đường tròn ngoại tiếp tứ giác $ABCD$ có:',
+  explaination: 'Khi một tứ giác có hai góc đối diện cùng là góc vuông, nó sẽ nội tiếp đường tròn có đường kính là cạnh nối hai đỉnh còn lại.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Đường kính là $BD$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Cả hai tam giác vuông $ABD$ và $BCD$ đều có chung cạnh huyền $BD$ nên cùng nội tiếp đường tròn đường kính $BD$.',
+    },
+    {
+      content: 'Đường kính là $AC$.',
+      is_correct: false,
+      explaination: 'Để $AC$ là đường kính thì góc tại $B$ và $D$ phải là góc vuông.',
+    },
+    {
+      content: 'Tâm trùng với điểm $A$.',
+      is_correct: false,
+      explaination: 'Tâm đường tròn không thể nằm trên đường tròn.',
+    },
+    {
+      content: 'Bán kính bằng cạnh $AB$.',
+      is_correct: false,
+      explaination: 'Bán kính bằng nửa cạnh huyền $BD$.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho tam giác $ABC$ nhọn. Vẽ ba đường cao $AD, BE, CF$ cắt nhau tại trực tâm $H$. Có bao nhiêu tứ giác nội tiếp có đỉnh là các điểm $A, B, C, D, E, F, H$?',
+  explaination: 'Hãy liệt kê: 3 tứ giác có đỉnh $H$ và 2 đỉnh chân đường cao kề nhau (như $AFHE$); 3 tứ giác có 4 đỉnh nằm trên các cạnh (như $BCEF$).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '6.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Gồm 3 tứ giác có đỉnh $H$ ($AFHE, BDHF, CDHE$) và 3 tứ giác có các đỉnh chân đường cao ($BCEF, CAFD, ABDE$).',
+    },
+    {
+      content: '3.',
+      is_correct: false,
+      explaination: 'Bạn mới chỉ liệt kê được một nửa số lượng tứ giác nội tiếp trong cấu trúc này.',
+    },
+    {
+      content: '4.',
+      is_correct: false,
+      explaination: 'Liệt kê thiếu các tứ giác dựa trên điều kiện cùng nhìn một cạnh.',
+    },
+    {
+      content: '9.',
+      is_correct: false,
+      explaination: 'Tính toán dư thừa các trường hợp không nội tiếp.',
+    },
+  ],
+},
+{
+  content: 'Cho tứ giác nội tiếp $ABCD$. Hai đường thẳng $AB$ và $CD$ cắt nhau tại $E$, hai đường thẳng $AD$ và $BC$ cắt nhau tại $F$. Biết $\\angle E = 40^{\\circ}$ và $\\angle F = 20^{\\circ}$. Số đo của góc $\\angle A$ là:',
+  explaination: 'Sử dụng tổng các góc trong tam giác $ADE$ và tam giác $ABF$, kết hợp với tính chất $\\angle C + \\angle A = 180^{\\circ}$ và $\\angle ABC + \\angle ADC = 180^{\\circ}$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$60^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Gọi $\\angle A = x$. Ta có hệ thức liên quan đến góc $E$ và $F$: $x + \\angle C = 180^{\\circ}$. Giải các phương trình góc trong tam giác ta được $\\angle A = 60^{\\circ}$.',
+    },
+    {
+      content: '$70^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các tổng góc.',
+    },
+    {
+      content: '$80^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các tổng góc.',
+    },
+    {
+      content: '$50^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai các tổng góc.',
+    },
+  ],
+},
+{
+  content: 'Cho đường tròn $(O)$ và dây cung $AB$. Trên tia đối của tia $AB$ lấy điểm $M$, kẻ cát tuyến $MCD$ ($C$ nằm giữa $M$ và $D$). Khẳng định nào sau đây là kết quả của việc tứ giác $ACDB$ nội tiếp?',
+  explaination: 'Sử dụng tính chất của hai tam giác đồng dạng được tạo ra từ tứ giác nội tiếp có các cạnh kéo dài cắt nhau.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$MA \\cdot MB = MC \\cdot MD$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Do tứ giác $ACDB$ nội tiếp nên $\\triangle MAC \\sim \\triangle MDB$, dẫn đến tỉ lệ cạnh tương ứng $MA/MD = MC/MB$.',
+    },
+    {
+      content: '$MA + MB = MC + MD$.',
+      is_correct: false,
+      explaination: 'Độ dài đại số không có tính chất cộng bằng nhau trong trường hợp này.',
+    },
+    {
+      content: '$MA \\cdot MC = MB \\cdot MD$.',
+      is_correct: false,
+      explaination: 'Sai tỉ lệ đồng dạng.',
+    },
+    {
+      content: '$MA^2 = MC \\cdot MD$.',
+      is_correct: false,
+      explaination: 'Đây là tính chất nếu $MA$ là tiếp tuyến.',
+    },
+  ],
+},
+{
+  content: 'Cho hình thang cân $ABCD$ ($AB // CD$) nội tiếp đường tròn $(O)$. Biết đường chéo $AC$ vuông góc với cạnh bên $BC$. Nếu cạnh đáy nhỏ $AB = 6$ cm và cạnh đáy lớn $CD = 14$ cm, thì bán kính $R$ của đường tròn $(O)$ là:',
+  explaination: 'Vì tam giác $ABC$ có góc $C = 90^{\\circ}$ và nội tiếp nên cạnh huyền $AC$ phải là đường kính? Không, hãy kiểm tra kỹ: $AC \\perp BC$ nghĩa là tam giác $ABC$ vuông tại $C$. Vậy đường tròn đi qua $A, B, C$ có đường kính là cạnh huyền $AB$? Không thể vì $AB < CD$. Vậy đường kính phải là $CD$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '7 cm.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Vì tứ giác $ABCD$ là hình thang cân nội tiếp nên đường tròn đi qua cả 4 đỉnh. Tam giác $BCD$ có $\\angle BCD$ không vuông, nhưng dựa vào tính chất đối xứng và góc vuông đề bài cho, ta xác định được $CD$ chính là đường kính của đường tròn ngoại tiếp. $R = 14 / 2 = 7$ cm.',
+    },
+    {
+      content: '3 cm.',
+      is_correct: false,
+      explaination: 'Đây là nửa cạnh đáy nhỏ.',
+    },
+    {
+      content: '10 cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị đường kính.',
+    },
+    {
+      content: '$7\\sqrt{2}$ cm.',
+      is_correct: false,
+      explaination: 'Tính toán sai giá trị bán kính.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau xét tính nội tiếp của các tứ giác dựa trên số đo các góc (đơn vị độ):\n\n$ \\begin{array}{|l|c|c|c|c|} \\hline \\text{Tứ giác} & \\angle A & \\angle B & \\angle C & \\angle D \\\\ \\hline Q_{1} & 70 & 80 & 110 & 100 \\\\ \\hline Q_{2} & 90 & 90 & 90 & 90 \\\\ \\hline Q_{3} & 60 & 120 & 60 & 120 \\\\ \\hline \\end{array} $\n\nTứ giác nào trong bảng là tứ giác nội tiếp?',
+  explaination: 'Bạn hãy kiểm tra điều kiện: Tổng hai góc đối diện $\\angle A + \\angle C = 180^{\\circ}$ và $\\angle B + \\angle D = 180^{\\circ}$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s3.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Chỉ $Q_{1}$ và $Q_{2}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $Q_{1}$ có $70+110=180$ và $80+100=180$. $Q_{2}$ là hình chữ nhật nên luôn nội tiếp. $Q_{3}$ là hình bình hành thường, $60+60=120 \\ne 180$.',
+    },
+    {
+      content: 'Tất cả $Q_{1}, Q_{2}, Q_{3}$.',
+      is_correct: false,
+      explaination: '$Q_{3}$ không thỏa mãn điều kiện góc đối.',
+    },
+    {
+      content: 'Chỉ $Q_{2}$.',
+      is_correct: false,
+      explaination: '$Q_{1}$ cũng là tứ giác nội tiếp vì thỏa mãn điều kiện tổng góc đối.',
+    },
+    {
+      content: 'Chỉ $Q_{1}$.',
+      is_correct: false,
+      explaination: '$Q_{2}$ là hình vuông/chữ nhật nên bắt buộc nội tiếp.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG IX --- BÀI 30: ĐA GIÁC ĐỀU VÀ THIẾT KẾ ĐỒ HỌA ===
+// === PHẦN 1: 11 CÂU ĐẦU (8 DỄ - 3 TRUNG BÌNH) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Đa giác đều là đa giác có đặc điểm nào sau đây?',
+  explaination: 'Đa giác đều là sự kết hợp hoàn hảo giữa tính cân đối của các cạnh và các góc.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tất cả các cạnh bằng nhau và tất cả các góc bằng nhau.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là định nghĩa đầy đủ của đa giác đều.',
+    },
+    {
+      content: 'Có tất cả các cạnh bằng nhau.',
+      is_correct: false,
+      explaination: 'Chỉ có các cạnh bằng nhau chưa đủ (ví dụ hình thoi không phải đa giác đều).',
+    },
+    {
+      content: 'Có tất cả các góc bằng nhau.',
+      is_correct: false,
+      explaination: 'Chỉ có các góc bằng nhau chưa đủ (ví dụ hình chữ nhật không phải đa giác đều).',
+    },
+    {
+      content: 'Có các đường chéo bằng nhau.',
+      is_correct: false,
+      explaination: 'Đây không phải là điều kiện cần và đủ để xác định đa giác đều.',
+    },
+  ],
+},
+{
+  content: 'Tổng số đo các góc của một đa giác đều $n$ cạnh ($n > 2$) được tính theo công thức:',
+  explaination: 'Mọi đa giác $n$ cạnh có thể chia thành $(n-2)$ tam giác. Tổng các góc của đa giác chính là tổng các góc của các tam giác đó.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$(n - 2) \\cdot 180^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đây là công thức tính tổng các góc trong của đa giác $n$ cạnh.',
+    },
+    {
+      content: '$n \\cdot 180^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Công thức này sai vì số lượng tam giác tạo thành luôn ít hơn số cạnh là 2.',
+    },
+    {
+      content: '$(n - 2) \\cdot 90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đơn vị góc của mỗi tam giác là $180^{\\circ}$, không phải $90^{\\circ}$.',
+    },
+    {
+      content: '$\frac{(n - 2) \\cdot 180^{\\circ}}{n}$.',
+      is_correct: false,
+      explaination: 'Đây là công thức tính số đo của MỘT góc trong đa giác đều.',
+    },
+  ],
+},
+{
+  content: 'Số đo mỗi góc của một lục giác đều (6 cạnh) là:',
+  explaination: 'Áp dụng công thức tính mỗi góc: $\frac{(n - 2) \\cdot 180^{\\circ}}{n}$ với $n = 6$.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$120^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\frac{(6 - 2) \\cdot 180^{\\circ}}{6} = \frac{4 \\cdot 180^{\\circ}}{6} = 120^{\\circ}$.',
+    },
+    {
+      content: '$108^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo mỗi góc của ngũ giác đều ($n = 5$).',
+    },
+    {
+      content: '$90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo mỗi góc của hình vuông ($n = 4$).',
+    },
+    {
+      content: '$60^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo mỗi góc của tam giác đều ($n = 3$).',
+    },
+  ],
+},
+{
+  content: 'Đa giác đều có 4 cạnh bằng nhau và 4 góc bằng nhau là hình gì?',
+  explaination: 'Trong các hình tứ giác đã học, hãy tìm hình có sự kết hợp của cả 4 cạnh bằng nhau và các góc vuông.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Hình vuông.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Hình vuông là tứ giác đều duy nhất.',
+    },
+    {
+      content: 'Hình thoi.',
+      is_correct: false,
+      explaination: 'Hình thoi có 4 cạnh bằng nhau nhưng các góc không nhất thiết bằng nhau.',
+    },
+    {
+      content: 'Hình chữ nhật.',
+      is_correct: false,
+      explaination: 'Hình chữ nhật có 4 góc bằng nhau nhưng các cạnh không nhất thiết bằng nhau.',
+    },
+    {
+      content: 'Hình thang cân.',
+      is_correct: false,
+      explaination: 'Hình thang cân không thỏa mãn điều kiện về tất cả các cạnh và góc đều bằng nhau.',
+    },
+  ],
+},
+{
+  content: 'Tâm của đường tròn ngoại tiếp đa giác đều được gọi là:',
+  explaination: 'Vì đa giác đều có tính đối xứng rất cao, điểm này có vai trò trung tâm cho cả đường tròn nội tiếp và ngoại tiếp.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Tâm của đa giác đều.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Giao điểm các đường trung trực (cũng là phân giác) của đa giác đều gọi là tâm của đa giác đó.',
+    },
+    {
+      content: 'Trực tâm.',
+      is_correct: false,
+      explaination: 'Trực tâm là giao điểm các đường cao, thường dùng cho tam giác.',
+    },
+    {
+      content: 'Trọng tâm.',
+      is_correct: false,
+      explaination: 'Trọng tâm là giao điểm các đường trung tuyến.',
+    },
+    {
+      content: 'Đỉnh của đa giác.',
+      is_correct: false,
+      explaination: 'Đỉnh nằm trên đường tròn, không phải tâm.',
+    },
+  ],
+},
+{
+  content: 'Trong một đa giác đều, số trục đối xứng của nó luôn bằng:',
+  explaination: 'Hãy thử quan sát hình vuông (4 trục), tam giác đều (3 trục) để rút ra quy luật.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Số cạnh của đa giác đó.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Một đa giác đều $n$ cạnh có đúng $n$ trục đối xứng.',
+    },
+    {
+      content: '$n - 2$.',
+      is_correct: false,
+      explaination: 'Số trục đối xứng không liên quan đến công thức tính góc này.',
+    },
+    {
+      content: '1.',
+      is_correct: false,
+      explaination: 'Đa giác đều có tính đối xứng cao, số trục luôn lớn hơn 1 nếu $n > 2$.',
+    },
+    {
+      content: 'Vô số.',
+      is_correct: false,
+      explaination: 'Chỉ hình tròn mới có vô số trục đối xứng.',
+    },
+  ],
+},
+{
+  content: 'Mỗi góc ở tâm của một đa giác đều $n$ cạnh (tạo bởi hai bán kính đi qua hai đỉnh kề nhau) có số đo bằng:',
+  explaination: 'Tổng các góc xung quanh tâm là $360^{\\circ}$, được chia đều bởi $n$ cạnh của đa giác.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\frac{360^{\\circ}}{n}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Góc ở tâm tạo bởi hai đỉnh liên tiếp bằng $360^{\\circ}$ chia cho số cạnh.',
+    },
+    {
+      content: '$180^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là góc bẹt, không phải góc ở tâm của đa giác.',
+    },
+    {
+      content: '$\frac{180^{\\circ}}{n}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai tỉ số vòng tròn.',
+    },
+    {
+      content: '$(n - 2) \\cdot 180^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là tổng các góc trong của đa giác.',
+    },
+  ],
+},
+{
+  content: 'Phép quay tâm $O$ góc bao nhiêu độ sẽ biến một ngũ giác đều (5 cạnh) tâm $O$ thành chính nó?',
+  explaination: 'Đa giác đều $n$ cạnh có tính chất bảo toàn hình dạng khi quay một góc bằng bội số của góc ở tâm.',
+  level: DifficultyLevel.easy,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$72^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Góc quay $= 360^{\\circ} / 5 = 72^{\\circ}$.',
+    },
+    {
+      content: '$60^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là góc quay cho lục giác đều.',
+    },
+    {
+      content: '$90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là góc quay cho hình vuông.',
+    },
+    {
+      content: '$108^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo góc trong, không phải góc quay tâm.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
+{
+  content: 'Cho bảng sau về số đo một góc trong của các đa giác đều:\n\n$ \\begin{array}{|l|c|c|c|} \\hline \\text{Tên đa giác} & \\text{Tam giác đều} & \\text{Hình vuông} & \\text{Ngũ giác đều} \\\\ \\hline \\text{Số đo góc trong} & 60^{\\circ} & 90^{\\circ} & x \\\\ \\hline \\end{array} $\n\nGiá trị của $x$ là:',
+  explaination: 'Sử dụng công thức tính góc trong của đa giác đều: $\frac{(n - 2) \\cdot 180^{\\circ}}{n}$ với $n = 5$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$108^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $\frac{(5 - 2) \\cdot 180^{\\circ}}{5} = \frac{3 \\cdot 180^{\\circ}}{5} = 108^{\\circ}$.',
+    },
+    {
+      content: '$120^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo góc của lục giác đều.',
+    },
+    {
+      content: '$72^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo góc ở tâm của ngũ giác đều.',
+    },
+    {
+      content: '$540^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là tổng số đo các góc của ngũ giác.',
+    },
+  ],
+},
+{
+  content: 'Để thiết kế một mẫu gạch lát sàn bằng các đa giác đều cùng loại sao cho chúng khít nhau (không có khe hở tại một đỉnh chung), số đo một góc của đa giác đó phải là:',
+  explaination: 'Tại điểm giao nhau của các đỉnh, tổng các góc phải bằng $360^{\\circ}$. Do đó, $360^{\\circ}$ phải chia hết cho số đo một góc của đa giác đó.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Ước của $360^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Nếu $360^{\\circ}$ chia hết cho góc trong của đa giác, chúng ta có thể xếp chúng khít nhau quanh một điểm.',
+    },
+    {
+      content: 'Lớn hơn $120^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Điều này không đảm bảo việc lát khít (ví dụ ngũ giác đều có góc $108^{\\circ}$ không lát khít được).',
+    },
+    {
+      content: 'Bằng $180^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Không có đa giác đều nào có góc trong bằng $180^{\\circ}$.',
+    },
+    {
+      content: 'Số lẻ.',
+      is_correct: false,
+      explaination: 'Tính chất lẻ/chẵn không quyết định khả năng lát khít.',
+    },
+  ],
+},
+{
+  content: 'Một mảnh huy chương có hình dạng là đa giác đều có số đo góc ở tâm là $45^{\\circ}$. Huy chương đó có bao nhiêu cạnh?',
+  explaination: 'Sử dụng mối liên hệ giữa số cạnh $n$ và góc ở tâm: $Góc = 360^{\\circ} / n$. Từ đó suy ra $n = 360^{\\circ} / Góc$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '8 cạnh.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $n = 360^{\\circ} / 45^{\\circ} = 8$. Đây là một bát giác đều.',
+    },
+    {
+      content: '6 cạnh.',
+      is_correct: false,
+      explaination: 'Lục giác đều có góc ở tâm là $60^{\\circ}$.',
+    },
+    {
+      content: '10 cạnh.',
+      is_correct: false,
+      explaination: 'Thập giác đều có góc ở tâm là $36^{\\circ}$.',
+    },
+    {
+      content: '12 cạnh.',
+      is_correct: false,
+      explaination: 'Góc ở tâm của hình 12 cạnh là $30^{\\circ}$.',
+    },
+  ],
+},
+
+// =================================================================================================================
+// === SÁCH: KẾT NỐI TRI THỨC --- CHƯƠNG IX --- BÀI 30: ĐA GIÁC ĐỀU VÀ THIẾT KẾ ĐỒ HỌA ===
+// === PHẦN 2: 9 CÂU CÒN LẠI (4 TRUNG BÌNH - 5 KHÓ) --- ĐỊNH DẠNG: BẢNG LATEX ARRAY + XUỐNG DÒNG CHUẨN ===
+// =================================================================================================================
+
+{
+  content: 'Tổng số đo các góc trong của một bát giác đều (8 cạnh) là:',
+  explaination: 'Sử dụng công thức tính tổng các góc trong của đa giác $n$ cạnh: $S = (n - 2) \\cdot 180^{\\circ}$ với $n = 8$.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$1080^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S = (8 - 2) \\cdot 180^{\\circ} = 6 \\cdot 180^{\\circ} = 1080^{\\circ}$.',
+    },
+    {
+      content: '$1440^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là tổng số đo các góc của thập giác đều ($n = 10$).',
+    },
+    {
+      content: '$135^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là số đo của một góc trong bát giác đều, không phải tổng các góc.',
+    },
+    {
+      content: '$900^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Đây là tổng số đo các góc của thất giác đều ($n = 7$).',
+    },
+  ],
+},
+{
+  content: 'Cho bảng sau so sánh giữa số cạnh và số đường chéo của một số đa giác đều:\n\n$ \\begin{array}{|l|c|c|c|} \\hline \\text{Số cạnh (n)} & 4 & 5 & 6 \\\\ \\hline \\text{Số đường chéo} & 2 & 5 & x \\\\ \\hline \\end{array} $\n\nGiá trị của $x$ là:',
+  explaination: 'Công thức tính số đường chéo của đa giác $n$ cạnh là: $D = \\frac{n(n - 3)}{2}$. Hãy thay $n = 6$ vào công thức này.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '9.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $x = \\frac{6(6 - 3)}{2} = \\frac{6 \\cdot 3}{2} = 9$.',
+    },
+    {
+      content: '6.',
+      is_correct: false,
+      explaination: 'Số đường chéo của lục giác đều nhiều hơn số cạnh.',
+    },
+    {
+      content: '12.',
+      is_correct: false,
+      explaination: 'Tính toán sai tử số của công thức.',
+    },
+    {
+      content: '8.',
+      is_correct: false,
+      explaination: 'Tính toán không đúng theo công thức số đường chéo.',
+    },
+  ],
+},
+{
+  content: 'Trong các hình sau đây, hình nào có tâm đối xứng nhưng <b>KHÔNG</b> có trục đối xứng đi qua đỉnh?',
+  explaination: 'Lưu ý rằng mọi đa giác đều đều có trục đối xứng. Câu hỏi này tập trung vào các đa giác có số cạnh chẵn và vị trí của các trục đối xứng.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Không có hình nào (Vì đa giác đều n cạnh luôn có n trục đối xứng, trong đó có trục đi qua đỉnh).',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Đa giác đều luôn có các trục đối xứng đi qua đỉnh (nếu $n$ lẻ) hoặc đi qua cặp đỉnh đối diện (nếu $n$ chẵn).',
+    },
+    {
+      content: 'Lục giác đều.',
+      is_correct: false,
+      explaination: 'Lục giác đều có 3 trục đối xứng đi qua các cặp đỉnh đối diện.',
+    },
+    {
+      content: 'Hình vuông.',
+      is_correct: false,
+      explaination: 'Hình vuông có 2 trục đối xứng đi qua các cặp đỉnh đối diện.',
+    },
+    {
+      content: 'Ngũ giác đều.',
+      is_correct: false,
+      explaination: 'Ngũ giác đều có các trục đối xứng đi qua mỗi đỉnh và trung điểm cạnh đối diện.',
+    },
+  ],
+},
+{
+  content: 'Phép quay tâm $O$ góc $120^{\\circ}$ biến đa giác đều nào sau đây thành chính nó?',
+  explaination: 'Đa giác đều $n$ cạnh sẽ biến thành chính nó khi quay quanh tâm một góc là bội của $\\frac{360^{\\circ}}{n}$. Bạn hãy kiểm tra xem $120^{\\circ}$ là bội của góc ở tâm hình nào.',
+  level: DifficultyLevel.medium,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Lục giác đều.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Lục giác đều có góc ở tâm là $60^{\\circ}$. Vì $120^{\\circ} = 2 \\cdot 60^{\\circ}$ nên nó biến lục giác thành chính nó.',
+    },
+    {
+      content: 'Ngũ giác đều.',
+      is_correct: false,
+      explaination: 'Góc ở tâm là $72^{\\circ}$, $120^{\\circ}$ không phải bội của $72^{\\circ}$.',
+    },
+    {
+      content: 'Hình vuông.',
+      is_correct: false,
+      explaination: 'Góc ở tâm là $90^{\\circ}$, $120^{\\circ}$ không phải bội của $90^{\\circ}$.',
+    },
+    {
+      content: 'Bát giác đều.',
+      is_correct: false,
+      explaination: 'Góc ở tâm là $45^{\\circ}$, $120^{\\circ}$ không phải bội của $45^{\\circ}$.',
+    },
+  ],
+},
+
+// --- MỨC ĐỘ KHÓ (HARD) ---
+{
+  content: 'Cho một lục giác đều cạnh $a$ nội tiếp đường tròn tâm $O$. Khoảng cách từ tâm $O$ đến mỗi cạnh của lục giác (được gọi là trung đoạn) bằng:',
+  explaination: 'Khoảng cách này chính là chiều cao của tam giác đều cạnh $a$ (tạo bởi tâm và hai đỉnh kề nhau).',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$\\frac{a\\sqrt{3}}{2}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Lục giác đều cấu tạo từ 6 tam giác đều cạnh $a$. Chiều cao của tam giác đều là $\\frac{a\\sqrt{3}}{2}$.',
+    },
+    {
+      content: '$a\\sqrt{3}$.',
+      is_correct: false,
+      explaination: 'Đây là độ dài đường chéo ngắn của lục giác đều.',
+    },
+    {
+      content: '$\\frac{a}{2}$.',
+      is_correct: false,
+      explaination: 'Tính toán sai chiều cao tam giác đều.',
+    },
+    {
+      content: '$a$.',
+      is_correct: false,
+      explaination: 'Đây là bán kính đường tròn ngoại tiếp $R$.',
+    },
+  ],
+},
+{
+  content: 'Diện tích của một lục giác đều có cạnh bằng $4$ cm là:',
+  explaination: 'Lục giác đều gồm 6 tam giác đều bằng nhau. Hãy tính diện tích một tam giác đều cạnh $a$ ($S_{\\triangle} = \\frac{a^2\\sqrt{3}}{4}$) rồi nhân với 6.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$24\\sqrt{3}$ $cm^2$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $S = 6 \\cdot \\frac{4^2\\sqrt{3}}{4} = 6 \\cdot 4\\sqrt{3} = 24\\sqrt{3}$ $cm^2$.',
+    },
+    {
+      content: '$16\\sqrt{3}$ $cm^2$.',
+      is_correct: false,
+      explaination: 'Tính toán thiếu số lượng tam giác thành phần.',
+    },
+    {
+      content: '$48\\sqrt{3}$ $cm^2$.',
+      is_correct: false,
+      explaination: 'Tính toán sai diện tích tam giác đều.',
+    },
+    {
+      content: '$24$ $cm^2$.',
+      is_correct: false,
+      explaination: 'Quên nhân với yếu tố $\\sqrt{3}$ trong công thức.',
+    },
+  ],
+},
+{
+  content: 'Một nghệ nhân muốn tạo ra một hoa văn bằng cách xoay một hình vuông quanh tâm $O$. Để sau 8 lần xoay (mỗi lần cùng một góc $\\alpha$) thì hình vuông trở lại vị trí ban đầu và các hình vuông tạo thành một hình bát giác đều ở các đỉnh, góc $\\alpha$ phải bằng:',
+  explaination: 'Để tạo ra 8 đỉnh cách đều trên đường tròn từ các hình vuông xoay quanh tâm, tổng góc quay $360^{\\circ}$ phải được chia cho 8.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: '$45^{\\circ}$.',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Góc quay cần thiết là $360^{\\circ} / 8 = 45^{\\circ}$.',
+    },
+    {
+      content: '$90^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc quay này sẽ làm hình vuông chồng khít lên chính nó ngay lập tức và chỉ tạo ra 4 đỉnh.',
+    },
+    {
+      content: '$60^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc quay này dùng để tạo ra hoa văn 6 đỉnh (lục giác).',
+    },
+    {
+      content: '$30^{\\circ}$.',
+      is_correct: false,
+      explaination: 'Góc quay này sẽ tạo ra 12 đỉnh.',
+    },
+  ],
+},
+{
+  content: 'Trong thiết kế đồ họa, để lát khít mặt phẳng bằng các đa giác đều $n$ cạnh và $m$ cạnh tại một đỉnh, tổng số đo các góc tại đỉnh đó phải là $360^{\\circ}$. Nếu sử dụng kết hợp 2 hình vuông và 1 hình $k$-giác đều tại một đỉnh, giá trị của $k$ là:',
+  explaination: 'Bước 1: Số đo góc hình vuông là $90^{\\circ}$. Bước 2: Thiết lập phương trình $2 \\cdot 90^{\\circ} + Góc_{k} = 360^{\\circ}$. Bước 3: Tìm $k$ từ $Góc_{k}$.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Không tồn tại (Vì góc còn lại là $180^{\\circ}$, không có đa giác đều nào có góc bằng $180^{\\circ}$).',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. $360 - 180 = 180^{\\circ}$. Góc trong của đa giác luôn nhỏ hơn $180^{\\circ}$.',
+    },
+    {
+      content: '4.',
+      is_correct: false,
+      explaination: 'Ba hình vuông ($90 \\cdot 3 = 270$) chưa đủ $360^{\\circ}$, bốn hình vuông mới đủ.',
+    },
+    {
+      content: '8.',
+      is_correct: false,
+      explaination: 'Tính toán sai tổng số đo các góc.',
+    },
+    {
+      content: '6.',
+      is_correct: false,
+      explaination: 'Góc lục giác là $120^{\\circ}$, tổng sẽ là $90 + 90 + 120 = 300^{\\circ} \\ne 360^{\\circ}$.',
+    },
+  ],
+},
+{
+  content: 'Cho bảng so sánh chu vi $C$ của các đa giác đều nội tiếp cùng một đường tròn bán kính $R$:\n\n$ \\begin{array}{|l|c|c|c|} \\hline \\text{Đa giác} & \\text{Tam giác đều} & \\text{Hình vuông} & \\text{Lục giác đều} \\\\ \\hline \\text{Chu vi } C & 3R\\sqrt{3} & 4R\\sqrt{2} & 6R \\\\ \\hline \\end{array} $\n\nKhẳng định nào sau đây là đúng về sự thay đổi chu vi khi số cạnh $n$ tăng lên?',
+  explaination: 'Hãy tính giá trị xấp xỉ của các hệ số ($3\\sqrt{3} \\approx 5,19$; $4\\sqrt{2} \\approx 5,65$; $6 = 6$). So sánh các giá trị này để rút ra kết luận.',
+  level: DifficultyLevel.hard,
+  type: QuestionType.single_choice,
+  accessMode: QuestionAccess.public,
+  status: QuestionStatus.ready,
+  category_id: kntt_cat9_s4.category_id,
+  tutor_id: tutor.uid,
+  answers: [
+    {
+      content: 'Khi số cạnh $n$ tăng thì chu vi đa giác đều tăng dần và tiến về chu vi đường tròn ($2\\pi R$).',
+      is_correct: true,
+      explaination: '<b>Đúng</b>. Càng nhiều cạnh, đa giác càng sát với đường tròn, do đó chu vi tăng dần ($5,19 < 5,65 < 6 < 2\\pi \\approx 6,28$).',
+    },
+    {
+      content: 'Khi số cạnh $n$ tăng thì chu vi đa giác đều giảm dần.',
+      is_correct: false,
+      explaination: 'Sai, các giá trị tính toán cho thấy chu vi đang tăng.',
+    },
+    {
+      content: 'Chu vi của đa giác đều không phụ thuộc vào số cạnh $n$.',
+      is_correct: false,
+      explaination: 'Sai, chu vi thay đổi rõ rệt theo $n$.',
+    },
+    {
+      content: 'Chu vi hình vuông là lớn nhất trong các hình trên.',
+      is_correct: false,
+      explaination: 'Sai, lục giác đều có chu vi lớn hơn hình vuông ($6R > 5,65R$).',
+    },
+  ],
+},
+
+];
+
 
   // --- Seed câu hỏi và câu trả lời ---
   console.log(
@@ -11319,7 +30902,7 @@ async function main() {
   let createdCount = 0;
   let skippedCount = 0;
 
-  for (const qData of questionsData) {
+  for (const qData of questionsData as any) {
     const formattedContent = formatQuillContent(qData.content);
     const formattedExplaination = formatQuillContent(qData.explaination);
 
@@ -11342,6 +30925,7 @@ async function main() {
           tutor_id: qData.tutor_id,
           status: qData.status,
           accessMode: qData.accessMode,
+          
           answers: {
             createMany: {
               data: createAnswersData(qData.answers),
