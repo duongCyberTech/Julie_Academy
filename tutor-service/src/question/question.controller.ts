@@ -59,7 +59,6 @@ export class BookController {
     }
 
     @Get()
-    @Roles('admin')
     getAllLessonPlan(@Request() req){
         const user = req.user
         return this.bookService.getAllPlans(user.userId, user.role);
