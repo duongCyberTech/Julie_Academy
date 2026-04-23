@@ -1,0 +1,19 @@
+# Bỏ qua môi trường ảo (CỰC KỲ QUAN TRỌNG)
+venv/
+.venv/
+venv_win/
+
+# Bỏ qua các file rác của Python
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Bỏ qua dữ liệu local và log
+*.log
+.git/
+.vscode/
+.env
+
+# Bỏ qua JDBC drivers nếu bạn đã dùng lệnh COPY riêng hoặc không muốn nặng build context
+# jdbc-driver/
