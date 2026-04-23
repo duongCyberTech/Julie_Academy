@@ -132,11 +132,6 @@ const Header = React.memo(function Header({
         path: "/settings",
         icon: <SettingsOutlinedIcon fontSize="small" />,
       },
-      {
-        text: "Ngôn ngữ",
-        path: "/language",
-        icon: <LanguageIcon fontSize="small" />,
-      },
     ];
   }, [userInfo]);
 

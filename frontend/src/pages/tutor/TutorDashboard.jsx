@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect, useCallback, useMemo } from "react";
 import { useTheme, alpha, styled } from "@mui/material/styles";
 import {
-  Grid, Box, Typography, Card, CardContent, Stack, Avatar, List, ListItem, ListItemText, ListItemAvatar, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, CircularProgress, TextField, InputAdornment, Tooltip, IconButton, Paper
+  Grid, Box, Typography, Card, CardContent, Stack, Avatar, List, ListItem, Tooltip, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, CircularProgress, TextField, InputAdornment, Fade
 } from "@mui/material";
 
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
@@ -53,16 +53,32 @@ const DashboardWidget = styled(Card)(({ theme }) => {
   };
 });
 
-const KpiCardWidget = memo(({ title, value, icon, color = "primary" }) => {
+const KpiCardWidget = memo(({ title, subtitle, value, subValue, icon, color = "primary" }) => {
   const theme = useTheme();
   return (
     <DashboardWidget>
-      <CardContent sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+      <CardContent sx={{ p: 2.5, flexGrow: 1, display: 'flex', alignItems: 'center', '&:last-child': { pb: 2.5 } }}>
         <Stack direction="row" spacing={2} alignItems="center">
-          <Avatar sx={{ width: 60, height: 60, bgcolor: alpha(theme.palette[color].main, 0.1), color: theme.palette[color].main }}>{icon}</Avatar>
+          <Avatar sx={{ width: 48, height: 48, bgcolor: alpha(theme.palette[color].main, 0.1), color: theme.palette[color].main }}>{icon}</Avatar>
           <Box>
-            <Typography variant="h4" component="div" fontWeight={700} color="text.primary">{value || 0}</Typography>
-            <Typography variant="body2" color="text.secondary" fontWeight={600} textTransform="uppercase">{title}</Typography>
+            <Stack direction="row" alignItems="baseline" spacing={0.5}>
+              <Typography variant="h5" component="div" fontWeight={700} color="text.primary">
+                {value !== undefined ? value : 0}
+              </Typography>
+              {subValue !== undefined && (
+                <Typography variant="subtitle1" color="text.secondary" fontWeight={600}>
+                  / {subValue}
+                </Typography>
+              )}
+            </Stack>
+            <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase" sx={{ mt: 0.25, display: 'block' }}>
+              {title}
+            </Typography>
+            {subtitle && (
+              <Typography variant="caption" color={alpha(theme.palette.text.secondary, 0.7)} fontWeight={600} sx={{ display: 'block', mt: -0.25 }}>
+                {subtitle}
+              </Typography>
+            )}
           </Box>
         </Stack>
       </CardContent>
@@ -86,8 +102,8 @@ const StudentsToWatchWidget = memo(({ students = [], loading, onApplyFilter }) =
     return () => clearTimeout(handler);
   }, [localScore, localMissed, onApplyFilter]);
 
-  const handleScoreChange = (e) => setLocalScore(e.target.value);
-  const handleMissedChange = (e) => setLocalMissed(e.target.value);
+  const handleScoreChange = useCallback((e) => setLocalScore(e.target.value), []);
+  const handleMissedChange = useCallback((e) => setLocalMissed(e.target.value), []);
 
   return (
     <DashboardWidget>
@@ -98,7 +114,6 @@ const StudentsToWatchWidget = memo(({ students = [], loading, onApplyFilter }) =
                 <Typography variant="body2" color="text.secondary">Danh sách cần theo dõi sát sao</Typography>
             </Box>
             
-            {/* Đã tăng khoảng cách gap và nới rộng width của các ô TextField */}
             <Box sx={{ display: 'flex', gap: 2 }}>
                 <TextField 
                     size="small" 
@@ -232,6 +247,11 @@ const ScheduleWidget = memo(({ schedules = [], loading }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
+  const currentMinutes = useMemo(() => {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  }, []);
+
   return (
     <DashboardWidget sx={{ bgcolor: isDark ? 'transparent' : alpha(theme.palette.primary.main, 0.02) }}>
       <CardContent sx={{ p: 3, flexGrow: 1 }}>
@@ -240,28 +260,57 @@ const ScheduleWidget = memo(({ schedules = [], loading }) => {
           <Typography variant="body2" color="text.secondary">Bạn không có ca dạy nào trong hôm nay.</Typography>
         ) : (
           <Grid container spacing={3}>
-            {schedules.map((item) => (
+            {schedules.map((item) => {
+              let isPast = false;
+              if (item.rawEnd) {
+                  const [hour, min] = item.rawEnd.split(':').map(Number);
+                  if (!isNaN(hour) && !isNaN(min)) {
+                      isPast = currentMinutes > (hour * 60 + min);
+                  }
+              }
+
+              return (
               <Grid size={{ xs: 12, md: 6, lg: 4 }} key={item.id}>
-                  <Box sx={{ p: 2, bgcolor: theme.palette.background.paper, borderRadius: '12px', border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ 
+                      p: 2, 
+                      bgcolor: isPast ? alpha(theme.palette.action.disabledBackground, 0.3) : theme.palette.background.paper, 
+                      borderRadius: '12px', 
+                      border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      opacity: isPast ? 0.6 : 1,
+                      filter: isPast ? 'grayscale(100%)' : 'none',
+                      transition: 'all 0.3s ease'
+                  }}>
                     <Stack direction="row" spacing={2} alignItems="center">
-                        <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', borderRadius: '8px' }}>
+                        <Avatar sx={{ bgcolor: isPast ? 'action.disabledBackground' : alpha(theme.palette.primary.main, 0.1), color: isPast ? 'text.disabled' : 'primary.main', borderRadius: '8px' }}>
                             <CalendarTodayOutlinedIcon />
                         </Avatar>
                         <Box>
-                            <Typography variant="subtitle2" fontWeight={700}>{item.title}</Typography>
-                            <Typography variant="caption" color="text.secondary" fontWeight={600}>{item.time}</Typography>
+                            <Typography variant="subtitle2" fontWeight={700} color={isPast ? 'text.disabled' : 'text.primary'}>{item.title}</Typography>
+                            <Typography variant="caption" color={isPast ? 'text.disabled' : 'text.secondary'} fontWeight={600}>{item.time}</Typography>
                         </Box>
                     </Stack>
                     {item.link && (
-                        <Tooltip title="Vào Google Meet">
-                            <IconButton color="primary" component="a" href={item.link} target="_blank" rel="noopener noreferrer">
-                                <VideoCallOutlinedIcon />
-                            </IconButton>
+                        <Tooltip title={isPast ? "Đã kết thúc" : "Vào Google Meet"}>
+                            <span>
+                                <IconButton 
+                                    color="primary" 
+                                    component="a" 
+                                    href={item.link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    disabled={isPast}
+                                >
+                                    <VideoCallOutlinedIcon />
+                                </IconButton>
+                            </span>
                         </Tooltip>
                     )}
                   </Box>
               </Grid>
-            ))}
+            )})}
           </Grid>
         )}
       </CardContent>
@@ -288,6 +337,7 @@ function TutorDashboard() {
             id: s.schedule_id || i, 
             title: s.classname || s.className || "Lớp học", 
             time: `${s.startAt.slice(0,5)} - ${s.endAt.slice(0,5)}`, 
+            rawEnd: s.endAt,
             link: s.link_meet 
         })));
         
@@ -368,19 +418,49 @@ function TutorDashboard() {
   }, [loadOverallStats]);
 
   const kpiCardsData = useMemo(() => [
-    { id: 'students', title: "Tổng học sinh", value: stats?.numStudent, icon: <PeopleAltOutlinedIcon fontSize="large" />, color: "primary" },
-    { id: 'classes', title: "Lớp phụ trách", value: stats?.numClasses, icon: <SchoolOutlinedIcon fontSize="large" />, color: "info" },
-    { id: 'questions', title: "Câu hỏi đóng góp", value: stats?.numQuestions, icon: <QuizOutlinedIcon fontSize="large" />, color: "success" },
+    { 
+        id: 'students', 
+        title: "Học sinh", 
+        subtitle: "Đang học / Tổng",
+        value: stats?.numStudent?.ongoing, 
+        subValue: stats?.numStudent?.total, 
+        icon: <PeopleAltOutlinedIcon fontSize="medium" />, 
+        color: "primary" 
+    },
+    { 
+        id: 'classes', 
+        title: "Lớp học", 
+        subtitle: "Đang mở / Tổng",
+        value: stats?.numClasses?.ongoing, 
+        subValue: stats?.numClasses?.total, 
+        icon: <SchoolOutlinedIcon fontSize="medium" />, 
+        color: "info" 
+    },
+    { 
+        id: 'questions', 
+        title: "Câu hỏi đóng góp", 
+        subtitle: "Tổng ngân hàng đề",
+        value: stats?.numQuestions, 
+        subValue: undefined, 
+        icon: <QuizOutlinedIcon fontSize="medium" />, 
+        color: "success" 
+    },
   ], [stats]);
 
   return (
     <Fade in timeout={500}>
       <PageWrapper>
-        
         <Grid container spacing={3}>
           {kpiCardsData.map((item) => (
             <Grid size={{ xs: 12, sm: 4 }} key={item.id}>
-              <KpiCardWidget title={item.title} value={item.value} icon={item.icon} color={item.color} />
+              <KpiCardWidget 
+                  title={item.title} 
+                  subtitle={item.subtitle}
+                  value={item.value} 
+                  subValue={item.subValue}
+                  icon={item.icon} 
+                  color={item.color} 
+              />
             </Grid>
           ))}
           
@@ -395,7 +475,6 @@ function TutorDashboard() {
           <Grid size={{ xs: 12 }}>
               <ScheduleWidget schedules={schedules} loading={isStatsLoading} />
           </Grid>
-
         </Grid>
       </PageWrapper>
     </Fade>

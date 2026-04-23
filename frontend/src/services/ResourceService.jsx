@@ -31,7 +31,7 @@ export const uploadResource = async (folderId, file, data, token) => {
             {
                 headers: {
                     ...getAuthHeaders(token).headers,
-                    'Content-Type': 'multipart/form-data', 
+                    'Content-Type': undefined, 
                 },
             }
         );
@@ -73,19 +73,29 @@ export const updateResource = async (docId, data, token) => {
     }
 };
 
-export const fetchFileStreamS3 = async (did, token) => {
+// [ĐÃ SỬA] Thay thế fetchFileStreamS3 bằng API lấy Presigned URL
+export const fetchPresignedUrl = async (did, token) => {
     try {
-        const response = await apiClient.get(`/resources/view/${did}`, {
-            ...getAuthHeaders(token),
-            responseType: 'blob', // Bắt buộc phải có để hứng Binary Stream từ S3
-        });
+        // Không dùng responseType: 'blob' nữa vì Backend đã trả JSON
+        const response = await apiClient.get(`/resources/view/${did}`, getAuthHeaders(token));
+        return response.data; // Trả về { signedUrl, fileInfo }
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+export const deleteResource = async (did, token) => {
+    try {
+        const response = await apiClient.delete(`/resources/${did}`, getAuthHeaders(token));
         return response.data;
     } catch (error) {
         throw error.response?.data || error;
     }
 };
+
+
 // ==========================================
-// FOLDER APIs (Thư mục) - (GIỮ NGUYÊN)
+// FOLDER APIs (Thư mục)
 // ==========================================
 
 export const createFolder = async (classId, categoryId, folderData, token) => {

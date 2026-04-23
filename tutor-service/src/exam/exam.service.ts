@@ -219,6 +219,7 @@ export class ExamService {
                         ...etStatusCondition
                     },
                     select: {
+                        exam_id: true,
                         session_id: true,
                         limit_taken: true,
                         startAt: true,

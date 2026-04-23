@@ -99,3 +99,16 @@ export const getHistory = async (token, params) => {
         throw error;
     }
 };
+
+/**
+ * Cập nhật chỉ số tưới cây (Nước và EXP)
+ */
+export const patchAnalysisWatering = async (token, data) => {
+    try {
+        const response = await apiClient.patch('/analysis/watering', data, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi gọi API tưới cây:', error.response?.data || error.message);
+        throw error;
+    }
+};

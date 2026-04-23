@@ -154,7 +154,8 @@ const StatusChip = memo(({ status }) => {
     const config = {
         pending: { label: "Chờ mở lớp", color: "warning", icon: <PendingActionsIcon fontSize="small"/> },
         ongoing: { label: "Đang diễn ra", color: "success", icon: <PlayCircleOutlineIcon fontSize="small"/> },
-        completed: { label: "Đã kết thúc", color: "default", icon: <CheckCircleOutlineIcon fontSize="small"/> },
+        // Đã sửa "default" thành "secondary" để match với palette
+        completed: { label: "Đã kết thúc", color: "secondary", icon: <CheckCircleOutlineIcon fontSize="small"/> }, 
         cancelled: { label: "Đã hủy", color: "error", icon: <CancelOutlinedIcon fontSize="small"/> },
     };
     const { label, color, icon } = config[status] || config.pending;

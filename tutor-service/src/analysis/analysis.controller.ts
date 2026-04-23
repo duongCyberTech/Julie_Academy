@@ -9,7 +9,7 @@ import {
     UseGuards,
     Request
 } from "@nestjs/common";
-import { AdminConfigService, AnalysisService } from "./analysis.service";
+import { AdminConfigService, AnalysisService, TutorAnalysisService } from "./analysis.service";
 import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { ActionConfigDto, AnalyticsDto, LevelConfigDto } from "./dto/analysis.dto";
 import { RolesGuard } from "src/auth/guard/roles.guard";
@@ -80,5 +80,25 @@ export class AdminConfigController {
         @Body() body: Partial<ActionConfigDto>
     ) {
         return this.adminConfigService.updateActionConfig(action_id, body);
+    }
+}
+
+@Controller('analysis/tutor')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('tutor') // Phân quyền chỉ cho phép gia sư truy cập
+export class TutorAnalysisController {
+    constructor(
+        private tutorAnalysisService: TutorAnalysisService
+    ) {}
+
+    @Get('class/:class_id/exam/:exam_id/session/:session_id')
+    getExamDashboard(
+        @Request() req: any,
+        @Param('class_id') class_id: string,
+        @Param('exam_id') exam_id: string,
+        @Param('session_id', ParseIntPipe) session_id: number
+    ) {
+        const tutor_uid = req.user.userId;
+        return this.tutorAnalysisService.getExamSessionDashboard(tutor_uid, class_id, exam_id, session_id);
     }
 }
