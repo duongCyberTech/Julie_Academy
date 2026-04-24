@@ -10,7 +10,6 @@ import { Request as Req, Response as Resp } from 'express';
 import { Readable } from 'stream';
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ResourceService, FolderService } from './resource.service'
-import { GoogleDriveService } from './google/google.service'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard'
 import { RolesGuard } from 'src/auth/guard/roles.guard'
@@ -22,9 +21,7 @@ import { ExceptionResponse } from 'src/exception/Exception.exception'
 @Controller('resources')
 export class ResourceController {
     constructor(
-        private readonly resource: ResourceService,
-        private readonly drive: GoogleDriveService,
-        private readonly prisma: PrismaService
+        private readonly resource: ResourceService
     ){}
 
     @Post('/:folder_id')
