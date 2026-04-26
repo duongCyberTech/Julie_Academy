@@ -4,12 +4,13 @@ import {
     Body, Param, Query, Request, Response,
     UseGuards,
     UseInterceptors,
-    UploadedFile,
-    NotFoundException
+    UploadedFile
 } from '@nestjs/common'
 import { Request as Req, Response as Resp } from 'express';
+import { Readable } from 'stream';
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ResourceService, FolderService } from './resource.service'
+import { GoogleDriveService } from './google/google.service'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard'
 import { RolesGuard } from 'src/auth/guard/roles.guard'
@@ -22,6 +23,7 @@ import { ExceptionResponse } from 'src/exception/Exception.exception'
 export class ResourceController {
     constructor(
         private readonly resource: ResourceService,
+        private readonly drive: GoogleDriveService,
         private readonly prisma: PrismaService
     ){}
 
@@ -72,25 +74,63 @@ export class ResourceController {
         }
     }
 
-    // TỐI ƯU VIEW BẰNG S3 PRESIGNED URL
-    @Get('view/:did')
-    async viewFile(@Param('did') did: string) {
-        try {
-            // Chỉ trả về { signedUrl, fileInfo } cho Client
-            return await this.resource.getPresignedUrl(did);
-        } catch (error) {
-            throw new NotFoundException((error as Error).message);
-        }
-    }
+    // @Get('download/:file_id')
+    // async downloadFile(
+    //     @Param('file_id') file_id: string,
+    //     @Response() res: Resp
+    // ){
+    //     try {
+    //         const GGD_file = await this.prisma.resources.findUnique({
+    //             where: {did: file_id}
+    //         })
 
-    @Delete(':did')
-    async deleteDocs(
-        @Param('did') did: string
-    ){
+    //         const fileParsing = GGD_file.file_path.split("/")
+
+    //         const fileId = fileParsing[fileParsing.indexOf("d") + 1]
+
+    //         const chunk = 1024
+    //         const maxSize = GGD_file.num_pages * 1024
+    //         let curr_window = 0
+
+    //         while (curr_window + chunk - 1 <= maxSize){
+    //             const driveApiResponse = await this.drive.downloadFile(fileId, `bytes=${curr_window}-${curr_window+chunk-1}`)
+
+    //             res.status(driveApiResponse.status)
+
+    //             const driveHeaders = driveApiResponse.hearders
+
+    //             if (driveHeaders['content-type']) res.setHeader('Content-Type', driveHeaders['content-type']);
+    //             if (driveHeaders['content-length']) res.setHeader('Content-Length', driveHeaders['content-length']);
+    //             if (driveHeaders['content-range']) res.setHeader('Content-Range', driveHeaders['content-range']);
+
+    //             res.setHeader('Accept-Ranges', 'bytes');
+    //             driveApiResponse.data.pipe(res);
+    //             curr_window += chunk
+    //         }
+    //     } catch (error) {
+    //         if (error.status) {
+    //             res.status(error.status).send(error.message);
+    //         } else {
+    //             res.status(500).send('Lỗi máy chủ nội bộ khi tải file.');
+    //         }
+    //     }
+    // }
+
+    @Get('view/:did')
+    async viewFile(@Param('did') did: string, @Response() res: Resp) {
         try {
-            return await this.resource.deleteDocs(did);
+            const { s3Response, fileInfo } = await this.resource.getFileById(did);
+
+            // Thiết lập Header
+            res.setHeader('Content-Type', s3Response.ContentType || 'application/octet-stream');
+            res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileInfo.title)}"`);
+
+            // CHÚ Ý: Chuyển đổi Web Stream sang Node.js Stream để pipe
+            const stream = s3Response.Body as Readable;
+            stream.pipe(res);
+
         } catch (error) {
-            return new ExceptionResponse().returnError(error as Error);
+            res.status(404).json({ message: (error as Error).message });
         }
     }
 }
