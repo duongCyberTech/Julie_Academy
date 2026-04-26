@@ -125,9 +125,7 @@ const buildCategoryTree = (categories) => {
   };
 
   Object.values(map).forEach(node => {
-    if (node.children.length > 0) {
-      node.children.sort(sortCategories);
-    }
+    if (node.children.length > 0) node.children.sort(sortCategories);
   });
 
   chapters.sort(sortCategories);
@@ -391,8 +389,7 @@ const StudentAdaptivePage = memo(() => {
         headers: { Authorization: `Bearer ${token}` }
       });
       const flatData = res.data?.data || res.data || [];
-      const treeData = buildCategoryTree(flatData);
-      setCategoryTree(treeData);
+      setCategoryTree(buildCategoryTree(flatData));
     } catch (error) {
       setCategoryTree([]);
     } finally {

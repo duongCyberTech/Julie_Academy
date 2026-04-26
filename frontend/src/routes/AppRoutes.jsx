@@ -142,11 +142,11 @@ function AppRoutes(props) {
             <Route path="adaptive" element={<StudentAdaptivePage />} />
             <Route path="adaptive/take/:categoryId" element={<StudentAdaptiveSessionPage />} />
             <Route
-              path="adaptive/result/:resultId"
+              path="adaptive/result/:etId"
               element={<StudentAdaptiveResultPage />}
             />
             <Route
-              path="adaptive/review/:reviewId"
+              path="adaptive/review/:etId"
               element={<StudentAdaptiveReviewPage />}
             />
 
