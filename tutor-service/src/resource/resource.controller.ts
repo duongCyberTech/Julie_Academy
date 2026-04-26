@@ -10,7 +10,6 @@ import { Request as Req, Response as Resp } from 'express';
 import { Readable } from 'stream';
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ResourceService, FolderService } from './resource.service'
-import { GoogleDriveService } from './google/google.service'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard'
 import { RolesGuard } from 'src/auth/guard/roles.guard'
@@ -22,9 +21,7 @@ import { ExceptionResponse } from 'src/exception/Exception.exception'
 @Controller('resources')
 export class ResourceController {
     constructor(
-        private readonly resource: ResourceService,
-        private readonly drive: GoogleDriveService,
-        private readonly prisma: PrismaService
+        private readonly resource: ResourceService
     ){}
 
     @Post('/:folder_id')
@@ -73,48 +70,6 @@ export class ResourceController {
             return new ExceptionResponse().returnError(error as Error)
         }
     }
-
-    // @Get('download/:file_id')
-    // async downloadFile(
-    //     @Param('file_id') file_id: string,
-    //     @Response() res: Resp
-    // ){
-    //     try {
-    //         const GGD_file = await this.prisma.resources.findUnique({
-    //             where: {did: file_id}
-    //         })
-
-    //         const fileParsing = GGD_file.file_path.split("/")
-
-    //         const fileId = fileParsing[fileParsing.indexOf("d") + 1]
-
-    //         const chunk = 1024
-    //         const maxSize = GGD_file.num_pages * 1024
-    //         let curr_window = 0
-
-    //         while (curr_window + chunk - 1 <= maxSize){
-    //             const driveApiResponse = await this.drive.downloadFile(fileId, `bytes=${curr_window}-${curr_window+chunk-1}`)
-
-    //             res.status(driveApiResponse.status)
-
-    //             const driveHeaders = driveApiResponse.hearders
-
-    //             if (driveHeaders['content-type']) res.setHeader('Content-Type', driveHeaders['content-type']);
-    //             if (driveHeaders['content-length']) res.setHeader('Content-Length', driveHeaders['content-length']);
-    //             if (driveHeaders['content-range']) res.setHeader('Content-Range', driveHeaders['content-range']);
-
-    //             res.setHeader('Accept-Ranges', 'bytes');
-    //             driveApiResponse.data.pipe(res);
-    //             curr_window += chunk
-    //         }
-    //     } catch (error) {
-    //         if (error.status) {
-    //             res.status(error.status).send(error.message);
-    //         } else {
-    //             res.status(500).send('Lỗi máy chủ nội bộ khi tải file.');
-    //         }
-    //     }
-    // }
 
     @Get('view/:did')
     async viewFile(@Param('did') did: string, @Response() res: Resp) {
