@@ -11,88 +11,123 @@ import {
   CircularProgress,
   LinearProgress,
 } from "@mui/material";
-import { io } from "socket.io-client";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CloudDownloadIcon from "@mui/icons-material/CloudDownload";
 import CloseIcon from "@mui/icons-material/Close";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+// Import Handlers (Assuming these are in your /handlers folder)
+import ImageHandler from "./handlers/ImageHandler";
+import PdfHandler from "./handlers/PdfHandler";
+import VideoHandler from "./handlers/VideoHandler";
+import DefaultHandler from "./handlers/DefaultHandler";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000"; // Update port if needed
 
 const FilePreviewDialog = ({ open, onClose, fileData }) => {
-  // --- 1. KHAI BÁO HOOKS (Luôn chạy, không được chặn bởi IF) ---
   const [progress, setProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [blobUrl, setBlobUrl] = useState(null);
   const [error, setError] = useState(null);
   
   const chunksRef = useRef([]);
-  const socketRef = useRef(null);
+  const abortControllerRef = useRef(null); // Replaces socketRef
 
   useEffect(() => {
-    // Chỉ chạy logic khi Dialog mở VÀ có fileData hợp lệ
     if (open && fileData?.did) {
-      startStreaming();
+      fetchAndStreamFile();
     }
 
+    // Cleanup function when dialog closes
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      // 1. Cancel the HTTP request if it's still running
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      // 2. Prevent memory leaks by revoking the blob URL
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+      // 3. Reset states
       chunksRef.current = [];
       setProgress(0);
       setIsDownloading(false);
       setError(null);
+      setBlobUrl(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, fileData]);
 
-  // --- 2. LOGIC HÀM ---
-  const startStreaming = () => {
-    // Double check để an toàn
+  const fetchAndStreamFile = async () => {
     if (!fileData) return;
 
     setIsDownloading(true);
     setProgress(0);
     setError(null);
     chunksRef.current = [];
+    
+    // Create a new AbortController for this request
+    abortControllerRef.current = new AbortController();
 
-    socketRef.current = io(SOCKET_URL);
-    const socket = socketRef.current;
+    try {
+      const response = await fetch(`${API_URL}/resources/view/${fileData.did}`, {
+        method: "GET",
+        signal: abortControllerRef.current.signal, // Attach the abort signal
+        headers: {
+          // If your API requires auth, uncomment and add your token here:
+          "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
+      });
 
-    socket.on("connect", () => {
-      console.log("🔌 Connected to socket, requesting file:", fileData.did);
-      socket.emit("START_DOWNLOAD", { docsId: fileData.did, startByte: 0 });
-    });
-
-    socket.on("CHUNK", (payload) => {
-      try {
-        const binaryString = window.atob(payload.data);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
-        chunksRef.current.push(bytes);
-        setProgress(payload.progress);
-      } catch (err) {
-        console.error("Error processing chunk", err);
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
       }
-    });
 
-    socket.on("COMPLETE", () => {
-      setIsDownloading(false);
+      // Try to get total file size for accurate progress bar
+      // Note: Backend must expose 'Content-Length' header for this to work perfectly.
+      const contentLength = response.headers.get("content-length");
+      const totalSize = contentLength ? parseInt(contentLength, 10) : 0;
+      let loadedSize = 0;
+
+      const reader = response.body.getReader();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+
+        // Push the raw chunk (Uint8Array) directly to our array
+        chunksRef.current.push(value);
+        loadedSize += value.length;
+
+        // Calculate progress if we know the total size
+        if (totalSize > 0) {
+          const currentProgress = Math.round((loadedSize / totalSize) * 100);
+          setProgress(currentProgress);
+        } else {
+          // Fallback if backend doesn't send Content-Length (indeterminate state)
+          // We keep it at 0 or a fake looping number, Material UI CircularProgress handles 0 well.
+          setProgress(0); 
+        }
+      }
+
+      // Streaming is complete, create the blob
+      const blob = new Blob(chunksRef.current, { type: fileData.file_type || response.headers.get("content-type") });
+      const url = URL.createObjectURL(blob);
+      
       setProgress(100);
-      try {
-        const blob = new Blob(chunksRef.current, { type: fileData.file_type });
-        const url = URL.createObjectURL(blob);
-        setBlobUrl(url);
-      } catch (err) {
-        setError("Lỗi tạo file preview.");
-      }
-    });
+      setBlobUrl(url);
 
-    socket.on("ERROR", (err) => {
-      console.error("Socket error:", err);
-      setError(err.message || "Lỗi tải file từ server");
+    } catch (err) {
+      // Ignore Abort errors (caused by user closing the modal)
+      if (err.name === "AbortError") {
+        console.log("Download cancelled by user.");
+      } else {
+        console.error("Fetch stream error:", err);
+        setError(err.message || "Lỗi tải file từ server");
+      }
+    } finally {
       setIsDownloading(false);
-    });
+    }
   };
 
   const handleDownloadToDisk = () => {
@@ -105,11 +140,29 @@ const FilePreviewDialog = ({ open, onClose, fileData }) => {
     document.body.removeChild(link);
   };
 
-  // --- 3. GUARD CLAUSE (Bây giờ mới được dùng IF) ---
-  // Đặt ở đây là an toàn vì tất cả Hooks bên trên đã chạy xong.
+  // --- RENDERING STRATEGY ---
+  const renderFileViewer = () => {
+    if (!blobUrl) return null;
+
+    const mimeType = fileData?.file_type?.toLowerCase() || "";
+
+    if (mimeType.includes("image")) {
+      return <ImageHandler url={blobUrl} title={fileData.title} />;
+    }
+    
+    if (mimeType.includes("video")) {
+      return <VideoHandler url={blobUrl} title={fileData.title} />;
+    }
+
+    if (mimeType.includes("pdf")) {
+      return <PdfHandler url={blobUrl} title={fileData.title} />;
+    }
+
+    return <DefaultHandler />;
+  };
+
   if (!fileData) return null;
 
-  // --- 4. RENDER UI ---
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" keepMounted={false}>
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -125,13 +178,19 @@ const FilePreviewDialog = ({ open, onClose, fileData }) => {
       </DialogTitle>
 
       <DialogContent dividers sx={{ height: "70vh", p: 0, display: "flex", flexDirection: "column", bgcolor: "#f5f5f5", position: "relative" }}>
+        
         {isDownloading && (
           <Box sx={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", zIndex: 10 }}>
-            <CircularProgress variant="determinate" value={progress} size={60} />
-            <Typography mt={2}>Đang tải dữ liệu... {Math.round(progress)}%</Typography>
-            <Box sx={{ width: "50%", mx: "auto", mt: 2 }}>
-              <LinearProgress variant="determinate" value={progress} />
-            </Box>
+            {/* If progress is 0 (missing content-length), switch to indeterminate spinner */}
+            <CircularProgress variant={progress > 0 ? "determinate" : "indeterminate"} value={progress} size={60} />
+            <Typography mt={2}>
+              Đang tải dữ liệu... {progress > 0 ? `${progress}%` : "(Đang xử lý)"}
+            </Typography>
+            {progress > 0 && (
+              <Box sx={{ width: "50%", mx: "auto", mt: 2 }}>
+                <LinearProgress variant="determinate" value={progress} />
+              </Box>
+            )}
           </Box>
         )}
 
@@ -143,22 +202,13 @@ const FilePreviewDialog = ({ open, onClose, fileData }) => {
 
         {!isDownloading && !error && blobUrl && (
           <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center", overflow: "hidden", bgcolor: "#eee", height: "100%" }}>
-            {fileData.file_type?.includes("image") ? (
-              <img src={blobUrl} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} alt="preview" />
-            ) : fileData.file_type?.includes("pdf") ? (
-              <iframe src={blobUrl} width="100%" height="100%" style={{ border: "none" }} title="pdf-preview" />
-            ) : (
-              <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
-                <Typography>Không hỗ trợ xem trước định dạng này.</Typography>
-                <Typography variant="caption">Vui lòng tải về máy.</Typography>
-              </Box>
-            )}
+            {renderFileViewer()}
           </Box>
         )}
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        {(!isDownloading && blobUrl) && (
+        {!isDownloading && blobUrl && (
           <Button variant="contained" startIcon={<CloudDownloadIcon />} onClick={handleDownloadToDisk}>
             Tải về máy
           </Button>

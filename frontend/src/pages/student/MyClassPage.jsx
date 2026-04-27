@@ -56,7 +56,6 @@ const HeaderBar = styled(Box)(({ theme }) => ({
   flexShrink: 0,
 }));
 
-// Tối ưu hóa UI: Card trở thành nút bấm
 const StyledClassCard = styled(Card, {
   shouldForwardProp: (prop) => prop !== 'isClickable',
 })(({ theme, isClickable }) => {
@@ -97,6 +96,17 @@ const formatSchedule = (scheduleData) => {
 
       return `${dayStr} ${timeStr}`.trim();
   }).join(', ');
+};
+
+// Cấu hình trạng thái hiển thị của lớp học
+const getClassStatusConfig = (status) => {
+  const config = {
+      pending: { label: "Chờ mở lớp", color: "warning" },
+      ongoing: { label: "Đang diễn ra", color: "success" },
+      completed: { label: "Đã kết thúc", color: "secondary" },
+      cancelled: { label: "Đã hủy", color: "error" },
+  };
+  return config[status] || { label: "Không xác định", color: "default" };
 };
 
 function StudentMyClassPage() {
@@ -148,7 +158,8 @@ function StudentMyClassPage() {
             tutor_avatar: cls.tutor?.user?.avata_url,
             student_count: cls.nb_of_student || 0,
             next_session: formatSchedule(cls.schedule),
-            status: myEnrollment.status,
+            enrollment_status: myEnrollment.status,
+            class_status: cls.status, // Lấy trạng thái gốc của lớp học
             subject: cls.subject
           };
 
@@ -242,126 +253,140 @@ function StudentMyClassPage() {
         </Box>
       )}
 
-      {/* Áp dụng chuẩn MUI v6 Grid với prop size */}
       <Grid container spacing={3}>
-        {displayList.map((cls, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={cls.id}>
-            <motion.div
-              custom={index}
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              style={{ height: "100%", width: "100%" }}
-            >
-              <StyledClassCard 
-                isClickable={tabValue === 0}
-                onClick={() => tabValue === 0 ? handleEnterClass(cls.id) : undefined}
+        {displayList.map((cls, index) => {
+          const statusConfig = getClassStatusConfig(cls.class_status);
+
+          return (
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={cls.id}>
+              <motion.div
+                custom={index}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                style={{ height: "100%", width: "100%" }}
               >
-                <Box sx={{ position: 'relative' }}>
-                  <CardMedia
-                    component="img"
-                    height="160"
-                    image={classBg} 
-                    alt={cls.name}
-                    sx={{ 
-                      objectFit: 'cover',
-                      filter: isDark ? 'brightness(0.85)' : 'none' 
-                    }}
-                  />
-                  <Box sx={{
-                    position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
-                    background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%)'
-                  }} />
-                  
-                  <Stack direction="row" justifyContent="space-between" sx={{ position: 'absolute', top: 12, left: 12, right: 12 }}>
-                    <Chip 
-                      label={cls.subject} 
-                      size="small" 
+                <StyledClassCard 
+                  isClickable={tabValue === 0}
+                  onClick={() => tabValue === 0 ? handleEnterClass(cls.id) : undefined}
+                >
+                  <Box sx={{ position: 'relative' }}>
+                    <CardMedia
+                      component="img"
+                      height="160"
+                      image={classBg} 
+                      alt={cls.name}
                       sx={{ 
-                        bgcolor: alpha(theme.palette.background.paper, 0.95), 
-                        color: 'primary.main', 
-                        fontWeight: 700, 
-                        backdropFilter: 'blur(4px)',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                      }} 
+                        objectFit: 'cover',
+                        filter: isDark ? 'brightness(0.85)' : 'none' 
+                      }}
                     />
-                    <Chip 
-                      label={tabValue === 0 ? "Đang học" : "Chờ duyệt"} 
-                      size="small" 
-                      color={tabValue === 0 ? "success" : "warning"} 
-                      sx={{ fontWeight: 700, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
-                    />
-                  </Stack>
-                </Box>
-
-                <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
-                  <Typography
-                    variant="h6"
-                    color="text.primary"
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: '1.15rem',
-                      lineHeight: 1.4,
-                      mb: 2,
-                      minHeight: "48px",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {cls.name}
-                  </Typography>
-
-                  <Tooltip title={`Giáo viên phụ trách: ${cls.tutor_name}`} placement="top" arrow>
-                    <Box sx={{ 
-                      display: 'flex', alignItems: 'center', p: 1.2, mb: 2.5, 
-                      bgcolor: isDark ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.main, 0.04), 
-                      borderRadius: 2 
-                    }}>
-                      <Avatar
-                        src={cls.tutor_avatar}
+                    <Box sx={{
+                      position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
+                      background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)'
+                    }} />
+                    
+                    <Stack 
+                      direction="row" 
+                      spacing={1}
+                      justifyContent="space-between" 
+                      sx={{ position: 'absolute', top: 12, left: 12, right: 12 }}
+                    >
+                      <Chip 
+                        label={<Typography noWrap sx={{ fontSize: '0.75rem', fontWeight: 700 }}>{cls.subject}</Typography>} 
+                        size="small" 
                         sx={{ 
-                          width: 42, height: 42, mr: 1.5, 
-                          border: `2px solid ${theme.palette.background.paper}`, 
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)', 
-                          bgcolor: alpha(theme.palette.primary.main, 0.2), 
+                          bgcolor: alpha(theme.palette.background.paper, 0.95), 
                           color: 'primary.main', 
-                          fontWeight: 700 
+                          backdropFilter: 'blur(4px)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          maxWidth: '50%' // Tránh đè lên Chip bên phải
+                        }} 
+                      />
+                      <Chip 
+                        label={<Typography noWrap sx={{ fontSize: '0.75rem', fontWeight: 700 }}>{statusConfig.label}</Typography>} 
+                        size="small" 
+                        color={statusConfig.color} 
+                        sx={{ 
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                          maxWidth: '45%' 
                         }}
-                      >
-                        {cls.tutor_name?.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2" fontWeight="700" color="text.primary" noWrap>
-                          {cls.tutor_name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                          Giáo viên phụ trách
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Tooltip>
+                      />
+                    </Stack>
+                  </Box>
 
-                  <Stack spacing={1.2}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <GroupIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                      <Typography variant="body2" fontWeight={600} color="text.secondary">
-                        {cls.student_count} Học viên
-                      </Typography>
+                  {/* Sử dụng flexGrow và flex column để đẩy nội dung dãn đều */}
+                  <CardContent sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, p: 2.5 }}>
+                    <Typography
+                      variant="h6"
+                      color="text.primary"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: '1.15rem',
+                        lineHeight: 1.4,
+                        mb: 2,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {cls.name}
+                    </Typography>
+
+                    {/* Phần nội dung phía dưới tự động bị đẩy xuống nhờ mt: 'auto' */}
+                    <Box sx={{ mt: 'auto' }}>
+                      <Tooltip title={`Giáo viên phụ trách: ${cls.tutor_name}`} placement="top" arrow>
+                        <Box sx={{ 
+                          display: 'flex', alignItems: 'center', p: 1.2, mb: 2, 
+                          bgcolor: isDark ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.main, 0.04), 
+                          borderRadius: 2 
+                        }}>
+                          <Avatar
+                            src={cls.tutor_avatar}
+                            sx={{ 
+                              width: 38, height: 38, mr: 1.5, 
+                              border: `2px solid ${theme.palette.background.paper}`, 
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)', 
+                              bgcolor: alpha(theme.palette.primary.main, 0.2), 
+                              color: 'primary.main', 
+                              fontWeight: 700 
+                            }}
+                          >
+                            {cls.tutor_name?.charAt(0)}
+                          </Avatar>
+                          <Box sx={{ minWidth: 0 }}> {/* minWidth 0 giúp noWrap hoạt động trong flexbox */}
+                            <Typography variant="body2" fontWeight="700" color="text.primary" noWrap>
+                              {cls.tutor_name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" fontWeight={500} noWrap display="block">
+                              Giáo viên phụ trách
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Tooltip>
+
+                      <Stack spacing={1}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <GroupIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                          <Typography variant="body2" fontWeight={600} color="text.secondary" noWrap>
+                            {cls.student_count} Học viên
+                          </Typography>
+                        </Box>
+                        <Box display="flex" alignItems="flex-start" gap={1}>
+                          <ScheduleIcon sx={{ fontSize: 18, color: 'text.secondary', mt: 0.2 }} />
+                          <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {cls.next_session}
+                          </Typography>
+                        </Box>
+                      </Stack>
                     </Box>
-                    <Box display="flex" alignItems="flex-start" gap={1}>
-                      <ScheduleIcon sx={{ fontSize: 20, color: 'text.secondary', mt: 0.2 }} />
-                      <Typography variant="body2" fontWeight={600} color="text.secondary">
-                        {cls.next_session}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StyledClassCard>
-            </motion.div>
-          </Grid>
-        ))}
+                  </CardContent>
+                </StyledClassCard>
+              </motion.div>
+            </Grid>
+          );
+        })}
       </Grid>
 
       <Snackbar

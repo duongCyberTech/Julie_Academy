@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { 
     Box, CircularProgress, Alert, Typography, Paper, Grid, 
     Breadcrumbs, Link as MuiLink, Stack, IconButton, Tooltip, 
-    useTheme, alpha, Backdrop, Snackbar, useMediaQuery, Drawer, Fab
+    useTheme, alpha, Snackbar, useMediaQuery, Drawer, Fab
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
@@ -22,7 +22,7 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import { getClassDetails } from '../../services/ClassService';
 import { getPlanDetail, getAllCategories } from "../../services/CategoryService";
-import { getFoldersByClass, fetchFileStreamS3 } from "../../services/ResourceService";
+import { getFoldersByClass, fetchPresignedUrl } from "../../services/ResourceService";
 
 import FilePreviewDialog from "../../components/FilePreviewDialog";
 
@@ -69,7 +69,7 @@ const StudentResourceViewer = memo(({ classId, planId, token }) => {
     const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
     const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(false);
+    const [loadingFileId, setLoadingFileId] = useState(null);
     
     const [planInfo, setPlanInfo] = useState(null);
     const [rawCategories, setRawCategories] = useState([]);
@@ -80,7 +80,6 @@ const StudentResourceViewer = memo(({ classId, planId, token }) => {
     const [breadcrumbs, setBreadcrumbs] = useState([]);
     
     const [previewFile, setPreviewFile] = useState(null);
-    const [blobUrl, setBlobUrl] = useState(null);
     const [toastMessage, setToastMessage] = useState("");
     const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -111,8 +110,7 @@ const StudentResourceViewer = memo(({ classId, planId, token }) => {
         try {
             const foldersRes = await getFoldersByClass(classId, token);
             setFolderTree(foldersRes || []);
-        } catch (e) {
-        }
+        } catch (e) {}
 
         setLoading(false);
     }, [planId, classId, token]);
@@ -218,45 +216,37 @@ const StudentResourceViewer = memo(({ classId, planId, token }) => {
 
     const handlePreviewClick = useCallback(async (e, file) => {
         e.stopPropagation();
-        setActionLoading(true);
+        setLoadingFileId(file.did);
         try {
-            const fileBlob = await fetchFileStreamS3(file.did, token);
-            const objectUrl = URL.createObjectURL(fileBlob);
-            setBlobUrl(objectUrl);
-            setPreviewFile({ ...file, secureViewUrl: objectUrl });
+            const data = await fetchPresignedUrl(file.did, token);
+            setPreviewFile({ ...file, secureViewUrl: data.signedUrl });
         } catch (error) {
             setToastMessage("Không thể mở tài liệu. Vui lòng thử lại!");
         } finally {
-            setActionLoading(false);
+            setLoadingFileId(null);
         }
     }, [token]);
 
     const handleClosePreview = useCallback(() => {
         setPreviewFile(null);
-        if (blobUrl) {
-            URL.revokeObjectURL(blobUrl);
-            setBlobUrl(null);
-        }
-    }, [blobUrl]);
+    }, []);
 
     const handleDownload = useCallback(async (e, file) => {
         e.stopPropagation();
-        setActionLoading(true);
+        setLoadingFileId(file.did);
         try {
-            const fileBlob = await fetchFileStreamS3(file.did, token);
-            const objectUrl = URL.createObjectURL(fileBlob);
+            const data = await fetchPresignedUrl(file.did, token);
             const a = document.createElement('a');
-            a.href = objectUrl;
+            a.href = data.signedUrl;
+            a.target = "_blank";
             a.download = file.title || 'Tai-lieu';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(objectUrl);
-            setToastMessage("Đã tải xong tài liệu!");
         } catch (error) {
             setToastMessage("Không thể tải tài liệu. Vui lòng thử lại!");
         } finally {
-            setActionLoading(false);
+            setLoadingFileId(null);
         }
     }, [token]);
 
@@ -335,13 +325,6 @@ const StudentResourceViewer = memo(({ classId, planId, token }) => {
 
     return (
         <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-            <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }} open={actionLoading}>
-                <Stack alignItems="center" spacing={2}>
-                    <CircularProgress color="inherit" />
-                    <Typography fontWeight={700}>Đang xử lý tài liệu...</Typography>
-                </Stack>
-            </Backdrop>
-
             <Grid container spacing={3} sx={{ flexGrow: 1, alignItems: 'flex-start' }}>
                 
                 {!isMobile && (
@@ -393,21 +376,30 @@ const StudentResourceViewer = memo(({ classId, planId, token }) => {
                                         <Box>
                                             <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight={700} sx={{ mb: 2 }}>TÀI LIỆU ĐÍNH KÈM</Typography>
                                             <Grid container spacing={3}>
-                                                {currentViewData.files.map(file => (
+                                                {currentViewData.files.map(file => {
+                                                    const isLoading = loadingFileId === file.did;
+                                                    return (
                                                     <Grid size={{ xs: 12 }} key={`file-${file.did}`}>
-                                                        <Paper elevation={0} onClick={(e) => handlePreviewClick(e, file)} sx={{ p: 2, display: "flex", alignItems: "center", cursor: "pointer", borderRadius: 3, position: "relative", bgcolor: "background.paper", border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, transition: "all 0.2s", "&:hover": { borderColor: "success.main", boxShadow: `0 4px 20px ${alpha(theme.palette.success.main, 0.15)}`, transform: "translateY(-2px)", "& .actions": { opacity: 1 } } }}>
+                                                        <Paper elevation={0} onClick={(e) => handlePreviewClick(e, file)} sx={{ p: 2, display: "flex", alignItems: "center", cursor: "pointer", borderRadius: 3, position: "relative", bgcolor: "background.paper", border: `1px solid ${isLoading ? theme.palette.primary.main : (isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3))}`, transition: "all 0.2s", opacity: isLoading ? 0.7 : 1, "&:hover": { borderColor: "success.main", boxShadow: `0 4px 20px ${alpha(theme.palette.success.main, 0.15)}`, transform: "translateY(-2px)", "& .actions": { opacity: 1 } } }}>
                                                             <Stack className="actions" direction="row" spacing={0.5} sx={{ position: "absolute", top: "50%", right: 12, transform: "translateY(-50%)", opacity: 0, bgcolor: alpha(theme.palette.background.paper, 0.9), borderRadius: 2, p: 0.5, boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.1)}` }}>
-                                                                <Tooltip title="Xem tài liệu"><IconButton size="small" color="primary" onClick={(e) => handlePreviewClick(e, file)}><VisibilityIcon fontSize="small" /></IconButton></Tooltip>
-                                                                <Tooltip title="Tải xuống"><IconButton size="small" color="success" onClick={(e) => handleDownload(e, file)}><DownloadIcon fontSize="small" /></IconButton></Tooltip>
+                                                                {!isLoading && (
+                                                                    <>
+                                                                        <Tooltip title="Xem tài liệu"><IconButton size="small" color="primary" onClick={(e) => handlePreviewClick(e, file)}><VisibilityIcon fontSize="small" /></IconButton></Tooltip>
+                                                                        <Tooltip title="Tải xuống"><IconButton size="small" color="success" onClick={(e) => handleDownload(e, file)}><DownloadIcon fontSize="small" /></IconButton></Tooltip>
+                                                                    </>
+                                                                )}
                                                             </Stack>
-                                                            <Box mr={2.5} sx={{ display: 'flex', alignItems: 'center' }}><FileIcon mimeType={file.file_type} /></Box>
+                                                            <Box mr={2.5} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36 }}>
+                                                                {isLoading ? <CircularProgress size={24} thickness={5} /> : <FileIcon mimeType={file.file_type} />}
+                                                            </Box>
                                                             <Box overflow="hidden" sx={{ pr: 6 }}>
-                                                                <Typography variant="body2" fontWeight={700} color="text.primary" noWrap title={file.title}>{file.title}</Typography>
-                                                                <Typography variant="caption" color="text.secondary" fontWeight={500}>{file.description || `Phiên bản ${file.version}`}</Typography>
+                                                                <Typography variant="body2" fontWeight={700} color={isLoading ? 'primary.main' : 'text.primary'} noWrap title={file.title}>{file.title}</Typography>
+                                                                <Typography variant="caption" color="text.secondary" fontWeight={500}>{isLoading ? "Đang xử lý..." : (file.description || `Phiên bản ${file.version}`)}</Typography>
                                                             </Box>
                                                         </Paper>
                                                     </Grid>
-                                                ))}
+                                                    );
+                                                })}
                                             </Grid>
                                         </Box>
                                     )}
@@ -446,7 +438,7 @@ const StudentResourceViewer = memo(({ classId, planId, token }) => {
             <FilePreviewDialog open={!!previewFile} onClose={handleClosePreview} fileData={previewFile} />
 
             <Snackbar open={!!toastMessage} autoHideDuration={3000} onClose={() => setToastMessage("")} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
-                <Alert severity="success" variant="filled" sx={{ width: "100%", borderRadius: 2 }}>{toastMessage}</Alert>
+                <Alert severity="success" variant="filled" sx={{ width: "100%", borderRadius: 2, fontWeight: 600 }}>{toastMessage}</Alert>
             </Snackbar>
         </Box>
     );
@@ -487,7 +479,7 @@ const StudentResourceTab = memo(({ classId, token }) => {
     
     if (error) return (
         <PageWrapper>
-            <Alert severity="error" sx={{ borderRadius: 3 }}>{error}</Alert>
+            <Alert severity="error" sx={{ borderRadius: 3, fontWeight: 600 }}>{error}</Alert>
         </PageWrapper>
     );
 

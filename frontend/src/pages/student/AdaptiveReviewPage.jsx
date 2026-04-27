@@ -91,9 +91,6 @@ export default function StudentAdaptiveReviewPage() {
   useEffect(() => {
     setIsLoading(true);
 
-    // Debug: Kiểm tra xem ID có nhận được không
-    console.log("Review Page - Session ID:", sessionId);
-
     const storedAnswers = sessionStorage.getItem(`practice_answers_${sessionId}`);
     
     setTimeout(() => {

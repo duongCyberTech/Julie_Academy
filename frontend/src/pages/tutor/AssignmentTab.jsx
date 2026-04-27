@@ -9,7 +9,8 @@ import { styled, alpha } from '@mui/material/styles';
 import dayjs from 'dayjs';
 
 import { getSessionsByClass } from '../../services/ExamService';
-import { getExamSessionStats } from '../../services/DashboardTutorService'; // Import API tiến độ
+import { getExamSessionStats } from '../../services/DashboardTutorService';
+import ExamAnalyticsDashboard from '../../components/ExamAnalyticsDashboard';
 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
@@ -64,7 +65,7 @@ const EmptyStatePaper = styled(Paper)(({ theme }) => ({
     marginTop: theme.spacing(1),
 }));
 
-const SessionCard = memo(({ session }) => {
+const SessionCard = memo(({ session, onOpenAnalytics }) => {
     const now = dayjs();
     const start = dayjs(session.startAt);
     const end = dayjs(session.expireAt);
@@ -120,7 +121,6 @@ const SessionCard = memo(({ session }) => {
                     </Typography>
                 </Stack>
 
-                {/* THÊM WIDGET TIẾN ĐỘ VÀO ĐÂY */}
                 <Box sx={{ mt: 2, mb: 0.5 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
                         <Typography variant="body2" color="text.secondary" fontWeight={600}>
@@ -171,6 +171,7 @@ const SessionCard = memo(({ session }) => {
                     variant="contained" 
                     color="primary" 
                     disableElevation
+                    onClick={() => onOpenAnalytics(session)}
                     endIcon={<AssessmentIcon fontSize="small"/>}
                     sx={{ fontWeight: 600, borderRadius: '8px', textTransform: 'none' }}
                 >
@@ -186,6 +187,7 @@ function AssignmentTab({ classId, token }) {
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [analyticsSession, setAnalyticsSession] = useState(null);
 
     const fetchAssignedSessions = useCallback(async () => {
         if (!classId || !token) return;
@@ -193,10 +195,9 @@ function AssignmentTab({ classId, token }) {
         setError(null);
         
         try {
-            // Sử dụng Promise.allSettled để đảm bảo nếu API thống kê lỗi thì vẫn load được danh sách
             const [sessRes, progRes] = await Promise.allSettled([
                 getSessionsByClass(classId, token),
-                getExamSessionStats(token, classId, 365) // Set 365 ngày để lấy toàn bộ tiến độ trong 1 năm
+                getExamSessionStats(token, classId, 365) 
             ]);
 
             let sessionData = [];
@@ -207,26 +208,35 @@ function AssignmentTab({ classId, token }) {
 
             if (progRes.status === 'fulfilled') progressData = progRes.value;
 
-            // Xử lý map dữ liệu tiến độ
             const totalStudents = progressData?.total_students || 0;
             const progressMap = {};
             
             (progressData?.es_mapper || []).forEach(item => {
-                if(item.exam_session?.session_id) {
-                    progressMap[item.exam_session.session_id] = item.number_of_students_done || 0;
+                if(item.exam_session?.session_id && item.exam_session?.exam_id) {
+                    const uniqueKey = `${item.exam_session.exam_id}_${item.exam_session.session_id}`;
+                    progressMap[uniqueKey] = item.number_of_students_done || 0;
                 }
             });
 
-            // Gắn tiến độ vào từng bài tập
-            const mergedSessions = sessionData.map(s => ({
-                ...s,
-                doneCount: progressMap[s.session_id] || 0,
-                totalStudents: totalStudents
-            }));
+            const mergedSessions = sessionData.map(s => {
+                // FIX TẬN GỐC: Tìm exam_id ở mọi ngóc ngách có thể có
+                const safeExamId = s.exam_id || s.exam?.exam_id || s.exam_session?.exam_id;
+                const safeSessionId = s.session_id || s.exam_session?.session_id;
+                
+                const uniqueKey = `${safeExamId}_${safeSessionId}`;
+                
+                return {
+                    ...s,
+                    // Lưu lại ID an toàn để lúc truyền xuống Dashboard không bị lỗi
+                    safe_exam_id: safeExamId,
+                    safe_session_id: safeSessionId,
+                    doneCount: progressMap[uniqueKey] || 0,
+                    totalStudents: totalStudents
+                };
+            });
 
             setSessions(mergedSessions);
         } catch (err) {
-            console.error("Fetch sessions error:", err);
             setError('Không thể tải danh sách bài tập.');
         } finally {
             setLoading(false);
@@ -235,9 +245,17 @@ function AssignmentTab({ classId, token }) {
 
     useEffect(() => { fetchAssignedSessions(); }, [fetchAssignedSessions]);
     
-    const handleNavigateAssign = () => {
+    const handleNavigateAssign = useCallback(() => {
         navigate('/tutor/assignment');
-    };
+    }, [navigate]);
+
+    const handleOpenAnalytics = useCallback((session) => {
+        setAnalyticsSession(session);
+    }, []);
+
+    const handleCloseAnalytics = useCallback(() => {
+        setAnalyticsSession(null);
+    }, []);
 
     if (loading) return (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -273,7 +291,7 @@ function AssignmentTab({ classId, token }) {
                 <Grid container spacing={3} sx={{ pb: 2 }}>
                     {sessions.map(session => (
                         <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={session.session_id}>
-                            <SessionCard session={session} />
+                            <SessionCard session={session} onOpenAnalytics={handleOpenAnalytics} />
                         </Grid>
                     ))}
                 </Grid>
@@ -297,8 +315,20 @@ function AssignmentTab({ classId, token }) {
                     </Button>
                 </EmptyStatePaper>
             )}
+
+            {analyticsSession && (
+                <ExamAnalyticsDashboard 
+                    open={!!analyticsSession}
+                    onClose={handleCloseAnalytics}
+                    classId={classId}
+                    examId={analyticsSession.exam_id}
+                    sessionId={analyticsSession.session_id}
+                    examTitle={analyticsSession.exam?.title}
+                    token={token}
+                />
+            )}
         </Box>
     );
 }
 
-export default React.memo(AssignmentTab);
+export default memo(AssignmentTab);

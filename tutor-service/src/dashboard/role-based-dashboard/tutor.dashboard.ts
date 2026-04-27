@@ -12,19 +12,50 @@ export class TutorDashboard {
     ){}
 
     async getNumStudentsOfTutor(tutor_id: string){
-        return this.prisma.student.count({
-            where: {
-                learning: {
-                    some: { class: {tutor: { uid: tutor_id }} }
+        const [total, ongoing] = await Promise.all([
+            // 1. Đếm tổng học sinh ĐÃ ĐƯỢC DUYỆT (accepted) vào tất cả các lớp của Gia sư
+            this.prisma.student.count({
+                where: {
+                    learning: {
+                        some: { 
+                            class: { tutor_uid: tutor_id },
+                            status: "accepted" // Lọc học sinh đã được duyệt
+                        }
+                    }
                 }
-            }
-        })
+            }),
+            // 2. Chỉ đếm học sinh ĐÃ ĐƯỢC DUYỆT trong các lớp ĐANG DIỄN RA (ongoing)
+            this.prisma.student.count({
+                where: {
+                    learning: {
+                        some: { 
+                            class: { 
+                                tutor_uid: tutor_id,
+                                status: "ongoing" // Lớp đang diễn ra
+                            },
+                            status: "accepted" // Học sinh đã được duyệt
+                        }
+                    }
+                }
+            })
+        ]);
+
+        return { total, ongoing };
     }
 
     async getNumClasses(tutor_id: string){
-        return this.prisma.class.count({
-            where: {tutor: {uid: tutor_id}}
-        })
+        const [total, ongoing] = await this.prisma.class.groupBy({
+            where: { tutor_uid: tutor_id },
+            by: ['status'],
+            _count: {
+                class_id: true
+            }
+        }).then(res => [
+            res.reduce((acc, cur) => acc + cur._count.class_id, 0) || 0, 
+            res?.find(i => i.status == 'ongoing')?._count.class_id || 0
+        ])
+
+        return { total, ongoing };
     }
 
     async getNumLessonPlan(tutor_id: string){
