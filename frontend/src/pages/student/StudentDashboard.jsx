@@ -414,7 +414,7 @@ const StudentDashboard = memo(() => {
           <StatCard title="Lớp đang tham gia" value={safeGetNumClasses(stats.numJoinClassess)} color="info" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <StatCard title="Giờ luyện tập" value={`${stats.totalPracticeTime || 0}h`} color="success" />
+          <StatCard title="Giờ luyện tập" value={`${stats.totalPracticeTime.toFixed(2) || 0}h`} color="success" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard title="Điểm trung bình" value={stats.avgTestScore || 0} color="error" />
