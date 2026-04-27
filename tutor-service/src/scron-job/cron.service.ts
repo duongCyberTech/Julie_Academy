@@ -11,12 +11,17 @@ export class CronService {
         private readonly mailer: MailService
     ){}
     
-
-    // @Cron('* * * * * *')
-    // handleCronEverySecond() {
-    //     this.logger.log('--- Đang chạy Cron Job mỗi giây! (Ví dụ 1) ---');
-    //     // Logic của Cron Job (ví dụ: gửi email, dọn dẹp database, kiểm tra trạng thái)
-    // }
+    @Cron('0 * * * * *', {
+        name: 'email_sender',
+        timeZone: 'Asia/Ho_Chi_Minh'
+    })
+    async handleSendEmail() {
+        try {
+            
+        } catch (error) {
+            
+        }
+    }
 
     @Cron('0 0 0 * * *',{
         name: 'class_status',
@@ -58,7 +63,15 @@ export class CronService {
                     }
                 })
                 
-                await this.mailer.sendEmail("Cron job: Check and update class status", `[Date - ${today}]: update ${item_update.count} classes`)
+                await this.prisma.user.findMany({
+                    where: { role: "admin" },
+                    select: { email: true }
+                }).then((lst) => {
+                    lst.map(user => user.email).forEach(async (email) => {
+                        await this.mailer.sendEmail(email, "Cron job: Check and update class status", `[Date - ${today}]: update ${item_update.count} classes`)
+                    })
+                })
+
                 this.logger.log("Cron job done")
             })  
         } catch (error) {

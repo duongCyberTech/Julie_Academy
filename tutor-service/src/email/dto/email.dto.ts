@@ -1,5 +1,5 @@
-import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
-import { EmailTemplateType, Period } from "@prisma/client";
+import { IsArray, IsBoolean, IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
+import { EmailObjective, EmailTemplateType, Period } from "@prisma/client";
 
 export class EmailConfigDto {
   @IsString()
@@ -21,6 +21,13 @@ export class EmailConfigDto {
 
   @IsEnum(['weekly', 'monthly'])
   period: Period;
+
+  @IsArray()
+  @IsString({ each: true })
+  receiver_ids: string[] = []
+
+  @IsEnum(EmailObjective)
+  send_to: EmailObjective = EmailObjective.all
 
   @IsOptional()
   @IsString()

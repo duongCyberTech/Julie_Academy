@@ -22,7 +22,7 @@ export class EmailService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      const { create_as_template, ...emailConfigData } = data;
+      const { create_as_template, receiver_ids, ...emailConfigData } = data;
 
       if (create_as_template) {
         const emailTemplate = await tx.emailTemplate.create({
@@ -52,12 +52,21 @@ export class EmailService {
         emailConfigData.template_id = template.template_id;
       }
 
-      return await tx.emailConfig.create({
+      const email_config = await tx.emailConfig.create({
         data: {
           ...emailConfigData,
           class_id,
         },
       });
+
+      await tx.receivers.createMany({
+        data: receiver_ids.map(id => ({
+          receiver_id: id,
+          config_id: email_config.config_id
+        }))
+      })
+
+      return email_config
     })
   }
 
@@ -105,14 +114,36 @@ export class EmailService {
       throw new ForbiddenException('Email configuration not found for this class.');
     }
 
-    return this.prisma.emailConfig.update({
-      where: {
-        config_id,
-      },
-      data: {
-        ...data,
-      },
-    });
+    return this.prisma.$transaction(async(tx) => {
+      const { create_as_template, receiver_ids, ...emailConfigData } = data;
+      const config = await tx.emailConfig.update({
+        where: {
+          config_id,
+        },
+        data: {
+          ...data,
+        },
+      });
+
+      if (receiver_ids) {
+        await tx.receivers.deleteMany({
+          where: {
+            config_id,
+            receiver_id: { notIn: receiver_ids }
+          }
+        })
+
+        await tx.receivers.createMany({
+          data: receiver_ids.map(id => ({
+            receiver_id: id,
+            config_id
+          })),
+          skipDuplicates: true
+        })
+      }
+
+      return config
+    })
   }
 
   async deleteEmailChainById(tutor_id: string, config_id: string) {
@@ -132,5 +163,9 @@ export class EmailService {
         config_id,
       },
     });
+  }
+
+  async sendEmailNow(tutor_id: string, config_id: string) {
+    
   }
 }
