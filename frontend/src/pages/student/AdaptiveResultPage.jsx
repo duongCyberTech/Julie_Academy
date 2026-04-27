@@ -1,279 +1,523 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Typography, Box, CircularProgress, Paper, Button, Chip, Accordion, 
-  AccordionSummary, AccordionDetails, Grid, useTheme, Divider, Stack
+  Typography, Box, CircularProgress, Paper, Button, Chip, Grid, 
+  Divider, Stack, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 
 // Icons
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import ReplayIcon from '@mui/icons-material/Replay';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 
-import { apiClient } from '../../services/ApiClient';
+import { submitAdaptiveExam } from '../../services/ExamService';
 import QuestionContentRenderer from '../../components/QuestionContentRenderer';
 
-// =========================================
-// STYLED COMPONENTS
-// =========================================
+// --- Styled Components (Đã tích hợp đúng mẫu của bạn) ---
 const PageWrapper = styled(Paper)(({ theme }) => {
   const isDark = theme.palette.mode === 'dark';
   return {
     margin: theme.spacing(3),
     padding: theme.spacing(5),
-    backgroundColor: isDark ? theme.palette.background.paper : '#ffffff',
+    backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB',
+    backgroundImage: 'none',
     borderRadius: '24px',
-    border: `1px solid ${isDark ? alpha(theme.palette.divider, 0.1) : alpha(theme.palette.divider, 0.3)}`,
-    boxShadow: '0 4px 24px rgba(0,0,0,0.03)',
-    minHeight: '80vh',
+    border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
+    boxShadow: isDark ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` : '0 8px 48px rgba(0,0,0,0.03)',
+    minHeight: 'calc(100vh - 120px)',
+    display: 'flex',
+    flexDirection: 'column',
   };
 });
 
+const HeaderBar = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: theme.spacing(4),
+  flexShrink: 0,
+}));
+
+const SummaryCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(5),
+  borderRadius: '24px',
+  marginBottom: theme.spacing(5),
+  backgroundColor: theme.palette.background.paper,
+  border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+  boxShadow: '0 12px 32px rgba(0,0,0,0.02)',
+}));
+
 const ScoreCircle = styled(Box)(({ theme, score }) => ({
-  width: 150,
-  height: 150,
+  width: 160,
+  height: 160,
   borderRadius: '50%',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',
   alignItems: 'center',
-  border: `8px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+  background: `conic-gradient(${theme.palette.primary.main} ${(score / 10) * 100}%, ${alpha(theme.palette.primary.main, 0.08)} ${(score / 10) * 100}% 100%)`,
   position: 'relative',
-  '&::after': {
+  '&::before': {
     content: '""',
     position: 'absolute',
-    top: -8, left: -8, right: -8, bottom: -8,
+    width: '140px',
+    height: '140px',
     borderRadius: '50%',
-    border: `8px solid ${theme.palette.primary.main}`,
-    clipPath: `inset(0 0 ${100 - score * 10}% 0)`, // Giả lập progress vòng tròn
-    transform: 'rotate(0deg)',
+    backgroundColor: theme.palette.background.paper,
+    boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.03)',
   }
 }));
 
-const StatCard = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
+const StatBox = styled(Box)(({ theme, colorType }) => ({
+  padding: theme.spacing(2.5),
   borderRadius: '16px',
-  backgroundColor: alpha(theme.palette.action.hover, 0.3),
+  backgroundColor: alpha(theme.palette[colorType].main, 0.05),
+  border: `1px solid ${alpha(theme.palette[colorType].main, 0.12)}`,
   textAlign: 'center',
-  boxShadow: 'none',
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: '100%',
 }));
 
-// =========================================
-// MAIN COMPONENT
-// =========================================
 export default function StudentAdaptiveResultPage() {
   const { etId } = useParams();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
 
   const [loading, setLoading] = useState(true);
-  const [resultData, setResultData] = useState(null);
+  const [data, setData] = useState(null);
 
   useEffect(() => {
     const fetchResult = async () => {
       try {
         setLoading(true);
-        // Gọi API lấy chi tiết lần thi (Bao gồm các câu hỏi đã làm)
-        const res = await apiClient.post(`/exam/adaptive/submit/${etId}`);
-        setResultData(res.data?.data || res.data);
+        const res = await submitAdaptiveExam(etId);
+        const actualData = res?.data?.data || res?.data || res;
+        setData(actualData);
       } catch (error) {
-        console.error("Lỗi khi tải kết quả:", error);
+        console.error("Lỗi tải kết quả:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchResult();
+    if (etId) fetchResult();
   }, [etId]);
 
-  if (loading) {
-    return (
-      <PageWrapper sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <CircularProgress size={48} />
-      </PageWrapper>
-    );
-  }
+  const formatTime = (start, end) => {
+    if (!start || !end) return "0p 0s";
+    const diff = Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 1000);
+    if (isNaN(diff) || diff < 0) return "0p 0s";
+    const m = Math.floor(diff / 60);
+    const s = diff % 60;
+    return `${m} phút ${s} giây`;
+  };
 
-  if (!resultData) return null;
+  if (loading) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+      <CircularProgress size={50} thickness={4} />
+    </Box>
+  );
 
-  const { final_score, total_ques_completed, question_for_exam_taken, category } = resultData;
-  const scoreValue = parseFloat(final_score || 0);
-  const correctCount = question_for_exam_taken?.filter(q => q.isCorrect).length || 0;
+  if (!data) return null;
+
+  const listQuestions = data.questions || [];
+  const maxQues = listQuestions.length > 0 ? listQuestions.length : 8; 
+  const correctCount = data.total_ques_completed !== undefined ? data.total_ques_completed : (listQuestions.filter(q => q.isCorrect === true).length || 0);
+  const scoreValue = parseFloat(data.final_score || 0);
+
 
   return (
     <PageWrapper>
-      {/* HEADER */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Button 
-          onClick={() => navigate('/student/adaptive')}
+      <HeaderBar>
+        <Button
+          onClick={() => navigate("/student/adaptive")}
           startIcon={<ArrowBackIcon />}
-          sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'none' }}
+          sx={{
+            color: "text.secondary",
+            fontWeight: 600,
+            textTransform: "none",
+            fontSize: "0.95rem",
+          }}
         >
-          Quay lại danh mục
+          Trở về trang luyện tập
         </Button>
-      </Box>
+      </HeaderBar>
 
-      {/* SUMMARY SECTION */}
-      <Grid container spacing={4} sx={{ mb: 6 }}>
-        <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Box sx={{ textAlign: 'center' }}>
-            <ScoreCircle score={scoreValue}>
-              <Typography variant="h3" fontWeight={900} color="primary.main">
-                {scoreValue}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                ĐIỂM SỐ
-              </Typography>
-            </ScoreCircle>
-            <Typography variant="h6" fontWeight={800} mt={2}>
-              {scoreValue >= 8 ? "Xuất sắc!" : scoreValue >= 5 ? "Tốt lắm!" : "Cần cố gắng thêm"}
-            </Typography>
-          </Box>
-        </Grid>
+      {/* PHẦN 1: TỔNG KẾT ĐIỂM SỐ */}
+      <SummaryCard elevation={0}>
+        <Grid container spacing={4} alignItems="center" justifyContent="center">
 
-        <Grid item xs={12} md={8}>
-          <Typography variant="h5" fontWeight={800} mb={3}>
-            Kết quả luyện tập: {category?.category_name}
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={6} sm={4}>
-              <StatCard>
-                <EmojiEventsIcon color="warning" sx={{ mb: 1 }} />
-                <Typography variant="h6" fontWeight={800}>{correctCount}/{total_ques_completed}</Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>CÂU ĐÚNG</Typography>
-              </StatCard>
-            </Grid>
-            <Grid item xs={6} sm={4}>
-              <StatCard>
-                <HelpOutlineIcon color="primary" sx={{ mb: 1 }} />
-                <Typography variant="h6" fontWeight={800}>{total_ques_completed}</Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>TỔNG SỐ CÂU</Typography>
-              </StatCard>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <StatCard>
-                <AccessTimeIcon color="info" sx={{ mb: 1 }} />
-                <Typography variant="h6" fontWeight={800}>
-                   {/* Logic hiển thị thời gian làm bài từ startAt - doneAt */}
-                   {resultData.doneAt ? 
-                    Math.floor((new Date(resultData.doneAt) - new Date(resultData.startAt)) / 60000) : 0} phút
-                </Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>THỜI GIAN</Typography>
-              </StatCard>
-            </Grid>
-          </Grid>
-          
-          <Stack direction="row" spacing={2} mt={4}>
-            <Button 
-              variant="contained" 
-              startIcon={<ReplayIcon />}
-              onClick={() => navigate(`/student/adaptive/take/${category?.category_id}`)}
-              sx={{ borderRadius: '10px', fontWeight: 700, textTransform: 'none', px: 3 }}
-            >
-              Luyện tập lại
-            </Button>
-          </Stack>
-        </Grid>
-      </Grid>
-
-      <Divider sx={{ mb: 4 }} />
-
-      {/* DETAILED REVIEW SECTION */}
-      <Typography variant="h6" fontWeight={800} mb={3}>
-        Xem lại chi tiết
-      </Typography>
-
-      <Box sx={{ maxWidth: 900 }}>
-        {question_for_exam_taken?.sort((a, b) => a.index - b.index).map((item, idx) => (
-          <Accordion 
-            key={item.ques_id}
-            elevation={0}
-            sx={{ 
-              mb: 2, 
-              border: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
-              borderRadius: '12px !important',
-              '&:before': { display: 'none' },
-              overflow: 'hidden'
+          <Grid
+            item
+            xs={12}
+            md={5}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              borderRight: { md: `1px dashed ${alpha("#000", 0.1)}` },
             }}
           >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                <Box sx={{ 
-                  width: 32, height: 32, borderRadius: '50%', 
-                  display: 'flex', justifyContent: 'center', alignItems: 'center',
-                  bgcolor: item.isCorrect ? alpha(theme.palette.success.main, 0.1) : alpha(theme.palette.error.main, 0.1),
-                  color: item.isCorrect ? 'success.main' : 'error.main',
-                  flexShrink: 0, fontWeight: 800
-                }}>
-                  {item.isCorrect ? <CheckCircleIcon fontSize="small" /> : <CancelIcon fontSize="small" />}
-                </Box>
-                <Typography variant="subtitle2" fontWeight={700} sx={{ flexGrow: 1 }}>
-                  Câu {item.index}: {item.question?.title || "Câu hỏi luyện tập"}
+            <ScoreCircle score={scoreValue}>
+              <Box
+                sx={{ position: "relative", zIndex: 1, textAlign: "center" }}
+              >
+                <Typography variant="h3" fontWeight={700} color="primary.main">
+                  {scoreValue.toFixed(2)}
                 </Typography>
-                <Chip 
-                  label={item.question?.level?.toUpperCase()} 
-                  size="small" 
-                  variant="outlined" 
-                  sx={{ fontWeight: 800, borderRadius: '6px' }} 
-                />
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  color="text.secondary"
+                  sx={{ mt: 0.5 }}
+                >
+                  Điểm hệ 10
+                </Typography>
               </Box>
+            </ScoreCircle>
+
+            <Typography
+              variant="h6"
+              fontWeight={700}
+              sx={{ mt: 3 }}
+              gutterBottom
+              align="center"
+            >
+              {data.category?.category_name || "Bài luyện tập thích ứng"}
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              fontWeight={500}
+              align="center"
+            >
+              {scoreValue >= 8
+                ? "Hoàn thành xuất sắc!"
+                : scoreValue >= 5
+                  ? "Hoàn thành khá tốt!"
+                  : "Cần cố gắng luyện tập thêm!"}
+            </Typography>
+          </Grid>
+
+          {/* Cột phải: Thống kê chi tiết */}
+          <Grid item xs={12} md={7}>
+            <Grid
+              container
+              spacing={3}
+              justifyContent="center"
+              sx={{ px: { xs: 0, md: 2 } }}
+            >
+              <Grid item xs={12} sm={4}>
+                <StatBox colorType="success">
+                  <EmojiEventsIcon
+                    color="success"
+                    sx={{ fontSize: 32, mb: 1 }}
+                  />
+                  <Typography
+                    variant="h5"
+                    fontWeight={700}
+                    color="success.main"
+                  >
+                    {correctCount}/{maxQues}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    color="text.secondary"
+                    sx={{ mt: 0.5 }}
+                  >
+                    Số câu đúng
+                  </Typography>
+                </StatBox>
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <StatBox colorType="primary">
+                  <HelpOutlineIcon
+                    color="primary"
+                    sx={{ fontSize: 32, mb: 1 }}
+                  />
+                  <Typography
+                    variant="h5"
+                    fontWeight={700}
+                    color="primary.main"
+                  >
+                    {maxQues}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    color="text.secondary"
+                    sx={{ mt: 0.5 }}
+                  >
+                    Tổng số câu
+                  </Typography>
+                </StatBox>
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <StatBox colorType="info">
+                  <AccessTimeIcon color="info" sx={{ fontSize: 32, mb: 1 }} />
+                  <Typography variant="h6" fontWeight={700} color="info.main">
+                    {formatTime(data.startAt, data.doneAt)}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    color="text.secondary"
+                    sx={{ mt: 0.5 }}
+                  >
+                    Thời gian làm bài
+                  </Typography>
+                </StatBox>
+              </Grid>
+            </Grid>
+
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+              <Button
+                variant="contained"
+                startIcon={<ReplayIcon />}
+                onClick={() => navigate("/student/adaptive")}
+                sx={{
+                  borderRadius: "12px",
+                  fontWeight: 600,
+                  px: 4,
+                  py: 1.2,
+                  textTransform: "none",
+                  fontSize: "1rem",
+                  boxShadow: "none",
+                }}
+              >
+                Luyện tập lại chủ đề này
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </SummaryCard>
+
+      {/* PHẦN 2: CHI TIẾT BÀI LÀM  */}
+      <Box sx={{ mb: 3, pl: 1 }}>
+        <Typography
+          variant="h6"
+          fontWeight={700}
+          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+        >
+          <HelpOutlineIcon color="primary" /> Chi tiết từng câu hỏi
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{ display: "flex", flexDirection: "column", gap: 2, flexGrow: 1 }}
+      >
+        {listQuestions.map((item, idx) => (
+          <Accordion
+            key={idx}
+            disableGutters
+            sx={{
+              borderRadius: "16px !important",
+              "&:before": { display: "none" },
+              border: "1px solid",
+              borderColor: "divider",
+              overflow: "hidden",
+              boxShadow: "none",
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              sx={{ bgcolor: alpha("#000", 0.015), px: 3 }}
+            >
+              <Stack
+                direction="row"
+                spacing={2}
+                alignItems="center"
+                sx={{ width: "100%" }}
+              >
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    bgcolor: item.isCorrect
+                      ? alpha("#4caf50", 0.15)
+                      : alpha("#f44336", 0.15),
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.isCorrect ? (
+                    <CheckCircleIcon sx={{ fontSize: 20, color: "#4caf50" }} />
+                  ) : (
+                    <CancelIcon sx={{ fontSize: 20, color: "#f44336" }} />
+                  )}
+                </Box>
+                <Typography fontWeight={600}>Câu {idx + 1}</Typography>
+
+                <Box sx={{ flexGrow: 1 }} />
+
+                <Chip
+                  label={item.question?.level?.toUpperCase() || "NORMAL"}
+                  size="small"
+                  variant="outlined"
+                  sx={{ fontWeight: 600, fontSize: "0.7rem" }}
+                />
+              </Stack>
             </AccordionSummary>
-            <AccordionDetails sx={{ px: 4, pb: 4, pt: 0 }}>
-              <Box sx={{ mb: 3, '& > div': { maxHeight: 'none !important' } }}>
+
+            <AccordionDetails sx={{ p: 4, pt: 2 }}>
+              <Box sx={{ mb: 4, "& *": { fontSize: "1.05rem" } }}>
                 <QuestionContentRenderer htmlContent={item.question?.content} />
               </Box>
 
-              <Typography variant="caption" fontWeight={800} color="text.secondary" textTransform="uppercase">
-                Đáp án của bạn
-              </Typography>
-              <Box sx={{ mt: 1, mb: 3 }}>
-                {item.question?.answers?.map((ans) => {
-                  const isSelected = item.answer_set?.includes(ans.aid);
-                  const isCorrect = ans.is_correct;
+              {item.question?.answers?.map((ans, aIdx) => {
+                const isUserChosen = (item.answer_set || [])
+                  .map((id) => String(id))
+                  .includes(String(ans.aid));
+                const isCorrect = ans.is_correct;
+                const isQuestionCorrect = item.isCorrect === true;
 
-                  if (!isSelected && !isCorrect) return null;
+                let borderColor = alpha("#000", 0.15);
+                let bgColor = "transparent";
+                let labelText = null;
+                let labelColor = "";
 
-                  return (
-                    <Box 
-                      key={ans.aid}
-                      sx={{ 
-                        p: 2, mb: 1, borderRadius: '10px',
-                        border: `1px solid ${isCorrect ? theme.palette.success.main : theme.palette.error.main}`,
-                        bgcolor: isCorrect ? alpha(theme.palette.success.main, 0.05) : alpha(theme.palette.error.main, 0.05),
-                        display: 'flex', alignItems: 'center', gap: 2
+                if (isUserChosen && isCorrect) {
+                  borderColor = "#4caf50";
+                  bgColor = alpha("#4caf50", 0.08);
+                  labelText = "Bạn chọn đúng";
+                  labelColor = "#4caf50";
+                } else if (isUserChosen && !isCorrect) {
+                  borderColor = "#f44336";
+                  bgColor = alpha("#f44336", 0.05);
+                  labelText = "Bạn chọn sai";
+                  labelColor = "#f44336";
+                } else if (!isUserChosen && isCorrect && isQuestionCorrect) {
+                  borderColor = "#4caf50";
+                  bgColor = alpha("#4caf50", 0.05);
+                  labelText = "Đáp án đúng";
+                  labelColor = "#4caf50";
+                }
+
+                return (
+                  <Grid item xs={12} key={aIdx}>
+                    <Box
+                      sx={{
+                        position: "relative",
+                        mb: 0.5,
+                        mt: labelText ? 1.5 : 0,
                       }}
                     >
-                      {isCorrect ? <CheckCircleIcon color="success" /> : <CancelIcon color="error" />}
-                      <Box sx={{ flexGrow: 1, '& > div': { maxHeight: 'none !important' } }}>
-                        <QuestionContentRenderer htmlContent={ans.content} />
+                      {/* Box chứa chữ đáp án */}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          p: 1.5,
+                          borderRadius: "10px",
+                          border: "2px solid",
+                          borderColor,
+                          backgroundColor: bgColor,
+                        }}
+                      >
+                        <Typography
+                          fontWeight={700}
+                          sx={{ mr: 1.5, color: "text.primary" }}
+                        >
+                          {String.fromCharCode(65 + aIdx)}.
+                        </Typography>
+                        <Box sx={{ flexGrow: 1, "& p": { m: 0 } }}>
+                          <QuestionContentRenderer htmlContent={ans.content} />
+                        </Box>
                       </Box>
-                      <Chip 
-                        label={isCorrect ? "Đáp án đúng" : "Bạn đã chọn"} 
-                        size="small" 
-                        color={isCorrect ? "success" : "error"} 
-                        sx={{ fontWeight: 700 }}
-                      />
-                    </Box>
-                  );
-                })}
-              </Box>
 
-              {/* GIẢI THÍCH (HIỆN LUÔN VÌ KHÔNG CÓ EXPIRE DATE) */}
-              <Box sx={{ p: 2, bgcolor: alpha(theme.palette.info.main, 0.05), borderRadius: '12px', border: `1px dashed ${alpha(theme.palette.info.main, 0.3)}` }}>
-                <Typography variant="subtitle2" fontWeight={800} color="info.main" mb={1}>
-                   Giải thích chi tiết:
-                </Typography>
-                <Box sx={{ '& > div': { maxHeight: 'none !important' } }}>
-                   <QuestionContentRenderer htmlContent={item.question?.explaination} />
+                      {/* Label nổi góc trên bên phải */}
+                      {labelText && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            position: "absolute",
+                            top: -10,
+                            right: 12,
+                            backgroundColor: "background.paper",
+                            px: 1,
+                            borderRadius: "4px",
+                            color: labelColor,
+                            fontWeight: 700,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          {labelText}
+                        </Typography>
+                      )}
+
+                      {isUserChosen && ans.explaination && (
+                        <Box
+                          sx={{
+                            mt: 1,
+                            ml: 4,
+                            p: 1.5,
+                            borderRadius: "8px",
+                            backgroundColor: alpha("#000", 0.03),
+                            borderLeft: `3px solid ${labelColor}`,
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            fontWeight={700}
+                            textTransform="uppercase"
+                            color="text.secondary"
+                            display="block"
+                            mb={0.5}
+                          >
+                            Phân tích lựa chọn của bạn
+                          </Typography>
+                          <Box sx={{ fontSize: "0.9rem" }}>
+                            <QuestionContentRenderer
+                              htmlContent={ans.explaination}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
+                  </Grid>
+                );
+              })}
+
+              {item.question?.explaination && (
+                <Box
+                  sx={{
+                    mt: 4,
+                    p: 3,
+                    bgcolor: alpha("#2196f3", 0.05),
+                    borderRadius: "16px",
+                    border: "1px dashed",
+                    borderColor: alpha("#2196f3", 0.3),
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    fontWeight={700}
+                    color="primary"
+                    gutterBottom
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    💡 Giải thích chi tiết:
+                  </Typography>
+                  <Box sx={{ mt: 1, color: "text.primary" }}>
+                    <QuestionContentRenderer
+                      htmlContent={item.question.explaination}
+                    />
+                  </Box>
                 </Box>
-              </Box>
+              )}
             </AccordionDetails>
           </Accordion>
         ))}
