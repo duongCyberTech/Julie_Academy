@@ -1,6 +1,3 @@
-import os
-import gc
-import numpy as np
 import pandas as pd
 from sqlalchemy.orm import Session
 from sklearn.model_selection import GroupKFold
@@ -23,72 +20,62 @@ class BKTModelTraining:
   
   def train_and_evaluate(self):
     from pyBKT.models import Model
-    """Chạy quy trình kiểm thử chéo 5-Fold (Cross Validation)."""
-    metrics = {'auc': [], 'rmse': [], 'accuracy': []}
-    
+    import numpy as np
+    import gc
+
+    metrics = {}
+
     # 1. Load data
     df = self.load_dataset()
-    
-    # Đảm bảo dữ liệu được sắp xếp theo thời gian cho từng Section (BKT cần tính tuần tự)
-    df = df.sort_values(['section_id', 'order_id'])
-    
-    # Chuẩn bị dữ liệu cho GroupKFold
-    X = df.drop(columns=['correct'])
-    y = df['correct']
-    groups = df['section_id']
-    
-    n_splits = 5
-    gkf = GroupKFold(n_splits=n_splits)
-    
-    print(f"Bắt đầu Training {n_splits} Folds (GroupKFold strategy)...")
 
-    # Sử dụng enumerate để lấy chỉ số fold chính xác
-    for fold, (train_idx, test_idx) in enumerate(gkf.split(X, y, groups)):
-      try:
-        # Tách dữ liệu
-        train_df = df.iloc[train_idx]
-        test_df = df.iloc[test_idx]
+    # 🧹 2. Làm sạch dữ liệu (rất quan trọng với BKT)
+    # bỏ skill quá ít data
+    df = df.groupby('skill_name').filter(lambda x: len(x) >= 5)
 
-        # Khởi tạo mô hình (Ví dụ với pyBKT)
-        model = Model(seed=42, num_fits=5) # Giả định SEED và NUM_FITS đã định nghĩa
-        
-        # Huấn luyện
-        # BKT thường yêu cầu cột 'skill_name' - hãy đảm bảo df của bạn có cột này
-        model.fit(data=train_df) 
+    # đảm bảo mỗi skill có cả 0 và 1
+    df = df.groupby('skill_name').filter(lambda x: x['correct'].nunique() > 1)
 
-        # Đánh giá hiệu năng trên tập test
-        auc = model.evaluate(data=test_df, metric='auc')
-        rmse = model.evaluate(data=test_df, metric='rmse')
-        acc = model.evaluate(data=test_df, metric='accuracy')
+    if df.empty:
+      print("Dataset rỗng sau khi filter")
+      return {'auc': None, 'rmse': None, 'accuracy': None}
 
-        print(f"   Fold {fold + 1}: AUC={auc:.4f} | RMSE={rmse:.4f} | ACC={acc:.4f}")
-        
-        metrics['auc'].append(auc)
-        metrics['rmse'].append(rmse)
-        metrics['accuracy'].append(acc)
+    # 🧠 3. Sort theo thứ tự học (BKT cần sequence)
+    # Ưu tiên user + order nếu có
+    if 'user_id' in df.columns:
+      df = df.sort_values(['user_id', 'order_id'])
+    else:
+      df = df.sort_values(['skill_name', 'order_id'])
 
-      except Exception as e:
-        print(f"   Lỗi tại Fold {fold + 1}: {e}")
-      
-      finally:
-        # Dọn dẹp RAM triệt để
-        if 'model' in locals(): del model
-        if 'train_df' in locals(): del train_df
-        if 'test_df' in locals(): del test_df
-        gc.collect()
+    print(f"Bắt đầu training trên {len(df)} samples, {df['skill_name'].nunique()} skills...")
 
-    # Tính toán kết quả trung bình cuối cùng
-    print("-" * 30)
-    print(f"Kết quả cuối cùng (Mean):")
-    for m, values in metrics.items():
-      if values:
-        print(f"  {m.upper()}: {sum(values)/len(values):.4f}")
+    try:
+      # 🚀 4. Train model
+      model = Model(seed=42, num_fits=5)
+      model.fit(data=df)
 
-    return {
-      'auc': round(float(np.mean(metrics['auc'])), 4),
-      'rmse': round(float(np.mean(metrics['rmse'])), 4),
-      'accuracy': round(float(np.mean(metrics['accuracy'])), 4)
-    }
+      # 📊 5. Evaluate (in-sample)
+      auc = model.evaluate(data=df, metric='auc')
+      rmse = model.evaluate(data=df, metric='rmse')
+      acc = model.evaluate(data=df, metric='accuracy')
+
+      print("-" * 30)
+      print("Kết quả:")
+      print(f"AUC={auc:.4f} | RMSE={rmse:.4f} | ACC={acc:.4f}")
+
+      return {
+        'auc': round(float(auc), 4),
+        'rmse': round(float(rmse), 4),
+        'accuracy': round(float(acc), 4)
+      }
+
+    except Exception as e:
+      print(f"Lỗi khi train/evaluate: {e}")
+      return {'auc': None, 'rmse': None, 'accuracy': None}
+
+    finally:
+      if 'model' in locals():
+        del model
+      gc.collect()
 
   def transform_bkt_params(df_raw: pd.DataFrame) -> pd.DataFrame:
     # 1. Thực hiện Pivot: biến các giá trị trong 'param' thành tên cột

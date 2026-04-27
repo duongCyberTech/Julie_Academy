@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sqlalchemy.orm import Session
 from app.repositories.training_data_repository import TrainingDataRepository
 
@@ -76,6 +77,7 @@ class Preprocessing:
 
     print("[4/5] Biến đổi Skill Name...")
     df['skill_name'] = df['skill_name'] + '_' + df['diff_tag']
+    df['order_id'] = df['order_id'].astype(np.int64)
     
     print(f"   -> Số lượng Skill sau khi phân tầng: {df['skill_name'].nunique()}")
 

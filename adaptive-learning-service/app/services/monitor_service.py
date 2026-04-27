@@ -41,6 +41,8 @@ class MonitorService:
 
   def trigger_retrain(self):
     avg_metric = self.model.train_and_evaluate()
+    print("METRICS: ", avg_metric)
+    if (avg_metric["auc"] == None): return
     if (avg_metric["auc"] < self.AUC_THRESHOLD):
       self.alert()
       model_params = self.model.train_master_model()
