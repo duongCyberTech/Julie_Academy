@@ -134,7 +134,8 @@ jobs:
             ssh $EC2_USERNAME@$EC2_HOST \
             "cd Julie_Academy && \
              git pull origin main && \
-             docker compose up -d --build tutor-service"
+             docker compose up -d --build tutor-service && \
+             docker compose exec -T tutor-service npx prisma migrate deploy"
           no_output_timeout: 30m
 
   # --- JOB MỚI CHO FRONTEND (REACT) ---
