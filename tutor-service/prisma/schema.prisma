@@ -36,6 +36,8 @@ model User {
   notifications Notifications[]
 
   emailTemplates EmailTemplate[]
+
+  mailers Receivers[]
 }
 
 model Tutor {
@@ -171,11 +173,23 @@ model EmailConfig {
   updated_at DateTime @default(now())
   period     Period   @default(monthly)
   time_to_send String @default("00:00")
+  send_to    EmailObjective @default(all)
   day_of_week Int?      
   day_of_month Int?
   class_id String
   template EmailTemplate? @relation(fields: [template_id], references: [template_id], onDelete: SetNull, onUpdate: Cascade)
   class    Class @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
+
+  receivers Receivers[]
+}
+
+model Receivers {
+  config_id     String
+  config        EmailConfig       @relation(fields: [config_id], references: [config_id])
+  receiver_id   String
+  receiver      User              @relation(fields: [receiver_id], references: [uid])
+
+  @@id([config_id, receiver_id])
 }
 
 model EmailTemplate {
@@ -619,6 +633,11 @@ enum Period {
   weekly
   monthly
   none
+}
+
+enum EmailObjective {
+  personal
+  all
 }
 
 enum EmailTemplateType {
