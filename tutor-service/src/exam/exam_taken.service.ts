@@ -357,16 +357,6 @@ export class ExamTakenService {
         return await this.prisma.$transaction(async(tx) => {
             const {score, cnt, ques_correct} = await this.calculateScore(tx, answers)
 
-            const examTaken = await tx.exam_taken.update({
-                where: {et_id},
-                data: {
-                    isDone: true,
-                    doneAt: new Date(),
-                    total_ques_completed: cnt,
-                    final_score: new Prisma.Decimal((score * cnt / this.MAX_ADAPTIVE_QUESTIONS).toFixed(2)),
-                }
-            })
-
             await tx.question_for_exam_taken.updateMany({
                 where: {et_id},
                 data: {
@@ -380,6 +370,62 @@ export class ExamTakenService {
                     isCorrect: true
                 }
             })
+
+            const cnt_ques = await tx.question_for_exam_taken.count({
+                where: { et_id }
+            })
+
+            const existingExam = await tx.exam_taken.findUnique({ where: { et_id } });
+
+            const examTaken = await tx.exam_taken.update({
+              where: { et_id },
+              data: {
+                isDone: true,
+                doneAt: existingExam?.isDone ? existingExam.doneAt : new Date(),
+                total_ques_completed: cnt,
+                final_score: new Prisma.Decimal(
+                  ((score / cnt_ques) * 10).toFixed(2),
+                ),
+              },
+              select: {
+                et_id: true,
+                final_score: true,
+                total_ques_completed: true,
+                startAt: true,
+                doneAt: true,
+                category: {
+                  select: {
+                    category_id: true,
+                    category_name: true,
+                  },
+                },
+                questions: {
+                  orderBy: { index: 'asc' }, //I them
+                  select: {
+                    isCorrect: true,  // I them
+                    question: {
+                      select: {
+                        ques_id: true,
+                        title: true,
+                        content: true,
+                        explaination: true,
+                        type: true,
+                        level: true,
+                        answers: {
+                          select: {
+                            aid: true,
+                            content: true,
+                            explaination: true,
+                            is_correct: true,
+                          },
+                        },
+                      },
+                    },
+                    answer_set: true,
+                  },
+                },
+              },
+            });
 
             return {
                 message: "Adaptive Exam Submitted Successfully",

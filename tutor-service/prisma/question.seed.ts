@@ -8423,7 +8423,7 @@ async function main() {
           content: 'ABCD là hình thang vuông.',
           is_correct: false,
           explaination:
-            'Một hình thang vuông (không phải hình chữ nhật) có tổng hai góc đối không bằng $180^{\\circ}$ (ví dụ $90^{\\circ}$ và $\\widehat{C} \ne 90^{\\circ}$) nên không thể nội tiếp.',
+            'Một hình thang vuông (không phải hình chữ nhật) có tổng hai góc đối không bằng $180^{\\circ}$ (ví dụ $90^{\\circ}$ và $\\widehat{C} \\ne 90^{\\circ}$) nên không thể nội tiếp.',
         },
         {
           content: 'ABCD là hình bình hành.',
@@ -11734,8 +11734,8 @@ async function main() {
     ],
   },
   {
-    content: 'Cho phương trình bậc nhất hai ẩn $ax + by = c$. Nếu $a \ne 0$ và $b = 0$, đường thẳng biểu diễn tập nghiệm của phương trình sẽ:',
-    explaination: 'Khi $a \ne 0, b = 0$, phương trình trở thành $ax = c \\implies x = \\frac{c}{a}$. Đây là đường thẳng đi qua điểm $(\\frac{c}{a}; 0)$ trên trục $Ox$.',
+    content: 'Cho phương trình bậc nhất hai ẩn $ax + by = c$. Nếu $a \\ne 0$ và $b = 0$, đường thẳng biểu diễn tập nghiệm của phương trình sẽ:',
+    explaination: 'Khi $a \\ne 0, b = 0$, phương trình trở thành $ax = c \\implies x = \\frac{c}{a}$. Đây là đường thẳng đi qua điểm $(\\frac{c}{a}; 0)$ trên trục $Ox$.',
     level: DifficultyLevel.medium,
     type: QuestionType.single_choice,
     accessMode: QuestionAccess.public,
@@ -11997,7 +11997,7 @@ async function main() {
 
   // --- MỨC ĐỘ DỄ (EASY) ---
   {
-    content: 'Để giải hệ phương trình $\\begin{cases} x - y = 3 \\\\ 2x + 3y = 1 \\end{cases}$ bằng phương pháp thế, bước đầu tiên thuận tiện nhất là:',
+    content: 'Để giải hệ phương trình $\\begin{cases} x - y = 3 \\\\ 2x + 3y = 1 6nd{cases}$ bằng phương pháp thế, bước đầu tiên thuận tiện nhất là:',
     explaination: 'Phương pháp thế ưu tiên chọn phương trình có hệ số của một ẩn là $1$ hoặc $-1$ để biểu diễn ẩn này qua ẩn kia một cách đơn giản nhất, tránh làm việc với phân số ngay từ đầu.',
     level: DifficultyLevel.easy,
     type: QuestionType.single_choice,
@@ -13378,12 +13378,12 @@ async function main() {
     {
       content: '$x \\ne 4$',
       is_correct: true,
-      explaination: '<b>Đúng</b>. Mẫu thức $x - 4 \ne 0 \\implies x \ne 4$.',
+      explaination: '<b>Đúng</b>. Mẫu thức $x - 4 \\ne 0 \\implies x \\ne 4$.',
     },
     {
       content: '$x \\ne -4$',
       is_correct: false,
-      explaination: 'Khi $x=-4$, mẫu thức bằng $-8 \ne 0$, nên $x=-4$ vẫn thỏa mãn ĐKXĐ.',
+      explaination: 'Khi $x=-4$, mẫu thức bằng $-8 \\ne 0$, nên $x=-4$ vẫn thỏa mãn ĐKXĐ.',
     },
     {
       content: '$x = 4$',
@@ -13479,7 +13479,7 @@ async function main() {
     {
       content: '$x \\ne 2$ và $x \\ne -3$',
       is_correct: true,
-      explaination: '<b>Đúng</b>. $x - 2 \ne 0 \implies x \ne 2$ và $x + 3 \ne 0 \implies x \ne -3$.',
+      explaination: '<b>Đúng</b>. $x - 2 \\ne 0 \\implies x \\ne 2$ và $x + 3 \\ne 0 \\implies x \\ne -3$.',
     },
     {
       content: '$x \\ne -2$ và $x \\ne 3$',
@@ -13501,7 +13501,7 @@ async function main() {
     {
       content: '$x = 0$',
       is_correct: false,
-      explaination: 'Giá trị này thỏa mãn ĐKXĐ ($0 \ne 1$).',
+      explaination: 'Giá trị này thỏa mãn ĐKXĐ ($0 \\ne 1$).',
     },
     {
       content: '$x = 1$',
@@ -13511,12 +13511,12 @@ async function main() {
     {
       content: '$x = -1$',
       is_correct: false,
-      explaination: 'Giá trị này thỏa mãn ĐKXĐ ($-1 \ne 1$).',
+      explaination: 'Giá trị này thỏa mãn ĐKXĐ ($-1 \\ne 1$).',
     },
     {
       content: '$x = 2$',
       is_correct: false,
-      explaination: 'Giá trị này thỏa mãn ĐKXĐ ($2 \ne 1$).',
+      explaination: 'Giá trị này thỏa mãn ĐKXĐ ($2 \\ne 1$).',
     },
   ],
 },
@@ -13567,7 +13567,7 @@ async function main() {
     {
       content: '$x = 2; x = 3$',
       is_correct: false,
-      explaination: 'Giá trị $x=3$ làm nhân tử thứ hai bằng $18 \ne 0$.',
+      explaination: 'Giá trị $x=3$ làm nhân tử thứ hai bằng $18 \\ne 0$.',
     },
     {
       content: '$x = -2; x = 3$',
@@ -13582,7 +13582,7 @@ async function main() {
     {
       content: '$x = -2; x = -3$',
       is_correct: false,
-      explaination: 'Giá trị $x=-2$ làm nhân tử thứ nhất bằng $-8 \ne 0$.',
+      explaination: 'Giá trị $x=-2$ làm nhân tử thứ nhất bằng $-8 \\ne 0$.',
     },
   ],
 },
@@ -13599,7 +13599,7 @@ async function main() {
     {
       content: '$x = 4$',
       is_correct: true,
-      explaination: '<b>Đúng</b>. ĐKXĐ: $x \\ne 0, x \\ne 2$. Quy đồng: $(x+2)(x-2) = x(x-3) \\iff x^2 - 4 = x^2 - 3x \\iff 3x = 4 \\iff x = 4/3$. (Kiểm tra lại đề bài: Nếu $x=4/3$ thỏa mãn ĐKXĐ). Hãy thử đáp án $x=4$: $(4+2)/4 = 1.5$; $(4-3)/(4-2) = 0.5$. $1.5 \\ne 0.5$. Vậy ta giải lại: $3x=4 \\implies x=4/3$.',
+      explaination: '<b>Đúng</b>. ĐKXĐ: $x \\ne 0, x \\ne 2$. Quy đồng: $(x+2)(x-2) = x(x-3) \\iff x^2 - 4 = x^2 - 3x \\iff 3x = 4 \\iff x = 4/3$.',
     },
     {
       content: '$x = \\frac{4}{3}$',

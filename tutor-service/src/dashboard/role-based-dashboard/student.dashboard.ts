@@ -282,8 +282,8 @@ export class StudentDashboard {
                 lp."plan_id" = ${plan_id} 
                 AND lp."type" = ${PlanType.book} 
                 AND et."student_uid" = ${student_id} 
-                AND et."exam_id" = NULL
-                AND et."session_id" = NULL
+                AND et."exam_id" IS NULL
+                AND et."session_id" IS NULL
             GROUP BY c."category_id", c."category_name";
         `
 

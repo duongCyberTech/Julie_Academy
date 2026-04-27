@@ -21,12 +21,10 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';  
 
-// API Services
-import { takeAdaptiveExam, getNextAdaptiveQuestion } from '../../services/ExamService';
+import { apiClient } from '../../services/ApiClient';
+import { takeAdaptiveExam, getNextAdaptiveQuestion, submitAdaptiveExam } from '../../services/ExamService';
 
-// Render nội dung
 import QuestionContentRenderer from '../../components/QuestionContentRenderer';
-
 
 const PageWrapper = styled(Paper)(({ theme }) => {
   const isDark = theme.palette.mode === 'dark';
@@ -94,9 +92,7 @@ const SpecificExplanationBox = styled(Box)(({ theme }) => {
   };
 });
 
-// =========================================
-// MAIN COMPONENT
-// =========================================
+
 export default function StudentAdaptiveSessionPage() {
   const { categoryId } = useParams();
   const navigate = useNavigate();
@@ -108,9 +104,7 @@ export default function StudentAdaptiveSessionPage() {
   const [step, setStep] = useState('LOADING_INIT'); 
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(null);
 
-  // Mở mặc định Accordion Giải thích chung nếu muốn (hiện đang để false)
   const [generalExpanded, setGeneralExpanded] = useState(false);
-  // Thêm state cho bộ đếm thời gian
   const [elapsedTime, setElapsedTime] = useState(0);
 
   // Hàm chuyển đổi giây sang định dạng MM:SS
@@ -191,16 +185,26 @@ export default function StudentAdaptiveSessionPage() {
     }
   };
 
-  const handleFinalize = async () => {
+ const handleFinalize = async () => {
     setStep('LOADING_NEXT');
     try {
-      await apiClient.post(`/exam/adaptive/submit/${etId}`);
-      navigate(`/student/adaptive/result/${etId}`);
+
+        const lastQuestion = selectedAnswer ? {
+            et_id: etId,
+            question_id: currentQuestion.ques_id,
+            answers: [parseInt(selectedAnswer)],
+            index: currentQuestion.index,
+            level: currentQuestion.level,
+            chosen_answer_at: new Date().toISOString()
+        } : null;
+
+        await submitAdaptiveExam(etId, lastQuestion);
+        navigate(`/student/adaptive/result/${etId}`);
     } catch (error) {
-      console.error("Lỗi khi nộp bài:", error);
-      navigate(`/student/adaptive/result/${etId}`);
+        console.error("Lỗi khi nộp bài:", error);
+        navigate(`/student/adaptive/result/${etId}`);
     }
-  };
+};
 
   const getDifficultyColor = (level) => {
     switch (level?.toLowerCase()) {
@@ -251,9 +255,9 @@ export default function StudentAdaptiveSessionPage() {
           label={formatTime(elapsedTime)}
           variant="outlined"
           sx={{
-            height: 42, // Tăng chiều cao để Chip to hơn
-            px: 2, // Tăng padding ngang
-            fontSize: "1.1rem", // Chữ to hơn
+            height: 42, 
+            px: 2, 
+            fontSize: "1.1rem",
             fontWeight: 800,
             borderRadius: "10px",
             color: "text.secondary",
