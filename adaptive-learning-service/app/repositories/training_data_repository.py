@@ -32,7 +32,6 @@ class TrainingDataRepository:
         TrainingData.correct
       )
       .join(Sections, TrainingData.section_id == Sections.skill)
-      .limit(BATCH_SIZE) 
     )
 
     # 2. Fetch data mapped to column names

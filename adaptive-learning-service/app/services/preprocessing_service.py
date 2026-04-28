@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sqlalchemy.orm import Session
 from app.repositories.training_data_repository import TrainingDataRepository
+from app.core.database import get_db
 
 class Preprocessing:
   def __init__(self, db: Session):
@@ -62,23 +63,37 @@ class Preprocessing:
 
     df = df[df['user_id'].isin(valid_users)]
 
-    # 3. TÍNH TOÁN ĐỘ KHÓ 
-    print(f"[3/5] Tính toán độ khó (Hard < {self.THRESHOLD_HARD}, Easy > {self.THRESHOLD_EASY})...")
+    # 3. TÍNH TOÁN ĐỘ KHÓ TRỰC TIẾP (LOGIT)
+    print(f"[3/5] Tính toán độ khó liên tục (Continuous Logit Difficulty)...")
     
-    problem_stats = df.groupby('problem_id')['correct'].mean().reset_index()
-    problem_stats.columns = ['problem_id', 'pass_rate']
+    # Gom nhóm tính toán
+    q_agg = df.groupby('problem_id')['correct'].agg(['sum', 'count']).reset_index()
+    q_agg.columns = ['problem_id', 'total_correct', 'total_attempts']
     
-    problem_stats['diff_tag'] = problem_stats['pass_rate'].apply(self.get_difficulty_label)
+    # Tính p với Laplace Smoothing (alpha=1) để tránh giá trị vô cùng
+    alpha = 1
+    p_smooth = (q_agg['total_correct'] + alpha) / (q_agg['total_attempts'] + 2 * alpha)
     
-    df = df.merge(problem_stats[['problem_id', 'diff_tag']], on='problem_id', how='left')
+    # Tính giá trị Logit trực tiếp
+    q_agg['difficulty_logit'] = np.log((1 - p_smooth) / p_smooth)
     
-    dist = df['diff_tag'].value_counts()
-    print(f"   -> Phân bố: Easy={dist.get('EASY', 0):,}, Medium={dist.get('MEDIUM', 0):,}, Hard={dist.get('HARD', 0):,}")
+    # Merge giá trị logit vào dataframe chính
+    df = df.merge(q_agg[['problem_id', 'difficulty_logit']], on='problem_id', how='left')
+    
+    print(f"   -> Thống kê Logit: Mean={df['difficulty_logit'].mean():.2f}, "
+          f"Min={df['difficulty_logit'].min():.2f}, Max={df['difficulty_logit'].max():.2f}")
 
-    print("[4/5] Biến đổi Skill Name...")
-    df['skill_name'] = df['skill_name'] + '_' + df['diff_tag']
+    # 4. BIẾN ĐỔI DỮ LIỆU
+    print("[4/5] Chuẩn bị dữ liệu cho mô hình...")
+    
+    # Ở đây chúng ta giữ nguyên skill_name gốc vì không còn phân tầng theo nhãn
+    # Nhưng giá trị difficulty_logit sẽ được sử dụng làm đầu vào cho hàm E-step
     df['order_id'] = df['order_id'].astype(np.int64)
     
-    print(f"   -> Số lượng Skill sau khi phân tầng: {df['skill_name'].nunique()}")
-
     return df
+
+if __name__ == "__main__":
+  db = next(get_db())
+  processor = Preprocessing(db=db)
+  df = processor.process_pipeline()
+  print(df.head())

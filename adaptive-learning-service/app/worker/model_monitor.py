@@ -15,7 +15,7 @@ celery_app.conf.timezone = 'Asia/Ho_Chi_Minh'
 celery_app.conf.beat_schedule = {
     'run-preprocessing-every-night': {
         'task': 'app.worker.model_monitor.run_daily_preprocessing',
-        'schedule': crontab(hour=0, minute=0),
+        'schedule': crontab(minute='*/2'),
     },
 }
 

@@ -1,6 +1,7 @@
 import pandas as pd
+import numpy as np
 from sqlalchemy.orm import Session
-from sklearn.model_selection import GroupKFold
+from app.repositories.metadata_repository import MetadataRepository
 from app.services.preprocessing_service import Preprocessing
 
 class BKTModelTraining:
@@ -8,107 +9,123 @@ class BKTModelTraining:
     self.SEED = 42           
     self.NUM_FITS = 10       
     self.DEFAULTS = {'order_id': 'order_id'} 
+    self.meta_repo = MetadataRepository(db=db)
     self.preprocessing = Preprocessing(db=db)
 
   def load_dataset(self) -> pd.DataFrame:
     """Đọc file CSV và chuẩn hóa cột thời gian (timestamp)."""
     return self.preprocessing.process_pipeline()
   
+  def load_params(self) -> pd.DataFrame:
+    return self.meta_repo.get_many()
+  
   def extract_skill_and_level(self, text: str):
     # Convert the split list into a pandas Series
     return pd.Series(text.rsplit('_', 1))
   
-  def train_and_evaluate(self):
-    from pyBKT.models import Model
-    import numpy as np
-    import gc
-
-    metrics = {}
-
-    # 1. Load data
+  def bkt_forward_proc(self):
+    print("[5/5] Performing Full BKT Forward Procedure (E-Step)...")
     df = self.load_dataset()
+    params_df = self.load_params()
+    dict_params = params_df.set_index('skill').to_dict('index')
 
-    # 🧹 2. Làm sạch dữ liệu (rất quan trọng với BKT)
-    # bỏ skill quá ít data
-    df = df.groupby('skill_name').filter(lambda x: len(x) >= 5)
+    def process_group(group):
+      skill = group['skill_name'].iloc[0]
+      if skill not in dict_params: return None
+      
+      p = dict_params[skill]
+      p_L = p['p_init']
+      p_T = p['p_transit']
+      beta_g = np.log(p['p_guess'] / (1 - p['p_guess']))
+      beta_s = np.log(p['p_slip'] / (1 - p['p_slip']))
 
-    # đảm bảo mỗi skill có cả 0 và 1
-    df = df.groupby('skill_name').filter(lambda x: x['correct'].nunique() > 1)
-
-    if df.empty:
-      print("Dataset rỗng sau khi filter")
-      return {'auc': None, 'rmse': None, 'accuracy': None}
-
-    # 🧠 3. Sort theo thứ tự học (BKT cần sequence)
-    # Ưu tiên user + order nếu có
-    if 'user_id' in df.columns:
-      df = df.sort_values(['user_id', 'order_id'])
-    else:
-      df = df.sort_values(['skill_name', 'order_id'])
-
-    print(f"Bắt đầu training trên {len(df)} samples, {df['skill_name'].nunique()} skills...")
-
-    try:
-      # 🚀 4. Train model
-      model = Model(seed=42, num_fits=5)
-      model.fit(data=df)
-
-      # 📊 5. Evaluate (in-sample)
-      auc = model.evaluate(data=df, metric='auc')
-      rmse = model.evaluate(data=df, metric='rmse')
-      acc = model.evaluate(data=df, metric='accuracy')
-
-      print("-" * 30)
-      print("Kết quả:")
-      print(f"AUC={auc:.4f} | RMSE={rmse:.4f} | ACC={acc:.4f}")
-
-      return {
-        'auc': round(float(auc), 4),
-        'rmse': round(float(rmse), 4),
-        'accuracy': round(float(acc), 4)
+      # Khởi tạo bộ đếm stats cho 4 tham số
+      stats = {
+        'g_num': 0, 'g_den': 0, 's_num': 0, 's_den': 0,
+        't_num': 0, 't_den': 0, 'i_num': 0, 'i_den': 0
       }
+      
+      for i, (_, row) in enumerate(group.iterrows()):
+        obs = row['correct']
+        d_i = row['difficulty_logit']
+        
+        p_G_i = 1 / (1 + np.exp(-(beta_g - d_i)))
+        p_S_i = 1 / (1 + np.exp(-(beta_s + d_i)))
 
-    except Exception as e:
-      print(f"Lỗi khi train/evaluate: {e}")
-      return {'auc': None, 'rmse': None, 'accuracy': None}
+        # --- E-Step: Posterior Calculation ---
+        if obs == 1:
+          p_L_obs = (p_L * (1 - p_S_i)) / (p_L * (1 - p_S_i) + (1 - p_L) * p_G_i)
+          stats['g_num'] += (1 - p_L_obs)
+        else:
+          p_L_obs = (p_L * p_S_i) / (p_L * p_S_i + (1 - p_L) * (1 - p_G_i))
+          stats['s_num'] += p_L_obs
+        
+        stats['g_den'] += (1 - p_L_obs)
+        stats['s_den'] += p_L_obs
 
-    finally:
-      if 'model' in locals():
-        del model
-      gc.collect()
+        # Thống kê cho P_init (chỉ lấy dòng đầu tiên của user-skill)
+        if i == 0:
+          stats['i_num'] += p_L_obs
+          stats['i_den'] += 1
+        
+        # Thống kê cho P_transit (Xác suất chuyển trạng thái)
+        p_not_known_before = 1 - p_L
+        # Kỳ vọng học sinh "vừa học được"
+        p_learned = (p_T * p_not_known_before) / (p_L + p_T * p_not_known_before)
+        stats['t_num'] += p_learned
+        stats['t_den'] += p_not_known_before
 
-  def transform_bkt_params(df_raw: pd.DataFrame) -> pd.DataFrame:
-    # 1. Thực hiện Pivot: biến các giá trị trong 'param' thành tên cột
-    df_pivot = df_raw.pivot(
-        index=['skill', 'level'], 
-        columns='param', 
-        values='value'
-    ).reset_index()
+        # --- Transition for next step ---
+        p_L = p_L_obs + (1 - p_L_obs) * p_T
+
+      return pd.Series(stats)
+
+    stats_df = df.groupby(['user_id', 'skill_name']).apply(process_group).reset_index()
+    final_stats = stats_df.groupby('skill_name').sum().reset_index()
+    return final_stats
+
+  def bkt_m_step_update(self, final_stats_df):
+    print("--- M-STEP: UPDATING ALL 4 PARAMS ---")
+    current_params = self.load_params()
+    update_df = final_stats_df.merge(current_params, left_on='skill_name', right_on='skill')
+
+    # Tỉ lệ cập nhật khác nhau
+    ETA_QUESTION = 0.15  # Guess, Slip thay đổi theo câu hỏi (nhanh)
+    ETA_LEARNING = 0.05  # Init, Transit thay đổi theo tệp khách hàng/giáo trình (chậm)
+
+    def update_logic(row):
+      # 1. Update Guess & Slip
+      batch_g = row['g_num'] / row['g_den'] if row['g_den'] > 0 else row['p_guess']
+      new_g = (1 - ETA_QUESTION) * row['p_guess'] + ETA_QUESTION * batch_g
+      
+      batch_s = row['s_num'] / row['s_den'] if row['s_den'] > 0 else row['p_slip']
+      new_s = (1 - ETA_QUESTION) * row['p_slip'] + ETA_QUESTION * batch_s
+
+      # 2. Update Init & Transit
+      batch_i = row['i_num'] / row['i_den'] if row['i_den'] > 0 else row['p_init']
+      new_i = (1 - ETA_LEARNING) * row['p_init'] + ETA_LEARNING * batch_i
+      
+      batch_t = row['t_num'] / row['t_den'] if row['t_den'] > 0 else row['p_transit']
+      new_t = (1 - ETA_LEARNING) * row['p_transit'] + ETA_LEARNING * batch_t
+
+      return pd.Series({
+        'new_p_init': np.clip(new_i, 0.01, 0.9),
+        'new_p_transit': np.clip(new_t, 0.01, 0.3),
+        'new_p_guess': np.clip(new_g, 0.01, 0.45),
+        'new_p_slip': np.clip(new_s, 0.01, 0.45)
+      })
+
+    results = update_df.apply(update_logic, axis=1)
+    update_df = pd.concat([update_df, results], axis=1)
+
+    # Lưu vào Database
+    for _, row in update_df.iterrows():
+      self.meta_repo.update_full_params(
+        skill=row['skill_name'],
+        p_init=row['new_p_init'],
+        p_transit=row['new_p_transit'],
+        p_guess=row['new_p_guess'],
+        p_slip=row['new_p_slip']
+      )
     
-    # 2. Loại bỏ tên index của cột (thường là 'param') để DataFrame sạch đẹp
-    df_pivot.columns.name = None
-    
-    # 3. Sắp xếp lại thứ tự cột theo ý muốn
-    expected_cols = ['skill', 'level', 'prior', 'learns', 'guesses', 'slips', 'forgets']
-    # Chỉ lấy những cột tồn tại trong dữ liệu thực tế
-    final_cols = [c for c in expected_cols if c in df_pivot.columns]
-    
-    return df_pivot[final_cols].drop(columns=['forgets'])
-
-  def train_master_model(self):
-    from pyBKT.models import Model
-    """Huấn luyện Model cuối cùng trên toàn bộ dữ liệu để xuất bản."""
-    print("\nĐang huấn luyện Master Model (Final)...")
-
-    # Gộp dữ liệu từ tất cả các fold
-    full_data = self.load_dataset()
-
-    final_model = Model(seed=self.SEED, num_fits=self.NUM_FITS)
-    final_model.fit(data=full_data, defaults=self.DEFAULTS)
-
-    df_params = pd.DataFrame(final_model.params())
-    df_params = df_params.drop(columns=['class'])
-    df_params[['skill', 'level']] = df_params['skill'].apply(self.extract_skill_and_level)
-    df_params['level'] = df_params['level'].str.lower()
-
-    return self.transform_bkt_params(df_params)
+    return update_df
