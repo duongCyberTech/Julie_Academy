@@ -1,5 +1,8 @@
+import json
+from pathlib import Path
+
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.dialects.postgresql import insert
 from app.models.model_metadata import ModelMetadata
 from app.models.sections import Sections
@@ -8,6 +11,12 @@ import pandas as pd
 class MetadataRepository:
   def __init__(self, db: Session):
     self.db = db
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    JSON_PATH = BASE_DIR / "core" / "default_index.json"
+
+    with open(JSON_PATH, "r", encoding="utf-8") as f:
+      self.default_index = json.load(f)
+    print("Loaded default index:", self.default_index)
 
   def create(self):
     pass
@@ -16,12 +25,13 @@ class MetadataRepository:
     stmt = (
       select(
         Sections.skill,
-        ModelMetadata.p_init,
-        ModelMetadata.p_transit,
-        ModelMetadata.p_slip,
-        ModelMetadata.p_guess
+        func.coalesce(ModelMetadata.p_init, self.default_index["p_prior"]).label("p_init"),
+        func.coalesce(ModelMetadata.p_transit, self.default_index["p_learns"]).label("p_transit"),
+        func.coalesce(ModelMetadata.p_slip, self.default_index["p_slips"]).label("p_slip"),
+        func.coalesce(ModelMetadata.p_guess, self.default_index["p_guesses"]).label("p_guess")
       )
-      .join(Sections, ModelMetadata.section_id == Sections.skill)
+      .select_from(Sections)
+      .outerjoin(ModelMetadata, Sections.skill == ModelMetadata.section_id)
     )
 
     results = self.db.execute(stmt).mappings().all()
