@@ -40,13 +40,8 @@ class MonitorService:
       self.metadata_repo.update_by_skill_and_level(skill, updated_df)
 
   def trigger_retrain(self):
-    avg_metric = self.model.train_and_evaluate()
-    if (avg_metric["auc"] < self.AUC_THRESHOLD):
-      self.alert()
-      model_params = self.model.train_master_model()
-      self.mass_update_params(model_params)
-      updated_avg_metric = self.model.train_and_evaluate()
-      self.update_measures(params=updated_avg_metric)
+    e_step = self.model.bkt_forward_proc()
+    self.model.bkt_m_step_update(e_step)
 
   def alert(self):
     print("Alert!")

@@ -1,6 +1,6 @@
 # app/repositories/training_data_repository.py
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import and_, select, func, text
 import pandas as pd
 from app.models.training_data import TrainingData
 from app.models.sections import Sections
@@ -26,13 +26,19 @@ class TrainingDataRepository:
     stmt = (
       select(
         Sections.skill,
-        TrainingData.user_id,    # Now pulling from TrainingData
+        Sections.user_id,    # Now pulling from TrainingData
         TrainingData.problem_id,
         TrainingData.order_id,
         TrainingData.correct
       )
-      .join(Sections, TrainingData.section_id == Sections.skill)
-      .limit(BATCH_SIZE) 
+      .join(
+        Sections, 
+        and_(
+          TrainingData.section_id == Sections.skill,
+          TrainingData.user_id == Sections.user_id
+        )
+      )
+      .where(TrainingData.order_id >= func.now() - text("INTERVAL '24 hours'"))
     )
 
     # 2. Fetch data mapped to column names

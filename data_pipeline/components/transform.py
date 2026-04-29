@@ -1,5 +1,5 @@
 from components.extract import DataExtraction
-from pyspark.sql.functions import col, coalesce, current_timestamp
+from pyspark.sql.functions import col, coalesce, current_timestamp, expr
 
 class DataTransformation:
   def __init__(self):
@@ -12,7 +12,7 @@ class DataTransformation:
     df_src.show(5)
     print("\n======================\n")
     print("\nTransform data...")
-    df_sections = df_src.select("skill").distinct()
+    df_sections = df_src.select("skill", "user_id").distinct()
 
     df_training_data = df_src.select('skill', 'problem_id', 'order_id', 'index', 'correct', 'user_id')
     df_training_data = df_training_data.withColumnRenamed("skill", "section_id")
@@ -20,7 +20,7 @@ class DataTransformation:
     df_training_data = df_training_data.withColumn(
       "order_id", 
       coalesce(col("order_id"), current_timestamp())
-    )
+    ).withColumn("id", expr("uuid()"))
     print("\n======================\n")
     df_sections.printSchema()
     df_sections.show(5)
@@ -28,7 +28,7 @@ class DataTransformation:
     df_training_data.show(5)
     print("\n======================\n")
     return {
-      "df_sections": df_sections,
+      "df_sections": df_sections.drop_duplicates(subset=['skill', 'user_id']),
       "df_training_data": df_training_data
     }
 
