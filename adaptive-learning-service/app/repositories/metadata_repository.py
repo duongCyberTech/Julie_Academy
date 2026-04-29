@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+from sqlalchemy import and_, or_, select, func, text
 from sqlalchemy.dialects.postgresql import insert
 from app.models.model_metadata import ModelMetadata
 from app.models.sections import Sections
@@ -25,13 +25,26 @@ class MetadataRepository:
     stmt = (
       select(
         Sections.skill,
-        func.coalesce(ModelMetadata.p_init, self.default_index["p_prior"]).label("p_init"),
-        func.coalesce(ModelMetadata.p_transit, self.default_index["p_learns"]).label("p_transit"),
-        func.coalesce(ModelMetadata.p_slip, self.default_index["p_slips"]).label("p_slip"),
-        func.coalesce(ModelMetadata.p_guess, self.default_index["p_guesses"]).label("p_guess")
+        Sections.user_id,
+        func.coalesce(ModelMetadata.p_init, self.default_index["prior"]).label("p_init"),
+        func.coalesce(ModelMetadata.p_transit, self.default_index["learns"]).label("p_transit"),
+        func.coalesce(ModelMetadata.p_slip, self.default_index["slips"]).label("p_slip"),
+        func.coalesce(ModelMetadata.p_guess, self.default_index["guesses"]).label("p_guess")
       )
       .select_from(Sections)
-      .outerjoin(ModelMetadata, Sections.skill == ModelMetadata.section_id)
+      .outerjoin(
+        ModelMetadata,
+        and_(
+          Sections.skill == ModelMetadata.section_id,
+          Sections.user_id == ModelMetadata.user_id
+        )
+      )
+      .where(
+        or_(
+          ModelMetadata.section_id == None, # Metadata chưa tồn tại
+          ModelMetadata.last_updated_at < (func.now() - text("INTERVAL '24 hours'")) # Hoặc đã quá 24h
+        )
+      )
     )
 
     results = self.db.execute(stmt).mappings().all()
@@ -45,28 +58,31 @@ class MetadataRepository:
   def get_by_id(self, id: str):
     pass
 
-  def update_full_params(self, skill, p_init, p_transit, p_guess, p_slip):
+  def update_full_params(self, skill, user_id, p_init, p_transit, p_guess, p_slip):
     """
     Sử dụng PostgreSQL UPSERT (ON CONFLICT DO UPDATE)
     """
     # 1. Tạo câu lệnh Insert cơ bản
     stmt = insert(ModelMetadata).values(
-      section_id=skill, # Giả định section_id là khóa chính hoặc có UNIQUE constraint
+      section_id=skill,
+      user_id=user_id,
       p_init=p_init,
       p_transit=p_transit,
       p_guess=p_guess,
-      p_slip=p_slip
+      p_slip=p_slip, 
+      last_updated_at=func.now()
     )
 
     # 2. Thêm logic xử lý xung đột (Upsert)
     # Giả sử 'section_id' là cột có ràng buộc UNIQUE hoặc Primary Key
     upsert_stmt = stmt.on_conflict_do_update(
-      index_elements=['section_id'], # Cột dùng để xác định trùng lặp
+      index_elements=['section_id', 'user_id'], # Cột dùng để xác định trùng lặp
       set_={
         'p_init': p_init,
         'p_transit': p_transit,
         'p_guess': p_guess,
-        'p_slip': p_slip
+        'p_slip': p_slip,
+        'last_updated_at': func.now()
       }
     )
 

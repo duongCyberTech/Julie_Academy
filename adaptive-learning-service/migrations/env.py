@@ -69,7 +69,7 @@ def run_migrations_online() -> None:
     config_section = config.get_section(config.config_ini_section)
     
     # 2. Retrieve the URL from the environment
-    db_url = os.environ.get("DATABASE_URL")
+    db_url = settings.DATABASE_URL
     
     # 3. Validation: Stop early if the URL is missing
     if not db_url:

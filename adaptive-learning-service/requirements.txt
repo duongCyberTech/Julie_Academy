@@ -37,7 +37,6 @@ prompt_toolkit==3.0.52
 propcache==0.4.1
 psycopg2-binary==2.9.11
 pyasn1==0.6.3
-pyBKT @ git+https://github.com/CAHLR/pyBKT.git@dd81770d7eab28400048c5f99773c76dd2aeeb6e
 pycparser==3.0
 pydantic==2.12.5
 pydantic-settings==2.13.1

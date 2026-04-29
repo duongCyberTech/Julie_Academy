@@ -18,18 +18,24 @@ class DataLoader:
     df_sections = df_transform["df_sections"]
     df_training_data = df_transform["df_training_data"]
 
-    df_sections.write.jdbc(
-      url=settings.TARGET_URL,
-      table="public.sections",
-      mode="append",
-      properties=self.target_properties
-    )
+    try:
+      df_sections.write.jdbc(
+        url=settings.TARGET_URL,
+        table="public.sections",
+        mode="append",
+        properties=self.target_properties
+      )
+    except: 
+      pass
 
-    df_training_data.write.jdbc(
-      url=settings.TARGET_URL,
-      table="public.training_data",
-      mode="append",
-      properties=self.target_properties
-    )
+    try:
+      df_training_data.write.jdbc(
+        url=settings.TARGET_URL,
+        table="public.training_data",
+        mode="append",
+        properties=self.target_properties
+      )
+    except:
+      pass
 
     print("Loading successfully!")

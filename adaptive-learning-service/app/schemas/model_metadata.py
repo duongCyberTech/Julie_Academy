@@ -6,4 +6,3 @@ class ModelMetadataUpsert(BaseModel):
   p_transit: float
   p_slip: float
   p_guess: float
-  level: LevelStatus

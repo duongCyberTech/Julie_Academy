@@ -36,6 +36,9 @@ class Preprocessing:
       df = self.get_many_session_df()
     except: return print("[LỖI] Không đọc được file CSV.")
 
+    if df.empty:
+      return df
+
     # Mapping cột
     cols_map = {
       'user_id': 'user_id', 'skill': 'skill_name', 'problem_id': 'problem_id',
@@ -44,6 +47,7 @@ class Preprocessing:
     }
     df = df.rename(columns={k: v for k, v in cols_map.items() if k in df.columns})
     df = df.dropna(subset=['user_id', 'skill_name', 'problem_id', 'order_id', 'correct'])
+    df = df.drop_duplicates()
     if 'original' in df.columns: df = df[df['original'] == 1]
     if 'attempt_count' in df.columns: df = df[df['attempt_count'] == 1]
     

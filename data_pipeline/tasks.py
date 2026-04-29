@@ -15,7 +15,7 @@ app.conf.beat_schedule = {
         'task': 'tasks.trigger_spark',
         # Cấu hình chạy vào 02:00 sáng mỗi ngày. 
         # (Bạn có thể đổi thành crontab(minute='*') để test chạy mỗi phút)
-        'schedule': crontab(minute=0, hour=2), 
+        'schedule': crontab(minute='*'), 
     },
 }
 
