@@ -5,13 +5,21 @@ import pika
 import json
 from app.core.config import settings
 from app.services.instant_computing_service import InstantComputingService
+from app.repositories.metadata_repository import MetadataRepository
+from app.core.database import SessionLocal
 
 instant_computing_service = InstantComputingService()
 
 def callback(ch, method, properties, body):
   data = json.loads(body)
+  question_list = data["question_dons_list"]
+  skill = data["skill"]
+  user_id = data["user_id"]
+  with SessionLocal() as db:
+    repo = MetadataRepository(db)
+    params = repo.get_by_user_and_skill(skill, user_id)
 
-  result = instant_computing_service.compute_instant_knowledge(data, {}).to_dict()
+  result = instant_computing_service.compute_instant_knowledge(question_list, params).to_dict()
   
   print(f"--- KẾT QUẢ P(L) CUỐI CÙNG GỬI VỀ NESTJS: {result['p_l']} ---")
 
