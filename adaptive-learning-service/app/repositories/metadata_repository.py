@@ -52,11 +52,16 @@ class MetadataRepository:
 
     return df
 
-  def get_by_section(self, section_id: str):
-    pass
+  def get_by_user_and_skill(self, skill: str, user_id: str):
+    params = self.db.query(ModelMetadata).filter_by(user_id=user_id, section_id=skill).first()
+    if params == None: return {}
 
-  def get_by_id(self, id: str):
-    pass
+    return {
+      "prior": params.p_init,
+      "learns": params.p_transit,
+      "guesses": params.p_guess,
+      "slips": params.p_slip
+    }
 
   def update_full_params(self, skill, user_id, p_init, p_transit, p_guess, p_slip):
     """

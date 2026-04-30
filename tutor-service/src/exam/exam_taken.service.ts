@@ -292,7 +292,11 @@ export class ExamTakenService {
             index: item.index
         })))
 
-        const payload = question_dons_list
+        const payload = {
+            skill: category_id,
+            user_id: student_id,
+            question_dons_list
+        }
 
         const p_l = await this.rabbitMQService.sendAndWait(payload)
 
