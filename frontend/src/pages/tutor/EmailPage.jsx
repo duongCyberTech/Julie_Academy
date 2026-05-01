@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   Box, Typography, Paper, Button, Stack, Switch,
   IconButton, Dialog, TextField, MenuItem, Snackbar, Alert, Grid, Tooltip, useTheme,
-  AppBar, Toolbar, Card, CardContent, CardActions, Divider, Slide, Chip
+  AppBar, Toolbar, Card, CardContent, CardActions, Divider, Slide, Chip,
+  Autocomplete
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import AddTaskIcon from '@mui/icons-material/AddTask';
@@ -19,6 +20,7 @@ import SendIcon from '@mui/icons-material/Send';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 
+import { getClassesByTutor } from '../../services/ClassService';
 import {
   getAllEmailChains, createEmailChain, updateEmailChain, deleteEmailChain
 } from '../../services/EmailService';
@@ -155,11 +157,14 @@ const daysOfWeek = [
 
 const daysOfMonth = Array.from({ length: 31 }, (_, i) => ({ value: i + 1, label: `Ngày ${i + 1}` }));
 
-function EmailChainPage({ classId, token }) {
+function EmailChainPage({ classId }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
+  const [token] = useState(() => localStorage.getItem("token"));
   const [chains, setChains] = useState([]);
+  const [tutorClasses, setTutorClasses] = useState([]);
+  const [selectedClass, setSelectedClass] = useState(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
@@ -175,7 +180,7 @@ function EmailChainPage({ classId, token }) {
   }, []);
 
   const fetchChains = useCallback(async () => {
-    if (!classId) return;
+    if (!classId || !token) return;
     try {
       setLoading(true);
       const data = await getAllEmailChains(classId, token);
@@ -188,27 +193,52 @@ function EmailChainPage({ classId, token }) {
   }, [classId, token, showToast]);
 
   useEffect(() => {
+    let isMounted = true;
     fetchChains();
-  }, [fetchChains]);
+    
+    const fetchClasses = async () => {
+      if (!token) return;
+      try {
+        const res = await getClassesByTutor(token);
+        if (isMounted) {
+          setTutorClasses(Array.isArray(res) ? res : res?.data || []);
+        }
+      } catch (error) {
+        console.error("Lỗi tải danh sách lớp:", error);
+      }
+    };
+    
+    fetchClasses();
+
+    return () => { isMounted = false; };
+  }, [fetchChains, token]);
 
   const handleOpenBuilderNew = useCallback(() => {
     setFormData(initialForm);
     setEditingId(null);
     setEditorStep(1);
+    setSelectedClass(null);
     setEditorOpen(true);
   }, []);
 
   const handleOpenBuilderEdit = useCallback((chain) => {
     setFormData({ ...chain, create_as_template: false });
     setEditingId(chain.config_id);
+    
+    if (chain.class_id) {
+      const matchedClass = tutorClasses.find(c => c.class_id === chain.class_id);
+      setSelectedClass(matchedClass || null);
+    }
+
     setEditorStep(2); 
     setEditorOpen(true);
-  }, []);
+  }, [tutorClasses]);
 
   const handleCloseBuilder = useCallback(() => {
     setEditorOpen(false);
     setFormData(initialForm);
     setEditingId(null);
+    setSelectedClass(null);
   }, []);
 
   const handleSelectTemplate = useCallback((template) => {
@@ -239,6 +269,11 @@ function EmailChainPage({ classId, token }) {
       showToast("Cần nhập đủ tiêu đề và nội dung", "warning");
       return;
     }
+    if (!selectedClass) {
+      showToast("Vui lòng chọn một lớp học để gửi", "warning");
+      return;
+    }
+    
     setLoading(true);
     try {
       const payload = { ...formData };
@@ -250,7 +285,7 @@ function EmailChainPage({ classId, token }) {
         await updateEmailChain(editingId, updatePayload, token);
         showToast("Cập nhật thành công");
       } else {
-        await createEmailChain(classId, payload, token);
+        await createEmailChain(selectedClass.class_id, payload, token);
         showToast("Khởi tạo luồng tự động thành công");
       }
       handleCloseBuilder();
@@ -260,7 +295,7 @@ function EmailChainPage({ classId, token }) {
     } finally {
       setLoading(false);
     }
-  }, [formData, editingId, classId, token, fetchChains, handleCloseBuilder, showToast]);
+  }, [formData, editingId, selectedClass, token, fetchChains, handleCloseBuilder, showToast]);
 
   const handleToggleActive = useCallback(async (configId, currentActive) => {
     try {
@@ -441,6 +476,24 @@ function EmailChainPage({ classId, token }) {
                     </CardHeader>
                     <CardBody>
                       <Stack spacing={2.5}>
+                        <Autocomplete
+                          options={tutorClasses}
+                          getOptionLabel={(option) => option?.classname || ""}
+                          isOptionEqualToValue={(option, value) => option.class_id === value.class_id}
+                          getOptionKey={(option) => option.class_id}
+                          value={selectedClass}
+                          onChange={(event, newValue) => setSelectedClass(newValue)}
+                          renderInput={(params) => (
+                            <TextField 
+                              {...params} 
+                              label="Chọn lớp học" 
+                              placeholder="Tìm lớp..." 
+                              size="small" 
+                              sx={commonInputSx} 
+                            />
+                          )}
+                        />
+
                         <TextField select label="Chu kỳ lặp lại" name="period" value={formData.period} onChange={handleChange} fullWidth size="small" sx={commonInputSx}>
                           <MenuItem value="none">Chỉ gửi 1 lần</MenuItem>
                           <MenuItem value="daily">Hàng ngày</MenuItem>
