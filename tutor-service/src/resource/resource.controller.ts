@@ -10,7 +10,6 @@ import { Request as Req, Response as Resp } from 'express';
 import { Readable } from 'stream';
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ResourceService, FolderService } from './resource.service'
-import { PrismaService } from 'src/prisma/prisma.service'
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard'
 import { RolesGuard } from 'src/auth/guard/roles.guard'
 import { Roles } from 'src/auth/decorator/roles.decorator'
