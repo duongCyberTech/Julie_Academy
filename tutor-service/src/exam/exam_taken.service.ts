@@ -215,6 +215,13 @@ export class ExamTakenService {
             index: 1
         }))
 
+        const jobPayload = {
+            et_id: newExamTaken.et_id,
+            timeoutAt: new Date(new Date().getTime() + 180 * 60 * 1000)
+        }
+
+        this.eventEmitter.emit('exam_taken.new', jobPayload)
+
         return {
             exam_info: newExamTaken,
             questions: [question]
