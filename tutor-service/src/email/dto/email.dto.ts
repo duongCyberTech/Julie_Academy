@@ -3,7 +3,7 @@ import { EmailObjective, EmailTemplateType, Period } from "@prisma/client";
 
 export class EmailConfigDto {
   @IsString()
-  header: string;
+  header!: string;
 
   @IsOptional()
   @IsString()
@@ -11,16 +11,16 @@ export class EmailConfigDto {
 
   @IsOptional()
   @IsString()
-  template_id?: string;
+  template_id: string | null = null;
 
   @IsBoolean()
   use_template: boolean = false;
 
   @IsBoolean()
-  active: boolean;
+  active!: boolean;
 
   @IsEnum(['weekly', 'monthly'])
-  period: Period;
+  period!: Period;
 
   @IsArray()
   @IsString({ each: true })
@@ -31,7 +31,7 @@ export class EmailConfigDto {
 
   @IsOptional()
   @IsString()
-  time_to_send?: string = '00:00';
+  time_to_send: string = '00:00';
 
   @IsOptional()
   @IsNumber()
@@ -48,7 +48,7 @@ export class EmailConfigDto {
 
 export class EmailTemplateCreateDto {
   @IsString()
-  body: string
+  body: string = "";
 
   @IsOptional()
   @IsEnum(EmailTemplateType)
