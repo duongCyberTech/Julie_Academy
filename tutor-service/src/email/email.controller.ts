@@ -27,6 +27,7 @@ export class EmailController {
     @Param('class_id') class_id: string, 
     @Body() data: EmailConfigDto
   ) {
+    console.log(`Creating email chain for tutor ${req.user.tutor_id} in class ${class_id} with data: ${JSON.stringify(data)}`);
     return this.emailService.createEmailConfig(req.user.tutor_id, class_id, data);
   }
 

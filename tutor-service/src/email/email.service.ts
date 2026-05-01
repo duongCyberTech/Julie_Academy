@@ -44,12 +44,17 @@ export class EmailService {
         });
 
         if (!template) {
+          // FIX 1: Uncomment this to stop the transaction if the ID is invalid
           throw new BadRequestException('The specified template does not exist.');
+        } else {
+          emailConfigData.body = template.body;
+          emailConfigData.use_template = true;
+          emailConfigData.template_id = template.template_id;
         }
-
-        emailConfigData.body = template.body;
-        emailConfigData.use_template = true;
-        emailConfigData.template_id = template.template_id;
+      } else if (!create_as_template) {
+        // FIX 2: Prevent a junk 'template_id' from slipping through if they aren't using/creating one
+        emailConfigData.use_template = false;
+        emailConfigData.template_id = null; 
       }
 
       const email_config = await tx.emailConfig.create({
