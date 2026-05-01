@@ -268,23 +268,34 @@ export class StudentDashboard {
             fail_cnt: number
         }[] = await this.prisma.$queryRaw`
             SELECT 
-                c."category_id", 
-                c."category_name",
-                COUNT(CASE WHEN qet."isCorrect" = true THEN 1 END) AS correct_cnt,
-                COUNT(CASE WHEN qet."isCorrect" = false THEN 1 END) AS fail_cnt
-            FROM public."Categories" AS c
-            JOIN public."Structure" AS st ON c."category_id" = st."cate_id"
+                parent_c."category_id", 
+                parent_c."category_name",
+                COALESCE(student_data.correct_cnt, 0) AS correct_cnt,
+                COALESCE(student_data.fail_cnt, 0) AS fail_cnt
+            FROM public."Categories" AS parent_c
+            -- 1. Lấy danh sách Category CHA (VD: Chương sách) được gán trực tiếp vào Lesson_Plan
+            JOIN public."Structure" AS st ON parent_c."category_id" = st."cate_id"
             JOIN public."Lesson_Plan" AS lp ON st."plan_id" = lp."plan_id"
-            JOIN public."Questions" AS q ON c."category_id" = q."category_id"
-            JOIN public."Question_for_exam_taken" AS qet ON q."ques_id" = qet."ques_id"
-            JOIN public."Exam_taken" as et on et."et_id" = qet."et_id"
-            WHERE 
-                lp."plan_id" = ${plan_id} 
-                AND lp."type" = ${PlanType.book} 
-                AND et."student_uid" = ${student_id} 
-                AND et."exam_id" IS NULL
-                AND et."session_id" IS NULL
-            GROUP BY c."category_id", c."category_name";
+                AND lp."plan_id" = ${plan_id}
+                AND lp."type" = 'book'
+            -- 2. LEFT JOIN với bảng điểm học sinh, lúc này đã được quy đổi lên cấp CHA
+            LEFT JOIN (
+                SELECT 
+                    -- Dùng COALESCE: Nếu câu hỏi gắn vào lớp con thì lấy parent_id, 
+                    -- nếu câu hỏi vô tình gắn thẳng vào lớp cha (parent_id bị NULL) thì giữ nguyên category_id
+                    COALESCE(child_c."parent_id", child_c."category_id") AS mapped_parent_id,
+                    COUNT(CASE WHEN qet."isCorrect" = true THEN 1 END) AS correct_cnt,
+                    COUNT(CASE WHEN qet."isCorrect" = false THEN 1 END) AS fail_cnt
+                FROM public."Questions" AS q
+                -- Nối thêm Categories vào Subquery để tra ngược lên cha của nó
+                JOIN public."Categories" AS child_c ON q."category_id" = child_c."category_id"
+                JOIN public."Question_for_exam_taken" AS qet ON q."ques_id" = qet."ques_id"
+                JOIN public."Exam_taken" AS et ON et."et_id" = qet."et_id"
+                WHERE et."student_uid" = ${student_id}
+                    AND et."exam_id" IS NULL
+                    AND et."session_id" IS NULL
+                GROUP BY COALESCE(child_c."parent_id", child_c."category_id")
+            ) AS student_data ON parent_c."category_id" = student_data.mapped_parent_id;
         `
 
         const list = await Promise.all(
@@ -312,9 +323,9 @@ export class StudentDashboard {
                     };
                 }
 
-                acc[id].correct_cnt += curr.correct_cnt;
-                acc[id].fail_cnt += curr.fail_cnt;
-                
+                acc[id].correct_cnt += Number(curr.correct_cnt);
+                acc[id].fail_cnt += Number(curr.fail_cnt);
+
                 return acc;
             }, {} as Record<string, any>)
         );
