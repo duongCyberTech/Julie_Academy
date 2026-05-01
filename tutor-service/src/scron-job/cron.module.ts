@@ -1,11 +1,10 @@
-import { Module } from '@nestjs/common'
+import { Module, Res } from '@nestjs/common'
 import { CronService } from './cron.service'
-import { PrismaModule } from 'src/prisma/prisma.module'
 import { MailModule } from 'src/mail/mail.module'
-import { MailService } from 'src/mail/mail.service'
+import { ResourceModule } from 'src/resource/resource.module'
 
 @Module({
-  imports: [PrismaModule, MailModule],
-  providers: [CronService, MailService],
+  imports: [MailModule, ResourceModule],
+  providers: [CronService],
 })
 export class CronModule {}

@@ -6,6 +6,7 @@ import { ConfigService } from "@nestjs/config";
 import { PrismaModule } from "src/prisma/prisma.module";
 import { CloudinaryService } from "./cloudinary/cloudinary.service";
 import { CloudinaryProvider } from "./cloudinary/cloudinary.provider";
+import { PdfService } from "./pdf/pdf.service";
 
 @Module({
   imports: [PrismaModule],
@@ -16,8 +17,9 @@ import { CloudinaryProvider } from "./cloudinary/cloudinary.provider";
     S3Service, 
     ConfigService,
     CloudinaryService,
-    CloudinaryProvider
+    CloudinaryProvider,
+    PdfService
   ],
-  exports: [CloudinaryService, S3Service],
+  exports: [CloudinaryService, S3Service, PdfService],
 })
 export class ResourceModule{}
