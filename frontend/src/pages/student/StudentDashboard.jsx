@@ -98,18 +98,18 @@ const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
       try {
         const token = localStorage.getItem("token");
         const response = await patchAnalysisWatering(token, {
-            water_drops: -1,
-            experience: 25,
-            streak_trigger: false
+          water_drops: -1,
+          experience: 25,
+          streak_trigger: false
         });
 
         if (response.experience >= levelConfig.maxExp) {
-           setJustLeveledUp(true);
-           setTimeout(() => setJustLeveledUp(false), 2000);
+          setJustLeveledUp(true);
+          setTimeout(() => setJustLeveledUp(false), 500);
         }
 
         if (onUpdate) onUpdate(response);
-        setTimeout(() => { setIsWatering(false); }, 600);
+        setTimeout(() => { setIsWatering(false); }, 400);
       } catch (error) {
         setIsWatering(false);
       }
@@ -288,8 +288,8 @@ const StudentDashboard = memo(() => {
       const data = await getStudentStats(token);
       setStats({
           ...data,
-          water_drops: data?.water_drops || 0,
-          experience: data?.experience || 0
+          water_drops: data?.analytics?.water_drops || 0,
+          experience: data?.analytics?.experience || 0
       });
     } catch (error) {}
   }, []);
@@ -297,8 +297,8 @@ const StudentDashboard = memo(() => {
   const handleUpdateStats = useCallback((newData) => {
     setStats(prev => ({
         ...prev,
-        water_drops: newData.water_drops,
-        experience: newData.experience
+        water_drops: newData?.water_drops ?? 0,
+        experience: newData?.experience ?? 0
     }));
   }, []);
 
@@ -399,8 +399,8 @@ const StudentDashboard = memo(() => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12 }}>
           <KnowledgeTreeWidget 
-            initialWater={stats.water_drops} 
-            initialExp={stats.experience} 
+            initialWater={stats.water_drops ?? 0} 
+            initialExp={stats.experience ?? 0} 
             onUpdate={handleUpdateStats}
           />
         </Grid>

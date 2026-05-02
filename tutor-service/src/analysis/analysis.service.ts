@@ -9,7 +9,6 @@ import {
   ActionConfigDto,
   LevelConfigDto,
 } from './dto/analysis.dto';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AdminConfigService {
@@ -115,6 +114,11 @@ export class AnalysisService {
         streak: 1,
         last_activity_at: new Date(),
         ...newData,
+      },
+      select: {
+        water_drops: true,
+        experience: true,
+        streak: true,
       },
     });
   }

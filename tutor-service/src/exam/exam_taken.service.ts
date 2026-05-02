@@ -438,6 +438,12 @@ export class ExamTakenService {
               },
             });
 
+            const staticsData = {
+                uid: student_id
+            }
+
+            this.eventEmitter.emit('exam_taken.submit', staticsData)
+
             return {
                 message: "Adaptive Exam Submitted Successfully",
                 data: examTaken
