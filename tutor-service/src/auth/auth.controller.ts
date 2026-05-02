@@ -20,6 +20,7 @@ export class AuthController {
   async login(@Body() dto: LoginDto) {
     const user = await this.authService.validateUser(dto.email, dto.password);
     if (!user) throw new NotFoundException("Account not exist!");
+    if (user.status === 'inactive') throw new UnauthorizedException("Account is inactive!");
     try {
       await this.analysisService.createOrUpdateAnalytics(user.uid, {water_drops: 1})
     } catch(err) {

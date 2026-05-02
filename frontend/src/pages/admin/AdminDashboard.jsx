@@ -20,6 +20,8 @@ import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import ReportIcon from '@mui/icons-material/Report';
 import FilterAltOutlinedIcon from '@mui/icons-material/FilterAltOutlined';
 
+import { socket } from "../../services/ApiClient";
+
 const PageWrapper = styled(Paper)(({ theme }) => {
   const isDark = theme.palette.mode === 'dark';
   return {
@@ -121,6 +123,14 @@ const AdminDashboard = memo(() => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("7days");
+  const [activeUsers, setActiveUsers] = useState(0);
+
+  useEffect(() => {
+    socket.on('active_users', (count) => {
+      setActiveUsers(count);
+    });
+    return () => { socket.off('active_users'); };
+  }, []);
 
   const funnelData = useMemo(() => [
     { name: 'Truy cập trang', value: 3500 }, { name: 'Đăng ký tài khoản', value: 1200 }, { name: 'Vào lớp học', value: 850 }, { name: 'Làm bài thi', value: 400 }
@@ -171,7 +181,7 @@ const AdminDashboard = memo(() => {
         </Stack>
 
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Học sinh Online" value="342" icon={<GroupAddOutlinedIcon />} color="primary" trend={12} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Học sinh Online" value={activeUsers} icon={<GroupAddOutlinedIcon />} color="primary" trend={12} /></Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Lớp Đang Chạy" value={data?.numActiveClasses || 0} icon={<SchoolOutlinedIcon />} color="success" /></Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Câu Hỏi Mới" value={data?.numQuestion || 0} icon={<ArticleOutlinedIcon />} color="info" /></Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Tác Vụ Chờ" value="15" icon={<ReportIcon />} color="error" /></Grid>
