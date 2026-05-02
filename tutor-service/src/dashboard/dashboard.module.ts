@@ -9,10 +9,11 @@ import { DashboardService } from "./dashboard.service";
 // Import other necessary modules
 import { PrismaModule } from "src/prisma/prisma.module";
 import { QuestionModule } from "src/question/question.module";
+import { AnalysisModule } from "src/analysis/analysis.module";
 
 @Module({
     controllers: [DashboardController],
     providers: [DashboardService, AdminDashboard, TutorDashboard, StudentDashboard],
-    imports: [PrismaModule, QuestionModule],
+    imports: [PrismaModule, QuestionModule, AnalysisModule],
 })
 export class DashboardModule {}

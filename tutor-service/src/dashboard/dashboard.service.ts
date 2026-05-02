@@ -4,13 +4,15 @@ import {
 import { StudentDashboard } from './role-based-dashboard/student.dashboard';
 import { TutorDashboard } from './role-based-dashboard/tutor.dashboard';
 import { AdminDashboard } from './role-based-dashboard/admin.dashboard';
+import { AnalysisService } from 'src/analysis/analysis.service';
 
 @Injectable()
 export class DashboardService {
     constructor(
         private readonly admin: AdminDashboard,
         private readonly tutor: TutorDashboard,
-        private readonly student: StudentDashboard
+        private readonly student: StudentDashboard,
+        private readonly analysisService: AnalysisService
     ) {}
 
     async getAdminStats(){
@@ -53,13 +55,15 @@ export class DashboardService {
         const numJoinClassess = await this.student.currentClasses(student_id)
         const avgTestScore = await this.student.averageTestScore(student_id)
         const testStreak = await this.student.testStreak(student_id)
+        const analytics = await this.analysisService.getAnalytics(student_id)
 
         return {
             latestScore,
             totalPracticeTime,
             numJoinClassess,
             avgTestScore,
-            testStreak
+            testStreak,
+            analytics
         }
     }
 }

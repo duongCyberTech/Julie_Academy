@@ -107,7 +107,7 @@ export class DashboardController {
     getSkillsMapDetail(
         @Param('chapter_id') chapter_id: string,
         @Query('plan_id', ParseUUIDPipe) plan_id: string,
-        @Request() req
+        @Request() req: any
     ) {
         if (!plan_id || !chapter_id) return []
         return this.studentDashboard.skillsMapDetail(req.user.userId, plan_id, chapter_id)
