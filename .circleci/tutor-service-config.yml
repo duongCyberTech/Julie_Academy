@@ -134,6 +134,8 @@ jobs:
             ssh $EC2_USERNAME@$EC2_HOST \
             "cd Julie_Academy && \
              git pull origin main && \
+             gpg --quiet --batch --yes --decrypt --passphrase=$GPG_PASSPHRASE \
+              --output tutor-service/src/config/system.config.json tutor-service/src/config/system.config.json.gpg && \
              docker compose up -d --build tutor-service && \
              docker compose exec -T tutor-service npx prisma migrate deploy"
           no_output_timeout: 30m

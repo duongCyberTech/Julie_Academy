@@ -7,6 +7,7 @@ import { JwtStrategy } from "./jwt.strategy";
 import { AuthController } from "./auth.controller";
 import { UserService } from "src/user/user.service";
 import { StringValue } from 'ms';
+import { SystemConfigModule } from "src/config/system-config.module";
 require('dotenv').config()
 
 @Module({
@@ -16,7 +17,8 @@ require('dotenv').config()
       signOptions: { expiresIn: (process.env.EXPIRATION ?? '2h') as StringValue},
     }),
     UserModule,
-    AnalysisModule
+    AnalysisModule,
+    SystemConfigModule
   ],
   providers: [AuthService, JwtStrategy, UserService],
   controllers: [AuthController],

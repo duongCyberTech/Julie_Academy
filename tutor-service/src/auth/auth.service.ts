@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
 export class AuthService {
   constructor(
     private userService: UserService,
-    private jwtService: JwtService,
+    private jwtService: JwtService
   ) {}
 
   async validateUser(email: string, pass: string) {

@@ -21,13 +21,15 @@ export class DashboardService {
         const numExamTakenByWeek = await this.admin.getNumberOfExamTakenByWeek()
         const numActiveClasses = await this.admin.getNumberOfActiveClasses()
         const numQuestion = await this.admin.getNumberOfQuestions()
+        const conversionStatsByWeek = await this.admin.getConversionStatsByWeek()
 
         return {
             numRegByWeek,
             numClassCreatedByWeek,
             numExamTakenByWeek,
             numActiveClasses,
-            numQuestion
+            numQuestion,
+            conversionStatsByWeek
         }
     }   
     
