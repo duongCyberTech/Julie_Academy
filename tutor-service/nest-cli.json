@@ -5,6 +5,9 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "watchAssets": true,
-    "manualRestart": true
+    "manualRestart": true,
+    "assets": [
+      { "include": "config/*.json", "watchAssets": true }
+    ]
   }
 }

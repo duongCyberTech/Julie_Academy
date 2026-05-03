@@ -23,7 +23,7 @@ __pycache__/
 **/__pycache__/
 **/**/__pycache__/
 venv_win/
-
+tutor-service/src/config/system.config.json
 # Build & Output
 # Các tệp và thư mục được tạo ra trong quá trình build.
 build/

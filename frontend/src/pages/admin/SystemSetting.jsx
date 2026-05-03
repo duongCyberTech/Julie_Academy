@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import SaveIcon from '@mui/icons-material/Save';
+import { getSystemConfig, updateSystemConfig } from "../../services/SystemConfigService";
 
 const PageWrapper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -84,57 +85,66 @@ export default function SystemSettings() {
 
   // Giả lập việc tải cài đặt ban đầu
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    //
-    // --- API THẬT SẼ GỌI Ở ĐÂY ---
-    // try {
-    //   const token = localStorage.getItem('token');
-    //   const fetchedSettings = await getSystemSettings(token);
-    //   setSettings(fetchedSettings);
-    // } catch (err) {
-    //   setError("Không thể tải cài đặt.");
-    // } finally {
-    //   setLoading(false);
-    // }
-    //
-    
-    // --- Giả lập (Mock) ---
-    setTimeout(() => {
-      setSettings(mockSettings); // Tải mock data
-      setLoading(false);
-    }, 500);
+    const fetchConfig = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const fetchedSettings = await getSystemConfig();
+        console.log("Cài đặt đã tải:", fetchedSettings);
+        setSettings(fetchedSettings);
+      } catch (err) {
+        setError("Không thể tải cài đặt.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConfig();
   }, []);
 
   const handleChange = (event) => {
     const { name, checked } = event.target;
-    setSettings((prev) => ({
-      ...prev,
-      [name]: checked,
-    }));
+    const keyMap = {
+      maintenanceMode: "maintenance_mode",
+      allowRegistration: "register_allowance",
+      requireTutorApproval: "profile_preview",
+      requireContentApproval: "document_check",
+    };
+    const key = keyMap[name] || name;
+
+    setSettings((prev) => {
+      const currentSetting = prev[key];
+      if (currentSetting && typeof currentSetting === "object" && "enabled" in currentSetting) {
+        return {
+          ...prev,
+          [key]: {
+            ...currentSetting,
+            enabled: checked,
+          },
+        };
+      }
+
+      return {
+        ...prev,
+        [key]: checked,
+      };
+    });
   };
 
   // Giả lập việc lưu
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
-    //
-    // --- API THẬT SẼ GỌI Ở ĐÂY ---
-    // try {
-    //   const token = localStorage.getItem('token');
-    //   await saveSystemSettings(settings, token);
-    //   setToast({ open: true, message: "Cài đặt đã được lưu." });
-    // } catch (err) {
-    //   setError("Lỗi khi lưu cài đặt.");
-    // } finally {
-    //   setIsSubmitting(false);
-    // }
-    //
 
-    // --- Giả lập (Mock) ---
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSubmitting(false);
-    setToast({ open: true, message: "Cài đặt đã được lưu (Giả lập)." });
+    try {
+      await updateSystemConfig(settings);
+      setToast({ open: true, message: "Cài đặt đã được lưu." });
+    } catch (err) {
+      setError("Lỗi khi lưu cài đặt.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCloseToast = (event, reason) => {
@@ -171,7 +181,7 @@ export default function SystemSettings() {
                     name="maintenanceMode"
                     label="Chế độ bảo trì"
                     caption="Bật để tạm khóa trang web với người dùng (trừ Admin)."
-                    checked={settings.maintenanceMode}
+                    checked={settings?.maintenance_mode?.enabled}
                     onChange={handleChange}
                 />
                 <Divider sx={{ my: 1.5 }} />
@@ -179,7 +189,7 @@ export default function SystemSettings() {
                     name="allowRegistration"
                     label="Cho phép đăng ký mới"
                     caption="Cho phép người dùng mới (Học sinh, Gia sư) tự tạo tài khoản."
-                    checked={settings.allowRegistration}
+                    checked={settings?.register_allowance?.enabled}
                     onChange={handleChange}
                 />
             </SettingsCard>
@@ -192,7 +202,7 @@ export default function SystemSettings() {
                     name="requireTutorApproval"
                     label="Yêu cầu duyệt Gia sư"
                     caption="Gia sư mới đăng ký phải được Admin duyệt thủ công (hiển thị ở Dashboard)."
-                    checked={settings.requireTutorApproval}
+                    checked={settings?.profile_preview?.enabled}
                     onChange={handleChange}
                 />
                 <Divider sx={{ my: 1.5 }} />
@@ -200,7 +210,7 @@ export default function SystemSettings() {
                     name="requireContentApproval"
                     label="Yêu cầu duyệt Nội dung"
                     caption="Câu hỏi/Tài liệu mới của Gia sư phải được Admin duyệt (status='pending')."
-                    checked={settings.requireContentApproval}
+                    checked={settings?.document_check?.enabled}
                     onChange={handleChange}
                 />
             </SettingsCard>

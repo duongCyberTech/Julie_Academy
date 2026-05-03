@@ -7,8 +7,8 @@ const apiClient = axios.create({
     headers: { 'Content-Type': 'application/json' },
 });
 
-const getAuthHeaders = (token) => ({
-    headers: { Authorization: `Bearer ${token}` }
+const getAuthHeaders = (token = null) => ({
+    headers: { Authorization: `Bearer ${token || localStorage.getItem('token')}` }
 });
 
 const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:4000',{
