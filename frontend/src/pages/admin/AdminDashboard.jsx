@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo, useMemo } from "react";
+import React, { useState, useEffect, useCallback, memo, useMemo, use } from "react";
 import { useTheme, alpha, styled } from "@mui/material/styles";
 import {
   Box, Typography, Card, CardContent, Stack, Avatar, Fade,
@@ -93,21 +93,21 @@ const TrueConversionFunnel = memo(({ data }) => {
   );
 });
 
-const SystemHealthWidget = memo(() => {
+const SystemHealthWidget = memo(({ serverMetrics }) => {
   const theme = useTheme();
   return (
     <WidgetCard>
       <CardContent sx={{ p: 3 }}>
         <Typography variant="subtitle1" fontWeight={700} mb={2}>Sức khỏe kỹ thuật</Typography>
         <Stack spacing={2}>
-          {[{ label: 'Tải CPU Server', val: 35, color: 'success' }, { label: 'Tải RAM Server', val: 62, color: 'info' }, { label: 'Độ trễ API', val: 85, color: 'primary', unit: 'ms' }].map((item, i) => (
+          {[{ label: 'Tải CPU Server', val: Number(serverMetrics?.find(item => item.Id === 'cpuUtilization')?.Values?.[0].toFixed(2)), color: 'success' }, { label: 'Tốc độ phản hồi API trung bình', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[3].toFixed(2)) ?? 0, color: 'info', unit: 'ms' }, { label: 'Tổng lượng requests', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[0].toFixed(2)) ?? 0, color: 'primary', unit: 'requests' }].map((item, i) => (
             <Box key={i}>
               <Stack direction="row" justifyContent="space-between" mb={0.5}>
-                <Typography variant="caption" fontWeight={600}>{item.label}</Typography>
+                <Typography variant="caption" fontWeight={600}>{item.label}</Typography> &nbsp;
                 <Typography variant="caption" color="text.secondary">{item.val}{item.unit || '%'}</Typography>
               </Stack>
               <Box sx={{ height: 6, width: '100%', bgcolor: alpha(theme.palette[item.color].main, 0.1), borderRadius: 1 }}>
-                <Box sx={{ height: '100%', width: `${item.val}%`, bgcolor: `${item.color}.main`, borderRadius: 1 }} />
+                <Box sx={{ height: '100%', width: `${Math.min(item.val, 100)}%`, bgcolor: `${item.color}.main`, borderRadius: 1 }} />
               </Box>
             </Box>
           ))}
@@ -124,13 +124,43 @@ const AdminDashboard = memo(() => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("7days");
   const [activeUsers, setActiveUsers] = useState(0);
+  const [serverMetrics, setServerMetrics] = useState(null);
 
   useEffect(() => {
     socket.on('active_users', (count) => {
+      console.log('Số người dùng đang hoạt động:', count);
       setActiveUsers(count);
     });
+
     return () => { socket.off('active_users'); };
   }, []);
+
+  useEffect(() => {
+    // 1. Đăng ký các sự kiện lắng nghe
+    socket.on('ec2_metrics', (metrics) => {
+      console.log('AWS EC2 Metrics:', metrics);
+      setServerMetrics(metrics?.MetricDataResults || []);
+    });
+
+    socket.on('ec2_metrics_error', (error) => {
+      console.error('Lỗi AWS EC2 Metrics:', error);
+    });
+
+    // 2. Lấy dữ liệu lần đầu tiên ngay khi mở trang
+    socket.emit('get_ec2_metrics');
+
+    // 3. Tự động lấy dữ liệu mới mỗi 1 phút (60000ms)
+    const interval = setInterval(() => {
+      socket.emit('get_ec2_metrics');
+    }, 60000);
+
+    // 4. Cleanup khi rời khỏi trang
+    return () => {
+      clearInterval(interval);
+      socket.off('ec2_metrics');
+      socket.off('ec2_metrics_error');
+    };
+  }, []); // Chỉ chạy 1 lần khi mount
 
   const funnelData = useMemo(() => [
     { name: 'Truy cập trang', value: 3500 }, { name: 'Đăng ký tài khoản', value: 1200 }, { name: 'Vào lớp học', value: 850 }, { name: 'Làm bài thi', value: 400 }
@@ -181,7 +211,7 @@ const AdminDashboard = memo(() => {
         </Stack>
 
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Học sinh Online" value={activeUsers} icon={<GroupAddOutlinedIcon />} color="primary" trend={12} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Người dùng Online" value={activeUsers} icon={<GroupAddOutlinedIcon />} color="primary" /></Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Lớp Đang Chạy" value={data?.numActiveClasses || 0} icon={<SchoolOutlinedIcon />} color="success" /></Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Câu Hỏi Mới" value={data?.numQuestion || 0} icon={<ArticleOutlinedIcon />} color="info" /></Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Tác Vụ Chờ" value="15" icon={<ReportIcon />} color="error" /></Grid>
@@ -210,7 +240,7 @@ const AdminDashboard = memo(() => {
           </Grid>
           <Grid size={{ xs: 12, lg: 4 }}>
             <Stack spacing={3} height="100%">
-              <SystemHealthWidget />
+              <SystemHealthWidget serverMetrics={serverMetrics} />
               <WidgetCard sx={{ p: 3, flexGrow: 1 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                   <Typography variant="subtitle1" fontWeight={700}>Phê duyệt gia sư</Typography>

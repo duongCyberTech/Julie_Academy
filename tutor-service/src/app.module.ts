@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from '@nestjs/bull';
@@ -27,6 +27,7 @@ import { AnalysisModule } from './analysis/analysis.module';
 import rabbitmqConfig from './config/rabbitmq.config';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { EmailModule } from './email/email.module';
+import { ApiTrackingInterceptor } from './intercepter/api_tracking.intercepter';
 
 require('dotenv').config()
 
@@ -87,6 +88,10 @@ require('dotenv').config()
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ApiTrackingInterceptor,
     },
     AppService
   ],
