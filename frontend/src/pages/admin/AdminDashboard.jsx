@@ -125,10 +125,12 @@ const AdminDashboard = memo(() => {
   const [timeRange, setTimeRange] = useState("7days");
   const [activeUsers, setActiveUsers] = useState(0);
   const [serverMetrics, setServerMetrics] = useState(null);
+  const [funnelData, setFunnelData] = useState([
+    { name: 'Truy cập trang', value: 3500 }, { name: 'Đăng ký tài khoản', value: 1200 }, { name: 'Vào lớp học', value: 850 }, { name: 'Làm bài thi', value: 400 }
+  ]);
 
   useEffect(() => {
     socket.on('active_users', (count) => {
-      console.log('Số người dùng đang hoạt động:', count);
       setActiveUsers(count);
     });
 
@@ -138,7 +140,6 @@ const AdminDashboard = memo(() => {
   useEffect(() => {
     // 1. Đăng ký các sự kiện lắng nghe
     socket.on('ec2_metrics', (metrics) => {
-      console.log('AWS EC2 Metrics:', metrics);
       setServerMetrics(metrics?.MetricDataResults || []);
     });
 
@@ -162,9 +163,9 @@ const AdminDashboard = memo(() => {
     };
   }, []); // Chỉ chạy 1 lần khi mount
 
-  const funnelData = useMemo(() => [
-    { name: 'Truy cập trang', value: 3500 }, { name: 'Đăng ký tài khoản', value: 1200 }, { name: 'Vào lớp học', value: 850 }, { name: 'Làm bài thi', value: 400 }
-  ], []);
+  // const funnelData = useMemo(() => [
+  //   { name: 'Truy cập trang', value: 3500 }, { name: 'Đăng ký tài khoản', value: 1200 }, { name: 'Vào lớp học', value: 850 }, { name: 'Làm bài thi', value: 400 }
+  // ], []);
 
   const fetchData = useCallback(async () => {
     if (!token) return;
@@ -176,6 +177,13 @@ const AdminDashboard = memo(() => {
         name: day, users: stats.numRegByWeek[i] || 0, classes: stats.numClassCreatedByWeek[i] || 0, exams: stats.numExamTakenByWeek[i] || 0
       }));
       setData({ ...stats, chartData });
+
+      setFunnelData(
+        Object.entries(stats.conversionStatsByWeek).map(([key, value]) => ({
+          name: key,
+          value
+        }))
+      );
     } catch (err) { console.error(err); } finally { setLoading(false); }
   }, [token, timeRange]);
 

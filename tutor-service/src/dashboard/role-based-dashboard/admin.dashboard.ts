@@ -129,4 +129,47 @@ export class AdminDashboard {
         const questionsCount = await this.prisma.questions.count();
         return questionsCount;
     }
+
+    async getConversionStatsByWeek() {
+        const nextOfToday = new Date();
+        nextOfToday.setDate(nextOfToday.getDate() + 1);
+        const _7daysAgo = new Date();
+        _7daysAgo.setDate(nextOfToday.getDate() - 8);
+        const studentRegistrations = await this.prisma.user.count({
+            where: {
+                role: 'student',
+            },
+        });
+
+        const classCreations = await this.prisma.student.count({
+            where: {
+                learning: {
+                    some: {
+                        class: {
+                            status: 'ongoing',
+                        },
+                        status: 'accepted'
+                    },
+                },
+            },
+        });
+
+        const examTakens = await this.prisma.student.count({
+            where: {
+                exam_taken: {
+                    some: {
+                        exam_session: {}
+                    }
+                }
+            },
+        });
+
+        const conversionStats = {
+            "Đăng ký tài khoản": studentRegistrations,
+            "Vào lớp học": classCreations,
+            "Làm bài thi": examTakens,
+        };
+
+        return conversionStats;
+    }
 }
