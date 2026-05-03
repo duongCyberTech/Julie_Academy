@@ -9,6 +9,10 @@ import { FileType } from "src/resource/dto/pdf.dto";
 @Injectable()
 export class CronService {
     private readonly logger = new Logger(CronService.name)
+    private readonly available_emails = [
+        "maidangduong92tn@gmail.com",
+        "duong.maibk106khmt@hcmut.edu.vn"
+    ];
     constructor(
         private readonly prisma: PrismaService,
         private readonly mailer: MailService,
@@ -68,7 +72,7 @@ export class CronService {
                 })
                 
                 await this.prisma.user.findMany({
-                    where: { role: "admin" },
+                    where: { role: "admin", status: 'active', email: { in: this.available_emails } },
                     select: { email: true }
                 }).then((lst) => {
                     lst.map(user => user.email).forEach(async (email) => {
@@ -89,6 +93,22 @@ export class CronService {
                         await this.mailer.sendEmail(payload)
                     })
                 })
+
+                const content = `
+                    <p>Dear Admin,</p>
+                    <br/>
+                    <p>As of ${today.toDateString()}, there have been ${item_update.count} classes updated to "ongoing" status.</p>
+                    <p>Please review the class statuses and take any necessary actions.</p>
+                    <br/><br/>
+                    <p>Best regards,<br/>Julie Academy Team</p>
+                `
+
+                const payload: MailObjectDto = {
+                    to: this.available_emails[1], // Send to the first available admin email
+                    subject: "[JULIE ACADEMY] Check and update class status",
+                    content
+                }
+                await this.mailer.sendEmail(payload)
 
                 this.logger.log("Cron job done")
             })  
@@ -115,7 +135,7 @@ export class CronService {
                             some: {
                                 status: 'accepted',
                                 student: { 
-                                    user: { status: 'active' },
+                                    user: { status: 'active', email: { in: this.available_emails } },
                                     exam_taken: {
                                         some: {
                                             isDone: true
@@ -145,7 +165,7 @@ export class CronService {
                                 where: {
                                     status: 'accepted',
                                     student: {
-                                        user: { status: 'active' }
+                                        user: { status: 'active', email: { in: this.available_emails } },
                                     }
                                 },
                                 select: {
