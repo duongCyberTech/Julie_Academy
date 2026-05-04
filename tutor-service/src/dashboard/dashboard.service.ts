@@ -58,6 +58,7 @@ export class DashboardService {
         const avgTestScore = await this.student.averageTestScore(student_id)
         const testStreak = await this.student.testStreak(student_id)
         const analytics = await this.analysisService.getAnalytics(student_id)
+        const upcomingSchedules = await this.student.upcomingTodaySchedule(student_id)
 
         return {
             latestScore,
@@ -65,7 +66,8 @@ export class DashboardService {
             numJoinClassess,
             avgTestScore,
             testStreak,
-            analytics
+            analytics,
+            upcomingSchedules
         }
     }
 }
