@@ -20,7 +20,7 @@ require('dotenv').config()
     AnalysisModule,
     SystemConfigModule
   ],
-  providers: [AuthService, JwtStrategy, UserService],
+  providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
 })
 export class AuthModule {}

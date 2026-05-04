@@ -76,7 +76,7 @@ function StudentProfilePage() {
   });
 
   const [formData, setFormData] = useState({
-    fname: "", mname: "", lname: "", school: "", dob: ""
+    fname: "", mname: "", lname: "", school: "", dob: "", avata: null
   });
 
   const [loading, setLoading] = useState(true);
@@ -115,7 +115,7 @@ function StudentProfilePage() {
         setSavedUser({ ...data, student: { ...data.student, school: schoolVal, dob: dobVal } });
         setFormData({
           fname: data.fname || "", mname: data.mname || "", lname: data.lname || "",
-          school: schoolVal, dob: dobVal
+          school: schoolVal, dob: dobVal, avata: null
         });
       } catch (error) {
         setToast({ open: true, message: "Lỗi tải thông tin.", severity: "error" });
@@ -149,34 +149,31 @@ function StudentProfilePage() {
       return;
     }
 
-    const userId = jwtDecode(token).sub || jwtDecode(token).uid;
-    const uploadData = new FormData();
-    uploadData.append("file", file);
-
-    try {
-      const res = await axios.post(`${API_URL}/users/${userId}/avatar`, uploadData, {
-        headers: { ...getAuthConfig().headers, "Content-Type": "multipart/form-data" },
-      });
-      if (res.data) {
-        setSavedUser(prev => ({ ...prev, avata_url: res.data.avata_url || URL.createObjectURL(file) }));
-        setToast({ open: true, message: "Đổi ảnh đại diện thành công!", severity: "success" });
-        setShowAvatarModal(false);
-      }
-    } catch (error) {
-      setToast({ open: true, message: "Lỗi upload ảnh.", severity: "error" });
-    }
+    setSavedUser(prev => ({ ...prev, avata_url: URL.createObjectURL(file) }))
+    setFormData(prev => ({ ...prev, avata: file }));
+    setShowAvatarModal(false);
   };
 
   const handleSave = async () => {
     try {
       setUpdating(true);
       const userId = jwtDecode(token).sub || jwtDecode(token).uid;
-      const payload = {
-        fname: formData.fname, mname: formData.mname, lname: formData.lname,
-        school: formData.school, dob: formData.dob ? new Date(formData.dob).toISOString() : null,
-      };
+      const formPayload = new FormData();
+      formPayload.append("fname", formData.fname);
+      formPayload.append("mname", formData.mname);
+      formPayload.append("lname", formData.lname);
+      formPayload.append("school", formData.school);
+      formPayload.append("dob", formData.dob ? new Date(formData.dob).toISOString() : "");
+      if (formData.avata) {
+        console.log("Appending avatar to form payload:", formData.avata);
+        formPayload.append("avata", formData.avata);
+      }
 
-      await axios.patch(`${API_URL}/users/${userId}`, payload, getAuthConfig());
+      await axios.patch(
+        `${API_URL}/users/${userId}`, 
+        formPayload, 
+        { ...getAuthConfig(), headers: { ...getAuthConfig().headers, 'Content-Type': 'multipart/form-data' } }
+      );
 
       setSavedUser(prev => ({
         ...prev, fname: formData.fname, mname: formData.mname, lname: formData.lname,

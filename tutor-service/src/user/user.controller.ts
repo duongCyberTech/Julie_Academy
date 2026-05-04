@@ -12,8 +12,10 @@ import {
   BadRequestException,
   Request,
   DefaultValuePipe,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service';
 import { UserDto } from './dto/user.dto';
 import { AccountStatus } from '@prisma/client';
@@ -24,7 +26,9 @@ import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+  ) {}
 
   /**
    * GET /users
@@ -45,7 +49,7 @@ export class UserController {
 
   @Get('parents/children')
   @Roles('parents')
-  async getMyChildren(@Request() req) {
+  async getMyChildren(@Request() req: any) {
     const parentId = req.user.userId;
 
     if (!parentId) {
@@ -72,7 +76,7 @@ export class UserController {
 
   @Get('tag/:class_id')
   getUserDetailToTagInClass(
-    @Request() req,
+    @Request() req: any,
     @Param('class_id') class_id: string,
     @Query('search', new DefaultValuePipe("")) filter: string
   ) {
@@ -107,8 +111,13 @@ export class UserController {
    * Cập nhật thông tin user
    */
   @Patch(':id')
-  updateUser(@Param('id') id: string, @Body() dto: Partial<UserDto>) {
-    return this.userService.updateUser(id, dto);
+  @UseInterceptors(FileInterceptor('avata'))
+  updateUser(
+    @Param('id') id: string, 
+    @Body() dto: Partial<UserDto>,
+    @UploadedFile() avata?: Express.Multer.File
+  ) {
+    return this.userService.updateUser(id, dto, avata);
   }
 
   @Patch(':id/status')

@@ -44,6 +44,23 @@ export class CloudinaryService {
     });
   }
 
+  uploadAvatar(file: Express.Multer.File): Promise<UploadApiResponse | UploadApiErrorResponse> {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'auto', 
+          folder: 'avatars', 
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        },
+      );
+
+      streamifier.createReadStream(file.buffer).pipe(uploadStream);
+    });
+  }
+
   async deleteFiles(publicIds: string[]) {
     const failure: string[] = []
     const success: string[] = []
