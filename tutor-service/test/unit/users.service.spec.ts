@@ -3,21 +3,31 @@ import { UserService } from 'src/user/user.service'; // Sử dụng Alias Path
 import { PrismaService } from 'src/prisma/prisma.service';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { PrismaClient, User } from '@prisma/client';
+import { CloudinaryService } from 'src/resource/cloudinary/cloudinary.service';
 
 describe('UserService', () => {
   let service: UserService;
   let prismaMock: DeepMockProxy<PrismaClient>;
 
   beforeEach(async () => {
-    // Tạo bản mock sâu cho PrismaClient
     prismaMock = mockDeep<PrismaClient>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UserService,
+        UserService, 
         {
           provide: PrismaService,
-          useValue: prismaMock, // Ghi đè PrismaService thật bằng bản mock
+          useValue: prismaMock, 
+        },
+        // 2. MOCK THÊM CloudinaryService VÀO ĐÂY
+        {
+          provide: CloudinaryService,
+          useValue: {
+            // Cung cấp các hàm giả mạo mà UserService có thể sẽ gọi.
+            // Ví dụ, nếu UserService gọi cloudinaryService.upload(), bạn mock nó bằng jest.fn()
+            uploadImage: jest.fn().mockResolvedValue({ url: 'http://fake-url.com/image.png' }),
+            deleteImage: jest.fn().mockResolvedValue(true),
+          },
         },
       ],
     }).compile();
