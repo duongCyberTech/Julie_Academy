@@ -368,5 +368,39 @@ export class StudentDashboard {
             fail_cnt: Number(item.fail_cnt)
         })) || [];
     }
+
+    async upcomingTodaySchedule(student_id: string) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        return await this.prisma.schedule.findMany({
+            where: {
+                class: {
+                    learning: {
+                        some: {
+                            student_uid: student_id,
+                            status: "accepted"
+                        }
+                    },
+                    status: "ongoing",
+                },
+                meeting_date: today.getDay() === 0 ? 8 : today.getDay() + 1
+            },
+            select: {
+                startAt: true,
+                endAt: true,
+                class: {
+                    select: {
+                        subject: true,
+                        class_id: true,
+                        classname: true
+                    }
+                }
+            },
+            orderBy: [{ startAt: "desc" }, { endAt: "desc" }]
+        })
+    }
 }
 

@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { UserDto, StudentDto, TutorDto, ParentsDto } from './dto/user.dto';
 import { AccountStatus, UserRole, Prisma } from '@prisma/client';
+import { CloudinaryService } from '../resource/cloudinary/cloudinary.service';
 
 const bcrypt = require('bcrypt');
 require('dotenv').config();
@@ -13,7 +14,10 @@ require('dotenv').config();
 type PrismaTransaction = Prisma.TransactionClient;
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cloudinaryService: CloudinaryService
+  ) {}
 
   async createUser(data: UserDto) {
     return this.prisma.$transaction(async (tx) => {
@@ -169,9 +173,22 @@ export class UserService {
     });
   }
 
-  async updateUser(id: string, data: Partial<UserDto>) {
+  async updateUser(id: string, data: Partial<UserDto>, avata?: Express.Multer.File) {
     if (data.password) {
       data.password = await bcrypt.hash(data.password, 12);
+    }
+
+    let avataUrl: string | null = null;
+
+    if (avata) {
+      console.log('Uploading avatar for user ID:', id);
+      try {
+        const result = await this.cloudinaryService.uploadAvatar(avata);
+        avataUrl = result.secure_url;
+        console.log('Avatar uploaded successfully:', avataUrl);
+      } catch (error) {
+        throw new BadRequestException('Failed to upload avatar');
+      }
     }
 
     const userData: Partial<Prisma.UserUpdateInput> = {};
@@ -191,6 +208,9 @@ export class UserService {
       if (data[key] !== undefined) {
         userData[key] = data[key];
       }
+    }
+    if (avataUrl !== null) {
+      userData.avata_url = avataUrl;
     }
 
     return this.prisma.$transaction(async (tx) => {
