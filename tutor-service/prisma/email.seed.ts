@@ -43,40 +43,36 @@ const SYSTEM_TEMPLATES = [
     `
   },
   {
-    header: '📊 [Báo cáo] Tình hình học tập định kỳ',
-    type: EmailTemplateType.public,
-    body: `
-      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-        <h2 style="color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px;">📊 Báo Cáo Tình Hình Học Tập</h2>
-        <p>Kính gửi Quý Phụ huynh,</p>
-        <p>Hệ thống xin trân trọng gửi đến Quý Phụ huynh báo cáo tổng hợp tình hình học tập của em <strong>[Tên học sinh]</strong> trong khoảng thời gian vừa qua.</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-          <tr style="background-color: #e8f5e9;">
-            <th style="border: 1px solid #c8e6c9; padding: 10px; text-align: left;">Tiêu chí</th>
-            <th style="border: 1px solid #c8e6c9; padding: 10px; text-align: left;">Đánh giá / Kết quả</th>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #c8e6c9; padding: 10px;"><strong>Chuyên cần</strong></td>
-            <td style="border: 1px solid #c8e6c9; padding: 10px;">[Đi học đầy đủ / Vắng X buổi]</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #c8e6c9; padding: 10px;"><strong>Điểm kiểm tra</strong></td>
-            <td style="border: 1px solid #c8e6c9; padding: 10px; color: #1976d2; font-weight: bold;">[Nhập điểm số trung bình]</td>
-          </tr>
-        </table>
-
-        <p><strong>📝 Nhận xét từ Giáo viên:</strong></p>
-        <p style="font-style: italic; background-color: #f9f9f9; padding: 15px; border-radius: 8px;">
-          "Con có thái độ học tập tích cực, hăng hái phát biểu xây dựng bài. Tuy nhiên cần chú ý cẩn thận hơn ở khâu tính toán để tránh mất điểm đáng tiếc."
-        </p>
-
-        <p>Sự đồng hành của gia đình là nguồn động lực rất lớn. Rất mong Quý Phụ huynh tiếp tục đôn đốc, động viên để con phát huy. Mọi thắc mắc Quý Phụ huynh vui lòng phản hồi trực tiếp lại email này.</p>
-        <br>
-        <p><em>Trân trọng cảm ơn,</em><br><strong style="color: #2e7d32;">Giáo viên Chủ nhiệm</strong></p>
+  header: '📊 [Báo cáo] Tình hình học tập định kỳ',
+  type: EmailTemplateType.public,
+  body: `
+    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+      <h2 style="color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px;">📊 Báo Cáo Tình Hình Học Tập</h2>
+      <p>Kính gửi Quý Phụ huynh,</p>
+      <p>Hệ thống xin trân trọng gửi đến Quý Phụ huynh báo cáo tổng hợp tình hình học tập của em <strong>[Tên học sinh]</strong> trong khoảng thời gian vừa qua.</p>
+      
+      <div style="margin: 20px 0; border: 1px solid #c8e6c9; border-radius: 4px; overflow: hidden;">
+        <ul style="list-style-type: none; padding: 0; margin: 0;">
+          <li style="padding: 12px 15px; border-bottom: 1px solid #c8e6c9; background-color: #e8f5e9;">
+             <strong style="color: #2e7d32;">Chuyên cần:</strong> [Đi học đầy đủ / Vắng X buổi]
+          </li>
+          <li style="padding: 12px 15px; background-color: #ffffff;">
+             <strong style="color: #2e7d32;">Điểm kiểm tra:</strong> <span style="color: #1976d2; font-weight: bold;">[Nhập điểm số trung bình]</span>
+          </li>
+        </ul>
       </div>
-    `
-  },
+
+      <p><strong>📝 Nhận xét từ Giáo viên:</strong></p>
+      <p style="font-style: italic; background-color: #f9f9f9; padding: 15px; border-radius: 8px;">
+        "Con có thái độ học tập tích cực, hăng hái phát biểu xây dựng bài. Tuy nhiên cần chú ý cẩn thận hơn ở khâu tính toán để tránh mất điểm đáng tiếc."
+      </p>
+
+      <p>Sự đồng hành của gia đình là nguồn động lực rất lớn. Rất mong Quý Phụ huynh tiếp tục đôn đốc, động viên để con phát huy. Mọi thắc mắc Quý Phụ huynh vui lòng phản hồi trực tiếp lại email này.</p>
+      <br>
+      <p><em>Trân trọng cảm ơn,</em><br><strong style="color: #2e7d32;">Giáo viên Chủ nhiệm</strong></p>
+    </div>
+  `
+},
   {
     header: '⚠️ [Thông báo] Nghỉ học đột xuất',
     type: EmailTemplateType.public,
@@ -141,7 +137,10 @@ async function main() {
           header: template.header,
           type: template.type,
           body: template.body,
+<<<<<<< HEAD
           // Đã sửa lỗi TypeScript bằng cách sử dụng connect
+=======
+>>>>>>> 44b5c9cb3008003aa8a187e13a8efc3d060a0b2b
           creator: {
             connect: { uid: tutorUser.uid }
           }

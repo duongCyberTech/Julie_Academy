@@ -5,14 +5,12 @@ import {
     InternalServerErrorException,
     UseGuards,
     ParseIntPipe,
-    ParseDatePipe,
     ParseBoolPipe,
     DefaultValuePipe,
     ParseEnumPipe,
     UnauthorizedException,
     ParseUUIDPipe
 } from "@nestjs/common";
-import { Request as Reqst } from "express";
 import { ApiBody, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { ExamService } from "./exam.service";
 import { ExamTakenService } from "./exam_taken.service";
@@ -20,11 +18,12 @@ import { ExamDto, ExamSessionDto, ExamSessionStatus, ExamTakenDto, SubmitAnswerD
 import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guard/roles.guard";
 import { ExceptionResponse } from "src/exception/Exception.exception";
-import { IsEnum } from "class-validator/types/decorator/typechecker/IsEnum";
 import { CurrentQuestionDto } from "./dto/adaptive.dto";
+import { Throttle } from "@nestjs/throttler";
 
 @Controller('exam')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Throttle({ default: { limit: 100, ttl: 60000 } }) // Giới hạn 10 yêu cầu mỗi 60 giây cho tất cả các endpoint trong controller này
 export class ExamController {
     constructor(
         private readonly examService: ExamService
@@ -37,7 +36,7 @@ export class ExamController {
         type: String
     })
     createExam(
-        @Param('tutor_id') tutor_id,
+        @Param('tutor_id') tutor_id: string,
         @Body() exam: Partial<ExamDto>
     ){
         return this.examService.createExam(exam, tutor_id);
@@ -103,6 +102,7 @@ export class ExamController {
 
 @Controller('exam/session')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Throttle({ default: { limit: 100, ttl: 60000 } })
 export class ExamSessionController {
     constructor(private readonly examService: ExamService){}
 
@@ -173,6 +173,7 @@ export class ExamSessionController {
 
 @Controller('exam_taken')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Throttle({ default: { limit: 100, ttl: 60000 } })
 export class ExamTakenController {
     constructor(
         private et_service: ExamTakenService
