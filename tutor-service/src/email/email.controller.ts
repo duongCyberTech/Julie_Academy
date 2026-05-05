@@ -63,4 +63,8 @@ export class EmailController {
   ) {
     return this.emailService.deleteEmailChainById(req.user.tutor_id, config_id);
   }
+  @Get('templates/all')
+  getAllTemplates(@Request() req: any) {
+    return this.emailService.getAllTemplates(req.user.tutor_id);
+  }
 }

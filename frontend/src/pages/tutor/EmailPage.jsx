@@ -15,15 +15,25 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SendIcon from '@mui/icons-material/Send';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 
+// Tích hợp React Quill
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+
 import { getClassesByTutor } from '../../services/ClassService';
 import {
-  getAllEmailChains, createEmailChain, updateEmailChain, deleteEmailChain
+  getAllEmailChains, createEmailChain, updateEmailChain, deleteEmailChain, getAllTemplates
 } from '../../services/EmailService';
+
+// Hàm hỗ trợ loại bỏ thẻ HTML để hiển thị văn bản rút gọn (Preview)
+const stripHtml = (html) => {
+  if (!html) return '';
+  // Sử dụng regex để xóa tất cả các thẻ HTML, chỉ giữ lại text
+  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+};
 
 const PageWrapper = styled(Paper)(({ theme }) => {
   const isDark = theme.palette.mode === 'dark';
@@ -42,6 +52,40 @@ const PageWrapper = styled(Paper)(({ theme }) => {
       margin: theme.spacing(1),
       padding: theme.spacing(2),
     }
+  };
+});
+
+// Custom Style cho Editor để ăn khớp với giao diện Material-UI và hỗ trợ Dark Mode
+const EditorWrapper = styled(Box)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    '& .quill': {
+      display: 'flex',
+      flexDirection: 'column',
+      height: '350px',
+    },
+    '& .ql-toolbar': {
+      borderColor: isDark ? theme.palette.divider : alpha(theme.palette.divider, 0.4),
+      backgroundColor: isDark ? alpha(theme.palette.background.default, 0.5) : '#f9fafb',
+      borderTopLeftRadius: theme.shape.borderRadius,
+      borderTopRightRadius: theme.shape.borderRadius,
+      '& .ql-stroke': { stroke: isDark ? theme.palette.text.primary : '#444' },
+      '& .ql-fill': { fill: isDark ? theme.palette.text.primary : '#444' },
+      '& .ql-picker': { color: isDark ? theme.palette.text.primary : '#444' },
+    },
+    '& .ql-container': {
+      borderColor: isDark ? theme.palette.divider : alpha(theme.palette.divider, 0.4),
+      borderBottomLeftRadius: theme.shape.borderRadius,
+      borderBottomRightRadius: theme.shape.borderRadius,
+      fontSize: '1.05rem',
+      fontFamily: theme.typography.fontFamily,
+      backgroundColor: theme.palette.background.paper,
+      color: theme.palette.text.secondary,
+    },
+    '& .ql-editor': {
+      padding: '16px 20px',
+      lineHeight: 1.7,
+    },
   };
 });
 
@@ -130,12 +174,6 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const MOCK_TEMPLATES = [
-  { template_id: 't1', title: 'Thông báo nghỉ học', type: 'public', body: 'Kính gửi Phụ huynh và các em học sinh,\n\nDo điều kiện khách quan, lớp học ngày [Ngày] sẽ được nghỉ. Lịch học bù sẽ được thông báo sau.\n\nTrân trọng,' },
-  { template_id: 't2', title: 'Nhắc nhở làm bài tập', type: 'public', body: 'Chào các em,\n\nNhắc nhở các em hoàn thành bài tập về nhà [Tên bài tập] trước buổi học ngày mai.\n\nChúc các em học tốt!' },
-  { template_id: 't3', title: 'Báo cáo tiến độ tháng', type: 'private', body: 'Kính gửi Phụ huynh,\n\nĐây là báo cáo tiến độ học tập tháng [Tháng] của em...\n\nTrân trọng,' }
-];
-
 const initialForm = {
   header: '',
   body: '',
@@ -157,12 +195,24 @@ const daysOfWeek = [
 
 const daysOfMonth = Array.from({ length: 31 }, (_, i) => ({ value: i + 1, label: `Ngày ${i + 1}` }));
 
+const QUILL_MODULES = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+    [{ 'color': [] }, { 'background': [] }],
+    ['link', 'image'],
+    ['clean']
+  ],
+};
+
 function EmailChainPage({ classId }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
   const [token] = useState(() => localStorage.getItem("token"));
   const [chains, setChains] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [tutorClasses, setTutorClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -192,9 +242,20 @@ function EmailChainPage({ classId }) {
     }
   }, [classId, token, showToast]);
 
+  const fetchTemplates = useCallback(async () => {
+    if (!token) return;
+    try {
+      const data = await getAllTemplates(token);
+      setTemplates(data || []);
+    } catch (error) {
+      console.error("Lỗi tải templates:", error);
+    }
+  }, [token]);
+
   useEffect(() => {
     let isMounted = true;
     fetchChains();
+    fetchTemplates();
     
     const fetchClasses = async () => {
       if (!token) return;
@@ -211,7 +272,7 @@ function EmailChainPage({ classId }) {
     fetchClasses();
 
     return () => { isMounted = false; };
-  }, [fetchChains, token]);
+  }, [fetchChains, fetchTemplates, token]);
 
   const handleOpenBuilderNew = useCallback(() => {
     setFormData(initialForm);
@@ -247,7 +308,7 @@ function EmailChainPage({ classId }) {
     } else {
       setFormData({ 
         ...initialForm, 
-        header: template.title,
+        header: template.title || template.header, 
         body: template.body, 
         use_template: true, 
         template_id: template.template_id 
@@ -264,8 +325,19 @@ function EmailChainPage({ classId }) {
     }));
   }, []);
 
+  // Custom handler cho trình soạn thảo Quill
+  const handleQuillChange = useCallback((content) => {
+    setFormData(prev => ({
+      ...prev,
+      body: content
+    }));
+  }, []);
+
   const handleSubmit = useCallback(async () => {
-    if (!formData.header || !formData.body) {
+    // ReactQuill thường để lại nội dung trống mặc định là "<p><br></p>"
+    const isBodyEmpty = !formData.body || formData.body === '<p><br></p>';
+
+    if (!formData.header || isBodyEmpty) {
       showToast("Cần nhập đủ tiêu đề và nội dung", "warning");
       return;
     }
@@ -290,12 +362,15 @@ function EmailChainPage({ classId }) {
       }
       handleCloseBuilder();
       fetchChains();
+      if (formData.create_as_template) {
+         fetchTemplates(); 
+      }
     } catch (error) {
       showToast("Có lỗi xảy ra", "error");
     } finally {
       setLoading(false);
     }
-  }, [formData, editingId, selectedClass, token, fetchChains, handleCloseBuilder, showToast]);
+  }, [formData, editingId, selectedClass, token, fetchChains, fetchTemplates, handleCloseBuilder, showToast]);
 
   const handleToggleActive = useCallback(async (configId, currentActive) => {
     try {
@@ -369,8 +444,9 @@ function EmailChainPage({ classId }) {
                   <Switch size="small" checked={chain.active} onChange={() => handleToggleActive(chain.config_id, chain.active)} color="primary" />
                 </CardHeader>
                 <CardBody sx={{ pb: 1 }}>
+                  {/* Sử dụng stripHtml để bỏ thẻ khi render text preview */}
                   <Typography variant="body2" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', mb: 2 }}>
-                    {chain.body}
+                    {stripHtml(chain.body)}
                   </Typography>
                   <Stack direction="row" flexWrap="wrap" gap={1} mt="auto">
                     <Chip icon={<AccessTimeIcon />} label={chain.time_to_send} size="small" sx={{ fontWeight: 600, bgcolor: alpha(theme.palette.text.secondary, 0.1) }} />
@@ -379,7 +455,7 @@ function EmailChainPage({ classId }) {
                   </Stack>
                 </CardBody>
                 <CardFooter sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5 }}>
-                  <Chip label={chain.use_template ? 'Mẫu hệ thống' : 'Tùy chỉnh'} size="small" sx={{ fontWeight: 700, fontSize: '0.7rem', bgcolor: chain.use_template ? alpha(theme.palette.info.main, 0.1) : alpha(theme.palette.secondary.main, 0.1), color: chain.use_template ? 'info.main' : 'secondary.main', borderRadius: 1 }} />
+                  <Chip label={chain.use_template ? 'Từ Mẫu' : 'Tùy chỉnh'} size="small" sx={{ fontWeight: 700, fontSize: '0.7rem', bgcolor: chain.use_template ? alpha(theme.palette.info.main, 0.1) : alpha(theme.palette.secondary.main, 0.1), color: chain.use_template ? 'info.main' : 'secondary.main', borderRadius: 1 }} />
                   <Stack direction="row" spacing={0.5}>
                     <Tooltip title="Chỉnh sửa"><IconButton size="small" onClick={() => handleOpenBuilderEdit(chain)} sx={{ color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.1) }}><EditIcon fontSize="small" /></IconButton></Tooltip>
                     <Tooltip title="Xóa"><IconButton size="small" onClick={() => handleDelete(chain.config_id)} sx={{ color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.1) }}><DeleteOutlineIcon fontSize="small" /></IconButton></Tooltip>
@@ -420,7 +496,7 @@ function EmailChainPage({ classId }) {
                     </Box>
                   </Card>
                 </Grid>
-                {MOCK_TEMPLATES.map((tpl) => (
+                {templates.map((tpl) => (
                   <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={tpl.template_id}>
                     <Card elevation={0} sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.5)}`, bgcolor: 'background.paper', transition: 'all 0.2s', '&:hover': { borderColor: 'primary.main', transform: 'translateY(-4px)', boxShadow: isDark ? `0 12px 32px ${alpha(theme.palette.primary.main, 0.15)}` : `0 12px 32px ${alpha(theme.palette.primary.main, 0.08)}` } }}>
                       <Box sx={{ bgcolor: isDark ? alpha(theme.palette.background.default, 0.6) : alpha(theme.palette.grey[100], 0.5), height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}` }}>
@@ -428,9 +504,10 @@ function EmailChainPage({ classId }) {
                       </Box>
                       <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
                         <Chip label={tpl.type === 'public' ? 'MẪU HỆ THỐNG' : 'MẪU CÁ NHÂN'} size="small" sx={{ mb: 1.5, fontWeight: 700, fontSize: '0.65rem', borderRadius: 1, bgcolor: tpl.type === 'public' ? alpha(theme.palette.success.main, 0.1) : alpha(theme.palette.info.main, 0.1), color: tpl.type === 'public' ? 'success.main' : 'info.main' }} />
-                        <Typography variant="subtitle1" fontWeight={700} color="text.primary" mb={1}>{tpl.title}</Typography>
+                        <Typography variant="subtitle1" fontWeight={700} color="text.primary" mb={1}>{tpl.title || tpl.header || 'Mẫu không tên'}</Typography>
+                        {/* Hiển thị văn bản thuần thay vì tag HTML */}
                         <Typography variant="body2" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {tpl.body}
+                          {stripHtml(tpl.body)}
                         </Typography>
                       </CardContent>
                       <CardActions sx={{ p: 2, pt: 0 }}>
@@ -454,13 +531,24 @@ function EmailChainPage({ classId }) {
                       <StepBadge active={!!formData.header}>1</StepBadge>
                       <Box>
                         <Typography variant="subtitle2" fontWeight="bold">NỘI DUNG EMAIL</Typography>
-                        <Typography variant="caption" color="text.secondary">Khu vực soạn thảo</Typography>
+                        <Typography variant="caption" color="text.secondary">Khu vực soạn thảo HTML</Typography>
                       </Box>
                     </CardHeader>
                     <CardBody sx={{ p: 4 }}>
                       <TextField fullWidth placeholder="Tiêu đề email (Subject)..." variant="standard" name="header" value={formData.header} onChange={handleChange} InputProps={{ disableUnderline: true, sx: { fontSize: '1.5rem', fontWeight: 700, mb: 1, color: 'text.primary' } }} />
                       <Divider sx={{ mb: 4, borderColor: isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.4) }} />
-                      <TextField fullWidth multiline placeholder="Viết nội dung truyền cảm hứng tại đây..." variant="standard" name="body" value={formData.body} onChange={handleChange} InputProps={{ disableUnderline: true, sx: { fontSize: '1.05rem', lineHeight: 1.7, color: 'text.secondary' } }} />
+                      
+                      {/* Trình soạn thảo ReactQuill nằm trong Wrapper Custom Style */}
+                      <EditorWrapper>
+                        <ReactQuill 
+                          theme="snow"
+                          value={formData.body}
+                          onChange={handleQuillChange}
+                          placeholder="Soạn nội dung email trực quan tại đây..."
+                          modules={QUILL_MODULES}
+                        />
+                      </EditorWrapper>
+
                     </CardBody>
                   </ColumnCard>
                 </Grid>
