@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Paper, Typography, Box, Card, CardContent, Stack, Chip,
   LinearProgress, FormControl, Select, MenuItem, InputLabel,
-  Dialog, DialogTitle, DialogContent, IconButton, Grid, TextField, Button
+  Dialog, DialogTitle, DialogContent, IconButton, Grid, TextField, Button,
+  Avatar
 } from "@mui/material";
 import { styled, useTheme, alpha, keyframes } from "@mui/material/styles";
 import {
@@ -15,9 +16,15 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
+import EventNoteIcon from "@mui/icons-material/EventNote";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
+import QuizIcon from "@mui/icons-material/Quiz";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import InsightsIcon from "@mui/icons-material/Insights";
 
 import {
-  getStudentStats, getMyPlans, getScoreTrend, getSkillsMap, getSkillsMapDrillDown, getHistory, patchAnalysisWatering
+  getStudentStats, getMyPlans, getScoreTrend, getSkillsMap, getSkillsMapDrillDown, getHistory, patchAnalysisWatering, getUpcomingTodaySchedule
 } from "../../services/DashboardStudentService";
 
 const float = keyframes`
@@ -271,12 +278,16 @@ const StudentDashboard = memo(() => {
   const [trendData, setTrendData] = useState([]);
   const [progressTimeRange, setProgressTimeRange] = useState("week");
   const [progressExamType, setProgressExamType] = useState("all");
+  
+  const [todaySchedule, setTodaySchedule] = useState([]);
+
   const [myPlans, setMyPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState("");
   const [radarData, setRadarData] = useState([]);
   const [openDrillDown, setOpenDrillDown] = useState(false);
   const [selectedChapterName, setSelectedChapterName] = useState("");
   const [drillDownData, setDrillDownData] = useState([]);
+  
   const [historyData, setHistoryData] = useState([]);
   const [activityType, setActivityType] = useState("all");
   const [startDate, setStartDate] = useState("");
@@ -300,6 +311,14 @@ const StudentDashboard = memo(() => {
         water_drops: newData?.water_drops ?? 0,
         experience: newData?.experience ?? 0
     }));
+  }, []);
+
+  const fetchSchedule = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const data = await getUpcomingTodaySchedule(token);
+      setTodaySchedule(data || []);
+    } catch (error) {}
   }, []);
 
   const fetchMyPlans = useCallback(async () => {
@@ -350,40 +369,60 @@ const StudentDashboard = memo(() => {
   useEffect(() => {
     const initData = async () => {
       setLoading(true);
-      await Promise.all([fetchStats(), fetchMyPlans()]);
+      await Promise.all([fetchStats(), fetchSchedule(), fetchMyPlans()]);
       setLoading(false);
     };
     initData();
-  }, [fetchStats, fetchMyPlans]);
+  }, [fetchStats, fetchSchedule, fetchMyPlans]);
 
   useEffect(() => { fetchTrend(); }, [fetchTrend]);
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
   useEffect(() => { fetchRadar(); }, [fetchRadar]); 
 
-  const handleRadarClick = useCallback(async (data) => {
-    if (data && data.activePayload && data.activePayload.length > 0) {
-      const chapter = data.activePayload[0].payload;
-      setSelectedChapterName(chapter.subject);
-      try {
-        const token = localStorage.getItem("token");
-        const responseData = await getSkillsMapDrillDown(token, chapter.chapter_id, selectedPlan);
-        const formattedDrillDown = responseData.map(item => {
-          const total = item.correct_cnt + item.fail_cnt;
-          return { topic: item.category_name, percent: total === 0 ? 0 : Math.round((item.correct_cnt / total) * 100) };
-        });
-        setDrillDownData(formattedDrillDown);
-        setOpenDrillDown(true);
-      } catch (error) {}
-    }
-  }, [selectedPlan]);
+  const handleVertexClick = useCallback(async (subjectName) => {
+    const chapter = radarData.find(d => d.subject === subjectName);
+    if (!chapter) return;
+    
+    setSelectedChapterName(chapter.subject);
+    try {
+      const token = localStorage.getItem("token");
+      const responseData = await getSkillsMapDrillDown(token, chapter.chapter_id, selectedPlan);
+      const formattedDrillDown = responseData.map(item => {
+        const total = item.correct_cnt + item.fail_cnt;
+        return { topic: item.category_name, percent: total === 0 ? 0 : Math.round((item.correct_cnt / total) * 100) };
+      });
+      setDrillDownData(formattedDrillDown);
+      setOpenDrillDown(true);
+    } catch (error) {}
+  }, [radarData, selectedPlan]);
+
+  const CustomRadarTick = useCallback((props) => {
+    const { payload, x, y, textAnchor } = props;
+    return (
+      <text
+        x={x}
+        y={y}
+        dy={textAnchor === 'start' ? 4 : textAnchor === 'end' ? 4 : 12}
+        textAnchor={textAnchor}
+        fill={theme.palette.primary.main}
+        fontSize={13}
+        fontWeight={700}
+        cursor="pointer"
+        onClick={() => handleVertexClick(payload.value)}
+        style={{ transition: 'all 0.2s' }}
+      >
+        {payload.value}
+      </text>
+    );
+  }, [handleVertexClick, theme]);
 
   const trendInsightMessage = useMemo(() => {
-    if (trendData.length < 2) return "Làm thêm bài tập để xem biểu đồ phân tích phong độ.";
+    if (trendData.length < 2) return "Làm thêm bài tập để hệ thống có thể phân tích xu hướng học tập của bạn.";
     const last = Number(trendData[trendData.length - 1].score);
     const prev = Number(trendData[trendData.length - 2].score);
     if (last > prev) return `Đang có đà tiến bộ! Điểm số tăng +${(last - prev).toFixed(1)} so với lần trước.`;
-    if (last < prev) return `Điểm số đang chững lại. Hãy xem "Bản đồ kỹ năng" để biết điểm yếu cần khắc phục.`;
-    return "Phong độ ổn định. Hãy thử thách các bài ở độ khó cao hơn.";
+    if (last < prev) return `Điểm số đang chững lại. Hãy xem "Bản đồ kỹ năng" bên dưới để tìm ra chủ đề cần khắc phục.`;
+    return "Phong độ ổn định. Hãy thử thách bản thân với các bài tập ở độ khó cao hơn.";
   }, [trendData]);
 
   const safeGetNumClasses = useCallback((dataValue) => {
@@ -422,7 +461,7 @@ const StudentDashboard = memo(() => {
       </Grid>
 
       <Grid container spacing={3} sx={{ mb: 4, alignItems: 'stretch' }}>
-        <Grid size={{ xs: 12, lg: 8, xl: 9 }}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, display: "flex", flexDirection: "column", height: '100%', bgcolor: isDark ? 'background.paper' : theme.palette.background.paper }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3, flexWrap: "wrap", gap: 2 }}>
               <Typography variant="h6" fontWeight={700}>Xu hướng điểm số</Typography>
@@ -448,7 +487,7 @@ const StudentDashboard = memo(() => {
 
             <Box sx={{ mb: 3, p: 2, borderRadius: 2, borderLeft: '4px solid', borderColor: theme.palette.primary.main, bgcolor: isDark ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.main, 0.05) }}>
               <Typography variant="body2" fontWeight={700} color="text.primary">
-                Gợi ý hệ thống:
+                Nhận xét hệ thống:
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 {trendInsightMessage}
@@ -469,22 +508,85 @@ const StudentDashboard = memo(() => {
           </Paper>
         </Grid>
 
-        <Grid size={{ xs: 12, lg: 4, xl: 3 }}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, display: "flex", flexDirection: "column", height: '100%', bgcolor: isDark ? 'background.paper' : theme.palette.background.paper }}>
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Bản đồ Kỹ năng</Typography>
-            <FormControl size="small" fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Chọn Lộ trình</InputLabel>
-              <Select value={selectedPlan} label="Chọn Lộ trình" onChange={(e) => setSelectedPlan(e.target.value)}>
-                {myPlans.map(plan => (<MenuItem key={plan.id} value={plan.id}>{plan.name}</MenuItem>))}
-              </Select>
-            </FormControl>
-            <Box sx={{ flexGrow: 1, minHeight: 250, cursor: 'pointer' }}>
+            <Stack direction="row" alignItems="center" spacing={1} mb={3}>
+              <EventNoteIcon color="primary" />
+              <Typography variant="h6" fontWeight={700}>Lịch học hôm nay</Typography>
+            </Stack>
+
+            {todaySchedule.length === 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexGrow: 1, p: 3, textAlign: 'center', bgcolor: isDark ? alpha(theme.palette.divider, 0.05) : alpha(theme.palette.grey[50], 0.5), borderRadius: 2 }}>
+                <AutoAwesomeIcon sx={{ fontSize: 40, color: theme.palette.text.disabled, mb: 1 }} />
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                  Hôm nay bạn không có ca học nào. Hãy dành thời gian tự luyện tập nhé!
+                </Typography>
+              </Box>
+            ) : (
+              <Stack spacing={2} sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 350, pr: 1 }}>
+                {todaySchedule.map((schedule, index) => {
+                  const startTime = new Date(schedule.startAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                  const endTime = new Date(schedule.endAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                  return (
+                    <Box key={index} sx={{ p: 2, borderRadius: 2, borderLeft: '4px solid', borderColor: theme.palette.info.main, bgcolor: isDark ? alpha(theme.palette.info.main, 0.05) : alpha(theme.palette.info.light, 0.1) }}>
+                      <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap>
+                        {schedule.class?.classname || 'Lớp học'}
+                      </Typography>
+                      <Stack direction="row" alignItems="center" spacing={1} mt={1}>
+                        <Chip size="small" label={schedule.class?.subject || 'Môn học'} sx={{ fontWeight: 600, bgcolor: theme.palette.background.paper }} />
+                        <Stack direction="row" alignItems="center" spacing={0.5} color="text.secondary">
+                          <AccessTimeIcon sx={{ fontSize: 16 }} />
+                          <Typography variant="caption" fontWeight={600}>{startTime} - {endTime}</Typography>
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  );
+                })}
+              </Stack>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid size={{ xs: 12 }}>
+          <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} mb={3} spacing={2}>
+              <Box>
+                <Typography variant="h6" fontWeight={700}>Bản đồ Kỹ năng Toàn diện</Typography>
+                <Typography variant="body2" color="text.secondary">Bấm trực tiếp vào các nút tên chủ đề hoặc đỉnh trên biểu đồ để xem độ thông thạo chi tiết.</Typography>
+              </Box>
+              <FormControl size="small" sx={{ minWidth: 200 }}>
+                <InputLabel>Chọn Lộ trình phân tích</InputLabel>
+                <Select value={selectedPlan} label="Chọn Lộ trình phân tích" onChange={(e) => setSelectedPlan(e.target.value)}>
+                  {myPlans.map(plan => (<MenuItem key={plan.id} value={plan.id}>{plan.name}</MenuItem>))}
+                </Select>
+              </FormControl>
+            </Stack>
+            
+            <Box sx={{ width: '100%', height: 400, mt: 2 }}>
                <ResponsiveContainer width="100%" height="100%">
-                 <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData} onClick={handleRadarClick}>
+                 <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
                    <PolarGrid stroke={isDark ? alpha(theme.palette.divider, 0.2) : alpha(theme.palette.divider, 0.5)} />
-                   <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: isDark ? theme.palette.text.secondary : theme.palette.text.primary, fontWeight: 700 }} />
+                   <PolarAngleAxis dataKey="subject" tick={<CustomRadarTick />} />
                    <PolarRadiusAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={false} axisLine={false} />
-                   <Radar name="Độ thông thạo (%)" dataKey="A" stroke={theme.palette.secondary.main} strokeWidth={2} fill={theme.palette.secondary.main} fillOpacity={isDark ? 0.3 : 0.15} />
+                   <Radar 
+                     name="Độ thông thạo (%)" 
+                     dataKey="A" 
+                     stroke={theme.palette.secondary.main} 
+                     strokeWidth={2} 
+                     fill={theme.palette.secondary.main} 
+                     fillOpacity={isDark ? 0.3 : 0.15}
+                     activeDot={{ 
+                       cursor: 'pointer', 
+                       r: 6, 
+                       onClick: (e, payload) => {
+                         if(payload && payload.payload) {
+                           handleVertexClick(payload.payload.subject);
+                         }
+                       }
+                     }}
+                   />
                    <RechartsTooltip contentStyle={{ backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.common.white, borderRadius: '8px', border: 'none', boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.1)}` }} />
                  </RadarChart>
                </ResponsiveContainer>
@@ -495,7 +597,7 @@ const StudentDashboard = memo(() => {
 
       <Paper elevation={0} sx={{ borderRadius: 3, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper, p: 3 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2} mb={3}>
-          <Typography variant="h6" fontWeight={700}>Hành trình học tập</Typography>
+          <Typography variant="h6" fontWeight={700}>Lịch sử Hoạt động</Typography>
           <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
             <TextField label="Từ ngày" type="date" size="small" InputLabelProps={{ shrink: true }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             <TextField label="Đến ngày" type="date" size="small" InputLabelProps={{ shrink: true }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
@@ -512,39 +614,68 @@ const StudentDashboard = memo(() => {
 
         <Stack spacing={2}>
           {historyData.length === 0 ? (
-            <Typography align="center" color="text.secondary" py={4} fontWeight={500}>Chưa có dữ liệu hoạt động.</Typography>
+            <Box sx={{ py: 6, textAlign: 'center' }}>
+              <Typography color="text.secondary" fontWeight={500}>Chưa có dữ liệu hoạt động trong khoảng thời gian này.</Typography>
+            </Box>
           ) : (
             historyData.map((item, index) => {
+              const hasCategory = !!item.category;
+              const isAdaptive = item.exam_type === 'adaptive' || hasCategory;
               const isTest = item.exam_type === 'test';
-              const isAdaptive = item.exam_type === 'adaptive';
-              const typeColor = isTest ? 'error' : isAdaptive ? 'secondary' : 'primary';
+              
+              let typeColor = 'primary';
+              let ItemIcon = AssignmentTurnedInIcon;
+              let typeLabel = 'Luyện tập';
+              let displayTitle = item.title || 'Bài tập chưa đặt tên';
+
+              if (isTest) {
+                typeColor = 'error';
+                ItemIcon = QuizIcon;
+                typeLabel = 'Kiểm tra';
+              } else if (isAdaptive) {
+                typeColor = 'secondary';
+                ItemIcon = AutoAwesomeIcon;
+                typeLabel = 'Thích ứng';
+                if (hasCategory) displayTitle = `Ôn tập: ${item.category}`;
+              }
 
               return (
                 <Box key={index} sx={{ 
-                  display: 'flex', alignItems: 'center', p: 2, borderRadius: 2,
+                  display: 'flex', alignItems: 'center', p: 2, borderRadius: 2, gap: 2,
                   bgcolor: isDark ? alpha(theme.palette.background.paper, 0.5) : alpha(theme.palette.grey[50], 0.5),
                   border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.2)}`,
-                  borderLeft: `4px solid ${theme.palette[typeColor].main}`,
-                  transition: 'transform 0.2s, background-color 0.2s',
-                  '&:hover': { transform: 'translateX(4px)', bgcolor: isDark ? theme.palette.action.hover : alpha(theme.palette.grey[100], 0.8) }
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': { 
+                    transform: 'translateY(-2px)', 
+                    bgcolor: isDark ? theme.palette.action.hover : alpha(theme.palette.background.paper, 0.8),
+                    boxShadow: `0 4px 12px ${alpha(theme.palette[typeColor].main, 0.1)}`,
+                    borderColor: alpha(theme.palette[typeColor].main, 0.3)
+                  }
                 }}>
+                  <Avatar sx={{ bgcolor: alpha(theme.palette[typeColor].main, 0.1), color: `${typeColor}.main`, width: 48, height: 48, borderRadius: 2 }}>
+                    <ItemIcon />
+                  </Avatar>
+
                   <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle2" fontWeight={700} noWrap>{item.title || 'Bài tập chưa đặt tên'}</Typography>
-                    <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
-                      <Typography variant="caption" fontWeight={700} color={`${typeColor}.main`} textTransform="uppercase">
-                        {isTest ? 'Kiểm tra' : isAdaptive ? 'Thích ứng' : 'Luyện tập'}
-                      </Typography>
+                    <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ color: 'text.primary' }}>
+                      {displayTitle}
+                    </Typography>
+                    <Stack direction="row" alignItems="center" spacing={1} mt={0.5} flexWrap="wrap">
+                      <Chip size="small" label={typeLabel} sx={{ bgcolor: alpha(theme.palette[typeColor].main, 0.1), color: `${typeColor}.main`, fontWeight: 700, borderRadius: 1 }} />
                       <Typography variant="caption" color="text.disabled">•</Typography>
-                      <Typography variant="caption" color="text.secondary" fontWeight={500}>{item.subject || 'Môn học'}</Typography>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600}>{item.subject || 'Môn học'}</Typography>
                       <Typography variant="caption" color="text.disabled">•</Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <AccessTimeIcon sx={{ fontSize: 14 }} />
                         {new Date(item.doneAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
                       </Typography>
                     </Stack>
                   </Box>
-                  <Box textAlign="right" pl={2}>
-                    <Typography variant="h6" fontWeight={700} color={isTest ? 'error.main' : 'text.primary'}>
-                      {item.score} <Typography component="span" variant="caption" color="text.secondary" fontWeight={700}>/ 10</Typography>
+                  
+                  <Box textAlign="right" sx={{ minWidth: 80, p: 1.5, bgcolor: alpha(theme.palette[typeColor].main, 0.05), borderRadius: 2, border: `1px dashed ${alpha(theme.palette[typeColor].main, 0.3)}` }}>
+                    <Typography variant="h5" fontWeight={700} color={`${typeColor}.main`} align="center">
+                      {item.score} 
+                      <Typography component="span" variant="body2" color="text.secondary" fontWeight={700} sx={{ ml: 0.5 }}>/ 10</Typography>
                     </Typography>
                   </Box>
                 </Box>
@@ -554,20 +685,25 @@ const StudentDashboard = memo(() => {
         </Stack>
       </Paper>
 
-      <Dialog open={openDrillDown} onClose={() => setOpenDrillDown(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper } }}>
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, pb: 1 }}>
-          Chi tiết: {selectedChapterName}
-          <IconButton onClick={() => setOpenDrillDown(false)}><CloseIcon /></IconButton>
+      <Dialog open={openDrillDown} onClose={() => setOpenDrillDown(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper, overflow: 'hidden' } }}>
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, pb: 2, bgcolor: isDark ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.light, 0.1) }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <InsightsIcon color="primary" />
+            <Typography variant="h6" fontWeight={700} color="primary.main">
+              Chi tiết: {selectedChapterName}
+            </Typography>
+          </Stack>
+          <IconButton onClick={() => setOpenDrillDown(false)} sx={{ color: 'text.secondary' }}><CloseIcon /></IconButton>
         </DialogTitle>
-        <DialogContent sx={{ pt: 0 }}>
-          <Box sx={{ width: '100%', height: 280, mt: 2 }}>
+        <DialogContent sx={{ p: 3, pt: 4 }}>
+          <Box sx={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
-              <BarChart data={drillDownData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+              <BarChart data={drillDownData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isDark ? alpha(theme.palette.divider, 0.1) : alpha(theme.palette.divider, 0.5)} />
                 <XAxis type="number" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: isDark ? theme.palette.text.secondary : theme.palette.text.secondary, fontWeight: 600 }} />
-                <YAxis dataKey="topic" type="category" width={110} tick={{fontSize: 12, fill: isDark ? theme.palette.text.secondary : theme.palette.text.secondary, fontWeight: 600}} />
-                <RechartsTooltip contentStyle={{ backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.common.white, borderRadius: '8px', border: 'none', boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.1)}` }} cursor={{ fill: isDark ? alpha(theme.palette.common.white, 0.05) : alpha(theme.palette.common.black, 0.05) }}/>
-                <Bar dataKey="percent" name="Độ thông thạo (%)" fill={theme.palette.secondary.main} radius={[0, 4, 4, 0]} barSize={16} />
+                <YAxis dataKey="topic" type="category" width={140} tick={{fontSize: 13, fill: isDark ? theme.palette.text.primary : theme.palette.text.primary, fontWeight: 600}} />
+                <RechartsTooltip contentStyle={{ backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.common.white, borderRadius: '8px', border: 'none', boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, 0.1)}` }} cursor={{ fill: isDark ? alpha(theme.palette.common.white, 0.05) : alpha(theme.palette.primary.main, 0.05) }}/>
+                <Bar dataKey="percent" name="Độ thông thạo (%)" fill={theme.palette.primary.main} radius={[0, 4, 4, 0]} barSize={24} />
               </BarChart>
             </ResponsiveContainer>
           </Box>

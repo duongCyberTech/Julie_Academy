@@ -112,3 +112,30 @@ export const patchAnalysisWatering = async (token, data) => {
         throw error;
     }
 };
+/**
+ * Lấy danh sách lịch học trong ngày hôm nay của học sinh
+ * Tương ứng với hàm upcomingTodaySchedule ở backend
+ */
+export const getUpcomingTodaySchedule = async (token) => {
+    try {
+        const response = await apiClient.get('/dashboard/student/schedule-today', getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi lấy lịch học hôm nay:', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+/**
+ * Lấy danh sách các lớp học hiện tại (đang chờ hoặc đang diễn ra)
+ * Tương ứng với hàm currentClasses ở backend
+ */
+export const getCurrentClasses = async (token) => {
+    try {
+        const response = await apiClient.get('/dashboard/student/classes', getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách lớp học:', error.response?.data || error.message);
+        throw error;
+    }
+};

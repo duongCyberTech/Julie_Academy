@@ -179,3 +179,39 @@ export const getMyChildren = async (token) => {
     throw error;
   }
 };
+
+/**
+ * Lấy thông tin hồ sơ người dùng
+ * @param {string} userId - ID của người dùng
+ * @param {string} token - Token xác thực
+ */
+export const getUserProfile = async (userId, token) => {
+  try {
+    const response = await apiClient.get(`/users/${userId}`, getAuthHeaders(token));
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * Cập nhật thông tin hồ sơ người dùng (bao gồm cả tải ảnh)
+ * @param {string} userId - ID của người dùng
+ * @param {FormData} formData - Dữ liệu form cần cập nhật
+ * @param {string} token - Token xác thực
+ */
+export const updateUserProfile = async (userId, formData, token) => {
+  try {
+    const authConfig = getAuthHeaders(token);
+    const response = await apiClient.patch(`/users/${userId}`, formData, {
+      ...authConfig,
+      headers: {
+        ...authConfig.headers,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};

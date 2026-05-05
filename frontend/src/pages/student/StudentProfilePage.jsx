@@ -1,7 +1,9 @@
+// file: StudentProfilePage.jsx
 import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import { getUserProfile, updateUserProfile } from "../../services/UserService"; 
+
 import {
   Box, Typography, Paper, CircularProgress, Alert, Snackbar,
   Avatar, Button, TextField, Chip, Divider, IconButton, Badge,
@@ -84,12 +86,7 @@ function StudentProfilePage() {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
-  const API_URL = "http://localhost:4000";
   const token = localStorage.getItem("token");
-
-  const getAuthConfig = useCallback(() => ({
-    headers: { Authorization: `Bearer ${token}` },
-  }), [token]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -106,8 +103,8 @@ function StudentProfilePage() {
 
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/users/${userId}`, getAuthConfig());
-        const data = response.data;
+        // Gọi hàm từ service thay vì axios.get
+        const data = await getUserProfile(userId, token);
 
         const schoolVal = data.student?.school || "";
         const dobVal = data.student?.dob ? data.student.dob.split("T")[0] : "";
@@ -124,7 +121,7 @@ function StudentProfilePage() {
       }
     };
     fetchProfile();
-  }, [navigate, token, getAuthConfig]);
+  }, [navigate, token]); // Xóa getAuthConfig khỏi dependency vì đã được quản lý trong service
 
   const profileCompleteness = useMemo(() => {
     let score = 0;
@@ -164,16 +161,14 @@ function StudentProfilePage() {
       formPayload.append("lname", formData.lname);
       formPayload.append("school", formData.school);
       formPayload.append("dob", formData.dob ? new Date(formData.dob).toISOString() : "");
+      
       if (formData.avata) {
         console.log("Appending avatar to form payload:", formData.avata);
         formPayload.append("avata", formData.avata);
       }
 
-      await axios.patch(
-        `${API_URL}/users/${userId}`, 
-        formPayload, 
-        { ...getAuthConfig(), headers: { ...getAuthConfig().headers, 'Content-Type': 'multipart/form-data' } }
-      );
+      // Gọi hàm từ service thay vì axios.patch
+      await updateUserProfile(userId, formPayload, token);
 
       setSavedUser(prev => ({
         ...prev, fname: formData.fname, mname: formData.mname, lname: formData.lname,
@@ -203,9 +198,7 @@ function StudentProfilePage() {
       </HeaderBar>
 
       <Grid container spacing={3}>
-        {/* ================================================= */}
         {/* CỘT TRÁI */}
-        {/* ================================================= */}
         <Grid size={{ xs: 12, md: 4 }}>
           <ProfileCard elevation={0}>
             <CoverBackground />
@@ -268,9 +261,7 @@ function StudentProfilePage() {
           </ProfileCard>
         </Grid>
 
-        {/* ================================================= */}
         {/* CỘT PHẢI */}
-        {/* ================================================= */}
         <Grid size={{ xs: 12, md: 8 }}>
           <ProfileCard elevation={0} sx={{ p: 4 }}>
             <Typography variant="h6" fontWeight="700" mb={3} sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'info.main' }}>
