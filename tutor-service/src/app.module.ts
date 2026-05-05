@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, ExecutionContext } from '@nestjs/common';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -41,7 +41,12 @@ require('dotenv').config()
     ThrottlerModule.forRoot([
       {
         ttl: 60000, 
-        limit: 50,  
+        limit: 50,
+        skipIf: (context: ExecutionContext) => {
+          const request = context.switchToHttp().getRequest();
+          const passToken = process.env.X_RATE_LIMIT_PASS_TOKEN;
+          return request.headers['x-bypass-rate-limit'] === passToken;
+        }
       },
     ]),
     BullBoardModule.forRoot({
