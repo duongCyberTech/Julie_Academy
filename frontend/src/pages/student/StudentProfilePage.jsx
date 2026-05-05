@@ -317,7 +317,7 @@ function StudentProfilePage() {
 
       {/* DIALOG UPLOAD ẢNH */}
       <Dialog open={showAvatarModal} onClose={() => setShowAvatarModal(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
-        <DialogTitle sx={{ fontWeight: 800, textAlign: 'center' }}>Thay Ảnh Đại Diện</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, textAlign: 'center' }}>Thay Ảnh Đại Diện</DialogTitle>
         <DialogContent>
           <Box sx={{ p: 2, bgcolor: alpha(theme.palette.info.main, 0.05), borderRadius: 2, mb: 2, border: '1px dashed', borderColor: 'info.main' }}>
             <Typography variant="subtitle2" fontWeight={700} color="info.main" gutterBottom>Lưu ý định dạng:</Typography>

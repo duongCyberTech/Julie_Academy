@@ -280,7 +280,7 @@ function TutorProfilePage() {
       </Grid>
 
       <Dialog open={showAvatarModal} onClose={() => setShowAvatarModal(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
-        <DialogTitle sx={{ fontWeight: 800, textAlign: 'center' }}>Cập Nhật Ảnh Đại Diện</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, textAlign: 'center' }}>Cập Nhật Ảnh Đại Diện</DialogTitle>
         <DialogContent>
           <Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.main, 0.05), borderRadius: 2, mb: 2, border: '1px dashed', borderColor: 'primary.main' }}>
             <Typography variant="subtitle2" fontWeight={700} color="primary.main" gutterBottom>Lưu ý định dạng:</Typography>

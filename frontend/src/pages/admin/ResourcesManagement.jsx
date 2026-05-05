@@ -10,7 +10,6 @@ import {
 import { styled, alpha } from "@mui/material/styles";
 import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 
-// Icons
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import SearchIcon from "@mui/icons-material/Search";
@@ -26,7 +25,6 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import TopicIcon from "@mui/icons-material/Topic";
 
-// Services (Chỉ giữ lại các API quản lý Khung giáo án)
 import { 
   getAllPlans, getPlanDetail, createBook, 
   deleteBook, getAllCategories,
@@ -34,10 +32,6 @@ import {
 } from "../../services/CategoryService";
 
 import CreateLessonPlanDialog from "../../components/CreatePlanDialog";
-
-// ==============================================================================
-// STYLED COMPONENTS & HELPERS
-// ==============================================================================
 
 const PageWrapper = styled(Paper)(({ theme }) => {
   const isDark = theme.palette.mode === 'dark';
@@ -63,10 +57,10 @@ const NameInputDialog = memo(({ open, onClose, onSubmit, title, label, initialVa
   const [name, setName] = useState(initialValue);
   useEffect(() => { if (open) setName(initialValue); }, [open, initialValue]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     if (name.trim()) onSubmit(name.trim());
-  };
+  }, [name, onSubmit]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: "16px", backgroundImage: 'none' }}}>
@@ -86,10 +80,6 @@ const NameInputDialog = memo(({ open, onClose, onSubmit, title, label, initialVa
   );
 });
 
-// ==============================================================================
-// MAIN COMPONENT
-// ==============================================================================
-
 const ResourcesManagement = memo(({ tutorId, token }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -98,24 +88,20 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const authTutorId = tutorId || storedUser?.userId || storedUser?.uid || storedUser?.id;
 
-  // States: View & Layout
   const [view, setView] = useState("list"); 
   const [selectedPlanId, setSelectedPlanId] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   
-  // States: Data
   const [plans, setPlans] = useState([]);
   const [planInfo, setPlanInfo] = useState(null);
   const [rawCategories, setRawCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // States: UI & Loaders
   const [loading, setLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
-  // States: Dialogs & Menus
   const [dialogs, setDialogs] = useState({ createPlan: false, createCate: false, editCate: false, editPlanName: false });
   const [tempData, setTempData] = useState({ targetId: null, initialName: "", parentId: null });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, type: null });
@@ -126,7 +112,6 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
   const showToast = useCallback((message, severity = "success") => setToast({ open: true, message, severity }), []);
   const closeToast = useCallback(() => setToast((prev) => ({ ...prev, open: false })), []);
 
-  // --- API: Load Danh sách Sách ---
   const fetchAllTemplates = useCallback(async () => {
     if (!authToken) return;
     setLoading(true);
@@ -150,7 +135,6 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
     finally { setActionLoading(false); }
   }, [authToken, fetchAllTemplates, showToast]);
 
-  // --- API: Load Chi tiết Cấu trúc ---
   const loadPlanDetail = useCallback(async () => {
     if (!selectedPlanId || !authToken) return;
     setIsInitialLoading(true);
@@ -172,7 +156,6 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
 
   useEffect(() => { if (view === "editor") loadPlanDetail(); }, [view, loadPlanDetail]);
 
-  // --- Logic Cây mục lục ---
   const categoryTreeData = useMemo(() => {
     if (!rawCategories || rawCategories.length === 0) return [];
     const getItemId = (itm) => String(itm.id ?? itm.category_id ?? itm._id ?? "");
@@ -185,7 +168,6 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
     const parentMap = new Map();
     const allItemIds = new Set(rawCategories.map(getItemId));
     
-    // Tạo node ảo cho các parent bị thiếu (đảm bảo cây không bị gãy)
     rawCategories.forEach(item => {
       const pid = getParentId(item);
       if (pid && !allItemIds.has(pid)) {
@@ -224,7 +206,6 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
     return target?.category_name || target?.name || "Danh mục";
   }, [selectedCategoryId, rawCategories]);
 
-  // --- Handlers ---
   const handleTreeSelection = useCallback((event, selectedItems) => {
     const selectedId = Array.isArray(selectedItems) ? selectedItems[0] : selectedItems;
     setSelectedCategoryId(selectedId || null);
@@ -255,10 +236,14 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
     } catch (e) { showToast("Lỗi thao tác xóa", "error"); } finally { setActionLoading(false); }
   }, [deleteConfirm, authToken, selectedPlanId, fetchAllTemplates, loadPlanDetail, showToast]);
 
+  const handleUpdateCategoryName = useCallback(async (name) => {
+    setActionLoading(true); 
+    await updateCategory(tempData.targetId, { category_name: name, plan_id: selectedPlanId }, authToken); 
+    setDialogs(p => ({...p, editCate: false})); 
+    loadPlanDetail(); 
+    setActionLoading(false); 
+  }, [authToken, loadPlanDetail, selectedPlanId, tempData.targetId]);
 
-  // ======================================================================================
-  // RENDER: VIEW DANH SÁCH GIÁO ÁN
-  // ======================================================================================
   if (view === "list") return (
     <PageWrapper elevation={0}>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'start', sm: 'center' }} mb={4} spacing={2}>
@@ -309,14 +294,10 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
     </PageWrapper>
   );
 
-  // ======================================================================================
-  // RENDER: VIEW EDITOR (QUẢN LÝ CẤU TRÚC CHƯƠNG BÀI)
-  // ======================================================================================
   return (
     <PageWrapper elevation={0} sx={{ p: { xs: 2, md: 3 } }}>
       <Grid container spacing={3} sx={{ flexGrow: 1, height: "100%", m: 0, width: "100%" }}>
         
-        {/* PANEL TRÁI: CÂY MỤC LỤC */}
         <Grid size={{ xs: 12, md: 4, lg: 3 }} sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", px: 0 }}>
           <Box 
             sx={{ 
@@ -373,11 +354,9 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
           </Box>
         </Grid>
 
-        {/* PANEL PHẢI: QUẢN LÝ MỤC CON */}
         <Grid size={{ xs: 12, md: 8, lg: 9 }} sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", pr: 0 }}>
           <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: isDark ? alpha(theme.palette.background.paper, 0.6) : "#FFFFFF", borderRadius: "16px", border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.5)}` }}>
             
-            {/* Header Phải */}
             <Paper square elevation={0} sx={{ p: 1.5, px: 2, borderBottom: "1px solid", borderColor: isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3), display: "flex", flexWrap: "wrap", gap: 1.5, justifyContent: "space-between", alignItems: "center", flexShrink: 0, bgcolor: "transparent", borderRadius: "16px 16px 0 0" }}>
               <Breadcrumbs separator={<ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />}>
                 <MuiLink component="button" underline="hover" color="inherit" onClick={() => setSelectedCategoryId(null)} sx={{ display: "flex", alignItems: "center", fontWeight: !selectedCategoryId ? 700 : 500, color: !selectedCategoryId ? 'primary.main' : 'text.secondary' }}>
@@ -395,12 +374,11 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
               </Button>
             </Paper>
 
-            {/* Content Phải */}
             <Box sx={{ p: 2.5, flexGrow: 1, overflowY: "auto", minHeight: 0, bgcolor: isDark ? 'transparent' : '#F9FAFB' }}>
               {isInitialLoading ? (
-                 <Grid container spacing={2}>{[1, 2, 3].map(i => <Grid size={{ xs: 12, sm: 6, xl: 4 }} key={i}><Skeleton variant="rounded" height={70} sx={{ borderRadius: "12px" }} /></Grid>)}</Grid>
+                 <Grid container spacing={3}>{[1, 2, 3].map(i => <Grid size={{ xs: 12, sm: 6, xl: 4 }} key={i}><Skeleton variant="rounded" height={70} sx={{ borderRadius: "12px" }} /></Grid>)}</Grid>
               ) : subCategories.length > 0 ? (
-                <Grid container spacing={2}>
+                <Grid container spacing={3}>
                   {subCategories.map(subCate => (
                     <Grid size={{ xs: 12, sm: 6, xl: 4 }} key={subCate.category_id || subCate.id}>
                       <Paper elevation={0} variant="outlined" onClick={() => setSelectedCategoryId(subCate.category_id || subCate.id)} sx={{ p: 2, display: "flex", alignItems: "center", cursor: "pointer", borderRadius: "12px", position: "relative", bgcolor: isDark ? alpha(theme.palette.background.default, 0.4) : "#FFFFFF", transition: "all 0.2s ease", "&:hover": { borderColor: "primary.main", transform: "translateY(-2px)", boxShadow: 2, "& .action-btns": { opacity: 1 } } }}>
@@ -425,7 +403,6 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
         </Grid>
       </Grid>
 
-      {/* --- Menus & Dialogs --- */}
       <Menu open={Boolean(planMenuAnchor)} anchorEl={planMenuAnchor} onClose={() => setPlanMenuAnchor(null)} PaperProps={{ sx: { borderRadius: "12px", backgroundImage: 'none', mt: 1, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.1)}` } }}>
         <MenuItem onClick={() => { setPlanMenuAnchor(null); setTempData({ initialName: planInfo?.title }); setDialogs(p => ({ ...p, editPlanName: true })); }}><ListItemIcon><EditIcon fontSize="small" /></ListItemIcon><ListItemText primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }}>Đổi tên giáo án</ListItemText></MenuItem>
         <Divider />
@@ -438,7 +415,7 @@ const ResourcesManagement = memo(({ tutorId, token }) => {
       </Menu>
 
       <NameInputDialog open={dialogs.createCate} onClose={() => setDialogs(p => ({ ...p, createCate: false }))} onSubmit={handleAddCate} title={tempData.parentId ? "Thêm bài học con" : "Thêm chương mới"} label="Tên mục" loading={actionLoading} />
-      <NameInputDialog open={dialogs.editCate} onClose={() => setDialogs(p => ({ ...p, editCate: false }))} onSubmit={async (name) => { setActionLoading(true); await updateCategory(tempData.targetId, { category_name: name, plan_id: selectedPlanId }, authToken); setDialogs(p => ({...p, editCate: false})); loadPlanDetail(); setActionLoading(false); }} title="Đổi tên mục" label="Tên mới" initialValue={tempData.initialName} loading={actionLoading} />
+      <NameInputDialog open={dialogs.editCate} onClose={() => setDialogs(p => ({ ...p, editCate: false }))} onSubmit={handleUpdateCategoryName} title="Đổi tên mục" label="Tên mới" initialValue={tempData.initialName} loading={actionLoading} />
 
       <Dialog open={deleteConfirm.open} onClose={() => setDeleteConfirm(p => ({ ...p, open: false }))} PaperProps={{ sx: { borderRadius: "16px", p: 1, backgroundImage: 'none', border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.1)}` } }}>
         <DialogTitle sx={{ fontWeight: 700 }}>Xác nhận xóa</DialogTitle>

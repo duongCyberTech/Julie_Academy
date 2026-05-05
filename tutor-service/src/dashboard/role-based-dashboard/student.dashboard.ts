@@ -398,6 +398,7 @@ export class StudentDashboard {
             select: {
                 startAt: true,
                 endAt: true,
+                link_meet: true,
                 class: {
                     select: {
                         subject: true,
