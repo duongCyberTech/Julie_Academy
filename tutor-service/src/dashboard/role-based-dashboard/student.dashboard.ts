@@ -107,9 +107,10 @@ export class StudentDashboard {
                 student_uid: student_id,
                 isDone: true,
                 // Lọc theo loại bài thi 
-                ...(filter.exam_type && filter.exam_type !== 'all' ? {
-                    exam_session: { exam_type: filter.exam_type as any }
-                } : {}),
+                ...(filter.exam_type && filter.exam_type !== 'all' ? 
+                    (filter.exam_type === 'adaptive' ? 
+                    { exam_id: null, session_id: null } :
+                    { exam_session: { exam_type: filter.exam_type as any } }) : {}),
 
                 ...(filter.startAt ? {startAt: {gte: filter.startAt}} : {}),
                 ...(filter.endAt ? {doneAt: {lte: filter.endAt}} : {})
@@ -135,7 +136,12 @@ export class StudentDashboard {
                     }
                 },
                 final_score: true,
-                doneAt: true
+                doneAt: true,
+                category: {
+                    select: {
+                        category_name: true
+                    }
+                }
             },
             orderBy: [
                 {doneAt: "desc"},
@@ -146,9 +152,10 @@ export class StudentDashboard {
         }).then(res => res.map(ex => ({
             title: ex?.exam_session?.exam.title,
             subject: ex?.exam_session?.exam_open_in[0].class.subject,
-            exam_type: ex?.exam_session?.exam_type,
+            exam_type: ex?.exam_session?.exam_type ||  'adaptive',
             score: ex.final_score,
-            doneAt: ex.doneAt
+            doneAt: ex.doneAt,
+            category: ex?.category?.category_name
         })))
     }
 
