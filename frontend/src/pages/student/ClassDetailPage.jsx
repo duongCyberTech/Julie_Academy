@@ -22,6 +22,7 @@ import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import MessageRoundedIcon from '@mui/icons-material/MessageRounded';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import VerifiedRoundedIcon from '@mui/icons-material/VerifiedRounded';
+import EventOutlinedIcon from '@mui/icons-material/EventOutlined'; 
 
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
@@ -32,6 +33,7 @@ import ClassmatesTab from './ClassmatesTab';
 import StudentResourceTab from './ResourcesTab';
 import StudentClassAssignmentTab from './AssignmentTab';
 import ThreadForum from '../../components/thread/ThreadForum';
+import StudentScheduleTab from './ScheduleTab'; 
 
 const PageWrapper = styled(Paper)(({ theme }) => {
     const isDark = theme.palette.mode === 'dark';
@@ -154,7 +156,6 @@ const StatusChip = memo(({ status }) => {
     const config = {
         pending: { label: "Chờ mở lớp", color: "warning", icon: <PendingActionsIcon fontSize="small"/> },
         ongoing: { label: "Đang diễn ra", color: "success", icon: <PlayCircleOutlineIcon fontSize="small"/> },
-        // Đã sửa "default" thành "secondary" để match với palette
         completed: { label: "Đã kết thúc", color: "secondary", icon: <CheckCircleOutlineIcon fontSize="small"/> }, 
         cancelled: { label: "Đã hủy", color: "error", icon: <CancelOutlinedIcon fontSize="small"/> },
     };
@@ -285,14 +286,9 @@ const StudentClassDetailPage = memo(() => {
             </Box>
 
             <HeroBanner>
+                {/* Giữ nguyên layout Header của lớp */}
                 <Box sx={{ position: 'relative', zIndex: 1 }}>
-                    <Stack 
-                        direction={{ xs: 'column', md: 'row' }} 
-                        alignItems={{ xs: 'flex-start', md: 'flex-start' }} 
-                        justifyContent="space-between" 
-                        spacing={3} 
-                        mb={4}
-                    >
+                    <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'flex-start' }} justifyContent="space-between" spacing={3} mb={4}>
                         <Box sx={{ flex: 1 }}>
                             <Stack direction="row" alignItems="center" spacing={2} mb={1.5}>
                                 <Typography variant="h4" fontWeight="700" color="text.primary" sx={{ letterSpacing: '-0.5px' }}>
@@ -304,37 +300,17 @@ const StudentClassDetailPage = memo(() => {
                                 {classData.description || "Chào mừng bạn đến với lớp học. Hãy thường xuyên kiểm tra bài tập và tài liệu nhé!"}
                             </Typography>
                         </Box>
-
                         <Paper
                             elevation={0}
                             sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 2,
-                                p: 1.5,
-                                pr: 4,
-                                borderRadius: '16px',
-                                background: isDark 
-                                    ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${alpha(theme.palette.primary.dark, 0.2)} 100%)` 
-                                    : `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.primary.light, 0.15)} 100%)`,
+                                display: 'flex', alignItems: 'center', gap: 2, p: 1.5, pr: 4, borderRadius: '16px',
+                                background: isDark ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${alpha(theme.palette.primary.dark, 0.2)} 100%)` : `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.primary.light, 0.15)} 100%)`,
                                 border: `1px solid ${isDark ? alpha(theme.palette.primary.main, 0.3) : alpha(theme.palette.primary.main, 0.2)}`,
                                 boxShadow: isDark ? 'none' : `0 8px 24px ${alpha(theme.palette.primary.main, 0.12)}`,
-                                backdropFilter: 'blur(12px)',
-                                flexShrink: 0
+                                backdropFilter: 'blur(12px)', flexShrink: 0
                             }}
                         >
-                            <Avatar 
-                                src={tutorAvatar}
-                                sx={{ 
-                                    bgcolor: alpha(theme.palette.primary.main, 0.15), 
-                                    color: 'primary.main', 
-                                    width: 52, 
-                                    height: 52, 
-                                    borderRadius: '12px',
-                                    fontWeight: 700,
-                                    border: `2px solid ${theme.palette.background.paper}`
-                                }}
-                            >
+                            <Avatar src={tutorAvatar} sx={{ bgcolor: alpha(theme.palette.primary.main, 0.15), color: 'primary.main', width: 52, height: 52, borderRadius: '12px', fontWeight: 700, border: `2px solid ${theme.palette.background.paper}` }}>
                                 {classData.tutor?.user?.fname ? classData.tutor.user.fname.charAt(0).toUpperCase() : <PersonOutlinedIcon />}
                             </Avatar>
                             <Box>
@@ -440,6 +416,7 @@ const StudentClassDetailPage = memo(() => {
                         }}
                     >
                         <StyledTab label="Bảng tin" value="threads" icon={<MessageRoundedIcon fontSize="small"/>} iconPosition="start" />
+                        <StyledTab label="Lịch học" value="schedule" icon={<EventOutlinedIcon fontSize="small"/>} iconPosition="start" />
                         <StyledTab label="Nhiệm vụ" value="assignments" icon={<AssignmentOutlinedIcon fontSize="small"/>} iconPosition="start" />
                         <StyledTab label="Kho tài liệu" value="documents" icon={<TopicOutlinedIcon fontSize="small"/>} iconPosition="start" />
                         <StyledTab label="Bạn cùng tiến" value="classmates" icon={<GroupOutlinedIcon fontSize="small"/>} iconPosition="start" />
@@ -448,6 +425,7 @@ const StudentClassDetailPage = memo(() => {
 
                 <ScrollableContent>
                     {currentTab === 'threads' && <ThreadForum class_id={classId} />}
+                    {currentTab === 'schedule' && <StudentScheduleTab classId={classId} token={token} />}
                     {currentTab === 'assignments' && <StudentClassAssignmentTab classId={classId} token={token} />}
                     {currentTab === 'documents' && <StudentResourceTab classId={classId} token={token} />}
                     {currentTab === 'classmates' && <ClassmatesTab studentsData={classData.learning} />}

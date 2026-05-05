@@ -58,3 +58,11 @@ export const deleteEmailChain = async (configId, token) => {
         throw error.response?.data || error;
     }
 };
+export const getAllTemplates = async (token) => {
+    try {
+        const response = await apiClient.get(`/email-chain/templates/all`, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};

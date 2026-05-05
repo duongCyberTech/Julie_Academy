@@ -187,6 +187,7 @@ model Receivers {
 
 model EmailTemplate {
   template_id String @id @default(uuid())
+  header      String?
   type        EmailTemplateType
   body        String
   user_id     String

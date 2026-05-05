@@ -215,6 +215,15 @@ export default function StudentAdaptiveSessionPage() {
     }
   };
 
+  const getDifficultyLabel = (level) => {
+    switch (level?.toLowerCase()) {
+      case 'easy': return 'DỄ';
+      case 'medium': return 'TRUNG BÌNH';
+      case 'hard': return 'KHÓ';
+      default: return 'BÌNH THƯỜNG';
+    }
+  };
+
   if (step === 'LOADING_INIT' || !currentQuestion) {
     return (
       <PageWrapper sx={{ justifyContent: 'center', alignItems: 'center' }}>
@@ -239,17 +248,17 @@ export default function StudentAdaptiveSessionPage() {
           <Chip
             label={`Câu ${currentQuestion.index}`}
             color="primary"
-            sx={{ fontWeight: 800, borderRadius: "8px", fontSize: "1rem" }}
+            sx={{ fontWeight: 700, borderRadius: "8px", fontSize: "1rem" }}
           />
           <Chip
-            label={currentQuestion.level?.toUpperCase() || "NORMAL"}
+            label={getDifficultyLabel(currentQuestion.level)}
             color={getDifficultyColor(currentQuestion.level)}
             variant="outlined"
-            sx={{ fontWeight: 800, borderRadius: "8px", fontSize: "0.85rem" }}
+            sx={{ fontWeight: 700, borderRadius: "8px", fontSize: "0.85rem" }}
           />
         </Box>
 
-        {/* Nhóm bên phải: Đồng hồ ( */}
+        {/* Nhóm bên phải: Đồng hồ */}
         <Chip
           icon={<AccessTimeIcon sx={{ fontSize: "1.3rem !important" }} />}
           label={formatTime(elapsedTime)}

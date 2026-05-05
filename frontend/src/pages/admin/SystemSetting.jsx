@@ -1,109 +1,108 @@
 import React, { useState, useEffect, useCallback, memo } from "react";
 import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Switch,
-  FormControlLabel,
-  Button,
-  Stack,
-  Divider,
-  CircularProgress,
-  Alert,
-  Snackbar,
+  Box, Typography, Paper, Grid, Switch, FormControlLabel,
+  Button, Stack, Divider, CircularProgress, Alert, Snackbar
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { styled, alpha, useTheme } from "@mui/material/styles";
 import SaveIcon from '@mui/icons-material/Save';
 import { getSystemConfig, updateSystemConfig } from "../../services/SystemConfigService";
 
-const PageWrapper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  backgroundColor:
-    theme.palette.mode === "light"
-      ? theme.palette.grey[50]
-      : theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius * 2,
-  border: `1px solid ${theme.palette.divider}`,
-  boxShadow: "none",
-}));
+const PageWrapper = styled(Paper)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    margin: theme.spacing(3),
+    padding: theme.spacing(5),
+    backgroundColor: isDark ? theme.palette.background.paper : '#F9FAFB',
+    backgroundImage: 'none',
+    borderRadius: '24px',
+    border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
+    boxShadow: isDark ? `0 0 40px ${alpha(theme.palette.primary.main, 0.03)}` : '0 8px 48px rgba(0,0,0,0.03)',
+    minHeight: 'calc(100vh - 120px)',
+    display: 'flex',
+    flexDirection: 'column',
+    [theme.breakpoints.down('md')]: {
+      margin: theme.spacing(1),
+      padding: theme.spacing(2),
+    }
+  };
+});
 
-// --- Mock Data cho cài đặt ban đầu ---
 const mockSettings = {
   maintenanceMode: false,
   allowRegistration: true,
   requireTutorApproval: true,
   requireContentApproval: false,
 };
-// -------------------------------------
 
-/**
- * Component con cho mỗi nhóm cài đặt
- */
-const SettingsCard = memo(({ title, children }) => (
-    <Paper variant="outlined" sx={{ p: 3, height: '100%' }}>
-        <Typography variant="h6" component="h3" fontWeight={600} gutterBottom>
-            {title}
-        </Typography>
-        <Stack spacing={1}>
-            {children}
-        </Stack>
+const SettingsCard = memo(({ title, children }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  
+  return (
+    <Paper 
+      elevation={0} 
+      sx={{ 
+        p: 3, 
+        height: '100%', 
+        borderRadius: '16px',
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`,
+        backgroundColor: theme.palette.background.paper,
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          borderColor: 'primary.main',
+          boxShadow: isDark 
+            ? `0 0 24px ${alpha(theme.palette.primary.main, 0.1)}` 
+            : `0 8px 24px ${alpha(theme.palette.common.black, 0.04)}`
+        }
+      }}
+    >
+      <Typography variant="h6" component="h3" fontWeight={700} gutterBottom color="text.primary">
+        {title}
+      </Typography>
+      <Stack spacing={1}>
+        {children}
+      </Stack>
     </Paper>
-));
+  );
+});
 
-/**
- * Component con cho mỗi dòng cài đặt
- */
 const SettingToggle = memo(({ name, label, caption, checked, onChange }) => (
-    <Box>
-        <FormControlLabel
-            control={
-                <Switch
-                    checked={checked}
-                    onChange={onChange}
-                    name={name}
-                />
-            }
-            label={
-                <Typography fontWeight={500}>{label}</Typography>
-            }
-        />
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: '2px' }}>
-            {caption}
-        </Typography>
-    </Box>
+  <Box sx={{ py: 1 }}>
+    <FormControlLabel
+      control={<Switch checked={Boolean(checked)} onChange={onChange} name={name} color="primary" />}
+      label={<Typography fontWeight={600} color="text.primary">{label}</Typography>}
+    />
+    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: '2px', mt: 0.5, lineHeight: 1.5 }}>
+      {caption}
+    </Typography>
+  </Box>
 ));
 
-
-// --- Component chính ---
-export default function SystemSettings() {
+const SystemSettings = memo(() => {
   const [settings, setSettings] = useState(mockSettings);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [toast, setToast] = useState({ open: false, message: "" });
 
-  // Giả lập việc tải cài đặt ban đầu
-  useEffect(() => {
-    const fetchConfig = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const fetchedSettings = await getSystemConfig();
-        console.log("Cài đặt đã tải:", fetchedSettings);
-        setSettings(fetchedSettings);
-      } catch (err) {
-        setError("Không thể tải cài đặt.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchConfig();
+  const fetchConfig = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fetchedSettings = await getSystemConfig();
+      setSettings(fetchedSettings);
+    } catch (err) {
+      setError("Không thể tải cài đặt.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleChange = (event) => {
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
+
+  const handleChange = useCallback((event) => {
     const { name, checked } = event.target;
     const keyMap = {
       maintenanceMode: "maintenance_mode",
@@ -124,19 +123,16 @@ export default function SystemSettings() {
           },
         };
       }
-
       return {
         ...prev,
         [key]: checked,
       };
     });
-  };
+  }, []);
 
-  // Giả lập việc lưu
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
     setError(null);
-
     try {
       await updateSystemConfig(settings);
       setToast({ open: true, message: "Cài đặt đã được lưu." });
@@ -145,92 +141,94 @@ export default function SystemSettings() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [settings]);
 
-  const handleCloseToast = (event, reason) => {
+  const handleCloseToast = useCallback((event, reason) => {
     if (reason === "clickaway") return;
     setToast(prev => ({ ...prev, open: false }));
-  };
+  }, []);
 
   if (loading) {
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-            <CircularProgress />
-        </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
     <PageWrapper>
-      <Typography variant="h4" component="h1" fontWeight="bold" mb={4}>
-        Cài đặt Hệ thống
-      </Typography>
+      <Box mb={4}>
+        <Typography variant="h4" component="h1" fontWeight={700} color="text.primary" sx={{ letterSpacing: -0.5 }}>
+          Cài đặt hệ thống
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Quản lý các cấu hình cốt lõi và quy trình duyệt của hệ thống
+        </Typography>
+      </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: '12px', fontWeight: 600 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
       <Grid container spacing={3}>
-        
-        {/* Cột 1: Cài đặt Chung */}
-        <Grid item xs={12} md={6}>
-            <SettingsCard title="Cài đặt Chung">
-                <SettingToggle
-                    name="maintenanceMode"
-                    label="Chế độ bảo trì"
-                    caption="Bật để tạm khóa trang web với người dùng (trừ Admin)."
-                    checked={settings?.maintenance_mode?.enabled}
-                    onChange={handleChange}
-                />
-                <Divider sx={{ my: 1.5 }} />
-                <SettingToggle
-                    name="allowRegistration"
-                    label="Cho phép đăng ký mới"
-                    caption="Cho phép người dùng mới (Học sinh, Gia sư) tự tạo tài khoản."
-                    checked={settings?.register_allowance?.enabled}
-                    onChange={handleChange}
-                />
-            </SettingsCard>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SettingsCard title="Cài đặt Chung">
+            <SettingToggle
+              name="maintenanceMode"
+              label="Chế độ bảo trì"
+              caption="Bật để tạm khóa trang web với người dùng (trừ Admin)."
+              checked={settings?.maintenance_mode?.enabled}
+              onChange={handleChange}
+            />
+            <Divider sx={{ my: 1.5 }} />
+            <SettingToggle
+              name="allowRegistration"
+              label="Cho phép đăng ký mới"
+              caption="Cho phép người dùng mới (Học sinh, Gia sư) tự tạo tài khoản."
+              checked={settings?.register_allowance?.enabled}
+              onChange={handleChange}
+            />
+          </SettingsCard>
         </Grid>
 
-        {/* Cột 2: Cài đặt Duyệt */}
-        <Grid item xs={12} md={6}>
-            <SettingsCard title="Cài đặt Duyệt (Workflow)">
-                <SettingToggle
-                    name="requireTutorApproval"
-                    label="Yêu cầu duyệt Gia sư"
-                    caption="Gia sư mới đăng ký phải được Admin duyệt thủ công (hiển thị ở Dashboard)."
-                    checked={settings?.profile_preview?.enabled}
-                    onChange={handleChange}
-                />
-                <Divider sx={{ my: 1.5 }} />
-                <SettingToggle
-                    name="requireContentApproval"
-                    label="Yêu cầu duyệt Nội dung"
-                    caption="Câu hỏi/Tài liệu mới của Gia sư phải được Admin duyệt (status='pending')."
-                    checked={settings?.document_check?.enabled}
-                    onChange={handleChange}
-                />
-            </SettingsCard>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SettingsCard title="Cài đặt Duyệt (Workflow)">
+            <SettingToggle
+              name="requireTutorApproval"
+              label="Yêu cầu duyệt Gia sư"
+              caption="Gia sư mới đăng ký phải được Admin duyệt thủ công (hiển thị ở Dashboard)."
+              checked={settings?.profile_preview?.enabled}
+              onChange={handleChange}
+            />
+            <Divider sx={{ my: 1.5 }} />
+            <SettingToggle
+              name="requireContentApproval"
+              label="Yêu cầu duyệt Nội dung"
+              caption="Câu hỏi/Tài liệu mới của Gia sư phải được Admin duyệt."
+              checked={settings?.document_check?.enabled}
+              onChange={handleChange}
+            />
+          </SettingsCard>
         </Grid>
       </Grid>
 
-      {/* Nút Lưu */}
       <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="contained"
-            size="large"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-          >
-            {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
-          </Button>
+        <Button
+          variant="contained"
+          size="large"
+          disableElevation
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+          sx={{ borderRadius: '12px', fontWeight: 700, px: 4, py: 1.5 }}
+        >
+          {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+        </Button>
       </Box>
 
-      {/* Thông báo (Toast) */}
       <Snackbar
         open={toast.open}
         autoHideDuration={4000}
@@ -241,12 +239,13 @@ export default function SystemSettings() {
           onClose={handleCloseToast}
           severity="success"
           variant="filled"
-          sx={{ width: "100%" }}
+          sx={{ width: "100%", borderRadius: '12px', fontWeight: 600 }}
         >
           {toast.message}
         </Alert>
       </Snackbar>
-
     </PageWrapper>
   );
-}
+});
+
+export default SystemSettings;

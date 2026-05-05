@@ -19,6 +19,7 @@
     "db:seed:user": "ts-node prisma/user.seed.ts",
     "db:seed:category": "ts-node prisma/category.seed.ts",
     "db:seed:question": "ts-node prisma/question.seed.ts",
+    "db:seed:email": "ts-node prisma/email.seed.ts",
     "db:seed:all": "npm-run-all db:seed:user db:seed:category db:seed:question",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:migrate:staging": "cross-env NODE_ENV=staging npx prisma migrate dev",

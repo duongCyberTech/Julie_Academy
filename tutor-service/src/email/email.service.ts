@@ -173,4 +173,21 @@ export class EmailService {
   async sendEmailNow(tutor_id: string, config_id: string) {
     
   }
+ async getAllTemplates(tutor_id: string) {
+    return this.prisma.emailTemplate.findMany({
+      where: {
+        OR: [
+          { type: 'public' }, 
+          { 
+            creator: { 
+              uid: tutor_id 
+            } 
+          } 
+        ]
+      },
+      orderBy: { 
+        created_at: 'desc' 
+      }
+    });
+  }
 }

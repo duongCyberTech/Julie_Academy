@@ -4,7 +4,7 @@ import {
   Paper, Typography, Box, Card, CardContent, Stack, Chip,
   LinearProgress, FormControl, Select, MenuItem, InputLabel,
   Dialog, DialogTitle, DialogContent, IconButton, Grid, TextField, Button,
-  Avatar
+  Avatar, Tooltip, List, ListItem, ListItemIcon, ListItemText
 } from "@mui/material";
 import { styled, useTheme, alpha, keyframes } from "@mui/material/styles";
 import {
@@ -22,9 +22,12 @@ import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import QuizIcon from "@mui/icons-material/Quiz";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import InsightsIcon from "@mui/icons-material/Insights";
+import VideoCallOutlinedIcon from '@mui/icons-material/VideoCallOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'; // <-- Đã thêm Icon Hướng dẫn
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 
 import {
-  getStudentStats, getMyPlans, getScoreTrend, getSkillsMap, getSkillsMapDrillDown, getHistory, patchAnalysisWatering, getUpcomingTodaySchedule
+  getStudentStats, getMyPlans, getScoreTrend, getSkillsMap, getSkillsMapDrillDown, getHistory, patchAnalysisWatering
 } from "../../services/DashboardStudentService";
 
 const float = keyframes`
@@ -50,6 +53,22 @@ const levelUp = keyframes`
   50% { transform: scale(1.05); filter: brightness(1.2); }
   100% { transform: scale(1); filter: brightness(1); }
 `;
+
+const formatPracticeTime = (decimalHours) => {
+  if (!decimalHours || decimalHours <= 0) return "0 phút";
+  const totalSeconds = Math.round(decimalHours * 3600);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours} giờ ${minutes > 0 ? `${minutes} phút` : ''}`.trim();
+  } else if (minutes > 0) {
+    return `${minutes} phút ${seconds > 0 ? `${seconds} giây` : ''}`.trim();
+  } else {
+    return `${seconds} giây`;
+  }
+};
 
 const PageWrapper = styled(Paper)(({ theme }) => {
   const isDark = theme.palette.mode === 'dark';
@@ -81,12 +100,31 @@ const TreeProgress = styled(LinearProgress)(({ theme }) => ({
   },
 }));
 
+const CustomBarTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <Box sx={{ p: 2, bgcolor: 'background.paper', boxShadow: 3, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+        <Typography variant="subtitle2" fontWeight={700} mb={1}>{data.topic}</Typography>
+        <Typography variant="body2" color="primary.main" fontWeight={700}>Độ thông thạo: {data.percent}%</Typography>
+        <Typography variant="body2" color="success.main" fontWeight={600} mt={0.5}>Đúng: {data.correct} câu</Typography>
+        <Typography variant="body2" color="error.main" fontWeight={600}>Sai: {data.fail} câu</Typography>
+      </Box>
+    );
+  }
+  return null;
+};
+
 const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const navigate = useNavigate();
+  
   const [isWatering, setIsWatering] = useState(false);
   const [justLeveledUp, setJustLeveledUp] = useState(false);
+  
+  // State điều khiển bảng hướng dẫn lấy Nước
+  const [openWaterGuide, setOpenWaterGuide] = useState(false);
 
   const levelConfig = useMemo(() => {
     if (initialExp < 200) return { level: 1, name: "Hạt giống hi vọng", emoji: "🌱", maxExp: 200, color: theme.palette.warning.dark, next: "Mầm non" };
@@ -124,116 +162,170 @@ const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
   }, [initialWater, isWatering, onUpdate, levelConfig.maxExp]);
 
   return (
-    <Card sx={{ 
-      borderRadius: 4, 
-      border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.success.main, 0.2)}`,
-      background: isDark 
-        ? `radial-gradient(circle at 30% 50%, ${alpha(theme.palette.success.main, 0.1)} 0%, ${theme.palette.background.paper} 80%)` 
-        : `radial-gradient(circle at 30% 50%, ${alpha(theme.palette.success.light, 0.15)} 0%, ${theme.palette.background.paper} 80%)`,
-      boxShadow: isDark ? 'none' : `0 8px 24px ${alpha(theme.palette.success.main, 0.05)}`,
-      position: 'relative', 
-      overflow: 'hidden'
-    }}>
-      <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-        <Grid container spacing={3} alignItems="center">
-          <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
-            <Box sx={{
-              width: 140, height: 140, borderRadius: '50%', 
-              background: isDark ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.success.main, 0.1),
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 0 0 16px ${alpha(theme.palette.success.main, 0.05)}, 0 0 40px ${alpha(levelConfig.color, 0.3)}`,
-              animation: justLeveledUp ? `${levelUp} 1s ease-out` : `${float} 4s ease-in-out infinite`, 
-              position: 'relative',
-              zIndex: 2
-            }}>
-              <Typography sx={{ fontSize: '5rem', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15))' }}>
-                {levelConfig.emoji}
-              </Typography>
-              {isWatering && <WaterDropIcon sx={{ position: 'absolute', top: -15, color: theme.palette.info.main, fontSize: '2.5rem', animation: `${drop} 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards`, zIndex: 3 }} />}
-            </Box>
-            <Chip 
-              label={`Cấp ${levelConfig.level}`} 
-              sx={{ 
-                position: 'absolute', bottom: -10, 
-                bgcolor: levelConfig.color, color: theme.palette.common.white, 
-                fontWeight: 700, borderRadius: '8px', px: 1, py: 2, fontSize: '0.9rem',
-                boxShadow: `0 4px 12px ${alpha(levelConfig.color, 0.4)}`, zIndex: 4
-              }} 
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 8 }}>
-            <Stack spacing={3}>
-              <Box>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
-                  <Box>
-                    <Typography variant="h5" fontWeight={700} color="text.primary" sx={{ mb: 0.5 }}>
-                      {levelConfig.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                      Tiến hóa thành <Typography component="span" variant="body2" fontWeight={700} color={levelConfig.color}>{levelConfig.next}</Typography>
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ 
-                    bgcolor: isDark ? alpha(theme.palette.info.main, 0.1) : alpha(theme.palette.info.light, 0.15),
-                    p: 1.5, borderRadius: 2, border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                    minWidth: 120, textAlign: 'center'
-                  }}>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">Kho Nước</Typography>
-                    <Typography variant="h4" fontWeight={700} color="info.main" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mt: 0.5 }}>
-                      {initialWater} <WaterDropIcon fontSize="medium" />
-                    </Typography>
-                  </Box>
-                </Stack>
+    <>
+      <Card sx={{ 
+        borderRadius: 4, 
+        border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.success.main, 0.2)}`,
+        background: isDark 
+          ? `radial-gradient(circle at 30% 50%, ${alpha(theme.palette.success.main, 0.1)} 0%, ${theme.palette.background.paper} 80%)` 
+          : `radial-gradient(circle at 30% 50%, ${alpha(theme.palette.success.light, 0.15)} 0%, ${theme.palette.background.paper} 80%)`,
+        boxShadow: isDark ? 'none' : `0 8px 24px ${alpha(theme.palette.success.main, 0.05)}`,
+        position: 'relative', 
+        overflow: 'hidden'
+      }}>
+        <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+          <Grid container spacing={3} alignItems="center">
+            <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+              <Box sx={{
+                width: 140, height: 140, borderRadius: '50%', 
+                background: isDark ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.success.main, 0.1),
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: `0 0 0 16px ${alpha(theme.palette.success.main, 0.05)}, 0 0 40px ${alpha(levelConfig.color, 0.3)}`,
+                animation: justLeveledUp ? `${levelUp} 1s ease-out` : `${float} 4s ease-in-out infinite`, 
+                position: 'relative',
+                zIndex: 2
+              }}>
+                <Typography sx={{ fontSize: '5rem', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15))' }}>
+                  {levelConfig.emoji}
+                </Typography>
+                {isWatering && <WaterDropIcon sx={{ position: 'absolute', top: -15, color: theme.palette.info.main, fontSize: '2.5rem', animation: `${drop} 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards`, zIndex: 3 }} />}
               </Box>
+              <Chip 
+                label={`Cấp ${levelConfig.level}`} 
+                sx={{ 
+                  position: 'absolute', bottom: -10, 
+                  bgcolor: levelConfig.color, color: theme.palette.common.white, 
+                  fontWeight: 700, borderRadius: '8px', px: 1, py: 2, fontSize: '0.9rem',
+                  boxShadow: `0 4px 12px ${alpha(levelConfig.color, 0.4)}`, zIndex: 4
+                }} 
+              />
+            </Grid>
 
-              <Box>
-                <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
-                  <Typography variant="body2" fontWeight={700} color="text.secondary">
-                    Tiến độ sinh trưởng
-                  </Typography>
-                  <Typography variant="body2" fontWeight={700} color="success.main">
-                    Còn {expNeeded} EXP
-                  </Typography>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Stack spacing={3}>
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
+                    <Box>
+                      {/* Tiêu đề có kèm nút Info */}
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                        <Typography variant="h5" fontWeight={700} color="text.primary">
+                          {levelConfig.name}
+                        </Typography>
+                        <Tooltip title="Hướng dẫn lấy Nước">
+                          <IconButton size="small" onClick={() => setOpenWaterGuide(true)} sx={{ color: 'info.main', p: 0.5 }}>
+                            <InfoOutlinedIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                        Tiến hóa thành <Typography component="span" variant="body2" fontWeight={700} color={levelConfig.color}>{levelConfig.next}</Typography>
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ 
+                      bgcolor: isDark ? alpha(theme.palette.info.main, 0.1) : alpha(theme.palette.info.light, 0.15),
+                      p: 1.5, borderRadius: 2, border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                      minWidth: 120, textAlign: 'center'
+                    }}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">Kho Nước</Typography>
+                      <Typography variant="h4" fontWeight={700} color="info.main" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mt: 0.5 }}>
+                        {initialWater} <WaterDropIcon fontSize="medium" />
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
+                    <Typography variant="body2" fontWeight={700} color="text.secondary">
+                      Tiến độ sinh trưởng
+                    </Typography>
+                    <Typography variant="body2" fontWeight={700} color="success.main">
+                      Còn {expNeeded} EXP
+                    </Typography>
+                  </Stack>
+                  <TreeProgress variant="determinate" value={progressPercent} />
+                </Box>
+
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <Button 
+                    variant="contained" 
+                    onClick={handleWater} 
+                    disabled={initialWater === 0 || isWatering} 
+                    startIcon={<WaterDropIcon />}
+                    sx={{
+                      bgcolor: theme.palette.info.main, color: theme.palette.common.white, borderRadius: '12px', fontWeight: 700, px: 3, py: 1.2,
+                      boxShadow: (initialWater > 0 && !isWatering) ? `0 6px 20px ${alpha(theme.palette.info.main, 0.4)}` : 'none',
+                      '&:hover': { bgcolor: theme.palette.info.dark, transform: 'translateY(-2px)' },
+                      '&:disabled': { bgcolor: alpha(theme.palette.action.disabledBackground, 0.5) },
+                      animation: (initialWater > 0 && !isWatering) ? `${pulseGlow} 2s infinite` : 'none',
+                      transition: 'all 0.2s'
+                    }}>
+                    {initialWater > 0 ? 'Tưới Nước (+25 EXP)' : 'Đã hết nước'}
+                  </Button>
+                  <Button 
+                    variant="outlined" 
+                    endIcon={<PlayArrowRoundedIcon />}
+                    onClick={() => navigate('/student/adaptive')}
+                    sx={{ 
+                      borderRadius: '12px', fontWeight: 700, px: 3, py: 1.2,
+                      borderWidth: 2, borderColor: alpha(theme.palette.success.main, 0.5), color: 'success.main', 
+                      '&:hover': { borderWidth: 2, borderColor: 'success.main', bgcolor: alpha(theme.palette.success.main, 0.05), transform: 'translateY(-2px)' },
+                      transition: 'all 0.2s'
+                    }}>
+                    Làm bài kiếm nước
+                  </Button>
                 </Stack>
-                <TreeProgress variant="determinate" value={progressPercent} />
-              </Box>
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <Button 
-                  variant="contained" 
-                  onClick={handleWater} 
-                  disabled={initialWater === 0 || isWatering} 
-                  startIcon={<WaterDropIcon />}
-                  sx={{
-                    bgcolor: theme.palette.info.main, color: theme.palette.common.white, borderRadius: '12px', fontWeight: 700, px: 3, py: 1.2,
-                    boxShadow: (initialWater > 0 && !isWatering) ? `0 6px 20px ${alpha(theme.palette.info.main, 0.4)}` : 'none',
-                    '&:hover': { bgcolor: theme.palette.info.dark, transform: 'translateY(-2px)' },
-                    '&:disabled': { bgcolor: alpha(theme.palette.action.disabledBackground, 0.5) },
-                    animation: (initialWater > 0 && !isWatering) ? `${pulseGlow} 2s infinite` : 'none',
-                    transition: 'all 0.2s'
-                  }}>
-                  {initialWater > 0 ? 'Tưới Nước (+25 EXP)' : 'Đã hết nước'}
-                </Button>
-                <Button 
-                  variant="outlined" 
-                  endIcon={<PlayArrowRoundedIcon />}
-                  onClick={() => navigate('/student/adaptive')}
-                  sx={{ 
-                    borderRadius: '12px', fontWeight: 700, px: 3, py: 1.2,
-                    borderWidth: 2, borderColor: alpha(theme.palette.success.main, 0.5), color: 'success.main', 
-                    '&:hover': { borderWidth: 2, borderColor: 'success.main', bgcolor: alpha(theme.palette.success.main, 0.05), transform: 'translateY(-2px)' },
-                    transition: 'all 0.2s'
-                  }}>
-                  Làm bài kiếm nước
-                </Button>
               </Stack>
-            </Stack>
+            </Grid>
           </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Bảng Dialog Hướng dẫn nhận nước */}
+      <Dialog open={openWaterGuide} onClose={() => setOpenWaterGuide(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <WaterDropIcon color="info" />
+              <Typography variant="h6" fontWeight={700}>Bí kíp thu thập Giọt Nước</Typography>
+            </Stack>
+            <IconButton onClick={() => setOpenWaterGuide(false)}><CloseIcon /></IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Chăm chỉ hoàn thành các nhiệm vụ học tập dưới đây để tích lũy thật nhiều Giọt Nước và tưới cho Cây Tri Thức của bạn lớn lên nhé!
+          </Typography>
+          <List sx={{ bgcolor: isDark ? alpha(theme.palette.background.default, 0.5) : alpha(theme.palette.grey[50], 0.5), borderRadius: 2 }}>
+            <ListItem>
+              <ListItemIcon><AssignmentTurnedInIcon color="primary" /></ListItemIcon>
+              <ListItemText 
+                primary={<Typography variant="subtitle2" fontWeight={700}>Hoàn thành bài Luyện tập</Typography>} 
+                secondary="Hoàn thành các bài luyện tập trong lộ trình." 
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemIcon><QuizIcon color="error" /></ListItemIcon>
+              <ListItemText 
+                primary={<Typography variant="subtitle2" fontWeight={700}>Làm bài Kiểm tra</Typography>} 
+                secondary="Tham gia và hoàn thành các bài test do giáo viên giao." 
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemIcon><LocalFireDepartmentIcon color="warning" /></ListItemIcon>
+              <ListItemText 
+                primary={<Typography variant="subtitle2" fontWeight={700}>Đăng nhập và Chuỗi ngày (Streak)</Typography>} 
+                secondary="Giữ chuỗi học tập liên tiếp không ngắt quãng mỗi ngày." 
+              />
+            </ListItem>
+          </List>
+          <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
+            *Số lượng nước nhận được phụ thuộc vào độ khó và điểm số bài làm của bạn.
+          </Typography>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 });
 
@@ -297,11 +389,15 @@ const StudentDashboard = memo(() => {
     try {
       const token = localStorage.getItem("token");
       const data = await getStudentStats(token);
+      
       setStats({
           ...data,
           water_drops: data?.analytics?.water_drops || 0,
           experience: data?.analytics?.experience || 0
       });
+      
+      setTodaySchedule(data?.upcomingSchedules || []);
+      
     } catch (error) {}
   }, []);
 
@@ -311,14 +407,6 @@ const StudentDashboard = memo(() => {
         water_drops: newData?.water_drops ?? 0,
         experience: newData?.experience ?? 0
     }));
-  }, []);
-
-  const fetchSchedule = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const data = await getUpcomingTodaySchedule(token);
-      setTodaySchedule(data || []);
-    } catch (error) {}
   }, []);
 
   const fetchMyPlans = useCallback(async () => {
@@ -369,33 +457,48 @@ const StudentDashboard = memo(() => {
   useEffect(() => {
     const initData = async () => {
       setLoading(true);
-      await Promise.all([fetchStats(), fetchSchedule(), fetchMyPlans()]);
+      await Promise.all([fetchStats(), fetchMyPlans()]);
       setLoading(false);
     };
     initData();
-  }, [fetchStats, fetchSchedule, fetchMyPlans]);
+  }, [fetchStats, fetchMyPlans]);
 
   useEffect(() => { fetchTrend(); }, [fetchTrend]);
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
   useEffect(() => { fetchRadar(); }, [fetchRadar]); 
 
+  // Hàm xử lý Click đã được sửa lỗi và thêm Console.log
   const handleVertexClick = useCallback(async (subjectName) => {
+    console.log("Đang tải dữ liệu cho chủ đề:", subjectName); // Giúp bạn kiểm tra nếu click thành công
     const chapter = radarData.find(d => d.subject === subjectName);
-    if (!chapter) return;
+    
+    if (!chapter) {
+      console.warn("Không tìm thấy chủ đề này trong Radar Data!");
+      return;
+    }
     
     setSelectedChapterName(chapter.subject);
     try {
       const token = localStorage.getItem("token");
       const responseData = await getSkillsMapDrillDown(token, chapter.chapter_id, selectedPlan);
+      
       const formattedDrillDown = responseData.map(item => {
         const total = item.correct_cnt + item.fail_cnt;
-        return { topic: item.category_name, percent: total === 0 ? 0 : Math.round((item.correct_cnt / total) * 100) };
+        return { 
+            topic: item.category_name, 
+            percent: total === 0 ? 0 : Math.round((item.correct_cnt / total) * 100),
+            correct: item.correct_cnt, 
+            fail: item.fail_cnt        
+        };
       });
       setDrillDownData(formattedDrillDown);
       setOpenDrillDown(true);
-    } catch (error) {}
+    } catch (error) {
+      console.error("Lỗi khi tải chi tiết:", error);
+    }
   }, [radarData, selectedPlan]);
 
+  // Sửa lỗi Click trên tên kỹ năng (Trọng tâm)
   const CustomRadarTick = useCallback((props) => {
     const { payload, x, y, textAnchor } = props;
     return (
@@ -408,8 +511,16 @@ const StudentDashboard = memo(() => {
         fontSize={13}
         fontWeight={700}
         cursor="pointer"
-        onClick={() => handleVertexClick(payload.value)}
-        style={{ transition: 'all 0.2s' }}
+        // Thêm stopPropagation và các style đặc biệt để mở khóa click
+        onClick={(e) => {
+          e.stopPropagation(); 
+          handleVertexClick(payload.value);
+        }}
+        style={{ 
+          pointerEvents: 'auto', // Bắt buộc để SVG nhận diện nhấp chuột
+          userSelect: 'none', 
+          transition: 'all 0.2s' 
+        }} 
       >
         {payload.value}
       </text>
@@ -453,7 +564,7 @@ const StudentDashboard = memo(() => {
           <StatCard title="Lớp đang tham gia" value={safeGetNumClasses(stats.numJoinClassess)} color="info" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <StatCard title="Giờ luyện tập" value={`${stats.totalPracticeTime.toFixed(2) || 0}h`} color="success" />
+          <StatCard title="Giờ luyện tập" value={formatPracticeTime(stats.totalPracticeTime)} color="success" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard title="Điểm trung bình" value={stats.avgTestScore || 0} color="error" />
@@ -525,20 +636,66 @@ const StudentDashboard = memo(() => {
             ) : (
               <Stack spacing={2} sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 350, pr: 1 }}>
                 {todaySchedule.map((schedule, index) => {
-                  const startTime = new Date(schedule.startAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                  const endTime = new Date(schedule.endAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                  const startTime = schedule.startAt;
+                  const endTime = schedule.endAt;
+                  
+                  const meetLink = schedule.link_meet || schedule.class?.link_meet || schedule.link || null;
+                  
+                  let isPast = false;
+                  if (endTime) {
+                      const now = new Date();
+                      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                      const [hour, min] = endTime.split(':').map(Number);
+                      if (!isNaN(hour) && !isNaN(min)) {
+                          isPast = currentMinutes > (hour * 60 + min);
+                      }
+                  }
+
                   return (
-                    <Box key={index} sx={{ p: 2, borderRadius: 2, borderLeft: '4px solid', borderColor: theme.palette.info.main, bgcolor: isDark ? alpha(theme.palette.info.main, 0.05) : alpha(theme.palette.info.light, 0.1) }}>
-                      <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap>
-                        {schedule.class?.classname || 'Lớp học'}
-                      </Typography>
-                      <Stack direction="row" alignItems="center" spacing={1} mt={1}>
-                        <Chip size="small" label={schedule.class?.subject || 'Môn học'} sx={{ fontWeight: 600, bgcolor: theme.palette.background.paper }} />
-                        <Stack direction="row" alignItems="center" spacing={0.5} color="text.secondary">
-                          <AccessTimeIcon sx={{ fontSize: 16 }} />
-                          <Typography variant="caption" fontWeight={600}>{startTime} - {endTime}</Typography>
+                    <Box key={index} sx={{ 
+                      p: 2, 
+                      borderRadius: 2, 
+                      borderLeft: '4px solid', 
+                      borderColor: isPast ? alpha(theme.palette.action.disabled, 0.5) : theme.palette.info.main, 
+                      bgcolor: isDark ? alpha(theme.palette.info.main, 0.05) : alpha(theme.palette.info.light, 0.1),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      opacity: isPast ? 0.6 : 1,
+                      filter: isPast ? 'grayscale(100%)' : 'none',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={700} color={isPast ? 'text.disabled' : 'text.primary'} noWrap>
+                          {schedule.class?.classname || 'Lớp học'}
+                        </Typography>
+                        <Stack direction="row" alignItems="center" spacing={1} mt={1}>
+                          <Chip size="small" label={schedule.class?.subject || 'Môn học'} sx={{ fontWeight: 600, bgcolor: theme.palette.background.paper }} />
+                          <Stack direction="row" alignItems="center" spacing={0.5} color={isPast ? 'text.disabled' : 'text.secondary'}>
+                            <AccessTimeIcon sx={{ fontSize: 16 }} />
+                            <Typography variant="caption" fontWeight={600}>{startTime} - {endTime}</Typography>
+                          </Stack>
                         </Stack>
-                      </Stack>
+                      </Box>
+
+                      <Tooltip title={isPast ? "Đã kết thúc" : (!meetLink ? "Chưa có link" : "Vào lớp học")}>
+                        <span>
+                          <IconButton 
+                            color={meetLink && !isPast ? "primary" : "default"} 
+                            component={meetLink && !isPast ? "a" : "button"} 
+                            href={meetLink && !isPast ? meetLink : undefined} 
+                            target={meetLink && !isPast ? "_blank" : undefined}
+                            disabled={isPast || !meetLink}
+                            sx={{ 
+                              bgcolor: meetLink && !isPast ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                              border: meetLink && !isPast ? `1px solid ${alpha(theme.palette.primary.main, 0.5)}` : 'none',
+                              borderRadius: 2
+                            }}
+                          >
+                            <VideoCallOutlinedIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     </Box>
                   );
                 })}
@@ -553,7 +710,7 @@ const StudentDashboard = memo(() => {
           <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper }}>
             <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} mb={3} spacing={2}>
               <Box>
-                <Typography variant="h6" fontWeight={700}>Bản đồ Kỹ năng Toàn diện</Typography>
+                <Typography variant="h6" fontWeight={700}>Bản đồ kỹ năng</Typography>
                 <Typography variant="body2" color="text.secondary">Bấm trực tiếp vào các nút tên chủ đề hoặc đỉnh trên biểu đồ để xem độ thông thạo chi tiết.</Typography>
               </Box>
               <FormControl size="small" sx={{ minWidth: 200 }}>
@@ -597,7 +754,7 @@ const StudentDashboard = memo(() => {
 
       <Paper elevation={0} sx={{ borderRadius: 3, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper, p: 3 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2} mb={3}>
-          <Typography variant="h6" fontWeight={700}>Lịch sử Hoạt động</Typography>
+          <Typography variant="h6" fontWeight={700}>Lịch sử hoạt động</Typography>
           <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
             <TextField label="Từ ngày" type="date" size="small" InputLabelProps={{ shrink: true }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             <TextField label="Đến ngày" type="date" size="small" InputLabelProps={{ shrink: true }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
@@ -698,11 +855,14 @@ const StudentDashboard = memo(() => {
         <DialogContent sx={{ p: 3, pt: 4 }}>
           <Box sx={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
-              <BarChart data={drillDownData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+              <BarChart data={drillDownData} layout="vertical" margin={{ top: 5, right: 30, left: 30, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isDark ? alpha(theme.palette.divider, 0.1) : alpha(theme.palette.divider, 0.5)} />
                 <XAxis type="number" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: isDark ? theme.palette.text.secondary : theme.palette.text.secondary, fontWeight: 600 }} />
-                <YAxis dataKey="topic" type="category" width={140} tick={{fontSize: 13, fill: isDark ? theme.palette.text.primary : theme.palette.text.primary, fontWeight: 600}} />
-                <RechartsTooltip contentStyle={{ backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.common.white, borderRadius: '8px', border: 'none', boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, 0.1)}` }} cursor={{ fill: isDark ? alpha(theme.palette.common.white, 0.05) : alpha(theme.palette.primary.main, 0.05) }}/>
+                <YAxis dataKey="topic" type="category" width={160} tick={{fontSize: 13, fill: isDark ? theme.palette.text.primary : theme.palette.text.primary, fontWeight: 600}} />
+                
+                {/* Gọi Tooltip chứa Số câu Đúng/Sai */}
+                <RechartsTooltip content={<CustomBarTooltip />} cursor={{ fill: isDark ? alpha(theme.palette.common.white, 0.05) : alpha(theme.palette.primary.main, 0.05) }}/>
+                
                 <Bar dataKey="percent" name="Độ thông thạo (%)" fill={theme.palette.primary.main} radius={[0, 4, 4, 0]} barSize={24} />
               </BarChart>
             </ResponsiveContainer>
