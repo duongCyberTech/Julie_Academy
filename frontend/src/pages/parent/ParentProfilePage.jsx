@@ -1,7 +1,9 @@
+// file: ParentProfilePage.jsx
 import React, { useState, useCallback, useEffect, useMemo, memo } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import { getUserProfile, updateUserProfile } from "../../services/UserService"; 
+
 import {
   Box, Typography, Paper, CircularProgress, Alert, Snackbar,
   Avatar, Button, TextField, Chip, Divider, IconButton, Badge,
@@ -74,18 +76,13 @@ function ParentProfilePage() {
   const [savedUser, setSavedUser] = useState({
     fname: "", mname: "", lname: "", email: "", role: "", avata_url: "", createAt: "", phone_number: ""
   });
-  const [formData, setFormData] = useState({ fname: "", mname: "", lname: "", phone_number: "" });
+  const [formData, setFormData] = useState({ fname: "", mname: "", lname: "", phone_number: "", avata: null });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
-  const API_URL = "http://localhost:4000";
   const token = localStorage.getItem("token");
-
-  const getAuthConfig = useCallback(() => ({
-    headers: { Authorization: `Bearer ${token}` },
-  }), [token]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -97,12 +94,11 @@ function ParentProfilePage() {
 
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/users/${userId}`, getAuthConfig());
-        const data = response.data;
+        const data = await getUserProfile(userId, token);
         const phoneVal = data.parents?.phone_number || data.phone_number || "";
 
         setSavedUser({ ...data, phone_number: phoneVal });
-        setFormData({ fname: data.fname || "", mname: data.mname || "", lname: data.lname || "", phone_number: phoneVal });
+        setFormData({ fname: data.fname || "", mname: data.mname || "", lname: data.lname || "", phone_number: phoneVal, avata: null });
       } catch (error) {
         setToast({ open: true, message: "Lỗi tải thông tin.", severity: "error" });
       } finally {
@@ -110,7 +106,7 @@ function ParentProfilePage() {
       }
     };
     fetchProfile();
-  }, [navigate, token, getAuthConfig]);
+  }, [navigate, token]);
 
   const profileCompleteness = useMemo(() => {
     let score = 0;
@@ -130,30 +126,28 @@ function ParentProfilePage() {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) return setToast({ open: true, message: "Ảnh quá lớn (Max 5MB)", severity: "warning" });
 
-    const userId = jwtDecode(token).sub || jwtDecode(token).uid;
-    const uploadData = new FormData();
-    uploadData.append("file", file);
-
-    try {
-      const res = await axios.post(`${API_URL}/users/${userId}/avatar`, uploadData, {
-        headers: { ...getAuthConfig().headers, "Content-Type": "multipart/form-data" },
-      });
-      if (res.data) {
-        setSavedUser(prev => ({ ...prev, avata_url: res.data.avata_url || URL.createObjectURL(file) }));
-        setToast({ open: true, message: "Đổi ảnh đại diện thành công!", severity: "success" });
-        setShowAvatarModal(false);
-      }
-    } catch (error) {
-      setToast({ open: true, message: "Lỗi upload ảnh.", severity: "error" });
-    }
+    setSavedUser(prev => ({ ...prev, avata_url: URL.createObjectURL(file) }));
+    setFormData(prev => ({ ...prev, avata: file }));
+    setShowAvatarModal(false);
   };
 
   const handleSave = async () => {
     try {
       setUpdating(true);
       const userId = jwtDecode(token).sub || jwtDecode(token).uid;
-      await axios.patch(`${API_URL}/users/${userId}`, formData, getAuthConfig());
-      setSavedUser(prev => ({ ...prev, ...formData }));
+
+      const formPayload = new FormData();
+      formPayload.append("fname", formData.fname);
+      formPayload.append("mname", formData.mname);
+      formPayload.append("lname", formData.lname);
+      formPayload.append("phone_number", formData.phone_number);
+      if (formData.avata) {
+        formPayload.append("avata", formData.avata);
+      }
+
+      await updateUserProfile(userId, formPayload, token);
+      
+      setSavedUser(prev => ({ ...prev, fname: formData.fname, mname: formData.mname, lname: formData.lname, phone_number: formData.phone_number }));
       setToast({ open: true, message: "Cập nhật hồ sơ thành công!", severity: "success" });
     } catch (error) {
       setToast({ open: true, message: "Cập nhật thất bại.", severity: "error" });

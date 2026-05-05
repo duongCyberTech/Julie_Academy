@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, memo } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import { getUserProfile, updateUserProfile } from "../../services/UserService"; 
+
 import {
   Box, Typography, Paper, CircularProgress, Alert, Snackbar,
   Avatar, Button, TextField, Chip, Divider, IconButton, Badge,
@@ -78,7 +79,7 @@ function AdminProfilePage() {
   });
 
   const [formData, setFormData] = useState({
-    fname: "", mname: "", lname: ""
+    fname: "", mname: "", lname: "", avata: null
   });
 
   const [loading, setLoading] = useState(true);
@@ -86,9 +87,7 @@ function AdminProfilePage() {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
-  const getAuthConfig = useCallback(() => ({
-    headers: { Authorization: `Bearer ${token}` },
-  }), [token]);
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -104,12 +103,11 @@ function AdminProfilePage() {
 
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/users/${userId}`, getAuthConfig());
-        const data = response.data;
+        const data = await getUserProfile(userId, token);
 
         setSavedUser(data);
         setFormData({
-          fname: data.fname || "", mname: data.mname || "", lname: data.lname || ""
+          fname: data.fname || "", mname: data.mname || "", lname: data.lname || "", avata: null
         });
       } catch (error) {
         setToast({ open: true, message: "Lỗi tải thông tin.", severity: "error" });
@@ -118,7 +116,7 @@ function AdminProfilePage() {
       }
     };
     fetchProfile();
-  }, [navigate, token, getAuthConfig]);
+  }, [navigate, token]);
 
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -134,33 +132,27 @@ function AdminProfilePage() {
       return;
     }
 
-    const userId = jwtDecode(token).sub || jwtDecode(token).uid;
-    const uploadData = new FormData();
-    uploadData.append("file", file);
-
-    try {
-      const res = await axios.post(`${API_URL}/users/${userId}/avatar`, uploadData, {
-        headers: { ...getAuthConfig().headers, "Content-Type": "multipart/form-data" },
-      });
-      if (res.data) {
-        setSavedUser(prev => ({ ...prev, avata_url: res.data.avata_url || URL.createObjectURL(file) }));
-        setToast({ open: true, message: "Cập nhật ảnh quản trị viên thành công!", severity: "success" });
-        setShowAvatarModal(false);
-      }
-    } catch (error) {
-      setToast({ open: true, message: "Lỗi upload ảnh.", severity: "error" });
-    }
+    setSavedUser(prev => ({ ...prev, avata_url: URL.createObjectURL(file) }));
+    setFormData(prev => ({ ...prev, avata: file }));
+    setShowAvatarModal(false);
   };
 
   const handleSave = async () => {
     try {
       setUpdating(true);
       const userId = jwtDecode(token).sub || jwtDecode(token).uid;
-      const payload = { fname: formData.fname, mname: formData.mname, lname: formData.lname };
+      
+      const formPayload = new FormData();
+      formPayload.append("fname", formData.fname);
+      formPayload.append("mname", formData.mname);
+      formPayload.append("lname", formData.lname);
+      if (formData.avata) {
+        formPayload.append("avata", formData.avata);
+      }
 
-      await axios.patch(`${API_URL}/users/${userId}`, payload, getAuthConfig());
+      await updateUserProfile(userId, formPayload, token);
 
-      setSavedUser(prev => ({ ...prev, ...formData }));
+      setSavedUser(prev => ({ ...prev, fname: formData.fname, mname: formData.mname, lname: formData.lname }));
       setToast({ open: true, message: "Cập nhật thông tin thành công!", severity: "success" });
     } catch (error) {
       setToast({ open: true, message: "Cập nhật thất bại.", severity: "error" });
@@ -185,9 +177,7 @@ function AdminProfilePage() {
       </HeaderBar>
 
       <Grid container spacing={3}>
-        {/* ================================================= */}
         {/* CỘT TRÁI */}
-        {/* ================================================= */}
         <Grid size={{ xs: 12, md: 4 }}>
           <ProfileCard elevation={0}>
             <CoverBackground />
@@ -244,9 +234,7 @@ function AdminProfilePage() {
           </ProfileCard>
         </Grid>
 
-        {/* ================================================= */}
         {/* CỘT PHẢI */}
-        {/* ================================================= */}
         <Grid size={{ xs: 12, md: 8 }}>
           <ProfileCard elevation={0} sx={{ p: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
