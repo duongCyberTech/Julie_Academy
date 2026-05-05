@@ -51,22 +51,16 @@ const SYSTEM_TEMPLATES = [
       <p>Kính gửi Quý Phụ huynh,</p>
       <p>Hệ thống xin trân trọng gửi đến Quý Phụ huynh báo cáo tổng hợp tình hình học tập của em <strong>[Tên học sinh]</strong> trong khoảng thời gian vừa qua.</p>
       
-      <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; margin: 20px 0; border-color: #c8e6c9;">
-        <tbody>
-          <tr style="background-color: #e8f5e9;">
-            <th style="border: 1px solid #c8e6c9; padding: 10px; text-align: left;">Tiêu chí</th>
-            <th style="border: 1px solid #c8e6c9; padding: 10px; text-align: left;">Đánh giá / Kết quả</th>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #c8e6c9; padding: 10px;"><strong>Chuyên cần</strong></td>
-            <td style="border: 1px solid #c8e6c9; padding: 10px;">[Đi học đầy đủ / Vắng X buổi]</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #c8e6c9; padding: 10px;"><strong>Điểm kiểm tra</strong></td>
-            <td style="border: 1px solid #c8e6c9; padding: 10px; color: #1976d2; font-weight: bold;">[Nhập điểm số trung bình]</td>
-          </tr>
-        </tbody>
-      </table>
+      <div style="margin: 20px 0; border: 1px solid #c8e6c9; border-radius: 4px; overflow: hidden;">
+        <ul style="list-style-type: none; padding: 0; margin: 0;">
+          <li style="padding: 12px 15px; border-bottom: 1px solid #c8e6c9; background-color: #e8f5e9;">
+             <strong style="color: #2e7d32;">Chuyên cần:</strong> [Đi học đầy đủ / Vắng X buổi]
+          </li>
+          <li style="padding: 12px 15px; background-color: #ffffff;">
+             <strong style="color: #2e7d32;">Điểm kiểm tra:</strong> <span style="color: #1976d2; font-weight: bold;">[Nhập điểm số trung bình]</span>
+          </li>
+        </ul>
+      </div>
 
       <p><strong>📝 Nhận xét từ Giáo viên:</strong></p>
       <p style="font-style: italic; background-color: #f9f9f9; padding: 15px; border-radius: 8px;">
