@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.router import api_router
+
 import asyncio
 from contextlib import asynccontextmanager
 from app.worker.consumer import start_worker
@@ -20,4 +20,3 @@ async def lifespan(app: FastAPI):
   worker_task.cancel()
 
 app = FastAPI(title="ML Service", lifespan=lifespan)
-app.include_router(api_router, prefix="/api")
