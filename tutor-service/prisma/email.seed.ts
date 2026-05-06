@@ -137,10 +137,6 @@ async function main() {
           header: template.header,
           type: template.type,
           body: template.body,
-<<<<<<< HEAD
-          // Đã sửa lỗi TypeScript bằng cách sử dụng connect
-=======
->>>>>>> 44b5c9cb3008003aa8a187e13a8efc3d060a0b2b
           creator: {
             connect: { uid: tutorUser.uid }
           }
