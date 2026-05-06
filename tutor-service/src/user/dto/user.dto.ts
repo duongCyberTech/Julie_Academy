@@ -1,5 +1,5 @@
 import { UserRole } from "@prisma/client";
-import { IsEmail, IsNotEmpty, MinLength, Matches, IsString, IsEnum } from "class-validator";
+import { IsEmail, IsNotEmpty, MinLength, Matches, IsString, IsEnum, IsOptional, IsDate } from "class-validator";
 
 export class UserDto {
     @IsNotEmpty()
@@ -52,10 +52,23 @@ export class UserDto {
     @Matches(/^(?=.*[@$!%*?&])/,
         { message: 'Password phải chứa ít nhất 1 ký tự đặc biệt (@$!%*?&)' },
     )
-    password: string;
+    password!: string;
+
+    @IsOptional()
+    @IsDate()
     dob?: Date;
+
+    @IsOptional()
+    @IsString()
     school?: string;
+
+    @IsOptional()
+    @Matches(/^(0|\+84)(3|5|7|8|9)+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' })
+    @IsString()
     phone_number?: string;
+
+    @IsOptional()
+    @IsString()
     experiences?: string;
 }
 
@@ -78,4 +91,31 @@ export class TutorDto {
 export class ParentsDto {
     @Matches(/^(0|\+84)(3|5|7|8|9)+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' })
     phone_number: string;
+}
+
+export class PasswordChangeDto {
+    @IsNotEmpty({message: "Current Password Required!"})
+    @IsString()
+    current_password!: string;
+
+    @IsNotEmpty({message: "New Password Required!"})
+    @IsString()
+    @MinLength(8, { message: 'New Password phải có ít nhất 8 ký tự' })
+    @Matches(/^(?=.*[a-z])/, {
+        message: 'New Password phải chứa ít nhất 1 chữ thường',
+    })
+    @Matches(/^(?=.*[A-Z])/, {
+        message: 'New Password phải chứa ít nhất 1 chữ hoa',
+    })
+    @Matches(/^(?=.*\d)/, {
+        message: 'New Password phải chứa ít nhất 1 số',
+    })
+    @Matches(/^(?=.*[@$!%*?&])/,
+        { message: 'New Password phải chứa ít nhất 1 ký tự đặc biệt (@$!%*?&)' },
+    )
+    new_password!: string;
+
+    @IsNotEmpty({message: "Confirm New Password Required!"})
+    @IsString()
+    confirm_new_password!: string;
 }

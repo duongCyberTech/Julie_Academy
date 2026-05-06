@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UserDto, StudentDto, TutorDto, ParentsDto } from './dto/user.dto';
+import { UserDto, StudentDto, TutorDto, ParentsDto, PasswordChangeDto } from './dto/user.dto';
 import { AccountStatus, UserRole, Prisma } from '@prisma/client';
 import { CloudinaryService } from '../resource/cloudinary/cloudinary.service';
 
@@ -169,6 +169,45 @@ export class UserService {
     return this.prisma.user.findUnique({
       where: {
         email: email,
+      },
+    });
+  }
+
+  async changePassword(id: string, data: PasswordChangeDto) {
+    const user = await this.prisma.user.findUnique({ where: { uid: id } });
+    if (!user) {
+      throw new NotFoundException(`User not found`);
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      data.current_password,
+      user.password,
+    );
+    if (!isCurrentPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    if (data.new_password !== data.confirm_new_password) {
+      throw new BadRequestException('New password and confirmation do not match');
+    }
+
+    const hashedNewPassword = await bcrypt.hash(data.new_password, 12);
+    return this.prisma.user.update({
+      where: { uid: id },
+      data: { password: hashedNewPassword },
+      select: {
+        uid: true,
+        username: true,
+        email: true,
+        fname: true,
+        mname: true,
+        lname: true,
+        role: true,
+        status: true,
+        avata_url: true,
+        student: true,
+        tutor: true,
+        parents: true,
       },
     });
   }

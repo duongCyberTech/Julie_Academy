@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useEffect, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUserProfile, updateUserProfile } from "../../services/UserService"; 
+import { getUserProfile, updateUserProfile, changePassword } from "../../services/UserService"; 
 
 import {
   Box, Typography, Paper, CircularProgress, Alert, Snackbar,
   Avatar, Button, TextField, Chip, Divider, IconButton, Badge,
-  Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Stack, Grid, useTheme
+  Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Stack, Grid, useTheme, InputAdornment
 } from "@mui/material";
 import { styled, alpha } from "@mui/material/styles";
 
@@ -20,6 +20,9 @@ import {
   SchoolOutlined as SchoolOutlinedIcon,
   VerifiedUserOutlined as VerifiedUserOutlinedIcon,
   InfoOutlined as InfoOutlinedIcon,
+  LockResetOutlined as LockResetOutlinedIcon,
+  Visibility,
+  VisibilityOff
 } from "@mui/icons-material";
 
 const PageWrapper = styled(Paper)(({ theme }) => {
@@ -74,6 +77,7 @@ function TutorProfilePage() {
   const navigate = useNavigate();
   const theme = useTheme();
 
+  // --- States Profile ---
   const [savedUser, setSavedUser] = useState({
     fname: "", mname: "", lname: "", email: "", username: "", role: "", avata_url: "", createAt: "", experiences: "", phone_number: ""
   });
@@ -82,6 +86,20 @@ function TutorProfilePage() {
   const [updating, setUpdating] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
+
+  // --- States Đổi Mật Khẩu ---
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    old: false,
+    new: false,
+    confirm: false
+  });
 
   const token = localStorage.getItem("token");
 
@@ -121,6 +139,7 @@ function TutorProfilePage() {
     return score;
   }, [savedUser]);
 
+  // --- Handlers Profile ---
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -162,6 +181,70 @@ function TutorProfilePage() {
       setUpdating(false);
     }
   };
+
+  // --- Handlers Đổi Mật Khẩu ---
+  const handlePasswordChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setPasswordForm(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const validatePassword = (password) => {
+    if (password.length < 8) return "Mật khẩu phải có ít nhất 8 ký tự";
+    if (!/[a-z]/.test(password)) return "Mật khẩu phải chứa ít nhất 1 chữ thường";
+    if (!/[A-Z]/.test(password)) return "Mật khẩu phải chứa ít nhất 1 chữ hoa";
+    if (!/\d/.test(password)) return "Mật khẩu phải chứa ít nhất 1 số";
+    if (!/[@$!%*?&]/.test(password)) return "Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt (@$!%*?&)";
+    return "";
+  };
+
+  const submitChangePassword = async () => {
+    // 1. Kiểm tra khớp mật khẩu
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      return setToast({ open: true, message: "Mật khẩu xác nhận không khớp!", severity: "error" });
+    }
+    
+    // 2. Validate độ mạnh của mật khẩu mới
+    const passwordError = validatePassword(passwordForm.newPassword);
+    if (passwordError) {
+      return setToast({ open: true, message: passwordError, severity: "warning" });
+    }
+
+    try {
+      setChangingPassword(true);
+      const userId = jwtDecode(token).sub || jwtDecode(token).uid;
+      
+      // 3. Gọi API với payload khớp DTO backend
+      await changePassword(userId, {
+        current_password: passwordForm.oldPassword,
+        new_password: passwordForm.newPassword,
+        confirm_new_password: passwordForm.confirmPassword
+      }, token);
+      
+      setToast({ open: true, message: "Đổi mật khẩu thành công!", severity: "success" });
+      setShowPasswordModal(false);
+      setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error) {
+      // 4. Bóc tách lỗi từ backend để hiển thị rõ ràng
+      const errorMessage = error.response?.data?.message || error.message || "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại.";
+      const finalMessage = Array.isArray(errorMessage) ? errorMessage.join(", ") : errorMessage;
+
+      setToast({ open: true, message: finalMessage, severity: "error" });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const renderPasswordAdornment = (field) => (
+    <InputAdornment position="end">
+      <IconButton onClick={() => togglePasswordVisibility(field)} edge="end">
+        {showPasswords[field] ? <VisibilityOff /> : <Visibility />}
+      </IconButton>
+    </InputAdornment>
+  );
 
   if (loading) return <PageWrapper sx={{ justifyContent: 'center', alignItems: 'center' }}><CircularProgress /></PageWrapper>;
 
@@ -270,8 +353,26 @@ function TutorProfilePage() {
               </Grid>
             </Grid>
 
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button variant="contained" size="large" onClick={handleSave} disabled={updating} startIcon={updating ? <CircularProgress size={20} color="inherit" /> : <SaveOutlinedIcon />} sx={{ px: 4, py: 1.5, borderRadius: '12px', fontWeight: 700 }}>
+            {/* BỘ NÚT ACTIONS */}
+            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+              <Button 
+                variant="outlined" 
+                size="large" 
+                color="primary"
+                startIcon={<LockResetOutlinedIcon />} 
+                onClick={() => setShowPasswordModal(true)}
+                sx={{ px: 3, py: 1.5, borderRadius: '12px', fontWeight: 700, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
+              >
+                Đổi Mật Khẩu
+              </Button>
+              <Button 
+                variant="contained" 
+                size="large" 
+                onClick={handleSave} 
+                disabled={updating} 
+                startIcon={updating ? <CircularProgress size={20} color="inherit" /> : <SaveOutlinedIcon />} 
+                sx={{ px: 4, py: 1.5, borderRadius: '12px', fontWeight: 700 }}
+              >
                 {updating ? "Đang lưu..." : "Lưu Thay Đổi"}
               </Button>
             </Box>
@@ -279,6 +380,7 @@ function TutorProfilePage() {
         </Grid>
       </Grid>
 
+      {/* MODAL CẬP NHẬT ẢNH ĐẠI DIỆN */}
       <Dialog open={showAvatarModal} onClose={() => setShowAvatarModal(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
         <DialogTitle sx={{ fontWeight: 700, textAlign: 'center' }}>Cập Nhật Ảnh Đại Diện</DialogTitle>
         <DialogContent>
@@ -294,6 +396,76 @@ function TutorProfilePage() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setShowAvatarModal(false)} color="inherit" sx={{ fontWeight: 700, borderRadius: '10px' }}>Hủy Bỏ</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* MODAL ĐỔI MẬT KHẨU */}
+      <Dialog open={showPasswordModal} onClose={() => !changingPassword && setShowPasswordModal(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
+        <DialogTitle sx={{ fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
+          Đổi Mật Khẩu
+        </DialogTitle>
+        <DialogContent sx={{ mt: 3 }}>
+          <Stack spacing={3}>
+            <TextField 
+              fullWidth 
+              type={showPasswords.old ? "text" : "password"}
+              label="Mật khẩu hiện tại" 
+              name="oldPassword" 
+              value={passwordForm.oldPassword} 
+              onChange={handlePasswordChange} 
+              InputProps={{ endAdornment: renderPasswordAdornment('old') }}
+            />
+            <TextField 
+              fullWidth 
+              type={showPasswords.new ? "text" : "password"}
+              label="Mật khẩu mới" 
+              name="newPassword" 
+              value={passwordForm.newPassword} 
+              onChange={handlePasswordChange} 
+              InputProps={{ endAdornment: renderPasswordAdornment('new') }}
+              helperText="Ít nhất 8 ký tự, có chữ hoa, thường, số và ký tự đặc biệt"
+            />
+            <TextField 
+              fullWidth 
+              type={showPasswords.confirm ? "text" : "password"}
+              label="Xác nhận mật khẩu mới" 
+              name="confirmPassword" 
+              value={passwordForm.confirmPassword} 
+              onChange={handlePasswordChange} 
+              InputProps={{ endAdornment: renderPasswordAdornment('confirm') }}
+              error={passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword !== ""}
+              helperText={passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword !== "" ? "Mật khẩu xác nhận không khớp" : ""}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
+          <Button 
+            onClick={() => {
+              setShowPasswordModal(false);
+              setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+            }} 
+            color="inherit" 
+            disabled={changingPassword}
+            sx={{ fontWeight: 700, borderRadius: '10px' }}
+          >
+            Hủy
+          </Button>
+          <Button 
+            onClick={submitChangePassword} 
+            variant="contained" 
+            color="primary" 
+            disabled={
+              changingPassword || 
+              !passwordForm.oldPassword || 
+              !passwordForm.newPassword || 
+              !passwordForm.confirmPassword ||
+              passwordForm.newPassword !== passwordForm.confirmPassword
+            }
+            sx={{ fontWeight: 700, borderRadius: '10px' }}
+            startIcon={changingPassword && <CircularProgress size={20} color="inherit" />}
+          >
+            {changingPassword ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
+          </Button>
         </DialogActions>
       </Dialog>
 
