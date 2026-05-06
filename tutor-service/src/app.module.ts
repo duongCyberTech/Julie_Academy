@@ -7,6 +7,7 @@ import { BullModule } from '@nestjs/bull';
 import { BullBoardModule } from "@bull-board/nestjs";
 import { ExpressAdapter } from "@bull-board/express";
 import { BullAdapter } from "@bull-board/api/bullAdapter";
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -34,6 +35,12 @@ require('dotenv').config()
 
 @Module({
   imports: [
+    PrometheusModule.register({
+      path: '/metrics',
+      defaultMetrics: {
+        enabled: true,
+      },
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [rabbitmqConfig],
