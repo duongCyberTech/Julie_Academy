@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service';
-import { UserDto } from './dto/user.dto';
+import { PasswordChangeDto, UserDto } from './dto/user.dto';
 import { AccountStatus } from '@prisma/client';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
@@ -110,6 +110,25 @@ export class UserController {
    * PATCH /users/:id
    * Cập nhật thông tin user
    */
+
+  @Patch('/password')
+  async changePassword(
+    @Request() req: any, 
+    @Body() dto: PasswordChangeDto
+  ) {
+    const userId = req.user.userId;
+    return this.userService.changePassword(userId, dto);
+  }
+
+  @Patch(':id/password')
+  @Roles('admin')
+  async changeUserPassword(
+    @Param('id') id: string,
+    @Body() dto: PasswordChangeDto
+  ) {
+    return this.userService.changePassword(id, dto);
+  }
+
   @Patch(':id')
   @UseInterceptors(FileInterceptor('avata'))
   updateUser(
@@ -127,6 +146,4 @@ export class UserController {
   ) {
     return this.userService.updateUserStatus(id, status);
   }
-
-  
 }
