@@ -27,6 +27,7 @@ export class EmailService {
       if (create_as_template) {
         const emailTemplate = await tx.emailTemplate.create({
           data: {
+            header: data.header,
             type: EmailTemplateType.custom,
             body: data.body,
             creator: {connect: {uid: tutor_id}}

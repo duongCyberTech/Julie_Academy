@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     TextField,
     Button,
@@ -76,6 +76,29 @@ const LoginPage = () => {
     const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
     const navigate = useNavigate();
 
+    // 1. KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP (TOKEN) KHI LOAD TRANG
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                const userRole = decodedToken.role;
+                const rolePath = {
+                    admin: "/admin/dashboard",
+                    student: "/student/dashboard",
+                    tutor: "/tutor/dashboard",
+                    parents: "/parent/dashboard",
+                }[userRole] || "/";
+                
+                // Điều hướng ngay lập tức và thay thế history để không quay lại form login được
+                navigate(rolePath, { replace: true }); 
+            } catch (error) {
+                // Token lỗi hoặc hết hạn thì dọn dẹp
+                localStorage.removeItem("token");
+            }
+        }
+    }, [navigate]);
+
     const handleLogin = async (event) => {
         event.preventDefault();
         setToast(prev => ({ ...prev, open: false }));
@@ -105,12 +128,12 @@ const LoginPage = () => {
                 
                 setToast({ 
                     open: true, 
-                    message: `Đăng nhập thành công! Chào mừng ${userRole}.`, 
+                    message: `Đăng nhập thành công`, 
                     severity: 'success' 
                 });
 
                 setTimeout(() => {
-                    navigate(rolePath);
+                    navigate(rolePath, { replace: true });
                 }, 1000);
                 
             } else {
@@ -118,9 +141,13 @@ const LoginPage = () => {
             }
         } catch (err) {
             console.error("Lỗi đăng nhập:", err);
-            const errorMessage = err.response?.status === 401
-                ? "Email hoặc mật khẩu không đúng"
-                : "Đã xảy ra lỗi. Vui lòng thử lại!";
+            
+            // 2. CHUẨN HÓA THÔNG BÁO LỖI THEO ĐÚNG ĐẶC TẢ USE CASE
+            // Nếu có lỗi từ server (400 Bad Request, 401 Unauthorized, 404 Not Found)
+            // thì đều gom chung thành 1 thông báo thân thiện với người dùng
+            const errorMessage = (err.response && [400, 401, 404].includes(err.response.status))
+                ? "Tên đăng nhập hoặc mật khẩu không chính xác"
+                : "Đã xảy ra lỗi kết nối. Vui lòng thử lại sau!";
             
             setToast({ 
                 open: true, 

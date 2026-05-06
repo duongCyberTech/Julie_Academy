@@ -215,3 +215,27 @@ export const updateUserProfile = async (userId, formData, token) => {
     throw error.response?.data || error;
   }
 };
+/**
+ * Thay đổi mật khẩu người dùng
+ * Tương ứng với: PATCH hoặc POST /users/{id}/password
+ * @param {string} userId - ID của người dùng
+ * @param {Object} passwordData - { oldPassword, newPassword }
+ * @param {string} token - Token xác thực
+ */
+export const changePassword = async (userId, passwordData, token) => {
+  try {
+    const response = await apiClient.patch(
+      `/users/password`, 
+      passwordData,
+      getAuthHeaders(token)
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error changing password for user ${userId}:`,
+      error.response?.status,
+      error.response?.data || error.message
+    );
+    throw error.response?.data || error;
+  }
+};

@@ -1,13 +1,12 @@
-// file: ParentProfilePage.jsx
 import React, { useState, useCallback, useEffect, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUserProfile, updateUserProfile } from "../../services/UserService"; 
+import { getUserProfile, updateUserProfile, changePassword } from "../../services/UserService"; 
 
 import {
   Box, Typography, Paper, CircularProgress, Alert, Snackbar,
   Avatar, Button, TextField, Chip, Divider, IconButton, Badge,
-  Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Stack, Grid, useTheme
+  Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Stack, Grid, useTheme, InputAdornment
 } from "@mui/material";
 import { styled, alpha } from "@mui/material/styles";
 
@@ -19,6 +18,9 @@ import {
   CloudUploadOutlined as CloudUploadOutlinedIcon,
   FamilyRestroom as FamilyRestroomIcon,
   InfoOutlined as InfoOutlinedIcon,
+  LockResetOutlined as LockResetOutlinedIcon,
+  Visibility,
+  VisibilityOff
 } from "@mui/icons-material";
 
 const PageWrapper = styled(Paper)(({ theme }) => {
@@ -73,6 +75,7 @@ function ParentProfilePage() {
   const navigate = useNavigate();
   const theme = useTheme();
 
+  // --- States Profile ---
   const [savedUser, setSavedUser] = useState({
     fname: "", mname: "", lname: "", email: "", role: "", avata_url: "", createAt: "", phone_number: ""
   });
@@ -81,6 +84,12 @@ function ParentProfilePage() {
   const [updating, setUpdating] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
+
+  // --- States Đổi Mật Khẩu ---
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
+  const [showPasswords, setShowPasswords] = useState({ old: false, new: false, confirm: false });
 
   const token = localStorage.getItem("token");
 
@@ -96,7 +105,6 @@ function ParentProfilePage() {
         setLoading(true);
         const data = await getUserProfile(userId, token);
         const phoneVal = data.parents?.phone_number || data.phone_number || "";
-
         setSavedUser({ ...data, phone_number: phoneVal });
         setFormData({ fname: data.fname || "", mname: data.mname || "", lname: data.lname || "", phone_number: phoneVal, avata: null });
       } catch (error) {
@@ -135,18 +143,14 @@ function ParentProfilePage() {
     try {
       setUpdating(true);
       const userId = jwtDecode(token).sub || jwtDecode(token).uid;
-
       const formPayload = new FormData();
       formPayload.append("fname", formData.fname);
       formPayload.append("mname", formData.mname);
       formPayload.append("lname", formData.lname);
       formPayload.append("phone_number", formData.phone_number);
-      if (formData.avata) {
-        formPayload.append("avata", formData.avata);
-      }
+      if (formData.avata) formPayload.append("avata", formData.avata);
 
       await updateUserProfile(userId, formPayload, token);
-      
       setSavedUser(prev => ({ ...prev, fname: formData.fname, mname: formData.mname, lname: formData.lname, phone_number: formData.phone_number }));
       setToast({ open: true, message: "Cập nhật hồ sơ thành công!", severity: "success" });
     } catch (error) {
@@ -155,6 +159,63 @@ function ParentProfilePage() {
       setUpdating(false);
     }
   };
+
+  // --- Handlers Đổi Mật Khẩu ---
+  const handlePasswordChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setPasswordForm(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const validatePassword = (password) => {
+    if (password.length < 8) return "Mật khẩu phải có ít nhất 8 ký tự";
+    if (!/[a-z]/.test(password)) return "Mật khẩu phải chứa ít nhất 1 chữ thường";
+    if (!/[A-Z]/.test(password)) return "Mật khẩu phải chứa ít nhất 1 chữ hoa";
+    if (!/\d/.test(password)) return "Mật khẩu phải chứa ít nhất 1 số";
+    if (!/[@$!%*?&]/.test(password)) return "Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt (@$!%*?&)";
+    return "";
+  };
+
+  const submitChangePassword = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      return setToast({ open: true, message: "Mật khẩu xác nhận không khớp!", severity: "error" });
+    }
+    const passwordError = validatePassword(passwordForm.newPassword);
+    if (passwordError) {
+      return setToast({ open: true, message: passwordError, severity: "warning" });
+    }
+
+    try {
+      setChangingPassword(true);
+      const userId = jwtDecode(token).sub || jwtDecode(token).uid;
+      await changePassword(userId, {
+        current_password: passwordForm.oldPassword,
+        new_password: passwordForm.newPassword,
+        confirm_new_password: passwordForm.confirmPassword
+      }, token);
+      
+      setToast({ open: true, message: "Đổi mật khẩu thành công!", severity: "success" });
+      setShowPasswordModal(false);
+      setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || "Đổi mật khẩu thất bại.";
+      const finalMessage = Array.isArray(errorMessage) ? errorMessage.join(", ") : errorMessage;
+      setToast({ open: true, message: finalMessage, severity: "error" });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const renderPasswordAdornment = (field) => (
+    <InputAdornment position="end">
+      <IconButton onClick={() => togglePasswordVisibility(field)} edge="end">
+        {showPasswords[field] ? <VisibilityOff /> : <Visibility />}
+      </IconButton>
+    </InputAdornment>
+  );
 
   if (loading) return <PageWrapper sx={{ justifyContent: 'center', alignItems: 'center' }}><CircularProgress /></PageWrapper>;
 
@@ -170,7 +231,6 @@ function ParentProfilePage() {
       </HeaderBar>
 
       <Grid container spacing={3}>
-        {/* CỘT TRÁI */}
         <Grid size={{ xs: 12, md: 4 }}>
           <ProfileCard elevation={0}>
             <CoverBackground />
@@ -223,7 +283,6 @@ function ParentProfilePage() {
           </ProfileCard>
         </Grid>
 
-        {/* CỘT PHẢI */}
         <Grid size={{ xs: 12, md: 8 }}>
           <ProfileCard elevation={0} sx={{ p: 4 }}>
             <Typography variant="h6" fontWeight="700" mb={3} sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'primary.main' }}>
@@ -244,14 +303,25 @@ function ParentProfilePage() {
               <Grid size={{ xs: 12 }}>
                 <TextField fullWidth label="Email đăng nhập" value={savedUser.email || ""} disabled size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }} helperText="Email được dùng để đăng nhập và không thể thay đổi." />
               </Grid>
-
               <Grid size={{ xs: 12 }}>
                 <TextField fullWidth label="Số điện thoại liên hệ" name="phone_number" value={formData.phone_number} onChange={handleInputChange} size="small" sx={{ bgcolor: 'background.paper', borderRadius: 1 }} placeholder="Ví dụ: 0912345678" helperText="* Giáo viên sẽ ưu tiên liên hệ qua số điện thoại này." />
               </Grid>
             </Grid>
 
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button variant="contained" size="large" onClick={handleSave} disabled={updating} startIcon={updating ? <CircularProgress size={20} color="inherit" /> : <SaveOutlinedIcon />} sx={{ px: 4, py: 1.5, borderRadius: '12px', fontWeight: 700 }}>
+            {/* BỘ NÚT ACTIONS */}
+            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+              <Button 
+                variant="outlined" color="primary" size="large" onClick={() => setShowPasswordModal(true)}
+                startIcon={<LockResetOutlinedIcon />} 
+                sx={{ px: 3, py: 1.5, borderRadius: '12px', fontWeight: 700, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
+              >
+                Đổi Mật Khẩu
+              </Button>
+              <Button 
+                variant="contained" size="large" onClick={handleSave} disabled={updating} 
+                startIcon={updating ? <CircularProgress size={20} color="inherit" /> : <SaveOutlinedIcon />} 
+                sx={{ px: 4, py: 1.5, borderRadius: '12px', fontWeight: 700 }}
+              >
                 {updating ? "Đang lưu..." : "Lưu Thay Đổi"}
               </Button>
             </Box>
@@ -259,6 +329,7 @@ function ParentProfilePage() {
         </Grid>
       </Grid>
 
+      {/* MODAL CẬP NHẬT ẢNH */}
       <Dialog open={showAvatarModal} onClose={() => setShowAvatarModal(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
         <DialogTitle sx={{ fontWeight: 700, textAlign: 'center' }}>Thay Ảnh Đại Diện</DialogTitle>
         <DialogContent>
@@ -274,6 +345,47 @@ function ParentProfilePage() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setShowAvatarModal(false)} color="inherit" sx={{ fontWeight: 700, borderRadius: '10px' }}>Hủy Bỏ</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* MODAL ĐỔI MẬT KHẨU */}
+      <Dialog open={showPasswordModal} onClose={() => !changingPassword && setShowPasswordModal(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
+        <DialogTitle sx={{ fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider', pb: 2, color: 'primary.main' }}>
+          Đổi Mật Khẩu
+        </DialogTitle>
+        <DialogContent sx={{ mt: 3 }}>
+          <Stack spacing={3}>
+            <TextField 
+              fullWidth type={showPasswords.old ? "text" : "password"} label="Mật khẩu hiện tại" name="oldPassword" 
+              value={passwordForm.oldPassword} onChange={handlePasswordChange} 
+              InputProps={{ endAdornment: renderPasswordAdornment('old') }}
+            />
+            <TextField 
+              fullWidth type={showPasswords.new ? "text" : "password"} label="Mật khẩu mới" name="newPassword" 
+              value={passwordForm.newPassword} onChange={handlePasswordChange} 
+              InputProps={{ endAdornment: renderPasswordAdornment('new') }}
+              helperText="Ít nhất 8 ký tự, có chữ hoa, thường, số và ký tự đặc biệt"
+            />
+            <TextField 
+              fullWidth type={showPasswords.confirm ? "text" : "password"} label="Xác nhận mật khẩu mới" name="confirmPassword" 
+              value={passwordForm.confirmPassword} onChange={handlePasswordChange} 
+              InputProps={{ endAdornment: renderPasswordAdornment('confirm') }}
+              error={passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword !== ""}
+              helperText={passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword !== "" ? "Mật khẩu xác nhận không khớp" : ""}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
+          <Button onClick={() => { setShowPasswordModal(false); setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" }); }} color="inherit" disabled={changingPassword} sx={{ fontWeight: 700, borderRadius: '10px' }}>
+            Hủy
+          </Button>
+          <Button 
+            onClick={submitChangePassword} variant="contained" color="primary" 
+            disabled={changingPassword || !passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword || passwordForm.newPassword !== passwordForm.confirmPassword}
+            sx={{ fontWeight: 700, borderRadius: '10px' }} startIcon={changingPassword && <CircularProgress size={20} color="inherit" />}
+          >
+            {changingPassword ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
+          </Button>
         </DialogActions>
       </Dialog>
 
