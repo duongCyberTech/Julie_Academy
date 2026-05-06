@@ -57,7 +57,7 @@ export class QueueProcessor {
         total_questions: updated_et._count.questions,
         total_correct_questions: updated_et.questions.length,
         final_score: updated_et.final_score,
-        exam_type: updated_et.exam_session.exam_type
+        exam_type: updated_et?.exam_session?.exam_type
       }
 
       this.eventEmitter.emit('exam_taken.submit', payload)
