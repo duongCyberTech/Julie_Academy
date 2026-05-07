@@ -20,7 +20,7 @@ const PALETTE = {
 };
 
 const TYPOGRAPHY = {
-  fontFamily: '"Inter", "Nunito", sans-serif', 
+  fontFamily: '"Inter", sans-serif', 
   h1: { fontSize: "3.5rem", fontWeight: 900, letterSpacing: "-0.04em" },
   h2: { fontSize: "2.5rem", fontWeight: 800, letterSpacing: "-0.02em" },
   h4: { fontWeight: 700 },

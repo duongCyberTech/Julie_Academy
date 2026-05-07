@@ -3,7 +3,7 @@ import { updateClass } from '../services/ClassService';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, Stack, Alert, CircularProgress, Box,
-    FormControl, InputLabel, Select, MenuItem,
+    FormControl, InputLabel, Select, MenuItem, Snackbar
 } from '@mui/material';
 
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -13,28 +13,26 @@ import dayjs from 'dayjs';
 
 const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
     const [token] = useState(() => localStorage.getItem('token'));
-    
     const [formData, setFormData] = useState({
         classname: '',
         description: '',
-        duration_time: 12,
-        nb_of_student: 40,
+        duration_time: '',
         grade: '',
         subject: '',
-        status: 'pending',
+        status: '',
         startat: dayjs(),
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState('');
+    const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
     useEffect(() => {
         if (open && initialData) {
             setFormData({
                 classname: initialData.classname || '',
                 description: initialData.description || '',
-                duration_time: initialData.duration_time || 12,
-                nb_of_student: initialData.nb_of_student || 40,
+                duration_time: initialData.duration_time || '',
                 grade: initialData.grade || '',
                 subject: initialData.subject || '',
                 status: initialData.status || 'pending',
@@ -56,6 +54,11 @@ const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
         setFormData(prev => ({ ...prev, startat: newDate }));
     };
 
+    const handleCloseToast = (event, reason) => {
+        if (reason === 'clickaway') return;
+        setToast({ ...toast, open: false });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -66,17 +69,23 @@ const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
 
         setIsSubmitting(true);
         setFormError('');
+        
         try {
             await updateClass(initialData.class_id, {
                 ...formData,
                 startat: formData.startat ? formData.startat.toISOString() : null,
             }, token);
             
+            setToast({ open: true, message: 'Cập nhật lớp học thành công!', severity: 'success' });
             onRefresh();
-            onClose();
+            
+            setTimeout(() => {
+                onClose();
+                setIsSubmitting(false);
+            }, 1000);
+
         } catch (err) {
             setFormError(err.message || 'Cập nhật lớp thất bại.');
-        } finally {
             setIsSubmitting(false);
         }
     };
@@ -96,6 +105,7 @@ const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
                                 value={formData.classname}
                                 onChange={handleChange}
                                 fullWidth
+                                disabled={isSubmitting}
                             />
                             <TextField
                                 name="description"
@@ -105,10 +115,11 @@ const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
                                 fullWidth
                                 multiline
                                 rows={2}
+                                disabled={isSubmitting}
                             />
                             
                             <Stack direction="row" spacing={2}>
-                                <FormControl fullWidth>
+                                <FormControl fullWidth disabled={isSubmitting}>
                                     <InputLabel id="grade-edit-label">Khối lớp</InputLabel>
                                     <Select
                                         labelId="grade-edit-label"
@@ -124,7 +135,7 @@ const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
                                         <MenuItem value={9}>Lớp 9</MenuItem>
                                     </Select>
                                 </FormControl>
-                                <FormControl fullWidth>
+                                <FormControl fullWidth disabled={isSubmitting}>
                                     <InputLabel id="subject-edit-label">Môn học</InputLabel>
                                     <Select
                                         labelId="subject-edit-label"
@@ -143,7 +154,6 @@ const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
                                 </FormControl>
                             </Stack>
 
-                            {/* Đã bỏ Sĩ số, Thời lượng full width */}
                             <TextField
                                 name="duration_time"
                                 label="Thời lượng (Tuần)"
@@ -151,6 +161,7 @@ const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
                                 value={formData.duration_time}
                                 onChange={handleChange}
                                 fullWidth
+                                disabled={isSubmitting}
                                 InputProps={{ inputProps: { min: 1 } }}
                             />
                             
@@ -159,9 +170,10 @@ const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
                                     label="Ngày bắt đầu"
                                     value={formData.startat}
                                     onChange={handleDateChange}
+                                    disabled={isSubmitting}
                                     sx={{ width: '100%' }}
                                 />
-                                <FormControl fullWidth>
+                                <FormControl fullWidth disabled={isSubmitting}>
                                     <InputLabel id="status-edit-label">Trạng thái</InputLabel>
                                     <Select
                                         labelId="status-edit-label"
@@ -184,11 +196,22 @@ const UpdateClassDialog = ({ open, onClose, onRefresh, initialData }) => {
                     <DialogActions sx={{ p: 3, pt: 0 }}>
                         <Button onClick={onClose} disabled={isSubmitting}>Hủy</Button>
                         <Button type="submit" variant="contained" disabled={isSubmitting}>
-                            {isSubmitting ? <CircularProgress size={24} /> : "Lưu thay đổi"}
+                            {isSubmitting ? <CircularProgress size={24} color="inherit" /> : "Lưu thay đổi"}
                         </Button>
                     </DialogActions>
                 </Box>
             </Dialog>
+
+            <Snackbar
+                open={toast.open}
+                autoHideDuration={3000}
+                onClose={handleCloseToast}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={handleCloseToast} severity={toast.severity} variant="filled" sx={{ width: '100%' }}>
+                    {toast.message}
+                </Alert>
+            </Snackbar>
         </LocalizationProvider>
     );
 };

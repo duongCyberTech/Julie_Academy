@@ -21,7 +21,7 @@ import CloudSyncIcon from '@mui/icons-material/CloudSync';
 
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
-import DOMPurify from 'dompurify'; 
+import DOMPurify from 'dompurify';
 
 import AppSnackbar from '../../components/SnackBar';
 import { takeExam, continueTakeExam, submitExam } from '../../services/ExamService';
@@ -48,42 +48,44 @@ const PageWrapper = styled(Paper)(({ theme }) => {
 
 const HtmlContentRenderer = memo(({ htmlContent }) => {
   const containerRef = useRef(null);
-  const cleanHtml = DOMPurify.sanitize(htmlContent || '', { ADD_TAGS: ['span'], ADD_ATTR: ['class', 'data-value'] });
+  
+  const preProcessedHtml = (htmlContent || '').replace(/\$(.*?)\$/g, '<span class="ql-formula" data-value="$1"></span>');
+  const cleanHtml = DOMPurify.sanitize(preProcessedHtml, { ADD_TAGS: ['span'], ADD_ATTR: ['class', 'data-value'] });
 
   useEffect(() => {
       if (containerRef.current) {
           const formulaElements = containerRef.current.querySelectorAll(".ql-formula");
           formulaElements.forEach(element => {
-              const latex = element.getAttribute('data-value') || element.textContent; 
+              const latex = element.getAttribute('data-value') || element.textContent;
               if (latex) {
-                  try { katex.render(latex, element, { throwOnError: false, displayMode: false }); } 
+                  try { katex.render(latex, element, { throwOnError: false, displayMode: false }); }
                   catch (e) { element.textContent = `[Error: ${latex}]`; }
               }
           });
       }
-  }, [cleanHtml]); 
+  }, [cleanHtml]);
 
-  return <Box 
-    ref={containerRef} 
-    dangerouslySetInnerHTML={{ __html: cleanHtml }} 
-    sx={{ 
-      '& p': { m: 0, p: 0 }, 
-      '& img': { maxWidth: '100%', height: 'auto', display: 'block', borderRadius: '8px' }, 
-      width: '100%', 
-      overflowX: 'auto', 
-      wordBreak: 'break-word' 
-    }} 
+  return <Box
+    ref={containerRef}
+    dangerouslySetInnerHTML={{ __html: cleanHtml }}
+    sx={{
+      '& p': { m: 0, p: 0 },
+      '& img': { maxWidth: '100%', height: 'auto', display: 'block', borderRadius: '8px' },
+      width: '100%',
+      overflowX: 'auto',
+      wordBreak: 'break-word'
+    }}
   />;
 });
 
-const getAnswerPrefix = (index) => String.fromCharCode(65 + index); 
+const getAnswerPrefix = (index) => String.fromCharCode(65 + index);
 
 export default function StudentAssignmentSessionPage() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
 
-  const { classId, examId, sessionId, etId } = useParams(); 
+  const { classId, examId, sessionId, etId } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
@@ -94,12 +96,12 @@ export default function StudentAssignmentSessionPage() {
   const [questions, setQuestions] = useState([]);
   
   const [activeStep, setActiveStep] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({}); 
+  const [selectedAnswers, setSelectedAnswers] = useState({});
   const [bookmarkedQuestions, setBookmarkedQuestions] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
 
-  const [timeTracker, setTimeTracker] = useState({}); 
+  const [timeTracker, setTimeTracker] = useState({});
   const currentStartTime = useRef(Date.now());
 
   const [timeLeft, setTimeLeft] = useState(null);
@@ -112,7 +114,7 @@ export default function StudentAssignmentSessionPage() {
     const handleBeforeUnload = (e) => {
       if (!isSubmitting && timeLeft > 0) {
         e.preventDefault();
-        e.returnValue = ''; 
+        e.returnValue = '';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -134,7 +136,7 @@ export default function StudentAssignmentSessionPage() {
       let isRedirecting = false;
       
       try {
-        isFetchingExam.current = true; 
+        isFetchingExam.current = true;
         setIsLoading(true);
 
         if (classId && examId && sessionId && !etId) {
@@ -144,9 +146,8 @@ export default function StudentAssignmentSessionPage() {
             if (newEtId) {
                 localStorage.setItem(`exam_class_${newEtId}`, classId);
                 isRedirecting = true;
-                // Dùng replace: true để học sinh không back lại trang tạo session được
                 navigate(`/student/assignment/continue/${newEtId}`, { replace: true });
-                return; 
+                return;
             }
         }
 
@@ -154,11 +155,8 @@ export default function StudentAssignmentSessionPage() {
             const responseData = await continueTakeExam(etId, token);
             const coreData = responseData.data || responseData;
             
-            // 🛡️ BẢO MẬT LOGIC: Kiểm tra nếu bài thi đã được nộp
-            // Tuỳ vào backend của bạn trả về field nào (is_done, status, submitAt...)
             if (coreData.is_done === true || coreData.status === 'COMPLETED' || coreData.submitAt) {
                  isRedirecting = true;
-                 // Đá thẳng sang trang kết quả, dùng replace để xóa lịch sử trang hiện tại
                  navigate(`/student/assignment/result/${etId}`, { replace: true });
                  return;
             }
@@ -196,14 +194,12 @@ export default function StudentAssignmentSessionPage() {
                 setTimeTracker(restoredTime);
             }
 
-            // Đồng bộ thời gian bảo mật
             let expireTime;
-            const duration = coreData.exam_session?.exam?.duration || coreData.exam?.duration || 60; 
-            const dbExpire = coreData.exam_session?.expireAt || coreData.expireAt; 
-            const startAt = coreData.startAt; 
+            const duration = coreData.exam_session?.exam?.duration || coreData.exam?.duration || 60;
+            const dbExpire = coreData.exam_session?.expireAt || coreData.expireAt;
+            const startAt = coreData.startAt;
 
             if (startAt) {
-                // Ưu tiên tính thời gian từ server (chống hack localstorage)
                 expireTime = new Date(startAt).getTime() + duration * 60000;
             } else {
                 const savedExpire = localStorage.getItem(`exam_expire_${etId}`);
@@ -215,7 +211,6 @@ export default function StudentAssignmentSessionPage() {
                 }
             }
 
-            // Chốt chặn cuối cùng: Không bao giờ vượt quá giờ đóng cửa của kỳ thi
             if (dbExpire && expireTime > new Date(dbExpire).getTime()) {
                 expireTime = new Date(dbExpire).getTime();
             }
@@ -229,7 +224,7 @@ export default function StudentAssignmentSessionPage() {
         if (!isRedirecting) {
           setIsLoading(false);
         }
-        isFetchingExam.current = false; 
+        isFetchingExam.current = false;
       }
     };
     
@@ -242,8 +237,8 @@ export default function StudentAssignmentSessionPage() {
       return {
         ques_id: q.ques_id,
         answers: currentAnswers[q.ques_id] || [],
-        ms_first_response: t.firstResponse || t.totalSpent || 500, 
-        ms_total_response: t.totalSpent || 1000, 
+        ms_first_response: t.firstResponse || t.totalSpent || 500,
+        ms_total_response: t.totalSpent || 1000,
         index: index
       };
     });
@@ -257,7 +252,7 @@ export default function StudentAssignmentSessionPage() {
       const actClassId = getActualClassId();
       const payload = buildPayload(selectedAnswers, timeTracker);
       
-      const res = await submitExam(examTakenId, actClassId || 'no-class-id', payload, true, token); 
+      const res = await submitExam(examTakenId, actClassId || 'no-class-id', payload, true, token);
       
       localStorage.removeItem(`exam_draft_${examTakenId}`);
       localStorage.removeItem(`exam_expire_${examTakenId}`);
@@ -267,8 +262,6 @@ export default function StudentAssignmentSessionPage() {
       setSnackbar({ open: true, message: isAutoSubmit ? 'Hết giờ! Đã nộp bài tự động.' : 'Nộp bài thành công!', severity: 'success' });
       
       setTimeout(() => {
-        // 🛡️ BẢO MẬT LOGIC: Dùng replace: true để đè lên lịch sử
-        // Trình duyệt sẽ "quên" trang làm bài này đi, bấm Back sẽ về trang bên ngoài
         navigate(`/student/assignment/result/${examTakenId}`, { 
             state: { resultData: res.data },
             replace: true 
@@ -284,7 +277,7 @@ export default function StudentAssignmentSessionPage() {
   useEffect(() => {
     if (timeLeft === null || isSubmitting) return;
     if (timeLeft <= 0) {
-      handleFinalSubmit(true); 
+      handleFinalSubmit(true);
       return;
     }
     const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
@@ -305,7 +298,7 @@ export default function StudentAssignmentSessionPage() {
       const current = prev[questionId] || { firstResponse: 0, totalSpent: 0 };
       return { ...prev, [questionId]: { ...current, totalSpent: current.totalSpent + timeSpent }};
     });
-    currentStartTime.current = Date.now(); 
+    currentStartTime.current = Date.now();
   }, []);
 
   const handleAnswerChange = useCallback((questionId, answerAid, isMultiChoice) => {
@@ -316,12 +309,12 @@ export default function StudentAssignmentSessionPage() {
       if (isMultiChoice) {
         const currentSelections = prev[questionId] || [];
         if (currentSelections.includes(answerAid)) {
-          newAnswers[questionId] = currentSelections.filter((id) => id !== answerAid); 
+          newAnswers[questionId] = currentSelections.filter((id) => id !== answerAid);
         } else {
-          newAnswers[questionId] = [...currentSelections, answerAid]; 
+          newAnswers[questionId] = [...currentSelections, answerAid];
         }
       } else {
-        newAnswers[questionId] = [answerAid]; 
+        newAnswers[questionId] = [answerAid];
       }
       newAnswersObj = newAnswers;
       
@@ -485,7 +478,6 @@ export default function StudentAssignmentSessionPage() {
 
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: isDark ? theme.palette.background.default : alpha(theme.palette.background.default, 0.6) }}><CircularProgress size={60} thickness={4} /></Box>;
   
-  // Tránh render nếu bị redirect
   if (!questions.length) return <PageWrapper><Typography variant="h5" color="error" align="center" mt={5}>Đang xử lý dữ liệu...</Typography></PageWrapper>;
 
   const currentQuestion = questions[activeStep];
