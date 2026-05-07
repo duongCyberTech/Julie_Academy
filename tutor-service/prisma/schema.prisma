@@ -113,6 +113,7 @@ model Student_analytics {
   streak      Int       @default(0)
   last_activity_at  DateTime?
   student_id            String     @unique
+  @@index([student_id])
   student               Student    @relation(fields: [student_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
 }
 
@@ -150,6 +151,8 @@ model Class {
   schedule      Schedule[]
   folders       Folder_of_class[]
 
+  @@index([tutor_uid])
+
   threads Thread[]
 
   emailConfig EmailConfig[]
@@ -174,6 +177,7 @@ model EmailConfig {
   class    Class @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
 
   receivers Receivers[]
+  @@index([class_id])
 }
 
 model Receivers {
@@ -208,6 +212,7 @@ model Schedule {
   class        Class   @relation(fields: [class_id], references: [class_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([schedule_id, class_id])
+  @@index([class_id])
 }
 
 model Learning {
@@ -235,6 +240,8 @@ model Thread {
   Resource_of_Thread Resource_of_Thread[]
   sender             User                 @relation(fields: [uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   likes              Likes[]
+
+  @@index([class_id])
 }
 
 model Comments {
@@ -255,6 +262,9 @@ model Comments {
   @@id([thread_id, comment_id])
   likes Likes[]
   tags Tag[]
+
+  @@index([thread_id])
+  @@index([uid])
 }
 
 model Likes {
@@ -386,6 +396,8 @@ model Questions {
   category             Categories?            @relation(fields: [category_id], references: [category_id], onDelete: SetNull, onUpdate: Cascade)
   tutor                Tutor                  @relation(fields: [tutor_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   Resource_of_Question Resource_of_Question[]
+
+  @@index([tutor_id])
 }
 
 model Answers {
@@ -414,6 +426,8 @@ model Exams {
   sessions       Exam_session[]
   tutor          Tutor              @relation(fields: [tutor_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
   exam_questions Question_of_exam[]
+
+  @@index([tutor_id])
 }
 
 model Question_of_exam {
@@ -469,6 +483,8 @@ model Exam_taken {
   exam_session         Exam_session?     @relation(fields: [exam_id, session_id], references: [exam_id, session_id], onDelete: SetNull, onUpdate: Cascade)
   questions            Question_for_exam_taken[]
   student              Student           @relation(fields: [student_uid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([student_uid])
 }
 
 model Question_for_exam_taken {
@@ -547,6 +563,8 @@ model Notifications {
   link_primary_id   String?
   link_partial_id   String?
   receiver          User          @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([user_id])
 }
 
 enum UserRole {
