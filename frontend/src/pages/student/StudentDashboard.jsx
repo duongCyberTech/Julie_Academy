@@ -23,7 +23,7 @@ import QuizIcon from "@mui/icons-material/Quiz";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import InsightsIcon from "@mui/icons-material/Insights";
 import VideoCallOutlinedIcon from '@mui/icons-material/VideoCallOutlined';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'; // <-- Đã thêm Icon Hướng dẫn
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 
 import {
@@ -100,12 +100,12 @@ const TreeProgress = styled(LinearProgress)(({ theme }) => ({
   },
 }));
 
-const CustomBarTooltip = ({ active, payload }) => {
+const CustomBarTooltip = memo(({ active, payload }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
       <Box sx={{ p: 2, bgcolor: 'background.paper', boxShadow: 3, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-        <Typography variant="subtitle2" fontWeight={700} mb={1}>{data.topic}</Typography>
+        <Typography variant="subtitle2" component="p" fontWeight={700} mb={1}>{data.topic}</Typography>
         <Typography variant="body2" color="primary.main" fontWeight={700}>Độ thông thạo: {data.percent}%</Typography>
         <Typography variant="body2" color="success.main" fontWeight={600} mt={0.5}>Đúng: {data.correct} câu</Typography>
         <Typography variant="body2" color="error.main" fontWeight={600}>Sai: {data.fail} câu</Typography>
@@ -113,7 +113,7 @@ const CustomBarTooltip = ({ active, payload }) => {
     );
   }
   return null;
-};
+});
 
 const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
   const theme = useTheme();
@@ -122,8 +122,6 @@ const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
   
   const [isWatering, setIsWatering] = useState(false);
   const [justLeveledUp, setJustLeveledUp] = useState(false);
-  
-  // State điều khiển bảng hướng dẫn lấy Nước
   const [openWaterGuide, setOpenWaterGuide] = useState(false);
 
   const levelConfig = useMemo(() => {
@@ -185,7 +183,7 @@ const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
                 position: 'relative',
                 zIndex: 2
               }}>
-                <Typography sx={{ fontSize: '5rem', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15))' }}>
+                <Typography component="div" sx={{ fontSize: '5rem', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15))' }}>
                   {levelConfig.emoji}
                 </Typography>
                 {isWatering && <WaterDropIcon sx={{ position: 'absolute', top: -15, color: theme.palette.info.main, fontSize: '2.5rem', animation: `${drop} 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards`, zIndex: 3 }} />}
@@ -206,13 +204,17 @@ const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
                 <Box>
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
                     <Box>
-                      {/* Tiêu đề có kèm nút Info */}
                       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
-                        <Typography variant="h5" fontWeight={700} color="text.primary">
+                        <Typography variant="h5" component="h2" fontWeight={700} color="text.primary">
                           {levelConfig.name}
                         </Typography>
                         <Tooltip title="Hướng dẫn lấy Nước">
-                          <IconButton size="small" onClick={() => setOpenWaterGuide(true)} sx={{ color: 'info.main', p: 0.5 }}>
+                          <IconButton 
+                            size="small" 
+                            onClick={() => setOpenWaterGuide(true)} 
+                            sx={{ color: 'info.main', p: 0.5 }}
+                            aria-label="Hướng dẫn lấy Nước"
+                          >
                             <InfoOutlinedIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -227,8 +229,8 @@ const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
                       p: 1.5, borderRadius: 2, border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
                       minWidth: 120, textAlign: 'center'
                     }}>
-                      <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">Kho Nước</Typography>
-                      <Typography variant="h4" fontWeight={700} color="info.main" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mt: 0.5 }}>
+                      <Typography variant="caption" component="p" color="text.secondary" fontWeight={700} textTransform="uppercase">Kho Nước</Typography>
+                      <Typography variant="h4" component="p" fontWeight={700} color="info.main" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mt: 0.5 }}>
                         {initialWater} <WaterDropIcon fontSize="medium" />
                       </Typography>
                     </Box>
@@ -237,14 +239,18 @@ const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
 
                 <Box>
                   <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
-                    <Typography variant="body2" fontWeight={700} color="text.secondary">
+                    <Typography variant="body2" component="p" fontWeight={700} color="text.secondary">
                       Tiến độ sinh trưởng
                     </Typography>
-                    <Typography variant="body2" fontWeight={700} color="success.main">
+                    <Typography variant="body2" component="p" fontWeight={700} color="success.main">
                       Còn {expNeeded} EXP
                     </Typography>
                   </Stack>
-                  <TreeProgress variant="determinate" value={progressPercent} />
+                  <TreeProgress 
+                    variant="determinate" 
+                    value={progressPercent} 
+                    aria-label="Tiến độ sinh trưởng" 
+                  />
                 </Box>
 
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -282,15 +288,14 @@ const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
         </CardContent>
       </Card>
 
-      {/* Bảng Dialog Hướng dẫn nhận nước */}
-      <Dialog open={openWaterGuide} onClose={() => setOpenWaterGuide(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle sx={{ pb: 1 }}>
+      <Dialog open={openWaterGuide} onClose={() => setOpenWaterGuide(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }} aria-labelledby="water-guide-dialog-title">
+        <DialogTitle sx={{ pb: 1 }} id="water-guide-dialog-title">
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Stack direction="row" alignItems="center" spacing={1}>
               <WaterDropIcon color="info" />
-              <Typography variant="h6" fontWeight={700}>Bí kíp thu thập Giọt Nước</Typography>
+              <Typography variant="h6" component="h2" fontWeight={700}>Bí kíp thu thập Giọt Nước</Typography>
             </Stack>
-            <IconButton onClick={() => setOpenWaterGuide(false)}><CloseIcon /></IconButton>
+            <IconButton onClick={() => setOpenWaterGuide(false)} aria-label="Đóng bảng hướng dẫn"><CloseIcon /></IconButton>
           </Stack>
         </DialogTitle>
         <DialogContent dividers>
@@ -301,21 +306,21 @@ const KnowledgeTreeWidget = memo(({ initialWater, initialExp, onUpdate }) => {
             <ListItem>
               <ListItemIcon><AssignmentTurnedInIcon color="primary" /></ListItemIcon>
               <ListItemText 
-                primary={<Typography variant="subtitle2" fontWeight={700}>Hoàn thành bài Luyện tập</Typography>} 
+                primary={<Typography variant="subtitle2" component="h3" fontWeight={700}>Hoàn thành bài Luyện tập</Typography>} 
                 secondary="Hoàn thành các bài luyện tập trong lộ trình." 
               />
             </ListItem>
             <ListItem>
               <ListItemIcon><QuizIcon color="error" /></ListItemIcon>
               <ListItemText 
-                primary={<Typography variant="subtitle2" fontWeight={700}>Làm bài Kiểm tra</Typography>} 
+                primary={<Typography variant="subtitle2" component="h3" fontWeight={700}>Làm bài Kiểm tra</Typography>} 
                 secondary="Tham gia và hoàn thành các bài test do giáo viên giao." 
               />
             </ListItem>
             <ListItem>
               <ListItemIcon><LocalFireDepartmentIcon color="warning" /></ListItemIcon>
               <ListItemText 
-                primary={<Typography variant="subtitle2" fontWeight={700}>Đăng nhập và Chuỗi ngày (Streak)</Typography>} 
+                primary={<Typography variant="subtitle2" component="h3" fontWeight={700}>Đăng nhập và Chuỗi ngày (Streak)</Typography>} 
                 secondary="Giữ chuỗi học tập liên tiếp không ngắt quãng mỗi ngày." 
               />
             </ListItem>
@@ -342,10 +347,10 @@ const StatCard = memo(({ title, value, color }) => {
     }}>
       <Box sx={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', bgcolor: `${color}.main` }} />
       <CardContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase" sx={{ mb: 1 }}>
+        <Typography variant="caption" component="h3" color="text.secondary" fontWeight={700} textTransform="uppercase" sx={{ mb: 1 }}>
           {title}
         </Typography>
-        <Typography variant="h4" fontWeight={700} color={`${color}.main`}>
+        <Typography variant="h4" component="p" fontWeight={700} color={`${color}.main`}>
           {value}
         </Typography>
       </CardContent>
@@ -384,6 +389,12 @@ const StudentDashboard = memo(() => {
   const [activityType, setActivityType] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const rechartsTooltipStyle = useMemo(() => ({ 
+    backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.common.white, 
+    borderRadius: '8px', 
+    border: 'none', 
+    boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.1)}` 
+  }), [isDark, theme]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -467,9 +478,8 @@ const StudentDashboard = memo(() => {
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
   useEffect(() => { fetchRadar(); }, [fetchRadar]); 
 
-  // Hàm xử lý Click đã được sửa lỗi và thêm Console.log
   const handleVertexClick = useCallback(async (subjectName) => {
-    console.log("Đang tải dữ liệu cho chủ đề:", subjectName); // Giúp bạn kiểm tra nếu click thành công
+    console.log("Đang tải dữ liệu cho chủ đề:", subjectName); 
     const chapter = radarData.find(d => d.subject === subjectName);
     
     if (!chapter) {
@@ -498,7 +508,6 @@ const StudentDashboard = memo(() => {
     }
   }, [radarData, selectedPlan]);
 
-  // Sửa lỗi Click trên tên kỹ năng (Trọng tâm)
   const CustomRadarTick = useCallback((props) => {
     const { payload, x, y, textAnchor } = props;
     return (
@@ -511,13 +520,12 @@ const StudentDashboard = memo(() => {
         fontSize={13}
         fontWeight={700}
         cursor="pointer"
-        // Thêm stopPropagation và các style đặc biệt để mở khóa click
         onClick={(e) => {
           e.stopPropagation(); 
           handleVertexClick(payload.value);
         }}
         style={{ 
-          pointerEvents: 'auto', // Bắt buộc để SVG nhận diện nhấp chuột
+          pointerEvents: 'auto', 
           userSelect: 'none', 
           transition: 'all 0.2s' 
         }} 
@@ -542,7 +550,7 @@ const StudentDashboard = memo(() => {
     return Number(dataValue) || 0;
   }, []);
 
-  if (loading) return <LinearProgress />;
+  if (loading) return <LinearProgress aria-label="Đang tải dữ liệu bảng điều khiển" />;
 
   return (
     <PageWrapper>
@@ -575,11 +583,17 @@ const StudentDashboard = memo(() => {
         <Grid size={{ xs: 12, lg: 8 }}>
           <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, display: "flex", flexDirection: "column", height: '100%', bgcolor: isDark ? 'background.paper' : theme.palette.background.paper }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3, flexWrap: "wrap", gap: 2 }}>
-              <Typography variant="h6" fontWeight={700}>Xu hướng điểm số</Typography>
+              <Typography variant="h6" component="h2" fontWeight={700}>Xu hướng điểm số</Typography>
               <Stack direction="row" spacing={2}>
                 <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <InputLabel>Loại bài</InputLabel>
-                  <Select value={progressExamType} label="Loại bài" onChange={(e) => setProgressExamType(e.target.value)}>
+                  <InputLabel id="exam-type-label">Loại bài</InputLabel>
+                  <Select 
+                    labelId="exam-type-label"
+                    id="exam-type-select"
+                    value={progressExamType} 
+                    label="Loại bài" 
+                    onChange={(e) => setProgressExamType(e.target.value)}
+                  >
                     <MenuItem value="all">Tất cả</MenuItem>
                     <MenuItem value="practice">Luyện tập</MenuItem>
                     <MenuItem value="test">Kiểm tra</MenuItem>
@@ -587,7 +601,11 @@ const StudentDashboard = memo(() => {
                   </Select>
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <Select value={progressTimeRange} onChange={(e) => setProgressTimeRange(e.target.value)}>
+                  <Select 
+                    value={progressTimeRange} 
+                    onChange={(e) => setProgressTimeRange(e.target.value)}
+                    inputProps={{ 'aria-label': 'Khoảng thời gian' }}
+                  >
                     <MenuItem value="week">Tuần này</MenuItem>
                     <MenuItem value="month">Tháng này</MenuItem>
                     <MenuItem value="term">Học kỳ</MenuItem>
@@ -597,10 +615,10 @@ const StudentDashboard = memo(() => {
             </Stack>
 
             <Box sx={{ mb: 3, p: 2, borderRadius: 2, borderLeft: '4px solid', borderColor: theme.palette.primary.main, bgcolor: isDark ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.main, 0.05) }}>
-              <Typography variant="body2" fontWeight={700} color="text.primary">
+              <Typography variant="body2" component="p" fontWeight={700} color="text.primary">
                 Nhận xét hệ thống:
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              <Typography variant="body2" component="p" color="text.secondary" sx={{ mt: 0.5 }}>
                 {trendInsightMessage}
               </Typography>
             </Box>
@@ -611,7 +629,7 @@ const StudentDashboard = memo(() => {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? alpha(theme.palette.divider, 0.1) : alpha(theme.palette.divider, 0.5)} />
                   <XAxis dataKey="name" tick={{fontSize: 12, fill: isDark ? theme.palette.text.secondary : theme.palette.text.secondary, fontWeight: 600}} axisLine={false} tickLine={false} dy={10} />
                   <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{fontSize: 12, fill: isDark ? theme.palette.text.secondary : theme.palette.text.secondary, fontWeight: 600}} axisLine={false} tickLine={false} dx={-10} />
-                  <RechartsTooltip contentStyle={{ backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.common.white, borderRadius: '8px', border: 'none', boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.1)}` }} />
+                  <RechartsTooltip contentStyle={rechartsTooltipStyle} />
                   <Line type="monotone" dataKey="score" name="Điểm số" stroke={theme.palette.primary.main} strokeWidth={3} dot={{ r: 4, fill: theme.palette.primary.main, strokeWidth: 2, stroke: theme.palette.background.paper }} activeDot={{ r: 6, strokeWidth: 0 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -623,13 +641,13 @@ const StudentDashboard = memo(() => {
           <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, display: "flex", flexDirection: "column", height: '100%', bgcolor: isDark ? 'background.paper' : theme.palette.background.paper }}>
             <Stack direction="row" alignItems="center" spacing={1} mb={3}>
               <EventNoteIcon color="primary" />
-              <Typography variant="h6" fontWeight={700}>Lịch học hôm nay</Typography>
+              <Typography variant="h6" component="h2" fontWeight={700}>Lịch học hôm nay</Typography>
             </Stack>
 
             {todaySchedule.length === 0 ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexGrow: 1, p: 3, textAlign: 'center', bgcolor: isDark ? alpha(theme.palette.divider, 0.05) : alpha(theme.palette.grey[50], 0.5), borderRadius: 2 }}>
                 <AutoAwesomeIcon sx={{ fontSize: 40, color: theme.palette.text.disabled, mb: 1 }} />
-                <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                <Typography variant="body2" component="p" color="text.secondary" fontWeight={500}>
                   Hôm nay bạn không có ca học nào. Hãy dành thời gian tự luyện tập nhé!
                 </Typography>
               </Box>
@@ -666,14 +684,14 @@ const StudentDashboard = memo(() => {
                       transition: 'all 0.3s ease'
                     }}>
                       <Box>
-                        <Typography variant="subtitle2" fontWeight={700} color={isPast ? 'text.disabled' : 'text.primary'} noWrap>
+                        <Typography variant="subtitle2" component="h3" fontWeight={700} color={isPast ? 'text.disabled' : 'text.primary'} noWrap>
                           {schedule.class?.classname || 'Lớp học'}
                         </Typography>
                         <Stack direction="row" alignItems="center" spacing={1} mt={1}>
                           <Chip size="small" label={schedule.class?.subject || 'Môn học'} sx={{ fontWeight: 600, bgcolor: theme.palette.background.paper }} />
                           <Stack direction="row" alignItems="center" spacing={0.5} color={isPast ? 'text.disabled' : 'text.secondary'}>
                             <AccessTimeIcon sx={{ fontSize: 16 }} />
-                            <Typography variant="caption" fontWeight={600}>{startTime} - {endTime}</Typography>
+                            <Typography variant="caption" component="span" fontWeight={600}>{startTime} - {endTime}</Typography>
                           </Stack>
                         </Stack>
                       </Box>
@@ -686,6 +704,7 @@ const StudentDashboard = memo(() => {
                             href={meetLink && !isPast ? meetLink : undefined} 
                             target={meetLink && !isPast ? "_blank" : undefined}
                             disabled={isPast || !meetLink}
+                            aria-label={isPast ? "Đã kết thúc" : (!meetLink ? "Chưa có link" : "Vào lớp học")}
                             sx={{ 
                               bgcolor: meetLink && !isPast ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
                               border: meetLink && !isPast ? `1px solid ${alpha(theme.palette.primary.main, 0.5)}` : 'none',
@@ -710,12 +729,18 @@ const StudentDashboard = memo(() => {
           <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper }}>
             <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} mb={3} spacing={2}>
               <Box>
-                <Typography variant="h6" fontWeight={700}>Bản đồ kỹ năng</Typography>
-                <Typography variant="body2" color="text.secondary">Bấm trực tiếp vào các nút tên chủ đề hoặc đỉnh trên biểu đồ để xem độ thông thạo chi tiết.</Typography>
+                <Typography variant="h6" component="h2" fontWeight={700}>Bản đồ kỹ năng</Typography>
+                <Typography variant="body2" component="p" color="text.secondary">Bấm trực tiếp vào các nút tên chủ đề hoặc đỉnh trên biểu đồ để xem độ thông thạo chi tiết.</Typography>
               </Box>
               <FormControl size="small" sx={{ minWidth: 200 }}>
-                <InputLabel>Chọn Lộ trình phân tích</InputLabel>
-                <Select value={selectedPlan} label="Chọn Lộ trình phân tích" onChange={(e) => setSelectedPlan(e.target.value)}>
+                <InputLabel id="plan-label">Chọn Lộ trình phân tích</InputLabel>
+                <Select 
+                  labelId="plan-label"
+                  id="plan-select"
+                  value={selectedPlan} 
+                  label="Chọn Lộ trình phân tích" 
+                  onChange={(e) => setSelectedPlan(e.target.value)}
+                >
                   {myPlans.map(plan => (<MenuItem key={plan.id} value={plan.id}>{plan.name}</MenuItem>))}
                 </Select>
               </FormControl>
@@ -744,7 +769,7 @@ const StudentDashboard = memo(() => {
                        }
                      }}
                    />
-                   <RechartsTooltip contentStyle={{ backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.common.white, borderRadius: '8px', border: 'none', boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.1)}` }} />
+                   <RechartsTooltip contentStyle={rechartsTooltipStyle} />
                  </RadarChart>
                </ResponsiveContainer>
             </Box>
@@ -754,12 +779,32 @@ const StudentDashboard = memo(() => {
 
       <Paper elevation={0} sx={{ borderRadius: 3, border: `1px solid ${isDark ? theme.palette.midnight?.border : alpha(theme.palette.divider, 0.3)}`, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper, p: 3 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2} mb={3}>
-          <Typography variant="h6" fontWeight={700}>Lịch sử hoạt động</Typography>
+          <Typography variant="h6" component="h2" fontWeight={700}>Lịch sử hoạt động</Typography>
           <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-            <TextField label="Từ ngày" type="date" size="small" InputLabelProps={{ shrink: true }} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            <TextField label="Đến ngày" type="date" size="small" InputLabelProps={{ shrink: true }} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <TextField 
+              id="start-date"
+              label="Từ ngày" 
+              type="date" 
+              size="small" 
+              InputLabelProps={{ shrink: true }} 
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)} 
+            />
+            <TextField 
+              id="end-date"
+              label="Đến ngày" 
+              type="date" 
+              size="small" 
+              InputLabelProps={{ shrink: true }} 
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)} 
+            />
             <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select value={activityType} onChange={(e) => setActivityType(e.target.value)}>
+              <Select 
+                value={activityType} 
+                onChange={(e) => setActivityType(e.target.value)}
+                inputProps={{ 'aria-label': 'Loại hoạt động' }}
+              >
                 <MenuItem value="all">Tất cả</MenuItem>
                 <MenuItem value="practice">Luyện tập</MenuItem>
                 <MenuItem value="test">Kiểm tra</MenuItem>
@@ -814,15 +859,15 @@ const StudentDashboard = memo(() => {
                   </Avatar>
 
                   <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ color: 'text.primary' }}>
+                    <Typography variant="subtitle1" component="h3" fontWeight={700} noWrap sx={{ color: 'text.primary' }}>
                       {displayTitle}
                     </Typography>
                     <Stack direction="row" alignItems="center" spacing={1} mt={0.5} flexWrap="wrap">
                       <Chip size="small" label={typeLabel} sx={{ bgcolor: alpha(theme.palette[typeColor].main, 0.1), color: `${typeColor}.main`, fontWeight: 700, borderRadius: 1 }} />
-                      <Typography variant="caption" color="text.disabled">•</Typography>
-                      <Typography variant="caption" color="text.secondary" fontWeight={600}>{item.subject || 'Môn học'}</Typography>
-                      <Typography variant="caption" color="text.disabled">•</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography variant="caption" component="span" color="text.disabled">•</Typography>
+                      <Typography variant="caption" component="span" color="text.secondary" fontWeight={600}>{item.subject || 'Môn học'}</Typography>
+                      <Typography variant="caption" component="span" color="text.disabled">•</Typography>
+                      <Typography variant="caption" component="span" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <AccessTimeIcon sx={{ fontSize: 14 }} />
                         {new Date(item.doneAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
                       </Typography>
@@ -830,7 +875,7 @@ const StudentDashboard = memo(() => {
                   </Box>
                   
                   <Box textAlign="right" sx={{ minWidth: 80, p: 1.5, bgcolor: alpha(theme.palette[typeColor].main, 0.05), borderRadius: 2, border: `1px dashed ${alpha(theme.palette[typeColor].main, 0.3)}` }}>
-                    <Typography variant="h5" fontWeight={700} color={`${typeColor}.main`} align="center">
+                    <Typography variant="h5" component="p" fontWeight={700} color={`${typeColor}.main`} align="center">
                       {item.score} 
                       <Typography component="span" variant="body2" color="text.secondary" fontWeight={700} sx={{ ml: 0.5 }}>/ 10</Typography>
                     </Typography>
@@ -842,15 +887,15 @@ const StudentDashboard = memo(() => {
         </Stack>
       </Paper>
 
-      <Dialog open={openDrillDown} onClose={() => setOpenDrillDown(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper, overflow: 'hidden' } }}>
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, pb: 2, bgcolor: isDark ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.light, 0.1) }}>
+      <Dialog open={openDrillDown} onClose={() => setOpenDrillDown(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper, overflow: 'hidden' } }} aria-labelledby="drilldown-dialog-title">
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, pb: 2, bgcolor: isDark ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.light, 0.1) }} id="drilldown-dialog-title">
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <InsightsIcon color="primary" />
-            <Typography variant="h6" fontWeight={700} color="primary.main">
+            <Typography variant="h6" component="h2" fontWeight={700} color="primary.main">
               Chi tiết: {selectedChapterName}
             </Typography>
           </Stack>
-          <IconButton onClick={() => setOpenDrillDown(false)} sx={{ color: 'text.secondary' }}><CloseIcon /></IconButton>
+          <IconButton onClick={() => setOpenDrillDown(false)} aria-label="Đóng chi tiết kỹ năng" sx={{ color: 'text.secondary' }}><CloseIcon /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 3, pt: 4 }}>
           <Box sx={{ width: '100%', height: 320 }}>
@@ -860,7 +905,6 @@ const StudentDashboard = memo(() => {
                 <XAxis type="number" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: isDark ? theme.palette.text.secondary : theme.palette.text.secondary, fontWeight: 600 }} />
                 <YAxis dataKey="topic" type="category" width={160} tick={{fontSize: 13, fill: isDark ? theme.palette.text.primary : theme.palette.text.primary, fontWeight: 600}} />
                 
-                {/* Gọi Tooltip chứa Số câu Đúng/Sai */}
                 <RechartsTooltip content={<CustomBarTooltip />} cursor={{ fill: isDark ? alpha(theme.palette.common.white, 0.05) : alpha(theme.palette.primary.main, 0.05) }}/>
                 
                 <Bar dataKey="percent" name="Độ thông thạo (%)" fill={theme.palette.primary.main} radius={[0, 4, 4, 0]} barSize={24} />

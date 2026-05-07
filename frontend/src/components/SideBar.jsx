@@ -29,7 +29,7 @@ import AssignmentTurnedInOutlined from "@mui/icons-material/AssignmentTurnedInOu
 import HomeWorkOutlinedIcon from '@mui/icons-material/HomeWorkOutlined';
 import EmailIcon from '@mui/icons-material/EmailOutlined';
 
-import Logo from "../assets/images/logo.png";
+import Logo from "../assets/images/logo.webp";
 
 const menuConfigByRole = {
   tutor: [
