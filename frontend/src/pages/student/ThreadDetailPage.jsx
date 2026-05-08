@@ -215,8 +215,9 @@ const ThreadDetailPage = React.memo(() => {
 
     return () => {
       socket.off('receive_comment',(newComment) => handleReceiveComment(newComment));
+      socket.off('join_thread');
     };
-  }, [thread, curParent]);
+  }, [thread]);
 
   const handleNewImages = (event) => {
     const files = Array.from(event.target.files);
@@ -262,34 +263,51 @@ const ThreadDetailPage = React.memo(() => {
     setSelectedImages([])
   };
   
-  // Hàm đệ quy để thêm trả lời
   const addReplyToTree = (nodes, parentId, newReplies) => {
     if (!parentId) {
       const uniqueNewComments = newReplies.filter(
-        newC => !nodes.some(oldC => oldC.comment_id === newC.comment_id)
+        newC => !nodes.some(oldC => String(oldC.comment_id) === String(newC.comment_id))
       );
       return [...uniqueNewComments, ...nodes];
     }
 
-    return nodes.map(node => {
-      if (node.comment_id === parentId) {
-        const prevNodes = node?.replies && node.replies.length ? node.replies : []
+    let found = false; // Biến đánh dấu đã tìm thấy cha ở nhánh này chưa
+
+    const updatedNodes = nodes.map(node => {
+      // 1. Nếu tìm thấy đúng nốt cha trực tiếp
+      if (String(node.comment_id) === String(parentId)) {
+        found = true;
+        const prevNodes = Array.isArray(node.replies) ? node.replies : [];
         const uniqueNewComments = newReplies.filter(
-          newC => !prevNodes.some(oldC => oldC.comment_id === newC.comment_id)
+          newR => !prevNodes.some(oldR => String(oldR.comment_id) === String(newR.comment_id))
         );
+
         return {
           ...node,
+          isNested: true, // Ép cha trực tiếp mở ra
+          cnt_comments: (node.cnt_comments || 0) + uniqueNewComments.length,
           replies: [...uniqueNewComments, ...prevNodes]
         };
       }
+
+      // 2. Nếu không phải cha, nhưng có con -> Tìm sâu xuống dưới
       if (node.replies && node.replies.length > 0) {
-        return {
-          ...node,
-          replies: addReplyToTree(node.replies, parentId, newReplies)
-        };
+        const newChildren = addReplyToTree(node.replies, parentId, newReplies);
+        
+        // Nếu mảng con có sự thay đổi (khác tham chiếu)
+        if (newChildren !== node.replies) {
+          found = true;
+          return {
+            ...node,
+            isNested: true, // Ép TẤT CẢ các lớp cha phía trên cũng phải mở ra
+            replies: newChildren
+          };
+        }
       }
       return node;
     });
+
+    return found ? updatedNodes : nodes; 
   };
 
   const updateNodeInTree = (nodes, targetId, updatePayload) => {
@@ -553,7 +571,7 @@ const ThreadDetailPage = React.memo(() => {
                   setComments={setComments}
                   addTreeNode={addReplyToTree}
                 />
-                {!comment.parent_cmt_id && thread.sender.uid == decodedData.sub ? (
+                {!comment.parent_cmt_id && thread.sender.uid == decodedData?.sub ? (
                   <Box sx={{ mt: 1 }}> {/* Thêm Box bọc ngoài để căn chỉnh lề trên nếu cần */}
                     {!comment.is_pinned ? (
                       <Tooltip title="Ghim" arrow placement="right"> 
@@ -582,7 +600,7 @@ const ThreadDetailPage = React.memo(() => {
                   setComments={setComments}
                   addTreeNode={addReplyToTree}
                 />
-                {!comment.parent_cmt_id && thread.sender.uid == decodedData.sub ? (
+                {!comment.parent_cmt_id && thread.sender.uid == decodedData?.sub ? (
                   <Box sx={{ mt: 1 }}> {/* Thêm Box bọc ngoài để căn chỉnh lề trên nếu cần */}
                     {!comment.is_pinned ? (
                       <Tooltip title="Ghim" arrow placement="right"> 

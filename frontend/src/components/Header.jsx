@@ -139,6 +139,7 @@ const Header = React.memo(function Header({
     localStorage.removeItem("token");
     setUserInfo(null);
     setAnchorEl(null);
+    socket.disconnect();
     navigate("/");
   }, [navigate]);
 
