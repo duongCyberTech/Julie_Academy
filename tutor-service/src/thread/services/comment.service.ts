@@ -95,16 +95,17 @@ export class CommentService {
                 }
             }).then((res) => {
                 return {
-                    class_id: res.thread.class_id,
+                    class_id: res?.thread.class_id,
                     thread_id,
-                    comment_id: res.comment_id,
-                    content: res.content,
-                    createAt: res.createAt,
-                    cnt_comments: res.comments.length,
-                    medias: res.Resource_of_Comment.map(i => i.Resources.file_path),
-                    parent_cmt_id: res.parent_cmt_id,
-                    sender: res.sender,
-                    cnt: res._count.comments,
+                    comment_id: res?.comment_id,
+                    content: res?.content,
+                    createAt: res?.createAt,
+                    cnt_comments: res?.comments.length,
+                    medias: res?.Resource_of_Comment.map(i => i.Resources.file_path),
+                    parent_cmt_id: res?.parent_cmt_id,
+                    sender: res?.sender,
+                    cnt: res?._count.comments,
+                    is_pinned: res?.is_pinned,
                     isNested: false,
                     replies: []
                 }

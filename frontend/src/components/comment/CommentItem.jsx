@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -47,7 +47,13 @@ const CommentItem = ({ comment, onReplySubmit, class_id = null, setComments = nu
   const [isNested, setIsNested] = useState(comment.isNested)
   const [page, setPage] = useState(1)
   const [isDeleteModal, setIsDeleteModal] = useState(false)
-  
+
+  useEffect(() => {
+    if (comment.isNested || (comment.replies && comment.replies.length > 0)) {
+      setIsNested(true);
+    }
+  }, [comment.isNested, comment.replies?.length]);
+
   const handleFetchChildComments = async() => {
     toast.promise(getCommentsByThread(comment.thread_id, comment.comment_id, page), {
       loading: "Đang tải bình luận...",
