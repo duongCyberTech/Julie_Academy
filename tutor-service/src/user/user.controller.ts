@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service';
-import { PasswordChangeDto, UserDto } from './dto/user.dto';
+import { PasswordChangeDto, UpdateUserDto, UserDto } from './dto/user.dto';
 import { AccountStatus } from '@prisma/client';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
@@ -133,7 +133,7 @@ export class UserController {
   @UseInterceptors(FileInterceptor('avata'))
   updateUser(
     @Param('id') id: string, 
-    @Body() dto: Partial<UserDto>,
+    @Body() dto: UpdateUserDto,
     @UploadedFile() avata?: Express.Multer.File
   ) {
     return this.userService.updateUser(id, dto, avata);
