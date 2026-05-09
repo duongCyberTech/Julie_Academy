@@ -146,7 +146,7 @@ const LoginPage = () => {
             // Nếu có lỗi từ server (400 Bad Request, 401 Unauthorized, 404 Not Found)
             // thì đều gom chung thành 1 thông báo thân thiện với người dùng
             const errorMessage = (err.response && [400, 401, 404].includes(err.response.status))
-                ? "Tên đăng nhập hoặc mật khẩu không chính xác"
+                ? err.response.data?.message || "Thông tin đăng nhập không chính xác hoặc tài khoản không tồn tại."
                 : "Đã xảy ra lỗi kết nối. Vui lòng thử lại sau!";
             
             setToast({ 
