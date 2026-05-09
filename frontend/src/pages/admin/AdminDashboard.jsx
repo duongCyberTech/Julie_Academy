@@ -100,7 +100,13 @@ const SystemHealthWidget = memo(({ serverMetrics }) => {
       <CardContent sx={{ p: 3 }}>
         <Typography variant="subtitle1" fontWeight={700} mb={2}>Sức khỏe kỹ thuật</Typography>
         <Stack spacing={2}>
-          {[{ label: 'Tải CPU Server', val: Number(serverMetrics?.find(item => item.Id === 'cpuUtilization')?.Values?.[0].toFixed(2)), color: 'success' }, { label: 'Tốc độ phản hồi API trung bình', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[3].toFixed(2)) ?? 0, color: 'info', unit: 'ms' }, { label: 'Tổng lượng requests', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[0].toFixed(2)) ?? 0, color: 'primary', unit: 'requests' }].map((item, i) => (
+          {[
+            { label: 'Tải CPU Server', val: Number(serverMetrics?.find(item => item.Id === 'cpuUtilization')?.Values?.[0].toFixed(2)), color: 'success' }, 
+            { label: 'Tốc độ phản hồi API trung bình', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[3].toFixed(2)) ?? 0, color: 'info', unit: 'ms' }, 
+            { label: 'Tổng lượng requests', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[0].toFixed(2)) ?? 0, color: 'primary', unit: ' requests' },
+            { label: 'Số lượng requests thành công', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[1].toFixed(2)) ?? 0, color: 'success', unit: ' requests' },
+            { label: 'Số lượng requests lỗi', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[2].toFixed(2)) ?? 0, color: 'error', unit: ' requests' }
+          ].map((item, i) => (
             <Box key={i}>
               <Stack direction="row" justifyContent="space-between" mb={0.5}>
                 <Typography variant="caption" fontWeight={600}>{item.label}</Typography> &nbsp;
