@@ -3,6 +3,8 @@ import { AuthService } from 'src/auth/auth.service';
 import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
+import { BadRequestException } from '@nestjs/common';
 
 // Mock thư viện bcrypt
 jest.mock('bcrypt');
@@ -126,10 +128,9 @@ describe('AuthService › validateUser', () => {
     mockUserService.findByEmail.mockResolvedValue(null);
 
     // Act
-    const result = await service.validateUser('wrong@email.com', 'any_pass');
-
-    // Assert
-    expect(result).toBeNull();
+    await expect(service.validateUser('wrong@email.com', 'any_pass'))
+      .rejects
+      .toThrow(new NotFoundException("Tài khoản không tồn tại"));
     expect(bcrypt.compare).not.toHaveBeenCalled(); // Không tìm thấy user thì không cần so khớp pass
   });
 
@@ -138,10 +139,9 @@ describe('AuthService › validateUser', () => {
     mockUserService.findByEmail.mockResolvedValue({ email: 'a@b.com', password: 'hash' });
     (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-    // Act
-    const result = await service.validateUser('a@b.com', 'wrong_pass');
-
     // Assert
-    expect(result).toBeNull();
+    await expect(service.validateUser('a@b.com', 'wrong_pass'))
+      .rejects
+      .toThrow(new BadRequestException("Sai mật khẩu"));
   });
 });
