@@ -13,7 +13,7 @@ export class UserDto {
     @IsOptional()
     @SanitizeEmpty()
     @Matches(/^[\p{L}\s]+$/u, {
-        message: 'Tên không hợp lệ',
+        message: 'Tên lót không hợp lệ',
     })
     mname?: string;
 
@@ -26,7 +26,7 @@ export class UserDto {
     @IsNotEmpty()
     username!: string;
 
-    @IsEmail({}, {message: "Invalid Email!"})
+    @IsEmail({}, {message: "Định dạng email không hợp lệ!"})
     email!: string;
     
     @IsNotEmpty()
@@ -40,7 +40,7 @@ export class UserDto {
     status!: 'active' | 'inactive';
     avata_url?: string;
 
-    @IsNotEmpty({message: "Password Required!"})
+    @IsNotEmpty({message: "Không được để trống mật khẩu!"})
     @IsString()
     @MinLength(8, { message: 'Password phải có ít nhất 8 ký tự' })
     @Matches(/^(?=.*[a-z])/, {
@@ -111,11 +111,11 @@ export class ParentsDto {
 }
 
 export class PasswordChangeDto {
-    @IsNotEmpty({message: "Current Password Required!"})
+    @IsNotEmpty({message: "Không được để trống mật khẩu hiện tại!"})
     @IsString()
     current_password!: string;
 
-    @IsNotEmpty({message: "New Password Required!"})
+    @IsNotEmpty({message: "Không được để trống mật khẩu mới!"})
     @IsString()
     @MinLength(8, { message: 'New Password phải có ít nhất 8 ký tự' })
     @Matches(/^(?=.*[a-z])/, {
@@ -132,7 +132,7 @@ export class PasswordChangeDto {
     )
     new_password!: string;
 
-    @IsNotEmpty({message: "Confirm New Password Required!"})
+    @IsNotEmpty({message: "Xác nhận mật khẩu mới không được để trống!"})
     @IsString()
     confirm_new_password!: string;
 }
