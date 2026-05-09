@@ -236,7 +236,7 @@ const AdminDashboard = memo(() => {
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Người dùng Online" value={activeUsers} icon={<GroupAddOutlinedIcon />} color="primary" /></Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Lớp Đang Chạy" value={data?.numActiveClasses || 0} icon={<SchoolOutlinedIcon />} color="success" /></Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Câu Hỏi Mới" value={data?.numQuestion || 0} icon={<ArticleOutlinedIcon />} color="info" /></Grid>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Tác Vụ Chờ" value="15" icon={<ReportIcon />} color="error" /></Grid>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Tác Vụ Chờ" value={serverMetrics?.find(item => item.Id === 'jobMetrics')?.Values?.[0] + serverMetrics?.find(item => item.Id === 'jobMetrics')?.Values?.[4]} icon={<ReportIcon />} color="error" /></Grid>
         </Grid>
 
         <Grid container spacing={3} sx={{ mb: 4 }}>
