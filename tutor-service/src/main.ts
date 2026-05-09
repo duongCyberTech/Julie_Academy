@@ -19,6 +19,7 @@ async function bootstrap() {
       transform: true,       // ✅ BẮT BUỘC ĐỂ ÉP KIỂU DỮ LIỆU
       transformOptions: {
         enableImplicitConversion: true, // Cho phép chuyển đổi kiểu dữ liệu ngầm định
+        exposeDefaultValues: true,
       },
     }));
 

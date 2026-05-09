@@ -1,7 +1,7 @@
 import { UserRole } from "@prisma/client";
 import { PartialType } from "@nestjs/mapped-types";
-import { Transform } from "class-transformer";
-import { IsEmail, IsNotEmpty, MinLength, Matches, IsString, IsEnum, IsOptional, IsDate, ValidateIf } from "class-validator";
+import { IsEmail, IsNotEmpty, MinLength, Matches, IsString, IsEnum, IsOptional, IsDate } from "class-validator";
+import { SanitizeEmpty } from "src/validator/sanitize-empty.validator";
 
 export class UserDto {
     @IsNotEmpty()
@@ -11,12 +11,7 @@ export class UserDto {
     fname!: string;
 
     @IsOptional()
-    @Transform(({ value }) => {
-        if (typeof value === 'string' && value.trim() == '') {
-            return undefined;
-        }
-        return value;
-    })
+    @SanitizeEmpty()
     @Matches(/^[\p{L}\s]+$/u, {
         message: 'Tên không hợp lệ',
     })
@@ -63,53 +58,54 @@ export class UserDto {
     password!: string;
 
     @IsOptional()
-    @ValidateIf(o => o.dob !== '' && o.dob !== undefined && o.dob !== null)
+    @SanitizeEmpty()
     @IsDate()
     dob?: Date;
 
     @IsOptional()
+    @SanitizeEmpty()
     @IsString()
     school?: string;
 
     @IsOptional()
-    @Transform(({ value }) => {
-        if (typeof value === 'string' && value.trim() == '') {
-            return undefined;
-        }
-        return value;
-    })
+    @SanitizeEmpty()
     @Matches(/^(0|\+84)(3|5|7|8|9)+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' })
     @IsString()
     phone_number?: string;
 
     @IsOptional()
+    @SanitizeEmpty()
     @IsString()
     experiences?: string;
 }
 
 export class StudentDto {
     @IsOptional()
+    @SanitizeEmpty()
     @IsString()
     school?: string;
 
     @IsOptional()
-    @ValidateIf(o => o.dob !== '' && o.dob !== undefined && o.dob !== null)
+    @SanitizeEmpty()
     @IsDate()
     dob?: Date;
 }
 
 export class TutorDto {
     @IsOptional()
+    @SanitizeEmpty()
     @Matches(/^(0|\+84)(3|5|7|8|9)+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' })
     phone_number?: string;
     
     @IsOptional()
+    @SanitizeEmpty()
     @IsString()
     experiences?: string;
 }
 
 export class ParentsDto {
     @IsOptional()
+    @SanitizeEmpty()
     @Matches(/^(0|\+84)(3|5|7|8|9)+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' })
     phone_number?: string;
 }
