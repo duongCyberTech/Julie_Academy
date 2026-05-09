@@ -27,6 +27,7 @@ import Card from "../../components/Card";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { Background } from "../../components/Background";
+import { decodedData } from "../../services/ApiClient";
 
 // Images
 import homepage1 from "../../assets/images/homepage1.webp";
@@ -204,6 +205,30 @@ const HeroSection = React.memo(() => {
       [key]: (prev[key] + 1) % data[key + "s"].length,
     }));
 
+  const handleGoToApp = () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+
+        const userRole = decodedData.role;
+        const rolePath = {
+            admin: "/admin/dashboard",
+            student: "/student/dashboard",
+            tutor: "/tutor/dashboard",
+            parents: "/parent/dashboard",
+        }[userRole] || "/";
+
+        navigate(rolePath);
+      } catch (error) {
+        // Token lỗi hoặc hết hạn thì dọn dẹp
+        console.error("Invalid token:", error);
+        localStorage.removeItem("token");
+      }
+    } else {
+      navigate("/login");
+    }
+  }
+
   return (
     <StyledSectionWrapper sx={{ pt: { xs: 6, md: 10 }, pb: { xs: 8, md: 12 } }}>
       <Container maxWidth="lg">
@@ -294,7 +319,7 @@ const HeroSection = React.memo(() => {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={() => navigate("/login")}
+                onClick={() => handleGoToApp()}
                 size="large"
                 endIcon={<RocketLaunchRoundedIcon />}
                 sx={{ borderRadius: "16px", px: 6, py: 2, fontSize: "1.15rem" }}
