@@ -11,6 +11,33 @@ export class QueueService {
     @InjectQueue('system-tasks-queue') private bgQueue: Queue
   ) {}
 
+  async getJobMetrics(): Promise<{ waiting: number; active: number; completed: number; failed: number; delayed: number }> {
+    try {
+      const waitingCount = await this.bgQueue.getWaitingCount();
+      const activeCount = await this.bgQueue.getActiveCount();
+      const completedCount = await this.bgQueue.getCompletedCount();
+      const failedCount = await this.bgQueue.getFailedCount();
+      const delayedCount = await this.bgQueue.getDelayedCount();
+
+      return {
+        waiting: waitingCount,
+        active: activeCount,
+        completed: completedCount,
+        failed: failedCount,
+        delayed: delayedCount
+      };
+    } catch (error) {
+      this.logger.error('Lỗi khi lấy metrics của Background Job', (error as Error).stack);
+      return {
+        waiting: 0,
+        active: 0,
+        completed: 0,
+        failed: 0,
+        delayed: 0
+      }
+    }
+  }
+
   async setupExamTakenTimeout(payload: ExamTakenTimeoutPayload, delayInMs: number) {
     try {
       console.log("[EXAM SESSION TIMEOUT QUEUING]")
@@ -30,7 +57,7 @@ export class QueueService {
       return job.id
     } catch (error) {
       console.log("[EXAM SESSION TIMEOUT QUEUING WITH ERROR]")
-      this.logger.error('Lỗi khi lên lịch Background Job', error.stack);
+      this.logger.error('Lỗi khi lên lịch Background Job', (error as Error).stack);
     }
   }
 
@@ -53,7 +80,7 @@ export class QueueService {
       return job.id
     } catch (error) {
       console.log("[NOTIFICATION QUEUING WITH ERROR]")
-      this.logger.error('Lỗi khi lên lịch Background Job', error.stack);
+      this.logger.error('Lỗi khi lên lịch Background Job', (error as Error).stack);
     }
   }
 }

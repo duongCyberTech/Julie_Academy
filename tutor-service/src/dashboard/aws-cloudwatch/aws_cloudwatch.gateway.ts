@@ -3,6 +3,7 @@ import { Server, Socket } from "socket.io";
 import { CloudWatchClient, GetMetricDataCommand } from "@aws-sdk/client-cloudwatch";
 import { ConfigService } from "@nestjs/config/dist/config.service";
 import { ApiMetricsService } from "../metrics/api-metrics.service";
+import { QueueService } from "src/background_job/bull-queue.service";
 
 @WebSocketGateway({ 
   cors: { origin: '*' }
@@ -15,7 +16,8 @@ export class AwsCloudWatchGateway {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly apiMetrics: ApiMetricsService
+    private readonly apiMetrics: ApiMetricsService,
+    private readonly queueService: QueueService
   ) {
     this.cloudWatchClient = new CloudWatchClient({ 
       region: this.configService.get('AWS_REGION') || "",
@@ -95,16 +97,25 @@ export class AwsCloudWatchGateway {
     try {
       const metricsData = await this.fetchEC2Metrics();
       const apiData = this.apiMetrics.getAndResetMetrics();
+      const jobMetrics = await this.queueService.getJobMetrics();
+
       metricsData.MetricDataResults?.push({
         Id: 'apiMetrics',
         Label: 'API Metrics',
         Timestamps: [new Date()],
         Values: [apiData.total, apiData.success, apiData.error, apiData.avg_duration],
-      })
+      });
+
+      metricsData.MetricDataResults?.push({
+        Id: 'jobMetrics',
+        Label: 'Background Job Metrics',
+        Timestamps: [new Date()],
+        Values: [jobMetrics.waiting, jobMetrics.active, jobMetrics.completed, jobMetrics.failed, jobMetrics.delayed],
+      });
       console.log("Dữ liệu CloudWatch đã được gửi");
       client.emit('ec2_metrics', metricsData);
     } catch (error) {
-      console.error("Lỗi khi lấy dữ liệu CloudWatch:", error);
+      console.error("Lỗi khi lấy dữ liệu CloudWatch:", (error as Error).stack);
       client.emit('ec2_metrics_error', 'Không thể lấy dữ liệu CloudWatch');
     }
   }

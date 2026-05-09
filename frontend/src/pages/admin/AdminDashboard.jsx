@@ -100,7 +100,13 @@ const SystemHealthWidget = memo(({ serverMetrics }) => {
       <CardContent sx={{ p: 3 }}>
         <Typography variant="subtitle1" fontWeight={700} mb={2}>Sức khỏe kỹ thuật</Typography>
         <Stack spacing={2}>
-          {[{ label: 'Tải CPU Server', val: Number(serverMetrics?.find(item => item.Id === 'cpuUtilization')?.Values?.[0].toFixed(2)), color: 'success' }, { label: 'Tốc độ phản hồi API trung bình', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[3].toFixed(2)) ?? 0, color: 'info', unit: 'ms' }, { label: 'Tổng lượng requests', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[0].toFixed(2)) ?? 0, color: 'primary', unit: 'requests' }].map((item, i) => (
+          {[
+            { label: 'Tải CPU Server', val: Number(serverMetrics?.find(item => item.Id === 'cpuUtilization')?.Values?.[0].toFixed(2)), color: 'success' }, 
+            { label: 'Tốc độ phản hồi API trung bình', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[3].toFixed(2)) ?? 0, color: 'info', unit: 'ms' }, 
+            { label: 'Tổng lượng requests', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[0].toFixed(2)) ?? 0, color: 'primary', unit: ' requests' },
+            { label: 'Số lượng requests thành công', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[1].toFixed(2)) ?? 0, color: 'success', unit: ' requests' },
+            { label: 'Số lượng requests lỗi', val: Number(serverMetrics?.find(item => item.Id === 'apiMetrics')?.Values?.[2].toFixed(2)) ?? 0, color: 'error', unit: ' requests' }
+          ].map((item, i) => (
             <Box key={i}>
               <Stack direction="row" justifyContent="space-between" mb={0.5}>
                 <Typography variant="caption" fontWeight={600}>{item.label}</Typography> &nbsp;
@@ -230,7 +236,7 @@ const AdminDashboard = memo(() => {
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Người dùng Online" value={activeUsers} icon={<GroupAddOutlinedIcon />} color="primary" /></Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Lớp Đang Chạy" value={data?.numActiveClasses || 0} icon={<SchoolOutlinedIcon />} color="success" /></Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Câu Hỏi Mới" value={data?.numQuestion || 0} icon={<ArticleOutlinedIcon />} color="info" /></Grid>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Tác Vụ Chờ" value="15" icon={<ReportIcon />} color="error" /></Grid>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}><KpiCard title="Tác Vụ Chờ" value={serverMetrics?.find(item => item.Id === 'jobMetrics')?.Values?.[0] + serverMetrics?.find(item => item.Id === 'jobMetrics')?.Values?.[4]} icon={<ReportIcon />} color="error" /></Grid>
         </Grid>
 
         <Grid container spacing={3} sx={{ mb: 4 }}>

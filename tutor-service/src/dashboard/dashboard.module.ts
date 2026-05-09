@@ -12,11 +12,12 @@ import { QuestionModule } from "src/question/question.module";
 import { AnalysisModule } from "src/analysis/analysis.module";
 import { AwsCloudWatchGateway } from "./aws-cloudwatch/aws_cloudwatch.gateway";
 import { ApiMetricsService } from "./metrics/api-metrics.service";
+import { BackgroundJobModule } from "src/background_job/background-job.module";
 
 @Module({
     controllers: [DashboardController],
     providers: [DashboardService, AdminDashboard, TutorDashboard, StudentDashboard, AwsCloudWatchGateway, ApiMetricsService],
-    imports: [PrismaModule, QuestionModule, AnalysisModule],
+    imports: [PrismaModule, QuestionModule, AnalysisModule, BackgroundJobModule],
     exports: [ApiMetricsService]
 })
 export class DashboardModule {}
