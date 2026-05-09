@@ -1,43 +1,46 @@
 import { UserRole } from "@prisma/client";
+import { PartialType } from "@nestjs/mapped-types";
 import { IsEmail, IsNotEmpty, MinLength, Matches, IsString, IsEnum, IsOptional, IsDate } from "class-validator";
+import { SanitizeEmpty } from "src/validator/sanitize-empty.validator";
 
 export class UserDto {
     @IsNotEmpty()
     @Matches(/^[\p{L}\s]+$/u, {
-        message: 'Tên không hợp lệ',
+        message: 'Họ không hợp lệ',
     })
-    fname: string;
+    fname!: string;
+
+    @IsOptional()
+    @SanitizeEmpty()
+    @Matches(/^[\p{L}\s]+$/u, {
+        message: 'Tên lót không hợp lệ',
+    })
+    mname?: string;
 
     @IsNotEmpty()
     @Matches(/^[\p{L}\s]+$/u, {
         message: 'Tên không hợp lệ',
     })
-    mname: string;
+    lname!: string;
 
     @IsNotEmpty()
-    @Matches(/^[\p{L}\s]+$/u, {
-        message: 'Tên không hợp lệ',
-    })
-    lname: string;
+    username!: string;
 
-    @IsNotEmpty()
-    username: string;
-
-    @IsEmail({}, {message: "Invalid Email!"})
-    email: string;
+    @IsEmail({}, {message: "Định dạng email không hợp lệ!"})
+    email!: string;
     
     @IsNotEmpty()
-    @IsEnum(['tutor', 'student', 'parents', 'admin'], {
+    @IsEnum(UserRole, {
         message: 'Role phải là tutor, student hoặc parents',
     })
-    role: 'tutor' | 'student' | 'parents' | 'admin';
+    role!: UserRole;
 
     @IsNotEmpty()
     @IsEnum(['active', 'inactive'])
-    status: 'active' | 'inactive';
+    status!: 'active' | 'inactive';
     avata_url?: string;
 
-    @IsNotEmpty({message: "Password Required!"})
+    @IsNotEmpty({message: "Không được để trống mật khẩu!"})
     @IsString()
     @MinLength(8, { message: 'Password phải có ít nhất 8 ký tự' })
     @Matches(/^(?=.*[a-z])/, {
@@ -55,50 +58,64 @@ export class UserDto {
     password!: string;
 
     @IsOptional()
+    @SanitizeEmpty()
     @IsDate()
     dob?: Date;
 
     @IsOptional()
+    @SanitizeEmpty()
     @IsString()
     school?: string;
 
     @IsOptional()
+    @SanitizeEmpty()
     @Matches(/^(0|\+84)(3|5|7|8|9)+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' })
     @IsString()
     phone_number?: string;
 
     @IsOptional()
+    @SanitizeEmpty()
     @IsString()
     experiences?: string;
 }
 
 export class StudentDto {
-    @IsNotEmpty()
+    @IsOptional()
+    @SanitizeEmpty()
     @IsString()
-    school: string;
+    school?: string;
 
-    @IsNotEmpty()
-    dob: Date;
+    @IsOptional()
+    @SanitizeEmpty()
+    @IsDate()
+    dob?: Date;
 }
 
 export class TutorDto {
+    @IsOptional()
+    @SanitizeEmpty()
     @Matches(/^(0|\+84)(3|5|7|8|9)+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' })
-    phone_number: string;
+    phone_number?: string;
     
-    experiences: string;
+    @IsOptional()
+    @SanitizeEmpty()
+    @IsString()
+    experiences?: string;
 }
 
 export class ParentsDto {
+    @IsOptional()
+    @SanitizeEmpty()
     @Matches(/^(0|\+84)(3|5|7|8|9)+([0-9]{8})\b/, { message: 'Số điện thoại không hợp lệ' })
-    phone_number: string;
+    phone_number?: string;
 }
 
 export class PasswordChangeDto {
-    @IsNotEmpty({message: "Current Password Required!"})
+    @IsNotEmpty({message: "Không được để trống mật khẩu hiện tại!"})
     @IsString()
     current_password!: string;
 
-    @IsNotEmpty({message: "New Password Required!"})
+    @IsNotEmpty({message: "Không được để trống mật khẩu mới!"})
     @IsString()
     @MinLength(8, { message: 'New Password phải có ít nhất 8 ký tự' })
     @Matches(/^(?=.*[a-z])/, {
@@ -115,7 +132,9 @@ export class PasswordChangeDto {
     )
     new_password!: string;
 
-    @IsNotEmpty({message: "Confirm New Password Required!"})
+    @IsNotEmpty({message: "Xác nhận mật khẩu mới không được để trống!"})
     @IsString()
     confirm_new_password!: string;
 }
+
+export class UpdateUserDto extends PartialType(UserDto) {}

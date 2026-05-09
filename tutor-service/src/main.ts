@@ -17,6 +17,10 @@ async function bootstrap() {
       whitelist: true, // Loại bỏ các field không được định nghĩa trong DTO
       forbidNonWhitelisted: false, // Quăng lỗi nếu có field lạ
       transform: true,       // ✅ BẮT BUỘC ĐỂ ÉP KIỂU DỮ LIỆU
+      transformOptions: {
+        enableImplicitConversion: true, // Cho phép chuyển đổi kiểu dữ liệu ngầm định
+        exposeDefaultValues: true,
+      },
     }));
 
     const config = new DocumentBuilder()

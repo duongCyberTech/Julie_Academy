@@ -8,7 +8,7 @@ export class CustomFileValidator extends FileValidator {
   isValid(file: Express.Multer.File): boolean {
     const allowedExtensions = ['png', 'jpg', 'jpeg', 'mp3', 'mp4', 'mkv'];
     // Lấy đuôi file từ tên file
-    const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
+    const fileExtension = file.originalname.split('.').pop()?.toLowerCase() || "undefined";
     return allowedExtensions.includes(fileExtension);
   }
 

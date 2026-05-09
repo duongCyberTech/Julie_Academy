@@ -21,10 +21,9 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto) {
     const user = await this.authService.validateUser(dto.email, dto.password);
-    if (!user) throw new NotFoundException("Account not exist!");
     const isMantananceMode = this.systemConfigService.validateConfig({key: 'maintenance_mode', value: true});
-    if (user.role !== 'admin' && isMantananceMode) throw new UnauthorizedException("System is under maintenance!");
-    if (user.status === 'inactive') throw new UnauthorizedException("Account is inactive!");
+    if (user.role !== 'admin' && isMantananceMode) throw new UnauthorizedException("Hệ thống đang bảo trì!");
+    if (user.status === 'inactive') throw new UnauthorizedException("Tài khoản không hoạt động!");
     try {
       await this.analysisService.createOrUpdateAnalytics(user.uid, {water_drops: 1})
     } catch(err) {
@@ -38,8 +37,8 @@ export class AuthController {
   async register(@Body() dto: RegisterDto){
     const isMantananceMode = this.systemConfigService.validateConfig({key: 'maintenance_mode', value: true});
     const isRegisterEnabled = this.systemConfigService.validateConfig({key: 'register_allowance', value: true});
-    if (isMantananceMode) throw new UnauthorizedException("System is under maintenance!");
-    if (!isRegisterEnabled) throw new UnauthorizedException("Registration is currently disabled.");
+    if (isMantananceMode) throw new UnauthorizedException("Hệ thống đang bảo trì!");
+    if (!isRegisterEnabled) throw new UnauthorizedException("Chức năng đăng ký hiện tại đang bị tắt.");
     const user = await this.userService.createUser(dto as UserDto);
     return user;
   }

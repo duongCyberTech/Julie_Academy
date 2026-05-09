@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { UserService } from "src/user/user.service";
 import { JwtService } from "@nestjs/jwt";
 const bcrypt = require('bcrypt');
@@ -12,13 +12,13 @@ export class AuthService {
 
   async validateUser(email: string, pass: string) {
     const user = await this.userService.findByEmail(email);
-    if (!user) return null;
+    if (!user) throw new NotFoundException("Tài khoản không tồn tại");
     const isMatched = await bcrypt.compare(pass, user?.password)
     if (user && isMatched) {
       const { password, ...result } = user;
       return result;
     }
-    return null;
+    throw new BadRequestException("Sai mật khẩu");
   }
 
   async login(user: any) {

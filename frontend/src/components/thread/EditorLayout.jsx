@@ -86,6 +86,7 @@ export const PostCreator = memo(({ class_id = "", closeModal, action = "create",
   const [isRestricted, setIsRestricted] = useState(action === "create" ? false : post?.is_restricted);
   const [restrictedModal, setRestrictedModal] = useState(false);
   const [openList, setOpenList] = useState(action === "create" ? [] : post?.open_list);
+  const [formError, setFormError] = useState({ title: "", content: "" });
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -101,7 +102,13 @@ export const PostCreator = memo(({ class_id = "", closeModal, action = "create",
   };
 
   const handleSubmit = async () => {
-    if (!htmlContent && !title) return;
+    if (!htmlContent || !title) {
+      setFormError({ 
+        title: !title ? "Tiêu đề không được để trống" : "", 
+        content: !htmlContent ? "Nội dung không được để trống" : "" 
+      });
+      return;
+    }
     const newPostData = {
       title,
       content: htmlContent,
@@ -131,7 +138,13 @@ export const PostCreator = memo(({ class_id = "", closeModal, action = "create",
   };
 
   const handleSave = async () => {
-    if (!htmlContent && !title) return;
+    if (!htmlContent || !title) {
+      setFormError({ 
+        title: !title ? "Tiêu đề không được để trống" : "", 
+        content: !htmlContent ? "Nội dung không được để trống" : "" 
+      });
+      return;
+    }
     const updatedPostData = {
       title,
       content: htmlContent,
@@ -227,20 +240,41 @@ export const PostCreator = memo(({ class_id = "", closeModal, action = "create",
       {/* --- Body: Content Area Seamless --- */}
       <Box sx={{ mb: 2 }}>
         <TextField
-            placeholder="Tiêu đề thảo luận..."
-            variant="standard"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            fullWidth
-            InputProps={{
-                disableUnderline: true,
-                sx: { fontSize: '1.15rem', fontWeight: 700, color: 'text.primary', mb: 1 }
-            }}
+          placeholder="Tiêu đề thảo luận..."
+          variant="standard"
+          value={title}
+          onChange={
+            (e) => {
+              setTitle(e.target.value);
+              if (formError.title) setFormError(prev => ({ ...prev, title: "" }));
+            }
+          }
+          fullWidth
+          InputProps={{
+            disableUnderline: true,
+            sx: { fontSize: '1.15rem', fontWeight: 700, color: 'text.primary', mb: 1 }
+          }}
+          required
+        />
+        <Chip          
+        label={formError.title} 
+          color="error" 
+          size="small" 
+          sx={{ mb: 1, display: formError.title ? 'inline-flex' : 'none' }}
         />
         <RichTextEditor 
           placeholder="Bạn muốn chia sẻ điều gì? (Gõ $ để viết công thức toán)"
           value={htmlContent}
-          onChange={setHtmlContent}
+          onChange={(value) => {
+            setHtmlContent(value);
+            if (formError.content) setFormError(prev => ({ ...prev, content: "" }));
+          }}
+        />
+        <Chip          
+          label={formError.content} 
+          color="error"
+          size="small"
+          sx={{ mt: 1, display: formError.content ? 'inline-flex' : 'none' }}
         />
       </Box>
 
@@ -418,7 +452,7 @@ export const PostItem = memo(({ post, class_id, handleUpdate, handleDelete }) =>
       
       <CardHeader
         avatar={
-            <Avatar src={post?.sender?.avatar_url} sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', fontWeight: 700 }}>
+            <Avatar src={post?.sender?.avata_url} sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', fontWeight: 700 }}>
                 {post?.sender?.fname?.[0] || "U"}
             </Avatar>
         }

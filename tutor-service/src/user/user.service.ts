@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UserDto, StudentDto, TutorDto, ParentsDto, PasswordChangeDto } from './dto/user.dto';
+import { UserDto, StudentDto, TutorDto, ParentsDto, PasswordChangeDto, UpdateUserDto } from './dto/user.dto';
 import { AccountStatus, UserRole, Prisma } from '@prisma/client';
 import { CloudinaryService } from '../resource/cloudinary/cloudinary.service';
 
@@ -34,7 +34,7 @@ export class UserService {
         data: {
           username: data.username,
           fname: data.fname,
-          mname: data.mname,
+          mname: data.mname || '',
           lname: data.lname,
           email: data.email,
           password: hashedPassword,
@@ -47,7 +47,7 @@ export class UserService {
       if (data.role === 'student') {
         const studentData: Partial<StudentDto> = {
           school: data.school || '',
-          dob: data.dob ? new Date(data.dob) : null,
+          dob: data?.dob ? new Date(data?.dob) : undefined,
         };
         await tx.student.create({
           data: {
@@ -57,8 +57,8 @@ export class UserService {
         });
       } else if (data.role === 'tutor') {
         const tutorData: Partial<TutorDto> = {
-          phone_number: data.phone_number,
-          experiences: data.experiences,
+          phone_number: data.phone_number || '',
+          experiences: data.experiences || '',
         };
         await tx.tutor.create({
           data: {
@@ -212,7 +212,7 @@ export class UserService {
     });
   }
 
-  async updateUser(id: string, data: Partial<UserDto>, avata?: Express.Multer.File) {
+  async updateUser(id: string, data: UpdateUserDto, avata?: Express.Multer.File) {
     if (data.password) {
       data.password = await bcrypt.hash(data.password, 12);
     }

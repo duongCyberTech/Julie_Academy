@@ -196,6 +196,7 @@ const RichTextEditor = forwardRef(({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             {...props}
+            required
           />
         </EditorWrapper>
 
