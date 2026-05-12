@@ -27,7 +27,10 @@ export class QueueProcessor {
 
     try {
       const updated_et = await this.prisma.exam_taken.update({
-        where: {et_id},
+        where: {
+          et_id,
+          isDone: false
+        },
         data: {
           isDone: true,
           doneAt: new Date()
