@@ -10,8 +10,6 @@ export class PdfService {
     private readonly prisma: PrismaService
   ) {}
 
-
-
   async generateFileContent(ftype: FileType, student_id: string, config_id: string): Promise<string> {
     switch (ftype) {
       case FileType.STUDY_REPORT: {
@@ -96,13 +94,13 @@ export class PdfService {
 
           return [
             index + 1,
-            exam.title,
-            `${item.final_score}/${exam.total_score} (${scorePercentage}%)`,
-            `${item.total_ques_completed}/${exam.total_ques}`,
+            exam?.title,
+            `${item.final_score}/${exam?.total_score} (${scorePercentage}%)`,
+            `${item.total_ques_completed}/${exam?.total_ques}`,
             duration,
             item.doneAt.toLocaleDateString('vi-VN')
           ];
-        });
+        }).filter(row => row[1] !== null);
 
         const table = {
           title: "Chi tiết bài thi",
