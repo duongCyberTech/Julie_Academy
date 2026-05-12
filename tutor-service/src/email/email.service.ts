@@ -48,7 +48,7 @@ export class EmailService {
           // FIX 1: Uncomment this to stop the transaction if the ID is invalid
           throw new BadRequestException('The specified template does not exist.');
         } else {
-          emailConfigData.body = template.body;
+          emailConfigData.body = data.body;
           emailConfigData.use_template = true;
           emailConfigData.template_id = template.template_id;
         }

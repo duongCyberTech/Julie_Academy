@@ -6,8 +6,7 @@ import { PdfService } from "src/resource/pdf/pdf.service";
 @Injectable()
 export class MailService {
   constructor(
-    private readonly mailer: MailerService,
-    private pdf: PdfService
+    private readonly mailer: MailerService
   ){}
 
   async sendEmail(data: MailObjectDto){
