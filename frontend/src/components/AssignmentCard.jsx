@@ -320,7 +320,7 @@ const AssignmentCard = memo(
 
             {/* Các nút bấm */}
             <Stack direction="row" spacing={1.5}>
-              {(status === "todo" || status === "completed") &&
+              {(status === "todo" || (status === "completed" && session.expireAt > new Date())) &&
                 !pending_et_id &&
                 attempts < limit_taken && (
                   <Button
