@@ -23,6 +23,10 @@ import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 
 const AssignmentCard = memo(
   ({ session, status, onStart, onContinue, onView, isGlobal }) => {
+    const currentTime = new Date();
+    const expireDate = session.expireAt ? new Date(session.expireAt) : null;
+    console.log(`Session ${session.exam_id} - ${session.session_id} with status: ${status} and expireAt: ${session.expireAt} at ${currentTime}`);
+    console.log(expireDate && expireDate > currentTime ? "Session is still valid" : "Session has expired");
     const theme = useTheme();
     const isDark = theme.palette.mode === "dark";
 
@@ -320,7 +324,7 @@ const AssignmentCard = memo(
 
             {/* Các nút bấm */}
             <Stack direction="row" spacing={1.5}>
-              {(status === "todo" || (status === "completed" && session.expireAt > new Date())) &&
+              {(status === "todo" || (status === "completed" && expireDate && expireDate > currentTime)) &&
                 !pending_et_id &&
                 attempts < limit_taken && (
                   <Button
