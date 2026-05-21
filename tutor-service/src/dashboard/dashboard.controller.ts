@@ -15,7 +15,7 @@ import { DashboardService } from "./dashboard.service";
 import { JwtAuthGuard } from "src/auth/guard/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guard/roles.guard";
 import { Roles } from "src/auth/decorator/roles.decorator";
-import { FilterDTO } from "./dto/filter.dto";
+import { PartialFilterDTO } from "./dto/filter.dto";
 
 @Controller("dashboard")
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -47,7 +47,7 @@ export class DashboardController {
     @Roles('tutor')
     getAttentionRequiredStudents(
         @Request() req: any,
-        @Query() query: Partial<FilterDTO>
+        @Query() query: PartialFilterDTO
     ) {
         const uid = req.user.userId
         return this.tutorDashboard.attentionRequiredStudents(uid, query)
@@ -75,7 +75,7 @@ export class DashboardController {
     @Roles('student')
     getStudentCurrentTest(
         @Request() req: any,
-        @Query() query: Partial<FilterDTO>
+        @Query() query: PartialFilterDTO
     ) {
         const uid = req.user.userId
         return this.studentDashboard.currentActivities(uid, query)
@@ -84,7 +84,7 @@ export class DashboardController {
     @Get('student/score-trend')
     @Roles('student')
     getScoreTrend(
-        @Query() query: Partial<FilterDTO>,
+        @Query() query: PartialFilterDTO,
         @Request() req: any
     ) {
         const uid = req.user.userId

@@ -3,7 +3,7 @@ import {
 } from '@nestjs/common';
 import { ClassStatus, ExamType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AttentionIssue, ExamFilterType, FilterDTO, TimeRange } from '../dto/filter.dto';
+import { AttentionIssue, ExamFilterType, FilterDTO, PartialFilterDTO, TimeRange } from '../dto/filter.dto';
 
 @Injectable()
 export class TutorDashboard {
@@ -197,7 +197,7 @@ export class TutorDashboard {
         }
     }
 
-    async attentionRequiredStudents(tutor_id: string, query: Partial<FilterDTO>) {
+    async attentionRequiredStudents(tutor_id: string, query: PartialFilterDTO) {
         const page: number = Number(query?.page ?? 1)
         const limit: number = Number(query?.limit ?? 10)
 
