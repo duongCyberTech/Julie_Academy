@@ -3,7 +3,7 @@ import {
 } from '@nestjs/common';
 import { ExamType, PlanType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ExamFilterType, FilterDTO, TimeRange } from 'src/dashboard/dto/filter.dto';
+import { ExamFilterType, FilterDTO, PartialFilterDTO, TimeRange } from 'src/dashboard/dto/filter.dto';
 import { CategoryService } from 'src/question/question.service';
 
 @Injectable()
@@ -98,7 +98,7 @@ export class StudentDashboard {
         }).then(res => res?.streak)
     }
 
-    async currentActivities(student_id: string, filter: Partial<FilterDTO>) {
+    async currentActivities(student_id: string, filter: PartialFilterDTO) {
         const take: number = Number(filter.limit ?? 10)
         const skip: number = ((filter.page ?? 1) - 1) * (filter.limit ?? 10)
 
@@ -159,7 +159,7 @@ export class StudentDashboard {
         })))
     }
 
-    async scoreTrend(student_id: string, filter: Partial<FilterDTO>) {
+    async scoreTrend(student_id: string, filter: PartialFilterDTO) {
         const timeRange: TimeRange = filter?.group_time ?? TimeRange.week
         const examType: ExamFilterType = filter?.exam_type ?? ExamFilterType.practice
 

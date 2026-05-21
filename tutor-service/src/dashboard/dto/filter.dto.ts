@@ -1,6 +1,7 @@
-import { ExamType } from "@prisma/client";
-import { Transform, Type } from "class-transformer";
-import { IsDate, IsEnum, IsNumber, IsOptional } from "class-validator";
+import { PartialType } from "@nestjs/mapped-types";
+import { Type } from "class-transformer";
+import { IsEnum, IsNumber, IsOptional } from "class-validator";
+import { IsIsoDateTime, TransformToIsoDateTime } from "src/validator/date-iso.validator";
 
 export enum TimeRange {
     week = "week",
@@ -34,14 +35,14 @@ export class FilterDTO {
     limit: number = 10
 
     @IsOptional()
-    @IsDate()
-    @Type(() => Date)
-    startAt: Date
+    @TransformToIsoDateTime()
+    @IsIsoDateTime()
+    startAt!: Date
 
     @IsOptional()
-    @IsDate()
-    @Type(() => Date)
-    endAt: Date
+    @TransformToIsoDateTime()
+    @IsIsoDateTime()
+    endAt!: Date
 
     @IsOptional()
     @IsEnum(TimeRange)
@@ -65,3 +66,5 @@ export class FilterDTO {
     @IsNumber()
     test_miss_threshold: number = 1
 }
+
+export class PartialFilterDTO extends PartialType(FilterDTO) {}
