@@ -26,6 +26,18 @@ export class QueueProcessor {
     } = job.data;
 
     try {
+      const check_exist = await this.prisma.exam_taken.findUnique({
+        where: {
+          et_id,
+          isDone: false
+        }
+      })
+
+      if (!check_exist) {
+        this.logger.warn(`[EXAM SESSION TIMEOUT] - ${timeoutAt} [LOG] Phiên thi đã được đánh dấu là timeout hoặc không tồn tại!`);
+        return;
+      }
+
       const updated_et = await this.prisma.exam_taken.update({
         where: {
           et_id,
@@ -66,7 +78,7 @@ export class QueueProcessor {
       this.eventEmitter.emit('exam_taken.submit', payload)
       this.logger.log(`[EXAM SESSION TIMEOUT] - ${timeoutAt} [LOG] Phiên thi đã được đánh dấu là timeout!`);
     } catch (error) {
-      this.logger.error(`[EXAM SESSION TIMEOUT] thất bại: ${error.message}`, error.stack);
+      this.logger.error(`[EXAM SESSION TIMEOUT] thất bại: ${(error as Error).message}`, (error as Error).stack);
     }
   }
 
@@ -109,7 +121,7 @@ export class QueueProcessor {
 
       this.logger.log(`[THÔNG BÁO] Thông báo đã được thiết lập thành công!`);
     } catch (error) {
-      this.logger.error(`[THÔNG BÁO] thất bại: ${error.message}`, error.stack);
+      this.logger.error(`[THÔNG BÁO] thất bại: ${(error as Error).message}`, (error as Error).stack);
     }
   }
 }
