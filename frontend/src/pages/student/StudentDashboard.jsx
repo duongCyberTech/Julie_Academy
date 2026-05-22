@@ -4,7 +4,7 @@ import {
   Paper, Typography, Box, Card, CardContent, Stack, Chip,
   LinearProgress, FormControl, Select, MenuItem, InputLabel,
   Dialog, DialogTitle, DialogContent, IconButton, Grid, TextField, Button,
-  Avatar, Tooltip, List, ListItem, ListItemIcon, ListItemText
+  Avatar, Tooltip, List, ListItem, ListItemIcon, ListItemText, Pagination
 } from "@mui/material";
 import { styled, useTheme, alpha, keyframes } from "@mui/material/styles";
 import {
@@ -470,14 +470,17 @@ const StudentDashboard = memo(() => {
   const fetchHistory = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const params = { limit: 10, page: 1, sort: historySort };
+      const params = { limit: historyLimit, page: historyPage, sort: historySort };
       if (activityType !== 'all') params.exam_type = activityType;
       if (startDate) params.startAt = startDate;
       if (endDate) params.endAt = endDate;
-      const data = await getHistory(token, params);
-      setHistoryData(data);
+      const response = await getHistory(token, params);
+      const payload = Array.isArray(response) ? { data: response, meta: { total: response.length, page: historyPage, limit: historyLimit, totalPages: 1 } } : response;
+      setHistoryData(payload.data || []);
+      setHistoryTotal(payload.meta?.total || 0);
+      setHistoryTotalPages(payload.meta?.totalPages || 1);
     } catch (error) {}
-  }, [activityType, startDate, endDate, historySort]);
+  }, [activityType, startDate, endDate, historySort, historyPage, historyLimit]);
 
   useEffect(() => {
     const initData = async () => {
@@ -489,6 +492,10 @@ const StudentDashboard = memo(() => {
   }, [fetchStats, fetchMyPlans]);
 
   useEffect(() => { fetchTrend(); }, [fetchTrend]);
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [activityType, startDate, endDate, historySort]);
+
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
   useEffect(() => { fetchRadar(); }, [fetchRadar]); 
 
@@ -911,6 +918,21 @@ const StudentDashboard = memo(() => {
             })
           )}
         </Stack>
+
+        <Box sx={{ mt: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Tổng {historyTotal} kết quả{historyTotalPages > 1 ? ` • Trang ${historyPage} / ${historyTotalPages}` : ''}
+          </Typography>
+          <Pagination
+            count={Math.max(historyTotalPages, 1)}
+            page={historyPage}
+            onChange={(_, value) => setHistoryPage(value)}
+            color="primary"
+            shape="rounded"
+            size="small"
+            disabled={historyTotalPages <= 1}
+          />
+        </Box>
       </Paper>
 
       <Dialog open={openDrillDown} onClose={() => setOpenDrillDown(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper, overflow: 'hidden' } }} aria-labelledby="drilldown-dialog-title">
