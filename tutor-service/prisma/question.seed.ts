@@ -2111,7 +2111,7 @@ async function main() {
       content:
         'Bác Ngọc gửi tiết kiệm $x$ đồng, lãi suất 7.2%/năm. Bác muốn tổng tiền (cả gốc lẫn lãi) sau 12 tháng ít nhất là 214,400,000 đồng. Bác Ngọc phải gửi ít nhất bao nhiêu tiền?',
       explaination:
-        'Lập BPT: Gốc + Lãi $\\ge$ 214,400,000. $x + 0.072x \\ge 214400000$.',
+        'Lập BPT: Gốc + Lãi $\ge$ 214,400,000. $x + 0.072x \\ge 214400000$.',
       level: DifficultyLevel.hard,
       type: QuestionType.single_choice,
       accessMode: QuestionAccess.public,
@@ -30401,7 +30401,7 @@ async function main() {
       explaination: 'Đơn vị góc của mỗi tam giác là $180^{\\circ}$, không phải $90^{\\circ}$.',
     },
     {
-      content: '$\frac{(n - 2) \\cdot 180^{\\circ}}{n}$.',
+      content: '$\\frac{(n - 2) \\cdot 180^{\\circ}}{n}$.',
       is_correct: false,
       explaination: 'Đây là công thức tính số đo của MỘT góc trong đa giác đều.',
     },
@@ -30409,7 +30409,7 @@ async function main() {
 },
 {
   content: 'Số đo mỗi góc của một lục giác đều (6 cạnh) là:',
-  explaination: 'Áp dụng công thức tính mỗi góc: $\frac{(n - 2) \\cdot 180^{\\circ}}{n}$ với $n = 6$.',
+  explaination: 'Áp dụng công thức tính mỗi góc: $\\frac{(n - 2) \\cdot 180^{\\circ}}{n}$ với $n = 6$.',
   level: DifficultyLevel.easy,
   type: QuestionType.single_choice,
   accessMode: QuestionAccess.public,
@@ -30420,7 +30420,7 @@ async function main() {
     {
       content: '$120^{\\circ}$.',
       is_correct: true,
-      explaination: '<b>Đúng</b>. $\frac{(6 - 2) \\cdot 180^{\\circ}}{6} = \frac{4 \\cdot 180^{\\circ}}{6} = 120^{\\circ}$.',
+      explaination: '<b>Đúng</b>. $\\frac{(6 - 2) \\cdot 180^{\\circ}}{6} = \\frac{4 \\cdot 180^{\\circ}}{6} = 120^{\\circ}$.',
     },
     {
       content: '$108^{\\circ}$.',
@@ -30546,7 +30546,7 @@ async function main() {
   tutor_id: tutor.uid,
   answers: [
     {
-      content: '$\frac{360^{\\circ}}{n}$.',
+      content: '$\\frac{360^{\\circ}}{n}$.',
       is_correct: true,
       explaination: '<b>Đúng</b>. Góc ở tâm tạo bởi hai đỉnh liên tiếp bằng $360^{\\circ}$ chia cho số cạnh.',
     },
@@ -30556,7 +30556,7 @@ async function main() {
       explaination: 'Đây là góc bẹt, không phải góc ở tâm của đa giác.',
     },
     {
-      content: '$\frac{180^{\\circ}}{n}$.',
+      content: '$\\frac{180^{\\circ}}{n}$.',
       is_correct: false,
       explaination: 'Tính toán sai tỉ số vòng tròn.',
     },
@@ -30603,7 +30603,7 @@ async function main() {
 // --- MỨC ĐỘ TRUNG BÌNH (MEDIUM) ---
 {
   content: 'Cho bảng sau về số đo một góc trong của các đa giác đều:\n\n$ \\begin{array}{|l|c|c|c|} \\hline \\text{Tên đa giác} & \\text{Tam giác đều} & \\text{Hình vuông} & \\text{Ngũ giác đều} \\\\ \\hline \\text{Số đo góc trong} & 60^{\\circ} & 90^{\\circ} & x \\\\ \\hline \\end{array} $\n\nGiá trị của $x$ là:',
-  explaination: 'Sử dụng công thức tính góc trong của đa giác đều: $\frac{(n - 2) \\cdot 180^{\\circ}}{n}$ với $n = 5$.',
+  explaination: 'Sử dụng công thức tính góc trong của đa giác đều: $\\frac{(n - 2) \\cdot 180^{\\circ}}{n}$ với $n = 5$.',
   level: DifficultyLevel.medium,
   type: QuestionType.single_choice,
   accessMode: QuestionAccess.public,
@@ -30614,7 +30614,7 @@ async function main() {
     {
       content: '$108^{\\circ}$.',
       is_correct: true,
-      explaination: '<b>Đúng</b>. $\frac{(5 - 2) \\cdot 180^{\\circ}}{5} = \frac{3 \\cdot 180^{\\circ}}{5} = 108^{\\circ}$.',
+      explaination: '<b>Đúng</b>. $\\frac{(5 - 2) \\cdot 180^{\\circ}}{5} = \\frac{3 \\cdot 180^{\\circ}}{5} = 108^{\\circ}$.',
     },
     {
       content: '$120^{\\circ}$.',

@@ -70,6 +70,14 @@ const formatPracticeTime = (decimalHours) => {
   }
 };
 
+// Rút gọn tên chương: "Chương II. Phương trình..." -> "Chương II"
+// Lấy phần trước dấu phân tách đầu tiên (. : - – —). Không có dấu nào thì trả nguyên.
+const toShortChapterName = (full) => {
+  if (!full) return '';
+  const m = full.match(/^([^.:\-\u2013\u2014]+?)(?=\s*[.:\-\u2013\u2014]|$)/);
+  return m ? m[1].trim() : full.trim();
+};
+
 const PageWrapper = styled(Paper)(({ theme }) => {
   const isDark = theme.palette.mode === 'dark';
   return {
@@ -389,6 +397,7 @@ const StudentDashboard = memo(() => {
   const [activityType, setActivityType] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [historySort, setHistorySort] = useState("newest"); // newest | oldest | highest | lowest
   const rechartsTooltipStyle = useMemo(() => ({ 
     backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.common.white, 
     borderRadius: '8px', 
@@ -444,11 +453,16 @@ const StudentDashboard = memo(() => {
     try {
       const token = localStorage.getItem("token");
       const data = await getSkillsMap(token, selectedPlan);
-      const formattedRadar = data.map(item => {
-        const total = item.correct_cnt + item.fail_cnt;
-        const percent = total === 0 ? 0 : Math.round((item.correct_cnt / total) * 100);
-        return { chapter_id: item.category_id, subject: item.category_name, A: percent };
-      });
+      // Backend mới trả về { category_id, category_name, percent, counted_subtopics }
+      // percent là trung bình % các chủ điểm (subtopic) ĐÃ LÀM trong chương.
+      // Trục radar dùng tên ngắn ("Chương II") để không bị chồng chéo; tên đầy đủ
+      // được giữ trong fullName để hiện ở header drill-down dialog.
+      const formattedRadar = data.map(item => ({
+        chapter_id: item.category_id,
+        subject: toShortChapterName(item.category_name),
+        fullName: item.category_name,
+        A: Math.round(Number(item.percent) || 0),
+      }));
       setRadarData(formattedRadar);
     } catch (error) {}
   }, [selectedPlan]);
@@ -456,14 +470,14 @@ const StudentDashboard = memo(() => {
   const fetchHistory = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const params = { limit: 10, page: 1 };
+      const params = { limit: 10, page: 1, sort: historySort };
       if (activityType !== 'all') params.exam_type = activityType;
       if (startDate) params.startAt = startDate;
       if (endDate) params.endAt = endDate;
       const data = await getHistory(token, params);
       setHistoryData(data);
     } catch (error) {}
-  }, [activityType, startDate, endDate]);
+  }, [activityType, startDate, endDate, historySort]);
 
   useEffect(() => {
     const initData = async () => {
@@ -479,15 +493,15 @@ const StudentDashboard = memo(() => {
   useEffect(() => { fetchRadar(); }, [fetchRadar]); 
 
   const handleVertexClick = useCallback(async (subjectName) => {
-    console.log("Đang tải dữ liệu cho chủ đề:", subjectName); 
     const chapter = radarData.find(d => d.subject === subjectName);
-    
+
     if (!chapter) {
       console.warn("Không tìm thấy chủ đề này trong Radar Data!");
       return;
     }
-    
-    setSelectedChapterName(chapter.subject);
+
+    // Header dialog hiện tên ĐẦY ĐỦ của chương để parent/student biết rõ
+    setSelectedChapterName(chapter.fullName || chapter.subject);
     try {
       const token = localStorage.getItem("token");
       const responseData = await getSkillsMapDrillDown(token, chapter.chapter_id, selectedPlan);
@@ -811,6 +825,18 @@ const StudentDashboard = memo(() => {
                 <MenuItem value="adaptive">Thích ứng</MenuItem>
               </Select>
             </FormControl>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <Select
+                value={historySort}
+                onChange={(e) => setHistorySort(e.target.value)}
+                inputProps={{ 'aria-label': 'Sắp xếp' }}
+              >
+                <MenuItem value="newest">Mới nhất</MenuItem>
+                <MenuItem value="oldest">Cũ nhất</MenuItem>
+                <MenuItem value="highest">Điểm cao → thấp</MenuItem>
+                <MenuItem value="lowest">Điểm thấp → cao</MenuItem>
+              </Select>
+            </FormControl>
           </Stack>
         </Stack>
 
@@ -865,7 +891,7 @@ const StudentDashboard = memo(() => {
                     <Stack direction="row" alignItems="center" spacing={1} mt={0.5} flexWrap="wrap">
                       <Chip size="small" label={typeLabel} sx={{ bgcolor: alpha(theme.palette[typeColor].main, 0.1), color: `${typeColor}.main`, fontWeight: 700, borderRadius: 1 }} />
                       <Typography variant="caption" component="span" color="text.disabled">•</Typography>
-                      <Typography variant="caption" component="span" color="text.secondary" fontWeight={600}>{item.subject || 'Môn học'}</Typography>
+                      <Typography variant="caption" component="span" color="text.secondary" fontWeight={600}>{item.subject || 'Toán'}</Typography>
                       <Typography variant="caption" component="span" color="text.disabled">•</Typography>
                       <Typography variant="caption" component="span" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <AccessTimeIcon sx={{ fontSize: 14 }} />

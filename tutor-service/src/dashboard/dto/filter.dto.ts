@@ -23,6 +23,13 @@ export enum AttentionIssue {
     test_miss = "test_miss"
 }
 
+export enum HistorySort {
+    newest = "newest",     // doneAt desc (mặc định, giống hành vi cũ)
+    oldest = "oldest",     // doneAt asc
+    highest = "highest",   // final_score desc, doneAt desc tie-break
+    lowest = "lowest",     // final_score asc, doneAt desc tie-break
+}
+
 export class FilterDTO {
     @IsOptional()
     @Type(() => Number)
@@ -65,6 +72,10 @@ export class FilterDTO {
     @Type(() => Number)
     @IsNumber()
     test_miss_threshold: number = 1
+
+    @IsOptional()
+    @IsEnum(HistorySort)
+    sort: HistorySort = HistorySort.newest
 }
 
 export class PartialFilterDTO extends PartialType(FilterDTO) {}
