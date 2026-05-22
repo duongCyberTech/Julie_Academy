@@ -476,6 +476,7 @@ export class StudentDashboard {
                 AND et."exam_id"     IS NULL
                 AND et."session_id"  IS NULL
             WHERE c."parent_id" = ${chapter_id}
+                AND et."student_uid" = ${student_id}
             GROUP BY c."category_id", c."category_name"
             ORDER BY c."category_name";
         `;
