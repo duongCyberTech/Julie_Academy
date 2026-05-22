@@ -275,14 +275,13 @@ const ParentDashboard = memo(() => {
   const [drillDownData, setDrillDownData] = useState([]);
 
   const [historyData, setHistoryData] = useState([]);
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
-  const [historyLimit] = useState(10);
-  const [historyTotal, setHistoryTotal] = useState(0);
-  const [historyTotalPages, setHistoryTotalPages] = useState(0);
   const [activityType, setActivityType] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [historySort, setHistorySort] = useState("newest"); // newest | oldest | highest | lowest
+  const HISTORY_LIMIT = 10;
 
   const rechartsTooltipStyle = useMemo(() => ({
     backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.common.white,
@@ -381,17 +380,27 @@ const ParentDashboard = memo(() => {
     if (!selectedChildId) return;
     try {
       const token = localStorage.getItem("token");
-      const params = { limit: historyLimit, page: historyPage, sort: historySort };
+      const params = { limit: HISTORY_LIMIT, page: historyPage, sort: historySort };
       if (activityType !== 'all') params.exam_type = activityType;
       if (startDate) params.startAt = startDate;
       if (endDate) params.endAt = endDate;
-      const response = await getHistory(token, selectedChildId, params);
-      const payload = Array.isArray(response) ? { data: response, meta: { total: response.length, page: historyPage, limit: historyLimit, totalPages: 1 } } : response;
-      setHistoryData(payload.data || []);
-      setHistoryTotal(payload.meta?.total || 0);
-      setHistoryTotalPages(payload.meta?.totalPages || 1);
+      const data = await getHistory(token, selectedChildId, params);
+      // Backend mới trả về { items, total, page, limit, totalPages }
+      // Vẫn fallback nếu sau này backend đổi format (array thuần).
+      if (Array.isArray(data)) {
+        setHistoryData(data);
+        setHistoryTotalPages(1);
+      } else {
+        setHistoryData(data?.items ?? []);
+        setHistoryTotalPages(data?.totalPages ?? 1);
+      }
     } catch (error) {}
-  }, [selectedChildId, activityType, startDate, endDate, historySort, historyPage, historyLimit]);
+  }, [selectedChildId, activityType, startDate, endDate, historySort, historyPage]);
+
+  // Khi filter hoặc đứa con đổi → reset về trang 1
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [selectedChildId, activityType, startDate, endDate, historySort]);
 
   // 2. Reload all child-scoped data khi đổi con
   useEffect(() => {
@@ -405,7 +414,6 @@ const ParentDashboard = memo(() => {
   }, [selectedChildId, fetchStats, fetchMyPlans]);
 
   useEffect(() => { if (selectedChildId) fetchTrend(); }, [fetchTrend, selectedChildId]);
-  useEffect(() => { setHistoryPage(1); }, [activityType, startDate, endDate, historySort]);
   useEffect(() => { if (selectedChildId) fetchHistory(); }, [fetchHistory, selectedChildId]);
   useEffect(() => { if (selectedChildId) fetchRadar(); }, [fetchRadar, selectedChildId]);
 
@@ -891,20 +899,21 @@ const ParentDashboard = memo(() => {
           )}
         </Stack>
 
-        <Box sx={{ mt: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Tổng {historyTotal} kết quả{historyTotalPages > 1 ? ` • Trang ${historyPage} / ${historyTotalPages}` : ''}
-          </Typography>
-          <Pagination
-            count={Math.max(historyTotalPages, 1)}
-            page={historyPage}
-            onChange={(_, value) => setHistoryPage(value)}
-            color="primary"
-            shape="rounded"
-            size="small"
-            disabled={historyTotalPages <= 1}
-          />
-        </Box>
+        {/* Phân trang chỉ hiện khi có nhiều hơn 1 trang để giữ UI gọn */}
+        {historyTotalPages > 1 && (
+          <Stack direction="row" justifyContent="center" sx={{ mt: 3 }}>
+            <Pagination
+              count={historyTotalPages}
+              page={historyPage}
+              onChange={(_, value) => setHistoryPage(value)}
+              color="primary"
+              shape="rounded"
+              showFirstButton
+              showLastButton
+              aria-label="Phân trang lịch sử hoạt động"
+            />
+          </Stack>
+        )}
       </Paper>
 
       <Dialog open={openDrillDown} onClose={() => setOpenDrillDown(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, bgcolor: isDark ? 'background.paper' : theme.palette.background.paper, overflow: 'hidden' } }} aria-labelledby="drilldown-dialog-title">
