@@ -57,7 +57,7 @@ export class FilterDTO {
 
     @IsOptional()
     @IsEnum(ExamFilterType)
-    exam_type: ExamFilterType = ExamFilterType.practice
+    exam_type: ExamFilterType = ExamFilterType.all
 
     @IsOptional()
     @IsEnum(AttentionIssue)
