@@ -99,23 +99,10 @@ export class StudentDashboard {
     }
 
     async currentActivities(student_id: string, filter: PartialFilterDTO) {
-        const take: number = Number(filter.limit ?? 10)
+        const limit: number = Number(filter.limit ?? 10)
         const page: number = Number(filter.page ?? 1)
-        const skip: number = (page - 1) * take
-
-        const where = {
-            student_uid: student_id,
-            isDone: true,
-            ...(filter.exam_type && filter.exam_type !== 'all'
-                ? filter.exam_type === 'adaptive'
-                    ? { exam_id: null, session_id: null }
-                    : { exam_session: { exam_type: filter.exam_type as any } }
-                : {}),
-            ...(filter.startAt ? { startAt: { gte: filter.startAt } } : {}),
-            ...(filter.endAt ? { doneAt: { lte: filter.endAt } } : {}),
-        }
-
-        const total = await this.prisma.exam_taken.count({ where })
+        const take: number = limit
+        const skip: number = (page - 1) * limit
 
         // Map enum sort → orderBy của Prisma.
         // Mặc định newest = doneAt desc (giữ y nguyên hành vi cũ).
@@ -128,43 +115,50 @@ export class StudentDashboard {
                     ? [{ final_score: 'asc' as const }, { doneAt: 'desc' as const }]
                     : [{ doneAt: 'desc' as const }, { startAt: 'desc' as const }];
 
-        const data = await this.prisma.exam_taken.findMany({
-            where,
-            select: {
-                exam_session: {
-                    select: {
-                        exam_type: true,
-                        exam: {
-                            select: {
-                                title: true
-                            }
-                        },
-                        exam_open_in: {
-                            select: {
-                                class: {
-                                    select: {
-                                        subject: true
-                                    }
-                                }
+        // where dùng chung cho findMany và count
+        const where = {
+            student_uid: student_id,
+            isDone: true,
+            // Lọc theo loại bài thi
+            ...(filter.exam_type && filter.exam_type !== 'all' ?
+                (filter.exam_type === 'adaptive' ?
+                { exam_id: null, session_id: null } :
+                { exam_session: { exam_type: filter.exam_type as any } }) : {}),
+
+            ...(filter.startAt ? {startAt: {gte: filter.startAt}} : {}),
+            ...(filter.endAt ? {doneAt: {lte: filter.endAt}} : {})
+        };
+
+        // Chạy song song findMany + count để giảm latency
+        const [rows, total] = await Promise.all([
+            this.prisma.exam_taken.findMany({
+                where,
+                select: {
+                    exam_session: {
+                        select: {
+                            exam_type: true,
+                            exam: { select: { title: true } },
+                            exam_open_in: {
+                                select: { class: { select: { subject: true } } }
                             }
                         }
-                    }
+                    },
+                    final_score: true,
+                    doneAt: true,
+                    category: { select: { category_name: true } }
                 },
-                final_score: true,
-                doneAt: true,
-                category: {
-                    select: {
-                        category_name: true
-                    }
-                }
-            },
-            orderBy,
-            take,
-            skip
-        })
+                orderBy,
+                take,
+                skip
+            }),
+            this.prisma.exam_taken.count({ where })
+        ]);
 
-        const formatted = data.map(ex => {
+        const items = rows.map(ex => {
             const isAdaptive = !ex.exam_session;
+            // Bài Adaptive không gắn class nên không có môn học cụ thể.
+            // Hiện tại hệ thống chỉ có Toán → trả về "Toán" cho rõ ràng,
+            // tránh fallback "Môn học" (placeholder) hoặc undefined ở UI.
             const subject = isAdaptive
                 ? 'Toán'
                 : (ex.exam_session?.exam_open_in?.[0]?.class?.subject ?? 'Toán');
@@ -177,17 +171,15 @@ export class StudentDashboard {
                 doneAt: ex.doneAt,
                 category: ex?.category?.category_name,
             };
-        })
+        });
 
         return {
-            data: formatted,
-            meta: {
-                total,
-                page,
-                limit: take,
-                totalPages: Math.ceil(total / take)
-            }
-        }
+            items,
+            total,
+            page,
+            limit,
+            totalPages: Math.max(1, Math.ceil(total / limit))
+        };
     }
 
     async scoreTrend(student_id: string, filter: PartialFilterDTO) {
