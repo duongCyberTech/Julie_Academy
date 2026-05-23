@@ -1,10 +1,12 @@
-import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { EmailConfigDto, EmailTemplateCreateDto } from "./dto/email.dto";
+import { CreateEmailLogDto, EmailConfigDto, EmailTemplateCreateDto } from "./dto/email.dto";
 import { EmailTemplateType } from "@prisma/client";
 
 @Injectable()
 export class EmailService {
+  private readonly logger = new Logger(EmailService.name)
+
   constructor(
     private readonly prisma: PrismaService,
   ) {}
@@ -97,6 +99,21 @@ export class EmailService {
     });
   }
 
+  async getAllEmailChains(tutor_id: string) {
+    return this.prisma.emailConfig.findMany({
+      where: {
+        class: {tutor_uid: tutor_id}
+      },
+      include: {
+        _count: {
+          select: {
+            emailLogs: true
+          }
+        }
+      }
+    });
+  }
+
   async getEmailChainById(tutor_id: string, config_id: string) {
     const emailConfig = await this.prisma.emailConfig.findFirst({
       where: {
@@ -121,13 +138,15 @@ export class EmailService {
     }
 
     return this.prisma.$transaction(async(tx) => {
-      const { create_as_template, receiver_ids, ...emailConfigData } = data;
+      const { _count, ...restOfData } = data as any; 
+      const { create_as_template, receiver_ids, template_id, ...emailConfigData } = restOfData;
       const config = await tx.emailConfig.update({
-        where: {
-          config_id,
-        },
+        where: { config_id },
         data: {
-          ...data,
+          ...emailConfigData,
+          template: template_id 
+            ? { connect: { template_id: template_id } } 
+            : { disconnect: true }
         },
       });
 
@@ -140,7 +159,7 @@ export class EmailService {
         })
 
         await tx.receivers.createMany({
-          data: receiver_ids.map(id => ({
+          data: (receiver_ids as string[]).map(id => ({
             receiver_id: id,
             config_id
           })),
@@ -171,10 +190,7 @@ export class EmailService {
     });
   }
 
-  async sendEmailNow(tutor_id: string, config_id: string) {
-    
-  }
- async getAllTemplates(tutor_id: string) {
+  async getAllTemplates(tutor_id: string) {
     return this.prisma.emailTemplate.findMany({
       where: {
         OR: [
@@ -190,5 +206,45 @@ export class EmailService {
         created_at: 'desc' 
       }
     });
+  }
+
+  async createSendingLog(config_id: string, log_data: CreateEmailLogDto) {
+    try {
+      return this.prisma.emailLogs.create({
+        data: {
+          emailConfig: { connect: { config_id } },
+          ...log_data
+        }
+      })
+    } catch (error) {
+      this.logger.log("Internal error: ", (error as Error).message);
+    }
+  }
+
+  async viewEmailLogs(tutor_id: string) {
+    return this.prisma.emailConfig.findMany({
+      where: {
+        class: { tutor_uid: tutor_id }
+      },
+      include: {
+        emailLogs: {
+          orderBy: { sent_at: 'desc' }
+        }
+      }
+    })
+  }
+
+  async viewEmailLogsByConfig(tutor_id: string, config_id: string) {
+    return this.prisma.emailConfig.findFirst({
+      where: {
+        config_id,
+        class: { tutor_uid: tutor_id }
+      },
+      include: {
+        emailLogs: {
+          orderBy: { sent_at: 'desc' }
+        }
+      }
+    })
   }
 }

@@ -1,5 +1,5 @@
-import { IsArray, IsBoolean, IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
-import { EmailObjective, EmailTemplateType, Period } from "@prisma/client";
+import { IsArray, IsBoolean, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { EmailObjective, EmailTemplateType, LogStatus, Period } from "@prisma/client";
 
 export class EmailConfigDto {
   @IsString()
@@ -53,4 +53,14 @@ export class EmailTemplateCreateDto {
   @IsOptional()
   @IsEnum(EmailTemplateType)
   type: EmailTemplateType = EmailTemplateType.public
+}
+
+export class CreateEmailLogDto {
+  @IsNotEmpty()
+  @IsEnum(LogStatus)
+  status!: LogStatus
+
+  @IsArray()
+  @IsString({ each: true })
+  error_message!: string[]
 }

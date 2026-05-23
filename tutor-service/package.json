@@ -20,6 +20,7 @@
     "db:seed:category": "ts-node prisma/seeds/category.seed.ts",
     "db:seed:question": "ts-node prisma/seeds/question.seed.ts",
     "db:seed:email": "ts-node prisma/seeds/email.seed.ts",
+    "db:seed:email-log": "ts-node prisma/seeds/email-log.seed.ts",
     "db:seed:all": "npm-run-all db:seed:user db:seed:category db:seed:question",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:migrate:staging": "cross-env NODE_ENV=staging npx prisma migrate dev",
@@ -28,6 +29,7 @@
     "db:seed:category:staging": "cross-env NODE_ENV=staging ts-node prisma/seeds/category.seed.ts",
     "db:seed:question:staging": "cross-env NODE_ENV=staging ts-node prisma/seeds/question.seed.ts",
     "db:seed:email:staging": "cross-env NODE_ENV=staging ts-node prisma/seeds/email.seed.ts",
+    "db:seed:email-log:staging": "cross-env NODE_ENV=staging ts-node prisma/seeds/email-log.seed.ts",
     "db:seed:all:staging": "cross-env NODE_ENV=staging npm-run-all db:seed:user:staging db:seed:category:staging db:seed:question:staging db:seed:email:staging",
     "start:staging": "cross-env NODE_ENV=staging nest start --watch"
   },

@@ -178,6 +178,16 @@ model EmailConfig {
 
   receivers Receivers[]
   @@index([class_id])
+  emailLogs EmailLogs[]
+}
+
+model EmailLogs {
+  log_id String @id @default(uuid())
+  config_id String
+  sent_at DateTime @default(now())
+  status LogStatus @default(success)
+  error_message Json?   @db.JsonB @default("[]")
+  emailConfig EmailConfig @relation(fields: [config_id], references: [config_id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Receivers {
@@ -656,4 +666,9 @@ enum EmailTemplateType {
   public
   private
   custom
+}
+
+enum LogStatus {
+  success
+  failure
 }

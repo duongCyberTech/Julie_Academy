@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   Box, Typography, Paper, Button, Stack, Switch,
-  IconButton, Dialog, TextField, MenuItem, Snackbar, Alert, Grid, Tooltip, useTheme,
+  IconButton, Dialog, DialogTitle, DialogContent, DialogActions,
+  TextField, MenuItem, Snackbar, Alert, Grid, Tooltip, useTheme,
   AppBar, Toolbar, Card, CardContent, CardActions, Divider, Slide, Chip,
-  Autocomplete
+  Autocomplete, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  CircularProgress
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import AddTaskIcon from '@mui/icons-material/AddTask';
@@ -16,6 +18,10 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SendIcon from '@mui/icons-material/Send';
+import HistoryIcon from '@mui/icons-material/History';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import InboxIcon from '@mui/icons-material/Inbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 
@@ -25,14 +31,22 @@ import 'react-quill/dist/quill.snow.css';
 
 import { getClassesByTutor } from '../../services/ClassService';
 import {
-  getAllEmailChains, createEmailChain, updateEmailChain, deleteEmailChain, getAllTemplates
+  getAllEmailChains, createEmailChain, updateEmailChain, deleteEmailChain, getAllTemplates,
+  getEmailLogsByConfig
 } from '../../services/EmailService';
 
 // Hàm hỗ trợ loại bỏ thẻ HTML để hiển thị văn bản rút gọn (Preview)
 const stripHtml = (html) => {
   if (!html) return '';
-  // Sử dụng regex để xóa tất cả các thẻ HTML, chỉ giữ lại text
   return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+};
+
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
 };
 
 const PageWrapper = styled(Paper)(({ theme }) => {
@@ -223,6 +237,11 @@ function EmailChainPage({ classId }) {
   const [formData, setFormData] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
 
+  const [logsDialogOpen, setLogsDialogOpen] = useState(false);
+  const [selectedConfigForLogs, setSelectedConfigForLogs] = useState(null);
+  const [configLogs, setConfigLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+
   const commonInputSx = useMemo(() => ({ bgcolor: 'background.paper', borderRadius: 1 }), []);
 
   const showToast = useCallback((message, severity = 'success') => {
@@ -230,10 +249,10 @@ function EmailChainPage({ classId }) {
   }, []);
 
   const fetchChains = useCallback(async () => {
-    if (!classId || !token) return;
+    if (!token) return;
     try {
       setLoading(true);
-      const data = await getAllEmailChains(classId, token);
+      const data = await getAllEmailChains(token);
       setChains(data || []);
     } catch (error) {
       showToast("Không thể tải dữ liệu", "error");
@@ -393,6 +412,27 @@ function EmailChainPage({ classId }) {
     }
   }, [token, fetchChains, showToast]);
 
+  const handleViewLogs = useCallback(async (chain) => {
+    setSelectedConfigForLogs(chain);
+    setConfigLogs([]);
+    setLogsDialogOpen(true);
+    setLogsLoading(true);
+    try {
+      const data = await getEmailLogsByConfig(chain.config_id, token);
+      setConfigLogs(data?.emailLogs || []);
+    } catch {
+      showToast("Không thể tải nhật ký email", "error");
+    } finally {
+      setLogsLoading(false);
+    }
+  }, [token, showToast]);
+
+  const handleCloseLogsDialog = useCallback(() => {
+    setLogsDialogOpen(false);
+    setSelectedConfigForLogs(null);
+    setConfigLogs([]);
+  }, []);
+
   return (
     <PageWrapper>
       <HeaderBar>
@@ -457,6 +497,7 @@ function EmailChainPage({ classId }) {
                 <CardFooter sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5 }}>
                   <Chip label={chain.use_template ? 'Từ Mẫu' : 'Tùy chỉnh'} size="small" sx={{ fontWeight: 700, fontSize: '0.7rem', bgcolor: chain.use_template ? alpha(theme.palette.info.main, 0.1) : alpha(theme.palette.secondary.main, 0.1), color: chain.use_template ? 'info.main' : 'secondary.main', borderRadius: 1 }} />
                   <Stack direction="row" spacing={0.5}>
+                    <Tooltip title="Nhật ký gửi"><IconButton size="small" onClick={() => handleViewLogs(chain)} sx={{ color: 'info.main', bgcolor: alpha(theme.palette.info.main, 0.1) }}><HistoryIcon fontSize="small" /></IconButton></Tooltip>
                     <Tooltip title="Chỉnh sửa"><IconButton size="small" onClick={() => handleOpenBuilderEdit(chain)} sx={{ color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.1) }}><EditIcon fontSize="small" /></IconButton></Tooltip>
                     <Tooltip title="Xóa"><IconButton size="small" onClick={() => handleDelete(chain.config_id)} sx={{ color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.1) }}><DeleteOutlineIcon fontSize="small" /></IconButton></Tooltip>
                   </Stack>
@@ -627,6 +668,99 @@ function EmailChainPage({ classId }) {
             </Box>
           )}
         </Box>
+      </Dialog>
+
+      <Dialog
+        open={logsDialogOpen}
+        onClose={handleCloseLogsDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, bgcolor: 'background.paper', backgroundImage: 'none' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+          <Box>
+            <Typography variant="h6" fontWeight={700} color="text.primary">Nhật ký gửi email</Typography>
+            {selectedConfigForLogs && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                {selectedConfigForLogs.header}
+              </Typography>
+            )}
+          </Box>
+          <IconButton size="small" onClick={handleCloseLogsDialog} sx={{ color: 'text.secondary' }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+
+        <Divider />
+
+        <DialogContent sx={{ p: 0, minHeight: 200 }}>
+          {logsLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress size={32} />
+            </Box>
+          )}
+
+          {!logsLoading && configLogs.length === 0 && (
+            <Box sx={{ py: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <InboxIcon sx={{ fontSize: 48, color: alpha(theme.palette.text.secondary, 0.25) }} />
+              <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                Chưa có nhật ký nào cho cấu hình này
+              </Typography>
+            </Box>
+          )}
+
+          {!logsLoading && configLogs.length > 0 && (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: isDark ? alpha(theme.palette.background.default, 0.6) : alpha(theme.palette.grey[100], 0.8) }}>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', pl: 3 }}>Trạng thái</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase' }}>Thời gian gửi</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', pr: 3 }}>Chi tiết lỗi</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {configLogs.map((log) => (
+                    <TableRow
+                      key={log.log_id}
+                      sx={{ '&:last-child td': { border: 0 }, '&:hover': { bgcolor: isDark ? alpha(theme.palette.action.hover, 0.5) : alpha(theme.palette.primary.main, 0.02) } }}
+                    >
+                      <TableCell sx={{ pl: 3, py: 1.5 }}>
+                        <Chip
+                          icon={log.status === 'success' ? <CheckCircleOutlineIcon fontSize="small" /> : <ErrorOutlineIcon fontSize="small" />}
+                          label={log.status === 'success' ? 'Thành công' : 'Thất bại'}
+                          size="small"
+                          sx={{
+                            fontWeight: 700, fontSize: '0.72rem',
+                            bgcolor: log.status === 'success' ? alpha('#22c55e', 0.12) : alpha('#ef4444', 0.12),
+                            color: log.status === 'success' ? '#16a34a' : '#dc2626',
+                            '& .MuiChip-icon': { color: 'inherit' },
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary">{formatDateTime(log.sent_at)}</Typography>
+                      </TableCell>
+                      <TableCell sx={{ pr: 3, py: 1.5 }}>
+                        {log.error_message && Array.isArray(log.error_message) && log.error_message.length > 0 ? (
+                          <Typography variant="caption" color="error.main" sx={{ fontFamily: 'monospace', display: 'block', maxWidth: 320, wordBreak: 'break-word' }}>
+                            {log.error_message.join('; ')}
+                          </Typography>
+                        ) : (
+                          <Typography variant="caption" color="text.disabled">—</Typography>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleCloseLogsDialog} sx={{ borderRadius: 2, fontWeight: 700 }}>Đóng</Button>
+        </DialogActions>
       </Dialog>
 
       <Snackbar open={toast.open} autoHideDuration={4000} onClose={() => setToast(p => ({...p, open: false}))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
