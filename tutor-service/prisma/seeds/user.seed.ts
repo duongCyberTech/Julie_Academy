@@ -36,7 +36,7 @@ const parentNames = [
   'Vương Minh Tâm', 'Châu Thị Lan', 'Lưu Hữu Phước', 'Tô Hoài Nam', 'Đoàn Kim Chi',
 ];
 
-function removeAccents(str) {
+function removeAccents(str: string) {
   return str
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -44,7 +44,7 @@ function removeAccents(str) {
     .replace(/Đ/g, 'D');
 }
 
-function createCredentials(name, roleSuffix = '') {
+function createCredentials(name: any, roleSuffix = '') {
   const parts = removeAccents(name).toLowerCase().split(' ');
   if (parts.length === 0) return { username: `user${roleSuffix}`, email: `user${roleSuffix}@gmail.com` };
   
@@ -58,7 +58,7 @@ function createCredentials(name, roleSuffix = '') {
   return { username, email };
 }
 
-function splitName(name) {
+function splitName(name: string) {
   const parts = name.split(' ');
   const fname = parts[parts.length - 1];
   const lname = parts[0];

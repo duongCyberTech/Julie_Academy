@@ -5,6 +5,7 @@ import { MailService } from "src/mail/mail.service";
 import { MailObjectDto } from "src/mail/dto/mail.dto";
 import { PdfService } from "src/resource/pdf/pdf.service";
 import { FileType } from "src/resource/dto/pdf.dto";
+import { LogStatus } from "@prisma/client";
 
 @Injectable()
 export class CronService {
@@ -217,6 +218,9 @@ export class CronService {
             this.logger.log(`Found ${emailConfigs.length} email configurations to process`)
             for (const config of emailConfigs) {
                 this.logger.log(`Processing email config ${config.config_id} for class ${config.class_id} with ${config.students.length} students`)
+                const errors: string[] = []
+                let emailsAttempted = 0
+
                 for (const { student_uid, student } of config.students) {
 
                     const fileContent = await this.pdf.generateFileContent(FileType.STUDY_REPORT, student_uid, config.config_id)
@@ -232,8 +236,8 @@ export class CronService {
 
                     if (config.body.includes("[Nhập điểm số trung bình]")) {
                         const now = new Date();
-                        const previous_date = config?.period === 'weekly' 
-                        ? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) 
+                        const previous_date = config?.period === 'weekly'
+                        ? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
                         : (config?.period === 'monthly' ? new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()) : null);
 
                         const data = await this.prisma.exam_taken.findMany({
@@ -290,7 +294,30 @@ export class CronService {
                         content: config.body,
                         fileContent: fileContent
                     }
-                    await this.mailer.sendEmail(payload)
+
+                    emailsAttempted++
+                    try {
+                        await this.mailer.sendEmail(payload)
+                    } catch (err) {
+                        const message = (err as Error)?.message ?? 'Unknown error'
+                        this.logger.error(`Failed to send email to ${student.email}: ${message}`)
+                        errors.push(`${student.email}: ${message}`)
+                    }
+                }
+
+                if (emailsAttempted > 0) {
+                    try {
+                        await this.prisma.emailLogs.create({
+                            data: {
+                                config_id: config.config_id,
+                                status: errors.length === 0 ? LogStatus.success : LogStatus.failure,
+                                error_message: errors
+                            }
+                        })
+                        this.logger.log(`Log created for config ${config.config_id}: ${errors.length === 0 ? 'success' : `failure (${errors.length} error(s))`}`)
+                    } catch (logErr) {
+                        this.logger.error(`Failed to write email log for config ${config.config_id}`, logErr)
+                    }
                 }
             }
         } catch (error) {

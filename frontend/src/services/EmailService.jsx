@@ -23,9 +23,9 @@ export const createEmailChain = async (classId, data, token) => {
     }
 };
 
-export const getAllEmailChains = async (classId, token) => {
+export const getAllEmailChains = async (token) => {
     try {
-        const response = await apiClient.get(`/email-chain/class/${classId}`, getAuthHeaders(token));
+        const response = await apiClient.get(`/email-chain`, getAuthHeaders(token));
         return response.data;
     } catch (error) {
         throw error.response?.data || error;
@@ -61,6 +61,24 @@ export const deleteEmailChain = async (configId, token) => {
 export const getAllTemplates = async (token) => {
     try {
         const response = await apiClient.get(`/email-chain/templates/all`, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+export const getEmailLogs = async (token) => {
+    try {
+        const response = await apiClient.get(`/email-chain/logs`, getAuthHeaders(token));
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+export const getEmailLogsByConfig = async (configId, token) => {
+    try {
+        const response = await apiClient.get(`/email-chain/${configId}/logs`, getAuthHeaders(token));
         return response.data;
     } catch (error) {
         throw error.response?.data || error;
