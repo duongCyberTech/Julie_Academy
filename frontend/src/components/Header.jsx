@@ -82,6 +82,10 @@ const Header = React.memo(function Header({
 
     if (!token) return;
 
+    if (!socket.connected) {
+      socket.connect();
+    }
+
     try {
       const decoded = jwtDecode(token);
       socket.emit("notify", decoded.sub);

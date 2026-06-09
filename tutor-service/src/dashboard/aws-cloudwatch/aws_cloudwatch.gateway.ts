@@ -5,7 +5,7 @@ import { ConfigService } from "@nestjs/config/dist/config.service";
 import { ApiMetricsService } from "../metrics/api-metrics.service";
 import { QueueService } from "src/background_job/bull-queue.service";
 
-@WebSocketGateway({ 
+@WebSocketGateway({
   cors: { origin: '*' }
 })
 export class AwsCloudWatchGateway {

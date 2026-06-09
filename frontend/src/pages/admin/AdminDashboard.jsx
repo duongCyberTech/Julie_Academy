@@ -172,6 +172,8 @@ const AdminDashboard = memo(() => {
   }, []);
 
   useEffect(() => {
+    const fetchMetrics = () => socket.emit('get_ec2_metrics');
+
     socket.on('ec2_metrics', (metrics) => {
       setServerMetrics(metrics?.MetricDataResults || []);
     });
@@ -180,14 +182,19 @@ const AdminDashboard = memo(() => {
       console.error('Lỗi AWS EC2 Metrics:', error);
     });
 
-    socket.emit('get_ec2_metrics');
+    // Re-fetch on every (re)connect so data is never stale after a reconnection
+    socket.on('connect', fetchMetrics);
 
-    const interval = setInterval(() => {
-      socket.emit('get_ec2_metrics');
-    }, 60000);
+    // Also emit immediately if the socket is already connected when the component mounts
+    if (socket.connected) {
+      fetchMetrics();
+    }
+
+    const interval = setInterval(fetchMetrics, 60000);
 
     return () => {
       clearInterval(interval);
+      socket.off('connect', fetchMetrics);
       socket.off('ec2_metrics');
       socket.off('ec2_metrics_error');
     };

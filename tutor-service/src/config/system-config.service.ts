@@ -30,13 +30,7 @@ export class SystemConfigService {
 
   validateConfig(validator: SystemConfigValidatorDto) {
     const config = this.getConfig();
-    console.log('Current Config:', config);
-    console.log('Validator:', validator);
-
     if (!Object.hasOwn(config, validator.key)) return true;
-    console.log(`Config value for ${validator.key}:`, config[validator.key]);
-    console.log(`Comparing config value (${config[validator.key].enabled}) with validator value (${validator.value})`);
-    console.log(`Validation result:`, config[validator.key].enabled === validator.value);
 
     return config[validator.key].enabled === validator.value;
   }
