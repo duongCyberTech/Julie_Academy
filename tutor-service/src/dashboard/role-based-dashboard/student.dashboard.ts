@@ -211,6 +211,7 @@ export class StudentDashboard {
             where: {
                 student_uid: student_id,
                 isDone: true,
+                exam_id: { not: null },
                 doneAt: { gte: dateAgo, lte: currentDate },
                 ...(examTypeCondition)
             },
@@ -287,7 +288,7 @@ export class StudentDashboard {
             averageScore: data.sum / data.count
         }));
 
-        return {score_trend: result, total: finalResults.length}
+        return {score_trend: result.sort((a, b) => a.label.localeCompare(b.label)), total: finalResults.length}
     }
 
     async skillsMap(student_id: string, plan_id: string) {

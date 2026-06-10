@@ -114,6 +114,8 @@ export class CronService {
                 await this.mailer.sendEmail(payload)
 
                 this.logger.log("Cron job done")
+            }, {
+                timeout: 30000
             })  
         } catch (error) {
             this.logger.log("Fail with error")
